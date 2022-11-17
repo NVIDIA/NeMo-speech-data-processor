@@ -38,6 +38,18 @@ def get_test_cases():
 @pytest.mark.parametrize("config_path", get_test_cases())
 def test_configs(config_path, tmp_path):
     TEST_DATA_ROOT = os.environ["TEST_DATA_ROOT"]
+    # we expect CONFIG_DIR and TEST_DATA_ROOT to have the same structure (e.g. <lang>/<dataset>)
+    rel_path_from_root = os.path.relpath(Path(config_path).parent, CONFIG_BASE_DIR)
+    reference_manifest = str(
+        Path(TEST_DATA_ROOT) / rel_path_from_root / "test_data_reference.json"
+    )
+    if not os.path.exists(reference_manifest):
+        raise ValueError(
+            f"No such file {reference_manifest}. Are you sure you specified the "
+            " 'TEST_DATA_ROOT' environment variable correctly? "
+            "We expect CONFIG_DIR and TEST_DATA_ROOT to have the same "
+            "structure (e.g. <lang>/<dataset>)"
+        )
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
     cfg["processors_to_run"] = "all"
@@ -49,16 +61,6 @@ def test_configs(config_path, tmp_path):
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
     # reference file (ignoring the file paths)
-    # we expect CONFIG_DIR and TEST_DATA_ROOT to have the same structure (e.g. <lang>/<dataset>)
-    rel_path_from_root = os.path.relpath(Path(config_path).parent, CONFIG_BASE_DIR)
-    reference_manifest = str(
-        Path(TEST_DATA_ROOT) / rel_path_from_root / "test_data_reference.json"
-    )
-    if not os.path.exists(reference_manifest):
-        raise ValueError(
-            f"No such file {reference_manifest}. Are you sure you specified the "
-            f" 'TEST_DATA_ROOT' environment variable correctly?"
-        )
     with open(reference_manifest, "rt", encoding="utf8") as reference_fin, open(
         cfg["final_manifest"], "rt", encoding="utf8"
     ) as generated_fin:
