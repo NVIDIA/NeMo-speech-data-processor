@@ -30,10 +30,10 @@ class ModifyManifestTextProcessor(BaseParallelProcessor):
           values.
 
     Args:
-        test_cases: an optional list of dicts containing test cases for checking 
+        test_cases: an optional list of dicts containing test cases for checking
             that the processor makes the changes that we are expecting.
             The dicts must have a key 'input', the value of which is a dictionary
-            containing data which is our test input manifest line, and a key 
+            containing data which is our test input manifest line, and a key
             'output', the value of which is a dictionary containing data which is
             the expected output manifest line.
 
@@ -44,6 +44,9 @@ class ModifyManifestTextProcessor(BaseParallelProcessor):
     def __init__(self, test_cases: Optional[List[Dict]] = None, **kwargs):
         super().__init__(**kwargs)
         self.test_cases = test_cases
+        # need to convert to list to avoid errors in iteration over None
+        if self.test_cases is None:
+            self.test_cases = []
 
     def test(self):
         for test_case in self.test_cases:
