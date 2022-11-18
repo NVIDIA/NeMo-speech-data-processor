@@ -23,12 +23,12 @@ from nemo.utils import logging
 from sdp.run_processors import run_processors
 
 
-CONFIG_BASE_DIR = Path(__file__).parents[1] / "dataset_configs"
+DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
 
 
 def get_test_cases():
     """Returns paths to all configs that are checked in."""
-    for config_path in glob.glob(f"{CONFIG_BASE_DIR}/**/*.yaml", recursive=True):
+    for config_path in glob.glob(f"{DATASET_CONFIGS_ROOT}/**/*.yaml", recursive=True):
         yield config_path
 
 
@@ -38,16 +38,15 @@ def get_test_cases():
 @pytest.mark.parametrize("config_path", get_test_cases())
 def test_configs(config_path, tmp_path):
     TEST_DATA_ROOT = os.environ["TEST_DATA_ROOT"]
-    # we expect CONFIG_DIR and TEST_DATA_ROOT to have the same structure (e.g. <lang>/<dataset>)
-    rel_path_from_root = os.path.relpath(Path(config_path).parent, CONFIG_BASE_DIR)
-    reference_manifest = str(
-        Path(TEST_DATA_ROOT) / rel_path_from_root / "test_data_reference.json"
-    )
+    # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
+    # to have the same structure (e.g. <lang>/<dataset>)
+    rel_path_from_root = os.path.relpath(Path(config_path).parent, DATASET_CONFIGS_ROOT)
+    reference_manifest = str(Path(TEST_DATA_ROOT) / rel_path_from_root / "test_data_reference.json")
     if not os.path.exists(reference_manifest):
         raise ValueError(
             f"No such file {reference_manifest}. Are you sure you specified the "
             " 'TEST_DATA_ROOT' environment variable correctly? "
-            "We expect CONFIG_DIR and TEST_DATA_ROOT to have the same "
+            "We expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT to have the same "
             "structure (e.g. <lang>/<dataset>)"
         )
     cfg = OmegaConf.load(config_path)
