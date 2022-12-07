@@ -31,4 +31,4 @@ jobs:
         pip install "nemo_toolkit[asr,nemo_text_processing]"
     - name: Run all tests
       run: |
-        pytest --durations=30 -rs
+        pytest --error-for-skips --durations=30 -rs

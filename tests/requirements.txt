@@ -1,2 +1,3 @@
 # additional packages required to run tests
 pytest
+pytest-error-for-skips
