@@ -25,6 +25,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r tests/requirements.txt
-    - name: Test with pytest
+        apt-get update && apt-get install -y libsndfile1 ffmpeg
+        pip install Cython
+        pip install "nemo_toolkit[asr,nemo_text_processing]"
+    - name: Run all tests
       run: |
         pytest --durations=30 -rs
