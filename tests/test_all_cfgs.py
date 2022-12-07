@@ -32,20 +32,64 @@ def get_test_cases():
         yield config_path
 
 
+def check_e2e_test_data() -> bool:
+    """Checks if required environment variables are defined for e2e data.
+
+    Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY
+    and AWS_ACCESS_KEY.
+    """
+    if os.getenv("TEST_DATA_ROOT"):
+        return True
+    if os.getenv("AWS_SECRET_KEY") and os.getenv("AWS_ACCESS_KEY"):
+        return True
+    return False
+
+
+def get_e2e_test_data_path() -> str:
+    """Returns path to e2e test data (downloading from AWS if necessary).
+
+    In case of downloading from AWS, will create "test_data" folder in the
+    current folder and set TEST_DATA_ROOT automatically (used by the sdp code
+    to locate test data).
+    """
+    test_data_root = os.getenv("TEST_DATA_ROOT")
+    if test_data_root:  # assume it's present locally
+        return test_data_root
+
+    import boto3
+
+    s3_resource = boto3.resource(
+        "s3",
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
+    )
+    bucket = s3_resource.Bucket("sdp-test-data")
+    for obj in bucket.objects.all():
+        if not os.path.exists(os.path.dirname(obj.key)):
+            os.makedirs(os.path.dirname(obj.key))
+        bucket.download_file(obj.key, obj.key)
+
+    os.environ["TEST_DATA_ROOT"] = os.path.abspath("test_data")
+
+    return os.environ["TEST_DATA_ROOT"]
+
+
 @pytest.mark.skipif(
-    not os.getenv("TEST_DATA_ROOT"), reason="TEST_DATA_ROOT has to be defined for e2e config tests"
+    not check_e2e_test_data(),
+    reason="Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY "
+    "and AWS_ACCESS_KEY to run e2e config tests",
 )
 @pytest.mark.parametrize("config_path", get_test_cases())
-def test_configs(config_path, tmp_path):
-    TEST_DATA_ROOT = os.environ["TEST_DATA_ROOT"]
+def test_configs(config_path: str, tmp_path: str):
+    test_data_root = get_e2e_test_data_path()
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
     # to have the same structure (e.g. <lang>/<dataset>)
     rel_path_from_root = os.path.relpath(Path(config_path).parent, DATASET_CONFIGS_ROOT)
-    reference_manifest = str(Path(TEST_DATA_ROOT) / rel_path_from_root / "test_data_reference.json")
+    reference_manifest = str(Path(test_data_root) / rel_path_from_root / "test_data_reference.json")
     if not os.path.exists(reference_manifest):
         raise ValueError(
-            f"No such file {reference_manifest}. Are you sure you specified the "
-            " 'TEST_DATA_ROOT' environment variable correctly? "
+            f"No such file {reference_manifest}. Are you sure you have correct "
+            "folder structure for test data? "
             "We expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT to have the same "
             "structure (e.g. <lang>/<dataset>)"
         )
