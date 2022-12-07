@@ -30,5 +30,11 @@ jobs:
         pip install Cython
         pip install "nemo_toolkit[asr,nemo_text_processing]"
     - name: Run all tests
+      env:
+        AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+        AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
       run: |
-        pytest --error-for-skips --durations=30 -rs
+        pytest --durations=30 -rs
+
+# TODO: add some way to see if e2e tests were skipped
+#       (which will be the case for PRs from public forks).
