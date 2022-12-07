@@ -25,7 +25,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r tests/requirements.txt
-        apt-get update && apt-get install -y libsndfile1 ffmpeg
+        sudo apt-get update
+        sudo apt-get install -y libsndfile1 ffmpeg
         pip install Cython
         pip install "nemo_toolkit[asr,nemo_text_processing]"
     - name: Run all tests
