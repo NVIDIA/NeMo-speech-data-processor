@@ -1,3 +1,6 @@
 __pycache__
 test_data
+pytest.xml
+pytest-coverage.txt
+.coverage
 
