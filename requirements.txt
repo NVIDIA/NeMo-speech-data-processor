@@ -1,2 +1,2 @@
 diff_match_patch
-nemo
+nemo_toolkit[all]
