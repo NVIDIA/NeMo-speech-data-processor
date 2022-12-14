@@ -20,27 +20,27 @@ SDP is specifically intended for the use case when you have an existing dataset 
 A simplified version of an SDP file can be:
 
 ```yaml
-processors: 
+processors:
 
   # use existing classes for popular datasets or make your own class
-  - _target_: sdp.processors.CreateInitialManifestMLS 
+  - _target_: sdp.processors.CreateInitialManifestMLS
     output_manifest_file: ...
     download_dir: ...
     ...
 
   # use existing classes for common operations or write your own
-  - _target_: sdp.processors.SubSubstringToSubstring 
+  - _target_: sdp.processors.SubSubstringToSubstring
 
-    substring_pairs: { 
-      # specify the parameters needed for your usecase 
+    substring_pairs: {
+      # specify the parameters needed for your usecase
       " mr ": " mister ",
       " misteak ": " mistake ",
       ...
     }
 
-  - _target_: sdp.processors.DropNonAlphabet 
+  - _target_: sdp.processors.DropNonAlphabet
     alphabet: " abcdefghijklmnopqrstuvwxyz"
-    output_manifest_file: ... 
+    output_manifest_file: ...
     ...
 ```
 ## Existing processor classes
@@ -67,3 +67,12 @@ processors:
       - {input: {text: "four a b c d spaced out letters"}, output: null}
   ...
 ```
+
+## Installation
+
+SDP is officially supported for Python 3.8, but might work for other versions.
+
+SDP depends on NeMo toolkit (ASR and nemo-text-processing parts).
+Please follow (NeMo installation instructions)[https://github.com/NVIDIA/NeMo#installation].
+After that, run `pip install -r requirements.txt` and (optionally)
+`pip install -r tests/requirements.txt` if you want to run tests.

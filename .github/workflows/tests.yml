@@ -1,0 +1,47 @@
+name: SDP tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.8"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r tests/requirements.txt
+        sudo apt-get update
+        sudo apt-get install -y libsndfile1 ffmpeg sox
+        pip install Cython
+        pip install "nemo_toolkit[asr,nemo_text_processing]"
+    - name: Run all tests
+      env:
+        AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+        AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      run: |
+        pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=sdp --durations=30 -rs | tee pytest-coverage.txt
+
+
+# TODO: add some way to see if e2e tests were skipped
+#       (which will be the case for PRs from public forks).
+#       below step is supposed to do that, but not working yet
+
+    # - name: Pytest coverage comment
+    #   uses: MishaKav/pytest-coverage-comment@main
+    #   with:
+    #     pytest-coverage-path: ./pytest-coverage.txt
+    #     junitxml-path: ./pytest.xml
