@@ -24,25 +24,20 @@ class ASRInference(BaseProcessor):
     """This processor performs ASR inference on the input manifest.
 
     Args:
-        output_manifest: the path to the output manifest. It will be the same as the input manifest, but will
-            also have "pred_true" entries for every utterance.
-        input_manifest_file: the path to the input manifest which will be transcribed.
         pretrained_model: the name of the pretrained NeMo ASR model which will be used to do inference.
         batch_size: the batch size to use for ASR inference.
 
     Note that it does not re-use base parallel implementation, since the ASR
     inference is already run in batches.
 
-    TODO: actually, it might still be benefitial to have another level of
+    TODO: actually, it might still be beneficial to have another level of
         parallelization, but that needs to be tested.
     """
 
     def __init__(
-        self, output_manifest_file: str, input_manifest_file: str, pretrained_model: str, batch_size: int = 32
+        self, pretrained_model: str, batch_size: int = 32, **kwargs,
     ):
-
-        self.output_manifest_file = output_manifest_file
-        self.input_manifest_file = input_manifest_file
+        super().__init__(**kwargs)
         self.script_path = Path(__file__).parents[1] / "utils" / "transcribe_speech.py"
         self.pretrained_model = pretrained_model
         self.batch_size = batch_size

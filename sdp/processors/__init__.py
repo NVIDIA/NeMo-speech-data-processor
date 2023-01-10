@@ -15,6 +15,8 @@
 # let's import all supported processors here to simplify target specification
 from sdp.processors.asr_inference import ASRInference
 from sdp.processors.create_initial_manifest.create_initial_manifest_mls import CreateInitialManifestMLS
+from sdp.processors.create_initial_manifest.create_initial_manifest_mcv import CreateInitialManifestMCV
+
 from sdp.processors.modify_manifest.data_to_data import (
     InsIfASRInsertion,
     SubIfASRSubstitution,
@@ -38,3 +40,4 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropNonAlphabet,
 )
 from sdp.processors.write_manifest import WriteManifest
+from sdp.processors.modify_manifest.add_fields import AddConstantFields
