@@ -33,7 +33,7 @@
 import csv
 import os
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 
 import sox
 from sox import Transformer
@@ -47,11 +47,11 @@ from sdp.utils.common import extract_archive
 class CreateInitialManifestMCV(BaseParallelProcessor):
     def __init__(
         self,
-        archive_filepath: str,
         extract_archive_dir: str,
         resampled_audio_dir: str,
         data_split: str,
         language_id: str,
+        archive_filepath: Optional[str] = None,
         use_test_data: bool = False,
         already_extracted: bool = False,
         target_samplerate: int = 16000,
@@ -95,15 +95,16 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
                 )
             data_folder = extract_archive(str(self.test_data_path), str(self.extract_archive_dir))
             version = "-".join(self.test_data_path.split("-")[2:-1])
-            self.transcription_file = Path(data_folder) / version / self.language_id / self.data_split + ".tsv"
+            self.transcription_file = Path(data_folder) / version / self.language_id
         else:
             if not self.already_extracted:
                 data_folder = extract_archive(self.archive_filepath, self.extract_archive_dir)
                 version = "-".join(self.archive_filepath.split("-")[2:-1])
-                self.transcription_file = Path(data_folder) / version / self.language_id / self.data_split + ".tsv"
+                self.transcription_file = Path(data_folder) / version / self.language_id
             else:
-                self.transcription_file = Path(self.extract_archive_dir) / self.language_id / self.data_split + ".tsv"
+                self.transcription_file = Path(self.extract_archive_dir) / self.language_id
         self.audio_path_prefix = str(self.transcription_file / "clips")
+        self.transcription_file = str(self.transcription_file / (self.data_split + ".tsv"))
         os.makedirs(self.resampled_audio_dir, exist_ok=True)
 
     def read_manifest(self):
@@ -121,7 +122,7 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
         file_name = os.path.splitext(os.path.basename(file_path))[0]
         transcript_text = text.strip()
 
-        audio_path = os.path.joinr(self.audio_path_prefix, file_path)
+        audio_path = os.path.join(self.audio_path_prefix, file_path)
         output_wav_path = os.path.join(self.resampled_audio_dir, file_name + ".wav")
 
         if not os.path.exists(output_wav_path):
