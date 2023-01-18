@@ -10,7 +10,7 @@ data_split: train
 language_id: ???
 workspace_dir: ???
 archive_filepath: ???
-final_manifest: ${workspace_dir}/${data_split}_manifest.json
+final_manifest: ${workspace_dir}/${language_id}/${data_split}_manifest.json
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestMCV
