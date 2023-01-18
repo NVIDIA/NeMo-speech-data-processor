@@ -16,6 +16,7 @@
 from sdp.processors.asr_inference import ASRInference
 from sdp.processors.create_initial_manifest.create_initial_manifest_mcv import CreateInitialManifestMCV
 from sdp.processors.create_initial_manifest.create_initial_manifest_mls import CreateInitialManifestMLS
+from sdp.processors.create_initial_manifest.create_initial_manifest_voxpopuli import CreateInitialManifestVoxpopuli
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ChangeToRelativePath,
