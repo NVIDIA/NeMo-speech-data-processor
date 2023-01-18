@@ -99,8 +99,7 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
         else:
             if not self.already_extracted:
                 data_folder = extract_archive(self.archive_filepath, self.extract_archive_dir)
-                version = "-".join(self.archive_filepath.split("-")[2:-1])
-                self.transcription_file = Path(data_folder) / version / self.language_id
+                self.transcription_file = Path(data_folder)
             else:
                 self.transcription_file = Path(self.extract_archive_dir) / self.language_id
         self.audio_path_prefix = str(self.transcription_file / "clips")
