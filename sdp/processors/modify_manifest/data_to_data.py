@@ -23,86 +23,17 @@ from sdp.utils.get_diff import get_diff_with_subs_grouped
 
 from nemo.utils import logging
 
-# TODO: some of the processors here can be replaced with generic regex processor
-#     by substituiting different regex patterns
-
-
-class SubSubstringToSpace(ModifyManifestTextProcessor):
-    """
-    Class for processor that converts substrings in "text" to spaces.
-
-    Args:
-        substrings: list of strings that will be replaced with spaces if
-            they are contained in data["text"].
-    """
-
-    def __init__(self, substrings: List[str], **kwargs,) -> None:
-        super().__init__(**kwargs)
-        self.substrings = substrings
-
-    def _process_dataset_entry(self, data_entry) -> List:
-        remove_substring_counter = collections.defaultdict(int)
-        for substring in self.substrings:
-            while substring in data_entry["text"]:
-                data_entry["text"] = data_entry["text"].replace(substring, " ")
-                remove_substring_counter[substring] += 1
-        return [DataEntry(data=data_entry, metrics=remove_substring_counter)]
-
-    def finalize(self, metrics):
-        total_counter = collections.defaultdict(int)
-        for counter in metrics:
-            for substring, value in counter.items():
-                total_counter[substring] += value
-        logging.info("Number of substrings that were converted to spaces")
-        for substring, count in total_counter.items():
-            logging.info(f"{substring}, {count}, \t\t(substring.encode(): {substring.encode()}")
-        super().finalize(metrics)
-
-
-class SubSubstringToSubstring(ModifyManifestTextProcessor):
-    """
-    Class for processor that converts substrings in "text" to other substrings.
-    The before and after substring pairs are defined in 'substring_pairs'.
-
-    Args:
-        substring_pairs:  Dictonary where keys are the substrings you want to change and
-            their values are the substrings you want to convert them to.
-    """
-
-    def __init__(
-        self, substring_pairs: Dict, **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.substring_pairs = substring_pairs
-
-    def _process_dataset_entry(self, data_entry) -> List:
-        replace_substring_counter = collections.defaultdict(int)
-        for original_word, new_word in self.substring_pairs.items():
-            while original_word in data_entry["text"]:
-                data_entry["text"] = data_entry["text"].replace(original_word, new_word)
-        return [DataEntry(data=data_entry, metrics=replace_substring_counter)]
-
-    def finalize(self, metrics):
-        total_counter = collections.defaultdict(int)
-        for counter in metrics:
-            for substring, value in counter.items():
-                total_counter[substring] += value
-        logging.info("Num of substrings that were substituted")
-        for substring, count in total_counter.items():
-            logging.info(f"{substring} {count}")
-        super().finalize(metrics)
-
 
 class InsIfASRInsertion(ModifyManifestTextProcessor):
     """
-    Class for processor that adds a substring to data["text"] if it is
-    present at that location in data["pred_text"].
+    Class for processor that adds a substring to data[self.text_attribute] if it is
+    present at that location in data[self.pred_text_attribute].
     It is useful if words are systematically missing from ground truth
     transcriptions.
 
     Args:
-        insert_words: list of strings that will be inserted into data['text'] if
-            there is an insertion (containing only that string) in data['pred_text'].
+        insert_words: list of strings that will be inserted into data[self.text_attribute] if
+            there is an insertion (containing only that string) in data[self.pred_text_attribute].
             Note: because data_to_data looks for an exact match in the insertion,
             we recommend including variations with different spaces in 'insert_words',
             e.g. [' nemo', 'nemo ', ' nemo '].
@@ -117,9 +48,9 @@ class InsIfASRInsertion(ModifyManifestTextProcessor):
     def _process_dataset_entry(self, data_entry) -> List:
         insert_word_counter = collections.defaultdict(int)
         for insert_word in self.insert_words:
-            if not insert_word in data_entry["pred_text"]:
+            if not insert_word in data_entry[self.pred_text_attribute]:
                 break
-            orig_words, pred_words = data_entry["text"], data_entry["pred_text"]
+            orig_words, pred_words = data_entry[self.text_attribute], data_entry[self.pred_text_attribute]
             diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
             if len(diff) > 0:  # ie if there are differences between text and pred_text
@@ -144,7 +75,7 @@ class InsIfASRInsertion(ModifyManifestTextProcessor):
                         raise ValueError(f"unexpected item in diff_entry: {diff_entry}")
 
                 new_sent = " ".join(new_sent.split())  # remove any extra spaces
-                data_entry["text"] = new_sent
+                data_entry[self.text_attribute] = new_sent
 
         return [DataEntry(data=data_entry, metrics=insert_word_counter)]
 
@@ -161,18 +92,18 @@ class InsIfASRInsertion(ModifyManifestTextProcessor):
 
 class SubIfASRSubstitution(ModifyManifestTextProcessor):
     """
-    Class for processor that converts a substring in data['text'] to a
-    substring in data['pred_text'] if both are located in the same place
+    Class for processor that converts a substring in data[self.text_attribute] to a
+    substring in data[self.pred_text_attribute] if both are located in the same place
     (ie are part of a 'substitution' operation) and if the substrings
     correspond to key-value pairs in 'sub_words'.
     This is useful if words are systematically incorrect in ground truth
     transcriptions.
 
     Args:
-        sub_words: dictionary where a key is a string that might be in data['text']
-            and the value is the string that might be in data['pred_text']. If both
+        sub_words: dictionary where a key is a string that might be in data[self.text_attribute]
+            and the value is the string that might be in data[self.pred_text_attribute]. If both
             are located in the same place (ie are part of a 'substitution' operation)
-            then the key string will be converted to the value string in data['text'].
+            then the key string will be converted to the value string in data[self.text_attribute].
 
             .. note::
                 data_to_data looks for exact string matches of substitutions, so
@@ -190,9 +121,9 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
     def _process_dataset_entry(self, data_entry) -> List:
         sub_word_counter = collections.defaultdict(int)
         for original_word, new_word in self.sub_words.items():
-            if not original_word in data_entry["text"]:
+            if not original_word in data_entry[self.text_attribute]:
                 break
-            orig_words, pred_words = data_entry["text"], data_entry["pred_text"]
+            orig_words, pred_words = data_entry[self.text_attribute], data_entry[self.pred_text_attribute]
             diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
             if len(diff) > 0:  # ie if there are differences between text and pred_text
@@ -223,7 +154,7 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
                         raise ValueError(f"unexpected item in diff_entry: {diff_entry}")
 
                 new_sent = add_start_end_spaces(new_sent)
-                data_entry["text"] = new_sent
+                data_entry[self.text_attribute] = new_sent
 
         return [DataEntry(data=data_entry, metrics=sub_word_counter)]
 
@@ -240,7 +171,7 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
 
 class SubMakeLowercase(ModifyManifestTextProcessor):
     """
-    Class to convert data['text'] to lowercase by calling '.lower()' on it.
+    Class to convert data[self.text_attribute] to lowercase by calling '.lower()' on it.
     """
 
     def __init__(
@@ -249,7 +180,7 @@ class SubMakeLowercase(ModifyManifestTextProcessor):
         super().__init__(**kwargs)
 
     def _process_dataset_entry(self, data_entry) -> List:
-        data_entry["text"] = data_entry["text"].lower()
+        data_entry[self.text_attribute] = data_entry[self.text_attribute].lower()
         return [DataEntry(data=data_entry)]
 
     def finalize(self, metrics):
@@ -264,23 +195,37 @@ class SubRegex(ModifyManifestTextProcessor):
 
     Args:
         regex_to_sub: dictionary where the keys are regex patterns that might
-            be in data['text'], and the values are the strings that will replace
+            be in data[self.text_attribute], and the values are the strings that will replace
             the regex matches if they are found.
     """
 
     def __init__(
-        self, regex_to_sub: Dict, **kwargs,
+        self, regex_params_list: List[Dict], **kwargs,
     ):
         super().__init__(**kwargs)
-        self.regex_to_sub = regex_to_sub
+        self.regex_params_list = regex_params_list
+        # TODO: verify regex_params have "pattern" and "repl" keys
 
     def _process_dataset_entry(self, data_entry) -> List:
         replace_word_counter = collections.defaultdict(int)
-        for regex, sub in self.regex_to_sub.items():
-            while re.search(regex, data_entry["text"]):
-                for match in re.finditer(regex, data_entry["text"]):
-                    replace_word_counter[match.group(0)] += 1
-                    data_entry["text"] = re.sub(regex, sub, data_entry["text"])
+
+        text_in = data_entry[self.text_attribute]
+
+        for regex_params in self.regex_params_list:
+
+            text_out = re.sub(
+                pattern=regex_params["pattern"],
+                repl=regex_params["repl"],
+                string=text_in,
+                count=regex_params.get("count", 0),
+            )
+
+            if text_in != text_out:
+                replace_word_counter[regex_params["pattern"]] += 1
+            text_in = text_out
+
+        data_entry[self.text_attribute] = text_out
+
         return [DataEntry(data=data_entry, metrics=replace_word_counter)]
 
     def finalize(self, metrics):

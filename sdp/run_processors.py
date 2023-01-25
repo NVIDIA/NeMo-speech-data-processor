@@ -60,9 +60,7 @@ def select_subset(input_list: List, select_str: str) -> List:
     if ":" not in select_str:
         selected_objects = [input_list[int(select_str)]]
     else:
-        slice_obj = slice(
-            *map(lambda x: int(x.strip()) if x.strip() else None, select_str.split(":"))
-        )
+        slice_obj = slice(*map(lambda x: int(x.strip()) if x.strip() else None, select_str.split(":")))
         selected_objects = input_list[slice_obj]
     return selected_objects
 
@@ -75,8 +73,7 @@ def run_processors(cfg):
         processors_to_run = ":"
     processors_cfgs = select_subset(cfg.processors, processors_to_run)
     logging.info(
-        "Specified to run the following processors: %s ",
-        [cfg["_target_"] for cfg in processors_cfgs],
+        "Specified to run the following processors: %s ", [cfg["_target_"] for cfg in processors_cfgs],
     )
 
     processors = []
@@ -94,10 +91,7 @@ def run_processors(cfg):
                 OmegaConf.set_struct(processor_cfg, False)
                 processor_cfg["output_manifest_file"] = tmp_file_path
                 OmegaConf.set_struct(processor_cfg, True)
-                if (
-                    idx != len(processors_cfgs) - 1
-                    and "input_manifest_file" not in processors_cfgs[idx + 1]
-                ):
+                if idx != len(processors_cfgs) - 1 and "input_manifest_file" not in processors_cfgs[idx + 1]:
                     OmegaConf.set_struct(processors_cfgs[idx + 1], False)
                     processors_cfgs[idx + 1]["input_manifest_file"] = tmp_file_path
                     OmegaConf.set_struct(processors_cfgs[idx + 1], True)
