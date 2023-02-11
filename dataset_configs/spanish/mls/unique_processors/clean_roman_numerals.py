@@ -14,6 +14,7 @@
 
 import collections
 import os
+import re
 import tempfile
 import urllib.request
 from typing import List
@@ -92,11 +93,24 @@ class CleanRomanNumerals(ModifyManifestTextProcessor):
 
     def clean_operation(self, data, triggers, roman_numeral_to_num_written):
         for trigger in triggers:
-            if trigger in data["text"]:
-                for roman_numeral, num_written in roman_numeral_to_num_written.items():
-                    noun_roman = f" {trigger} {roman_numeral} "
-                    if noun_roman in data["text"]:
-                        noun_number = f" {trigger} {num_written} "
-                        data["text"] = data["text"].replace(noun_roman, noun_number)
-                        self.clean_roman_numerals_count[noun_roman] += 1
+            trigger_match = re.search(
+                pattern=f"({trigger} \S*)\s", string=data[self.text_attribute], flags=re.IGNORECASE,
+            )
+
+            if trigger_match:
+                trigger_numeral = trigger_match.group(0).strip()
+                trigger, numeral = trigger_numeral.split(" ")
+
+                if numeral.lower() in roman_numeral_to_num_written:
+                    number = roman_numeral_to_num_written[numeral.lower()]
+
+                    if trigger[0].isupper():
+                        # 'felipe iv' --> 'felipe cuarto'
+                        # 'Felipe iv' --> 'Felipe Cuarto'
+                        number = number.capitalize()
+
+                    trigger_number = f"{trigger} {number}"
+
+                    data["text"] = data["text"].replace(trigger_numeral, trigger_number)
+                    self.clean_roman_numerals_count[trigger_numeral] += 1
         return data
