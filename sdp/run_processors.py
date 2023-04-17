@@ -83,6 +83,20 @@ def run_processors(cfg):
     # let's build all processors first to automatically check
     # for errors in parameters
     with tempfile.TemporaryDirectory() as tmp_dir:
+        # special check for the first processor.
+        # In case user selected something that does not start from
+        # manifest creation we will try to infer the input from previous
+        # output file
+        if processors_cfgs[0] is not cfg.processors[0] and "input_manifest_file" not in processors_cfgs[0]:
+            # locating starting processor
+            for idx, processor in enumerate(cfg.processors):
+                if processor is processors_cfgs[0]:  # we don't do a copy, so can just check object ids
+                    if "output_manifest_file" in cfg.processors[idx - 1]:
+                        OmegaConf.set_struct(processors_cfgs[0], False)
+                        processors_cfgs[0]["input_manifest_file"] = cfg.processors[idx - 1]["output_manifest_file"]
+                        OmegaConf.set_struct(processors_cfgs[0], True)
+                    break
+
         for idx, processor_cfg in enumerate(processors_cfgs):
             logging.info('=> Building processor "%s"', processor_cfg["_target_"])
 
@@ -94,13 +108,13 @@ def run_processors(cfg):
                 OmegaConf.set_struct(processor_cfg, False)
                 processor_cfg["output_manifest_file"] = tmp_file_path
                 OmegaConf.set_struct(processor_cfg, True)
-                if (
-                    idx != len(processors_cfgs) - 1
-                    and "input_manifest_file" not in processors_cfgs[idx + 1]
-                ):
-                    OmegaConf.set_struct(processors_cfgs[idx + 1], False)
-                    processors_cfgs[idx + 1]["input_manifest_file"] = tmp_file_path
-                    OmegaConf.set_struct(processors_cfgs[idx + 1], True)
+            if (
+                idx != len(processors_cfgs) - 1
+                and "input_manifest_file" not in processors_cfgs[idx + 1]
+            ):
+                OmegaConf.set_struct(processors_cfgs[idx + 1], False)
+                processors_cfgs[idx + 1]["input_manifest_file"] = processor_cfg["output_manifest_file"]
+                OmegaConf.set_struct(processors_cfgs[idx + 1], True)
 
             processor = hydra.utils.instantiate(processor_cfg)
             # running runtime tests to fail right-away if something is not

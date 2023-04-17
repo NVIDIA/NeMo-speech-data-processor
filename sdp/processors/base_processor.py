@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import itertools
 import json
 import multiprocessing
@@ -39,7 +40,7 @@ class BaseProcessor(ABC):
 
     Args
     output_manifest_file: path of where the output manifest file will be located.
-    input_manifest_file: path of where the input manifest file is located. This arg 
+    input_manifest_file: path of where the input manifest file is located. This arg
         is optional - some processors may not take in an input manifest because they
         need to create an initial manifest from scratch (ie from some transcript file
         that is in a format different to the NeMo manifest format).
@@ -66,12 +67,12 @@ class BaseProcessor(ABC):
 
 class BaseParallelProcessor(BaseProcessor):
     """
-    Processor class which allows operations on each utterance to be parallelized. Parallelization 
+    Processor class which allows operations on each utterance to be parallelized. Parallelization
     is done using tqdm.contrib.concurrent.process_map.
 
     Args:
         max_workers: maximum number of workers that will be spawned during parallel processing.
-        chunksize: the size of the chunks that will be sent to worker processes. 
+        chunksize: the size of the chunks that will be sent to worker processes.
     """
 
     def __init__(self, max_workers: int = -1, chunksize: int = 100, **kwargs):
@@ -122,6 +123,7 @@ class BaseParallelProcessor(BaseProcessor):
             )
         )
         metrics = []
+        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for data_entry in tqdm(data):
                 metrics.append(data_entry.metrics)

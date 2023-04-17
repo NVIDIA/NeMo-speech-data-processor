@@ -171,12 +171,12 @@ class DropHighLowDuration(ModifyManifestTextProcessor):
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
         logging.info(
-            "Num of utterances that were dropped due to duration > %d: %d",
+            "Num of utterances that were dropped due to duration > %f: %d",
             self.high_duration_threshold,
             high_drop_counter,
         )
         logging.info(
-            "Num of utterances that were dropped due to duration < %d: %d",
+            "Num of utterances that were dropped due to duration < %f: %d",
             self.low_duration_threshold,
             low_drop_counter,
         )

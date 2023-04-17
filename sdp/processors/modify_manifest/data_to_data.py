@@ -277,10 +277,11 @@ class SubRegex(ModifyManifestTextProcessor):
     def _process_dataset_entry(self, data_entry) -> List:
         replace_word_counter = collections.defaultdict(int)
         for regex, sub in self.regex_to_sub.items():
-            while re.search(regex, data_entry["text"]):
-                for match in re.finditer(regex, data_entry["text"]):
-                    replace_word_counter[match.group(0)] += 1
-                    data_entry["text"] = re.sub(regex, sub, data_entry["text"])
+            # this is only used to count the replacements for logging
+            for match in re.finditer(regex, data_entry["text"]):
+                replace_word_counter[match.group(0)] += 1
+            # sub will automatically replace all occurences
+            data_entry["text"] = re.sub(regex, sub, data_entry["text"])
         return [DataEntry(data=data_entry, metrics=replace_word_counter)]
 
     def finalize(self, metrics):
