@@ -45,7 +45,7 @@ def extract_archive(archive_path: str, extract_path: str) -> str:
     archive_contents_dir = os.path.join(extract_path, archive_extracted_dir)
 
     if os.path.exists(archive_contents_dir):
-        logging.info(f"Directory {archive_contents_dir} already exists => " "will not attempt to extract file")
+        logging.info(f"Directory {archive_contents_dir} already exists => will not attempt to extract file")
     else:
         with tarfile.open(archive_path, "r") as archive:
             archive.extractall(path=extract_path)
