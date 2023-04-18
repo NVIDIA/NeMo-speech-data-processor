@@ -109,7 +109,9 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
 
     def read_manifest(self):
         with open(
-            self.download_dir / "transcribed_data" / self.language_id / f"asr_{self.data_split}.tsv", "rt", encoding="utf8"
+            self.download_dir / "transcribed_data" / self.language_id / f"asr_{self.data_split}.tsv",
+            "rt",
+            encoding="utf8",
         ) as fin:
             dataset_entries = fin.readlines()[1:]  # skip header line
 

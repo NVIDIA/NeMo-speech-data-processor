@@ -217,6 +217,7 @@ class SubRegex(ModifyManifestTextProcessor):
                 pattern=regex_params["pattern"],
                 repl=regex_params["repl"],
                 string=text_in,
+                # note: this count param is the maximum number of pattern occurrences to be replaced.
                 count=regex_params.get("count", 0),
             )
 
