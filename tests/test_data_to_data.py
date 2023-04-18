@@ -18,29 +18,9 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
-    SubSubstringToSpace,
-    SubSubstringToSubstring,
 )
 
 test_params_list = []
-
-test_params_list.extend(
-    [
-        (SubSubstringToSpace, {"substrings": [","]}, {"text": "hello, nemo"}, {"text": "hello nemo"}),
-        (SubSubstringToSpace, {"substrings": ["-"]}, {"text": "ice-cream"}, {"text": "ice cream"}),
-    ]
-)
-
-test_params_list.extend(
-    [
-        (
-            SubSubstringToSubstring,
-            {"substring_pairs": {"nemon": "nemo"}},
-            {"text": "using nemon"},
-            {"text": "using nemo"},
-        ),
-    ]
-)
 
 test_params_list.extend(
     [
@@ -86,7 +66,14 @@ test_params_list.extend(
 )
 
 test_params_list.extend(
-    [(SubRegex, {"regex_to_sub": {"\s<.*>\s": " "}}, {"text": "hello <cough> world"}, {"text": "hello world"},),]
+    [
+        (
+            SubRegex,
+            {"regex_params_list": [{"pattern": "\s<.*>\s", "repl": " "}]},
+            {"text": "hello <cough> world"},
+            {"text": "hello world"},
+        ),
+    ]
 )
 
 
