@@ -194,9 +194,11 @@ class SubRegex(ModifyManifestTextProcessor):
     by key-value pairs in regex_to_sub.
 
     Args:
-        regex_to_sub: dictionary where the keys are regex patterns that might
-            be in data[self.text_key], and the values are the strings that will replace
-            the regex matches if they are found.
+        regex_params_list: list of dicts. Each dict must contain a 'pattern' and 'repl' key, 
+            and optionally a 'count' key (by default, 'count' will be 0).
+            This processor will go through the list in order, and apply a re.sub operation on
+            the input text in data_entry[self.text_key], feeding in the specified 'pattern', 'repl'
+            and 'count' parameters to re.sub.
     """
 
     def __init__(
@@ -204,7 +206,17 @@ class SubRegex(ModifyManifestTextProcessor):
     ):
         super().__init__(**kwargs)
         self.regex_params_list = regex_params_list
-        # TODO: verify regex_params have "pattern" and "repl" keys
+
+        # verify all dicts in regex_params_list have "pattern" and "repl" keys
+        for regex_params_dict in self.regex_params_list:
+            if not "pattern" in regex_params_dict.keys():
+                raise ValueError(
+                    f"Need to have key 'pattern' in all entries of `regex_params_list`: {self.regex_params_list}"
+                )
+            if not "repl" in regex_params_dict.keys():
+                raise ValueError(
+                    f"Need to have key 'repl' in all entries of `regex_params_list`: {self.regex_params_list}"
+                )
 
     def _process_dataset_entry(self, data_entry) -> List:
         replace_word_counter = collections.defaultdict(int)
@@ -234,9 +246,8 @@ class SubRegex(ModifyManifestTextProcessor):
         for counter in metrics:
             for word, count in counter.items():
                 total_counter[word] += count
-        logging.info("Some of the words matching the regex that were substituted")
+        logging.info("Number of utterances which applied substitutions for the following patterns:")
         total_counter_sorted = dict(sorted(total_counter.items(), key=lambda x: x[1], reverse=True))
         for word, count in total_counter_sorted.items():
-            if count > 1:
-                logging.info(f"{word} {count}")
+            logging.info(f"{word} {count}")
         super().finalize(metrics)
