@@ -52,8 +52,8 @@ class ModifyManifestTextProcessor(BaseParallelProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.text_attribute = text_attribute
-        self.pred_text_attribute = pred_text_attribute
+        self.text_key = text_attribute
+        self.pred_text_key = pred_text_attribute
         self.test_cases = test_cases
         # need to convert to list to avoid errors in iteration over None
         if self.test_cases is None:
@@ -82,18 +82,18 @@ class ModifyManifestTextProcessor(BaseParallelProcessor):
     def process_dataset_entry(self, data_entry):
         """Wrapper for 'process_dataset_entry' abstract method.
 
-        Before 'process_dataset_entry' is called, the function
-        'add_start_end_spaces' is applied to the "text" and "pred_text" in
-        the input data.
+        Before 'process_dataset_entry' is called, the function 
+        'add_start_end_spaces' is applied to the self.text_key 
+        and self.pred_text_key in the input data.
         After 'process_dataset_entry' is called, the function
         'remove_extra_spaces' is applied to the "text" and "pred_text" to
         the output 'data' variable of the 'process_dataset_entry' method.
         """
         # handle spaces
-        if self.text_attribute in data_entry:
-            data_entry[self.text_attribute] = add_start_end_spaces(data_entry[self.text_attribute])
-        if self.pred_text_attribute in data_entry:
-            data_entry[self.pred_text_attribute] = add_start_end_spaces(data_entry[self.pred_text_attribute])
+        if self.text_key in data_entry:
+            data_entry[self.text_key] = add_start_end_spaces(data_entry[self.text_key])
+        if self.pred_text_key in data_entry:
+            data_entry[self.pred_text_key] = add_start_end_spaces(data_entry[self.pred_text_key])
 
         data_entries = self._process_dataset_entry(data_entry)
         if len(data_entries) > 1:
@@ -101,13 +101,11 @@ class ModifyManifestTextProcessor(BaseParallelProcessor):
 
         if len(data_entries) == 1 and data_entries[0].data is not None:
             # handle spaces
-            if self.text_attribute in data_entries[0].data:
-                data_entries[0].data[self.text_attribute] = remove_extra_spaces(
-                    data_entries[0].data[self.text_attribute]
-                )
-            if self.pred_text_attribute in data_entries[0].data:
-                data_entries[0].data[self.pred_text_attribute] = remove_extra_spaces(
-                    data_entries[0].data[self.pred_text_attribute]
+            if self.text_key in data_entries[0].data:
+                data_entries[0].data[self.text_key] = remove_extra_spaces(data_entries[0].data[self.text_key])
+            if self.pred_text_key in data_entries[0].data:
+                data_entries[0].data[self.pred_text_key] = remove_extra_spaces(
+                    data_entries[0].data[self.pred_text_key]
                 )
 
         return data_entries
