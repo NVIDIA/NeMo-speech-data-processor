@@ -62,7 +62,15 @@ test_params_list.extend(
 )
 
 test_params_list.extend(
-    [(SubMakeLowercase, {}, {"text": "Hello Привет 123"}, {"text": "hello привет 123"},),]
+    [
+        (SubMakeLowercase, {}, {"text": "Hello Привет 123"}, {"text": "hello привет 123"},),
+        (
+            SubMakeLowercase,
+            {"text_key": "text_new"},
+            {"text_new": "Hello Привет 123"},
+            {"text_new": "hello привет 123"},
+        ),
+    ]
 )
 
 test_params_list.extend(

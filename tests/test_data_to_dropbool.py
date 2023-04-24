@@ -20,6 +20,7 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropHighLowDuration,
     DropHighLowWordrate,
     DropHighWER,
+    DropIfRegexMatch,
     DropIfSubstringInInsertion,
     DropLowWordMatchRate,
     DropNonAlphabet,
@@ -145,6 +146,18 @@ test_params_list.extend(
         (DropHighWER, {"wer_threshold": 0}, {"text": "11  22", "pred_text": "11 22"}, False,),
         (DropHighWER, {"wer_threshold": 50.1}, {"text": "11 22", "pred_text": "11 22 33"}, False,),
         (DropHighWER, {"wer_threshold": 49.9}, {"text": "11 22", "pred_text": "11 22 33"}, True,),
+    ]
+)
+
+test_params_list.extend(
+    [
+        (DropIfRegexMatch, {"regex_patterns": ["incorrect_text"]}, {"text": "incorrect_text"}, True),
+        (
+            DropIfRegexMatch,
+            {"regex_patterns": ["001/002"], "text_key": "audio_filepath"},
+            {"audio_filepath": "001/002/003.wav"},
+            True,
+        ),
     ]
 )
 
