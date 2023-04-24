@@ -31,8 +31,8 @@ class ModifyManifestTextProcessor(BaseParallelProcessor):
 
     Args:
         TODO add detail
-        text_attribute
-        pred_text_attribute 
+        text_key
+        pred_text_key 
         test_cases: an optional list of dicts containing test cases for checking
             that the processor makes the changes that we are expecting.
             The dicts must have a key 'input', the value of which is a dictionary
@@ -46,14 +46,14 @@ class ModifyManifestTextProcessor(BaseParallelProcessor):
 
     def __init__(
         self,
-        text_attribute: str = "text",
-        pred_text_attribute: str = "pred_text",
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
         test_cases: Optional[List[Dict]] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.text_key = text_attribute
-        self.pred_text_key = pred_text_attribute
+        self.text_key = text_key
+        self.pred_text_key = pred_text_key
         self.test_cases = test_cases
         # need to convert to list to avoid errors in iteration over None
         if self.test_cases is None:
