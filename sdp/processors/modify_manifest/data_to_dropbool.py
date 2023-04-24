@@ -311,7 +311,6 @@ class DropHighCER(ModifyManifestTextProcessor):
 
     Args:
         cer_thershold: CER threshold above which the utterance will be dropped.
-        TODO: add kwargs? 
     """
 
     def __init__(
@@ -418,7 +417,8 @@ class DropIfRegexMatch(ModifyManifestTextProcessor):
     a regex pattern.
 
     Args:
-        TODO: add details 
+        regex_patterns: a list of strings. The list will be traversed in order.
+            If data_entry.data[self.text_key] matches the regex, the entry will be dropped.
     """
 
     def __init__(

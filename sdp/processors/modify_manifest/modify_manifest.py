@@ -24,15 +24,16 @@ class ModifyManifestTextProcessor(BaseParallelProcessor):
     """Base class useful for most "text-only" modifications of the manifest.
 
     This adds the following functionality on top of BaseParallelProcessor
-        - Adds space in the beginning and end of sentence for easier regex-based
+        - Adds space in the beginning and end of text for easier regex-based
           processing.
         - Automatically handles common test cases by comparing input to output
           values.
 
     Args:
-        TODO add detail
-        text_key
-        pred_text_key 
+        text_key: a string indicating which key of DataEntry.data should be used as the
+            "text" key. Default: "text".
+        pred_text_key: a string indicating which key of DataEntry.data should be used as the
+            "pred_text" key. Default: "pred_text".
         test_cases: an optional list of dicts containing test cases for checking
             that the processor makes the changes that we are expecting.
             The dicts must have a key 'input', the value of which is a dictionary
