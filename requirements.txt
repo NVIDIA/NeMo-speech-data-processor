@@ -1,2 +1,3 @@
 diff_match_patch
-# additionally https://github.com/NVIDIA/NeMo is required
+nemo_toolkit[all]
+nemo_text_processing
