@@ -94,7 +94,7 @@ class CleanRomanNumerals(ModifyManifestTextProcessor):
     def clean_operation(self, data, triggers, roman_numeral_to_num_written):
         for trigger in triggers:
             trigger_match = re.search(
-                pattern=f"({trigger} \S*)\s", string=data[self.text_attribute], flags=re.IGNORECASE,
+                pattern=f"({trigger} \S*)\s", string=data[self.text_key], flags=re.IGNORECASE,
             )
 
             if trigger_match:
@@ -111,6 +111,6 @@ class CleanRomanNumerals(ModifyManifestTextProcessor):
 
                     trigger_number = f"{trigger} {number}"
 
-                    data["text"] = data["text"].replace(trigger_numeral, trigger_number)
+                    data[self.text_key] = data[self.text_key].replace(trigger_numeral, trigger_number)
                     self.clean_roman_numerals_count[trigger_numeral] += 1
         return data
