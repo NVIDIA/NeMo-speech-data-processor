@@ -27,8 +27,6 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
-    SubSubstringToSpace,
-    SubSubstringToSubstring,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRErrorBeginningEnd,
@@ -37,10 +35,8 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropHighLowDuration,
     DropHighLowWordrate,
     DropHighWER,
-    DropIfRegexInAttribute,
-    DropIfSubstringInAttribute,
+    DropIfRegexMatch,
     DropIfSubstringInInsertion,
-    DropIfTextIsEmpty,
     DropLowWordMatchRate,
     DropNonAlphabet,
 )

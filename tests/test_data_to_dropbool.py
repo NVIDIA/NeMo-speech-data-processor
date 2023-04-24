@@ -20,10 +20,8 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropHighLowDuration,
     DropHighLowWordrate,
     DropHighWER,
-    DropIfRegexInAttribute,
-    DropIfSubstringInAttribute,
+    DropIfRegexMatch,
     DropIfSubstringInInsertion,
-    DropIfTextIsEmpty,
     DropLowWordMatchRate,
     DropNonAlphabet,
 )
@@ -153,6 +151,18 @@ test_params_list.extend(
 
 test_params_list.extend(
     [
+        (DropIfRegexMatch, {"regex_patterns": ["incorrect_text"]}, {"text": "incorrect_text"}, True),
+        (
+            DropIfRegexMatch,
+            {"regex_patterns": ["001/002"], "text_key": "audio_filepath"},
+            {"audio_filepath": "001/002/003.wav"},
+            True,
+        ),
+    ]
+)
+
+test_params_list.extend(
+    [
         (
             DropLowWordMatchRate,
             {"wmr_threshold": 50.1},
@@ -171,35 +181,6 @@ test_params_list.extend(
 test_params_list.extend(
     [
         (
-            DropIfSubstringInAttribute,
-            {"attribute_to_substring": {"filepath": ["002"]}},
-            {"text": "hello world", "filepath": "path/to/file/002.wav"},
-            True,
-        ),
-        (
-            DropIfSubstringInAttribute,
-            {"attribute_to_substring": {"filepath": ["002"]}},
-            {"text": "hello world", "filepath": "path/to/file/001.wav"},
-            False,
-        ),
-    ]
-)
-
-test_params_list.extend(
-    [
-        (
-            DropIfRegexInAttribute,
-            {"attribute_to_regex": {"text": ["(\\D ){5,20}"]}},
-            {"text": "h e l l o world"},
-            True,
-        ),
-        (DropIfRegexInAttribute, {"attribute_to_regex": {"text": ["(\\D ){5,20}"]}}, {"text": "hello world"}, False,),
-    ]
-)
-
-test_params_list.extend(
-    [
-        (
             DropIfSubstringInInsertion,
             {"substrings_in_insertion": ["might "]},
             {"text": "we miss certain words", "pred_text": "we might miss certain words"},
@@ -211,13 +192,6 @@ test_params_list.extend(
             {"text": "we may certain words", "pred_text": "we might miss certain words"},
             False,
         ),
-    ]
-)
-
-test_params_list.extend(
-    [
-        (DropIfTextIsEmpty, {}, {"text": "", "pred_text": "uuuu"}, True,),
-        (DropIfTextIsEmpty, {}, {"text": "uhuh", "pred_text": "uuuu"}, False,),
     ]
 )
 
