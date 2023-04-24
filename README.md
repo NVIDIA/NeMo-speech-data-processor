@@ -6,7 +6,7 @@ Speech Data Processor (SDP) is a toolkit to make it easy to:
 
 SDP's philosophy is to represent processing operations as 'processor' classes. Many common processing operations are provided, and it is easy to add your own. In some cases, all you will need to do to process a new dataset is simply to write a YAML file containing the parameters needed to process your dataset.
 
-SDP is specifically intended for the use case when you have an existing dataset with the audio & text pairs already specified in some form, and you wish to create a JSON manifest suitable for use with NeMo. SDP allows for intermediate cleaning and filtering steps which involve amending the 'ground truth' `"text"` or dropping utterances which are deemed to be too inaccurate for training on.
+SDP is specifically intended for the use case when you have an existing dataset with the audio & text pairs already specified in some form, and you wish to create a JSON manifest suitable for use with NeMo. SDP allows for intermediate cleaning and filtering steps which involve amending the 'ground truth' `"text"` (or some other field, specified using `"text_key"`) or dropping utterances which are deemed to be too inaccurate for training on.
 
 ## Quick intro to Speech Data Processor
 
@@ -29,14 +29,11 @@ processors:
     ...
 
   # use existing classes for common operations or write your own
-  - _target_: sdp.processors.SubSubstringToSubstring
-
-    substring_pairs: {
+  - _target_: sdp.processors.SubRegex
+    regex_params_list: 
       # specify the parameters needed for your usecase
-      " mr ": " mister ",
-      " misteak ": " mistake ",
-      ...
-    }
+      - {"pattern": " mr ", "repl": " mister "}
+      - {"pattern": " misteak ", "repl": " mistake "}
 
   - _target_: sdp.processors.DropNonAlphabet
     alphabet: " abcdefghijklmnopqrstuvwxyz"
@@ -56,15 +53,15 @@ For example:
 ```yaml
 processors:
   ...
-  - _target_: sdp.processors.DropIfRegexInAttribute
-    attribute_to_regex:
-      "text" : ["(\\D ){5,20}"] # looks for between 4 and 19 characters surrounded by spaces
+  - _target_: sdp.processors.DropIfRegexMatch
+  regex_patterns: 
+  - '(\D ){5,20}' # looks for between 4 and 19 characters surrounded by space
 
-    test_cases:
-      - {input: {text: "some s p a c e d out letters"}, output: null}
-      - {input: {text: "normal words only"}, output: {text: "normal words only"}}
-      - {input: {text: "three a b c spaced out letters"}, output: {text: "three a b c spaced out letters"}}
-      - {input: {text: "four a b c d spaced out letters"}, output: null}
+  test_cases:
+    - {input: {text: "some s p a c e d out letters"}, output: null}
+    - {input: {text: "normal words only"}, output: {text: "normal words only"}}
+    - {input: {text: "three a b c spaced out letters"}, output: {text: "three a b c spaced out letters"}}
+    - {input: {text: "four a b c d spaced out letters"}, output: null}
   ...
 ```
 
