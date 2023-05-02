@@ -23,122 +23,112 @@ processors:
     output_manifest_file: "${workspace_dir}/processed_manifests/stt_es_quartznet15x5_${data_split}.json"
     pretrained_model: "stt_es_quartznet15x5"
 
-  - _target_: sdp.processors.SubSubstringToSubstring
+  - _target_: sdp.processors.SubRegex
     input_manifest_file: "${workspace_dir}/processed_manifests/stt_es_quartznet15x5_${data_split}.json"
+    regex_params_list:
+      - {"pattern": "'", "repl": ""} # so that e.g. "d'artagnan" becomes "dartagnan", not "d artagnan"
 
-    substring_pairs: {
+      - {"pattern": ' sr ', "repl": ' señor '}
+      - {"pattern": ' vd ', "repl": ' usted '}
+      - {"pattern": ' vds ', "repl": ' ustedes '}
+      - {"pattern": ' vdes ', "repl": ' ustedes '}
+      - {"pattern": ' v md ', "repl": ' vuestra merced '}
+      - {"pattern": ' mr ', "repl": ' mister '}
+      - {"pattern": ' ud ', "repl": ' un '} # technically can be ustedes, but I have only seen it being 'un'
 
-      "'" : "", # so that e.g. "d'artagnan" becomes "dartagnan", not "d artagnan"
+      - {"pattern": ' guando ', "repl": ' cuando '}
+      - {"pattern": ' magestad ', "repl": ' majestad '}
 
-      ' sr ': ' señor ',
-      ' vd ': ' usted ',
-      ' vds ': ' ustedes ',
-      ' vdes ': ' ustedes ',
-      ' v md ': ' vuestra merced ',
-      ' mr ': ' mister ',
-      ' ud ': ' un ', # technically can be ustedes, but I have only seen it being 'un'
-
-      ' guando ': ' cuando ',
-      ' magestad ': ' majestad ',
-
-      ' á ': ' a ',
-      ' ó ': ' o ',
-      ' é ': ' e ',
-      ' ú ': ' u ',
-      ' fué ': ' fue ',
-      ' sólo ': ' solo ',
-      ' dió ': ' dio ',
-      ' hácia ': ' hacia ',
-      ' jóven ': ' joven ',
+      - {"pattern": ' á ', "repl": ' a '}
+      - {"pattern": ' ó ', "repl": ' o '}
+      - {"pattern": ' é ', "repl": ' e '}
+      - {"pattern": ' ú ', "repl": ' u '}
+      - {"pattern": ' fué ', "repl": ' fue '}
+      - {"pattern": ' sólo ', "repl": ' solo '}
+      - {"pattern": ' dió ', "repl": ' dio '}
+      - {"pattern": ' hácia ', "repl": ' hacia '}
+      - {"pattern": ' jóven ', "repl": ' joven '}
 
       # tried to make reasonable approximations:
-      ' dixo ' : ' dijo ',
-      ' dixe ' : ' dije ',
-      ' dixéramos ' : ' dijéramos ',
+      - {"pattern": ' dixo ', "repl" : ' dijo '}
+      - {"pattern": ' dixe ', "repl" : ' dije '}
+      - {"pattern": ' dixéramos ', "repl" : ' dijéramos '}
 
-      ' dixeron ' : ' dijeron ',
-      ' dixéron ': ' dijéron ',
-      ' dixese ': ' dijese ',
-      ' dixesen ':' dijesen',   ### bug
-      ' dixesemos ':' dijesemos', ### bug
-      ' diximos ':' dijimos ',
-      ' dixere ':' dijere ',
-      ' dixera ':' dijera ',
+      - {"pattern": ' dixeron ', "repl" : ' dijeron '}
+      - {"pattern": ' dixéron ', "repl": ' dijéron '}
+      - {"pattern": ' dixese ', "repl": ' dijese '}
+      - {"pattern": ' dixesen ', "repl":' dijesen'}   ### bug
+      - {"pattern": ' dixesemos ', "repl":' dijesemos'} ### bug
+      - {"pattern": ' diximos ', "repl":' dijimos '}
+      - {"pattern": ' dixere ', "repl":' dijere '}
+      - {"pattern": ' dixera ', "repl":' dijera '}
 
-      ' algun ':' algún ',
-      ' alli ':' allí ',
-      ' aqui ':' aquí ',
-      ' asi ':' así ',
-      ' atencion ':' atención ',
-      ' capitan ':' capitán ',
-      ' corazon ':' corazón ',
-      ' debia ':' debía ',
-      ' decia ':' decía ',
-      ' decian ':' decían ',
-      ' demas ':' demás ',
-      ' despues ':' después ',
-      ' dia ':' día ',
-      ' dias ':' días ',
-      ' habeis ':' habéis ',
-      ' habia ':' había ',
-      ' habian ':' habían ',
-      ' habitacion ':' habitación ',
-      ' habria ':' habría ',
-      ' hacian ':' hacían ',
-      ' mio ':' mío ',
-      ' ningun ':' ningún ',
-      ' ocasion ':' ocasión ',
-      ' oir ':' oír ',
-      ' pais ':' país ',
-      ' parecia ':' parecía ',
-      ' podia ':' podía ',
-      ' podian ':' podían ',
-      ' podria ':' podría ',
-      ' queria ':' quería ',
-      ' razon ':' razón ',
-      ' segun ':' según ',
-      ' tambien ':' también ',
-      ' tenia ':' tenía ',
-      ' tenian ':' tenían ',
-      ' velazquez ':' velázquez ',
-      ' venian ':' venían '
-    }
+      - {"pattern": ' algun ', "repl":' algún '}
+      - {"pattern": ' alli ', "repl":' allí '}
+      - {"pattern": ' aqui ', "repl":' aquí '}
+      - {"pattern": ' asi ', "repl":' así '}
+      - {"pattern": ' atencion ', "repl":' atención '}
+      - {"pattern": ' capitan ', "repl":' capitán '}
+      - {"pattern": ' corazon ', "repl":' corazón '}
+      - {"pattern": ' debia ', "repl":' debía '}
+      - {"pattern": ' decia ', "repl":' decía '}
+      - {"pattern": ' decian ', "repl":' decían '}
+      - {"pattern": ' demas ', "repl":' demás '}
+      - {"pattern": ' despues ', "repl":' después '}
+      - {"pattern": ' dia ', "repl":' día '}
+      - {"pattern": ' dias ', "repl":' días '}
+      - {"pattern": ' habeis ', "repl":' habéis '}
+      - {"pattern": ' habia ', "repl":' había '}
+      - {"pattern": ' habian ', "repl":' habían '}
+      - {"pattern": ' habitacion ', "repl":' habitación '}
+      - {"pattern": ' habria ', "repl":' habría '}
+      - {"pattern": ' hacian ', "repl":' hacían '}
+      - {"pattern": ' mio ', "repl":' mío '}
+      - {"pattern": ' ningun ', "repl":' ningún '}
+      - {"pattern": ' ocasion ', "repl":' ocasión '}
+      - {"pattern": ' oir ', "repl":' oír '}
+      - {"pattern": ' pais ', "repl":' país '}
+      - {"pattern": ' parecia ', "repl":' parecía '}
+      - {"pattern": ' podia ', "repl":' podía '}
+      - {"pattern": ' podian ', "repl":' podían '}
+      - {"pattern": ' podria ', "repl":' podría '}
+      - {"pattern": ' queria ', "repl":' quería '}
+      - {"pattern": ' razon ', "repl":' razón '}
+      - {"pattern": ' segun ', "repl":' según '}
+      - {"pattern": ' tambien ', "repl":' también '}
+      - {"pattern": ' tenia ', "repl":' tenía '}
+      - {"pattern": ' tenian ', "repl":' tenían '}
+      - {"pattern": ' velazquez ', "repl":' velázquez '}
+      - {"pattern": ' venian ', "repl":' venían '}
 
     test_cases:
       - {input: {text: "á las dos"}, output: {text: "a las dos"}}
 
-  - _target_: sdp.processors.SubSubstringToSpace
-    substrings: [
-                '.', '-', '‐', '‑', '–', '—', '―',
-                '"', '$', '&', "'", ',', ',',
-                ':', "'", '=', '?', '_', '`',
-                '{', '|', '}', '~', '¨', 'ª',
-                '«', '°', '´', '·', '»', '¿',
-                '‘', '’', '“', '”', '„', '…',
-                '‧', '‹', '›', '≪', '≫', '!',
-                ':', ';', '`', 'ʻ',
-                'ː', '‘', '’', '“', '→',
-                '"', '%', '‘', '”', '�',
-                'ʽ', 'ʿ',
-                '́', #used for putting stress on Russian letters
-                '̇',
-                'content from google book search google book search generated at ',
-                'content from google book search generated at ',
-                'content from ',
-                'google book search generated at ',
-                'search generated at ',
-                'content from google ',
-                'content from google book search ',
-                'content from google book search generated at content from google book search generated at ',
-                'book search generated at ',
-                'content from google book ',
-                'generated at ',
-                'generated at content from google book search generated at ',
-                'at content from google book search generated at ',
-                'from google book search generated at ',
-                'content from google book search content from google book search generated at ',
-                'content from google book search generated at content from google book search generated at content from google book search generated at ',
-            ]
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      - {"pattern": '[\.\-\‐\‑\–\—\―\"\$\&]', "repl": " "} 
+      - {"pattern": "['']", "repl": " "} 
+      - {"pattern": '[\,\,\:\=\?\_\`\{\|\}\~\¨\ª]', "repl": " "} 
+      - {"pattern": '[\«\°\´\·\»\¿\‘\’\“\”\„\…\‧\‹\›\≪\≫\!]', "repl": " "} 
+      - {"pattern": '[\:\;\`\ʻ\ː\‘\’\“\→\"\%\‘\”\�\ʽ\ʿ]', "repl": " "} 
+      - {"pattern": '́', "repl": " "} #used for putting stress on Russian letters
+      - {"pattern": '̇', "repl": " "}
+      - {"pattern": 'content from google book search google book search generated at ', "repl": " "}
+      - {"pattern": 'content from google book search generated at ', "repl": " "}
+      - {"pattern": 'content from ', "repl": " "}
+      - {"pattern": 'google book search generated at ', "repl": " "}
+      - {"pattern": 'search generated at ', "repl": " "}
+      - {"pattern": 'content from google ', "repl": " "}
+      - {"pattern": 'content from google book search ', "repl": " "}
+      - {"pattern": 'content from google book search generated at content from google book search generated at ', "repl": " "}
+      - {"pattern": 'book search generated at ', "repl": " "}
+      - {"pattern": 'content from google book ', "repl": " "}
+      - {"pattern": 'generated at ', "repl": " "}
+      - {"pattern": 'generated at content from google book search generated at ', "repl": " "}
+      - {"pattern": 'at content from google book search generated at ', "repl": " "}
+      - {"pattern": 'from google book search generated at ', "repl": " "}
+      - {"pattern": 'content from google book search content from google book search generated at ', "repl": " "}
+      - {"pattern": 'content from google book search generated at content from google book search generated at content from google book search generated at ', "repl": " "}
 
     test_cases:
       - {input: {text: "abc, def."}, output: {text: "abc def"}}
@@ -185,9 +175,9 @@ processors:
     test_cases:
       - {input: {text: "número i"}, output: {text: "número uno"}}
 
-  - _target_: sdp.processors.DropIfRegexInAttribute
-    attribute_to_regex:
-      "text" : ["(\\D ){5,20}"] # looks for between 4 and 19 characters surrounded by spaces
+  - _target_: sdp.processors.DropIfRegexMatch
+    regex_patterns:
+      - "(\\D ){5,20}" # looks for between 4 and 19 characters surrounded by spaces
 
     test_cases:
       - {input: {text: "some s p a c e d out letters"}, output: null}
@@ -195,38 +185,38 @@ processors:
       - {input: {text: "three a b c spaced out letters"}, output: {text: "three a b c spaced out letters"}}
       - {input: {text: "four a b c d spaced out letters"}, output: null}
 
-  - _target_: sdp.processors.DropIfSubstringInAttribute
-    attribute_to_substring:
-      "audio_filepath" : [
-            # books with lots of OCR errors etc.
-            "8882/10372",
-            "8882/11576",
-            "10246/11643",
-            "9972/11767",
-            "9972/12090",
-            "9972/12260",
-            "10246/12300",
-            "10246/12585",
-            "12689/12700",
-            "12341/12700",
-            "8882/12700",
-            "12953/12700",
-            "12428/12700",
-            "12921/12700",
-            "11797/12700",
-            "9972/12705",
-            "11797/13121",
-            "11797/13497",
-            "10246/13672",
-            "12367/14286",
-            "10246/14708",
-            "11048/9310",
-            "6447/9310",
-            "11040/9310",
-            "9063/9310",
-            "9972/9503",
-            "8060/9503",
-      ]
+  - _target_: sdp.processors.DropIfRegexMatch
+    text_key: "audio_filepath"
+    regex_patterns: [
+          # books with lots of OCR errors etc.
+          "8882/10372",
+          "8882/11576",
+          "10246/11643",
+          "9972/11767",
+          "9972/12090",
+          "9972/12260",
+          "10246/12300",
+          "10246/12585",
+          "12689/12700",
+          "12341/12700",
+          "8882/12700",
+          "12953/12700",
+          "12428/12700",
+          "12921/12700",
+          "11797/12700",
+          "9972/12705",
+          "11797/13121",
+          "11797/13497",
+          "10246/13672",
+          "12367/14286",
+          "10246/14708",
+          "11048/9310",
+          "6447/9310",
+          "11040/9310",
+          "9063/9310",
+          "9972/9503",
+          "8060/9503",
+    ]
 
     test_cases:
       - {input: {audio_filepath: "/path/10246/12585/abc.wav"}, output: null}
@@ -254,12 +244,12 @@ processors:
       - {input: {text: "el de junio", pred_text: "el diez de junio"}, output: null}
       - {input: {text: "el diez de junio", pred_text: "el diez de junio"}, output: {text: "el diez de junio", pred_text: "el diez de junio"}}
 
-  - _target_: sdp.processors.DropIfSubstringInAttribute
-    attribute_to_substring:
-      "pred_text" : [
-        'librewox', 'librevox', 'librivox', 'libribox', 'libriebox', 'libriboux',
-        ' grabado por ',
-      ]
+  - _target_: sdp.processors.DropIfRegexMatch
+    text_key: "pred_text"
+    regex_patterns: [
+      'librewox', 'librevox', 'librivox', 'libribox', 'libriebox', 'libriboux',
+      ' grabado por ',
+    ]
     test_cases:
       - {input: {pred_text: "librivox recording"}, output: null}
       - {input: {pred_text: "abcdef"}, output: {pred_text: "abcdef"}}
