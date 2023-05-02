@@ -183,6 +183,42 @@ class DropHighLowDuration(ModifyManifestTextProcessor):
         super().finalize(metrics)
 
 
+class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
+    """
+    Class for processor that drops utterances if data[self.text_attribute] does
+    not match any of regex_patterns.
+    Args:
+        regex_patterns: a list of strings. If data_entry[self.attribute] does not match any 
+            of the regex patterns in the list, that utterance will be dropped.
+    """
+
+    def __init__(
+        self, regex_patterns: List[str], **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.regex_patterns = regex_patterns
+
+    def _process_dataset_entry(self, data_entry) -> List:
+
+        for regex_pattern in self.regex_patterns:
+            if re.search(regex_pattern, data_entry[self.text_key]):
+                break
+        else:  # will only reach this if none of the regex match
+            return [DataEntry(data=None, metrics=1)]
+
+        # will reach this part of code if at least one of the regexes matches
+        return [DataEntry(data=data_entry, metrics=0)]
+
+    def finalize(self, metrics):
+        total_counter = 0
+        for value in metrics:
+            if value:
+                total_counter += value
+        logging.info("Num of utterances that were dropped due to not containing any of the specified regex patterns")
+        logging.info(f"{total_counter}")
+        super().finalize(metrics)
+
+
 class DropNonAlphabet(ModifyManifestTextProcessor):
     """
     Class for processor that drops utterances if they contain characters that

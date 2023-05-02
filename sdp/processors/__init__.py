@@ -20,6 +20,7 @@ from sdp.processors.create_initial_manifest.create_initial_manifest_voxpopuli im
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ChangeToRelativePath,
+    RenameFields,
     SplitOnFixedDuration,
 )
 from sdp.processors.modify_manifest.data_to_data import (
@@ -36,8 +37,10 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropHighLowWordrate,
     DropHighWER,
     DropIfRegexMatch,
+    DropIfNoneOfRegexMatch,
     DropIfSubstringInInsertion,
     DropLowWordMatchRate,
     DropNonAlphabet,
 )
+from sdp.processors.sort_manifest import SortManifest
 from sdp.processors.write_manifest import WriteManifest

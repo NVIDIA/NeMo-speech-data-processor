@@ -30,6 +30,33 @@ class AddConstantFields(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
+class RenameFields(BaseParallelProcessor):
+    """
+    This processor renames the field in all manifest entries.
+
+    Args:
+        rename_fields: dictionary where keys are the fields to be renamed and their values
+            are the new names of the fields.
+    """
+
+    def __init__(
+        self, rename_fields: Dict, **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.rename_fields = rename_fields
+
+    def process_dataset_entry(self, data_entry: Dict):
+        for field_in, field_out in self.rename_fields.items():
+
+            if not field_in in data_entry:
+                raise ValueError(f"Expected field {field_in} in data_entry {data_entry} but there isn't one.")
+
+            data_entry[field_out] = data_entry[field_in]
+            del data_entry[field_in]
+
+        return [DataEntry(data=data_entry)]
+
+
 class SplitOnFixedDuration(BaseParallelProcessor):
     """This processor splits audio into a fixed length segments.
 

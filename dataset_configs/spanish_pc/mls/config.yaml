@@ -1,0 +1,411 @@
+# user can specify which processors should be run
+# can be either "all" to run all processors,
+# or any Python "slice" object, e.g.,
+# ":3" (to select first 3 objects),
+# ":-1" (to select all but last)
+# "2:5" (to select 3rd to 5th)
+# "0" (to select only the first processor)
+processors_to_run: ???
+data_split: ???
+workspace_dir: ???
+language_long: "spanish"
+language_short: "es"
+pc_model_path: ???
+lv_text_dir: ???
+final_manifest: ${workspace_dir}/mls_spanish_processed/${data_split}_final.json
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestMLS
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_initial.json"
+    language: ${language_long}
+    download_dir: ${workspace_dir}
+    resampled_audio_dir: "${workspace_dir}/mls_spanish_processed/${data_split}/audio/"
+    data_split: "${data_split}"
+
+  - _target_: dataset_configs.spanish_pc.mls.unique_processors.add_pc_to_mls_initial_manifest.AddPCToMLSInitialManifest
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_initial.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc.json"
+    language_long: ${language_long}
+    language_short: ${language_short}
+    lv_text_dir: "${lv_text_dir}"
+    submanifests_dir: ${workspace_dir}/mls_spanish_processed/submanifests/${data_split}
+    restored_submanifests_dir: ${workspace_dir}/mls_spanish_processed/restored_submanifests/${data_split}
+    n_jobs: -2
+    show_conversion_breakdown: true
+
+  - _target_: dataset_configs.spanish_pc.mls.unique_processors.add_pc_pred.AddPCPred
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_just_added_pred.json"
+    model_path: "${pc_model_path}"
+    input_text_field: "text"
+    output_text_field: "text_pc_pred"
+    batch_size: 32
+
+  # fix up text_pc_pred outputs by putting upside down question mark at the start of the word (not at the end, as it currently is)
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_just_added_pred.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
+    text_key: "text_pc_pred"
+    regex_params_list: 
+    - {"pattern": ' (\w+)¿ ', "repl": ' ¿\1 '}
+
+    test_cases:
+      - {input: {text_pc_pred: "cómo¿ estás? def."}, output: {text_pc_pred: "¿cómo estás? def."}}
+
+  - _target_: dataset_configs.spanish_pc.mls.unique_processors.make_letters_uppercase_after_period.MakeLettersUppercaseAfterPeriod
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
+    text_key: "text_pc_pred"
+    test_cases:
+      - {input: {text_pc_pred: "¿cómo estás? def."}, output: {text_pc_pred: "¿cómo estás? Def."}}
+
+  - _target_: sdp.processors.RenameFields
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
+    rename_fields: 
+      "text": "original_dataset_text"
+
+  - _target_: dataset_configs.spanish_pc.mls.unique_processors.change_pc_fields.ChangePCFields
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
+
+  - _target_: sdp.processors.ASRInference
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_inference.json"
+    pretrained_model: "stt_es_quartznet15x5"
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_inference.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex.json"
+    regex_params_list: 
+      - {"pattern": "!", "repl": "."}
+      - {"pattern": "…", "repl": "."}
+      - {"pattern": "(\\. ){2,20}", "repl": "."}
+      - {"pattern": "\\.+", "repl": "."}
+
+      - {"pattern": " Á ", "repl": " A "}
+      - {"pattern": " á ", "repl": " a "}
+      - {"pattern": " ó ", "repl": " o "}
+      - {"pattern": " é ", "repl": " e "}
+      - {"pattern": " ú ", "repl": " u "}
+
+      - {"pattern": " D. ", "repl": ' Don '}
+      - {"pattern": " Dr. ", "repl": ' Doctor '}
+      - {"pattern": " [Ss]r. ", "repl": ' señor '}
+      - {"pattern": " [Ss]r ", "repl": ' señor '}
+
+      - {"pattern": " [Vv]d ", "repl": ' usted '}
+      - {"pattern": " [Vv]ds ", "repl": ' ustedes '}
+      - {"pattern": " [Vv]des ", "repl": ' ustedes '}
+
+      - {"pattern": " ([Vv]) md ", "repl": ' \1uestra merced '}
+      - {"pattern": " ([Mm])r ", "repl": ' \1ister '}
+      - {"pattern": " ([Uu])d ", "repl": ' \1n '} # technically can be ustedes, but I have only seen it being "u"
+      - {"pattern": " ([Gg])uando ", "repl": ' \1uando '}
+      - {"pattern": " ([Mm])agestad ", "repl": ' \1ajestad '}
+
+      - {"pattern": " ([Ff])ué ", "repl": ' \1ue '}
+      - {"pattern": " ([Ss])ólo ", "repl": ' \1olo '}
+      - {"pattern": " ([Dd])ió ", "repl": ' \1io '}
+      - {"pattern": " ([Hh])ácia ", "repl": ' \1acia '}
+      - {"pattern": " ([Jj])óven ", "repl": ' \1oven '}
+
+      - {"pattern": " ([Dd])ixo ", "repl": ' \1ijo '}
+      - {"pattern": " ([Dd])ixe ", "repl": ' \1ije '}
+      - {"pattern": " ([Dd])ixéramos ", "repl": ' \1ijéramos '}
+
+      - {"pattern": " ([Dd])ixeron ", "repl": ' \1ijeron '}
+      - {"pattern": " ([Dd])ixéron ", "repl": ' \1ijéron '}
+      - {"pattern": " ([Dd])ixese ", "repl": ' \1ijese '}
+      - {"pattern": " ([Dd])ixesen ", "repl": ' \1ijesen ", '}
+      - {"pattern": " ([Dd])ixesemos ", "repl": ' \1ijesemos "'}
+      - {"pattern": " ([Dd])iximos ", "repl": ' \1ijimos '}
+      - {"pattern": " ([Dd])ixere ", "repl": ' \1ijere '}
+      - {"pattern": " ([Dd])ixera ", "repl": ' \1ijera '}
+
+      - {"pattern": " ([Aa])lgun ", "repl": ' \1lgún '}
+      - {"pattern": " ([Aa])lli ", "repl": ' \1llí '}
+      - {"pattern": " ([Aa])qui ", "repl": ' \1quí '}
+      - {"pattern": " ([Aa])si ", "repl": ' \1sí '}
+      - {"pattern": " ([Aa])tencion ", "repl": ' \1tención '}
+      - {"pattern": " ([Cc])apitan ", "repl": ' \1apitán '}
+      - {"pattern": " ([Cc])orazon ", "repl": ' \1orazón '}
+      - {"pattern": " ([Dd])ebia ", "repl": ' \1ebía '}
+      - {"pattern": " ([Dd])ecia ", "repl": ' \1ecía '}
+      - {"pattern": " ([Dd])ecian ", "repl": ' \1ecían '}
+      - {"pattern": " ([Dd])emas ", "repl": ' \1emás '}
+      - {"pattern": " ([Dd])espues ", "repl": ' \1espués '}
+      - {"pattern": " ([Dd])ia ", "repl": ' \1ía '}
+      - {"pattern": " ([Dd])ias ", "repl": ' \1ías '}
+      - {"pattern": " ([Hh])abeis ", "repl": ' \1abéis '}
+      - {"pattern": " ([Hh])abia ", "repl": ' \1abía '}
+      - {"pattern": " ([Hh])abian ", "repl": ' \1abían '}
+      - {"pattern": " ([Hh])abitacion ", "repl": ' \1abitación '}
+      - {"pattern": " ([Hh])abria ", "repl": ' \1abría '}
+      - {"pattern": " ([Hh])acian ", "repl": ' \1acían '}
+      - {"pattern": " ([Mm])io ", "repl": ' \1mío '}
+      - {"pattern": " ([Nn])ingun ", "repl": ' \1ingún '}
+      - {"pattern": " ([Oo])casion ", "repl": ' \1casión '}
+      - {"pattern": " ([Oo])ir ", "repl": ' \1ír '}
+      - {"pattern": " ([Pp])ais ", "repl": ' \1aís '}
+      - {"pattern": " ([Pp])arecia ", "repl": ' \1arecía '}
+      - {"pattern": " ([Pp])odia ", "repl": ' \1odía '}
+      - {"pattern": " ([Pp])odian ", "repl": ' \1odían '}
+      - {"pattern": " ([Pp])odria ", "repl": ' \1odría '}
+      - {"pattern": " ([Qq])ueria ", "repl": ' \1uería '}
+      - {"pattern": " ([Rr])azon ", "repl": ' \1azón '}
+      - {"pattern": " ([Ss])egun ", "repl": ' \1egún '}
+      - {"pattern": " ([Tt])ambien ", "repl": ' \1ambién '}
+      - {"pattern": " ([Tt])enia ", "repl": ' \1enía '}
+      - {"pattern": " ([Tt])enian ", "repl": ' \1enían '}
+      - {"pattern": " ([Vv])elazquez ", "repl": ' \1elázquez '}
+      - {"pattern": " ([Vv])enian ", "repl": ' \1enían '}
+
+    test_cases:
+      - {input: {text: "Á las dos"}, output: {text: "A las dos"}}
+      - {input: {text: "á las dos"}, output: {text: "a las dos"}}
+      - {input: {text: "Sr"}, output: {text: "señor"}}
+      - {input: {text: "sr"}, output: {text: "señor"}}
+      - {input: {text: "Abc. . . "}, output: {text: "Abc."}}
+      - {input: {text: "Abc..."}, output: {text: "Abc."}}
+
+  # bunch of strings we map to spaces
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex.json"
+    regex_params_list: 
+    - {"pattern": '[\-\‐\‑\–\—\―\"]', "repl": " "}
+    - {"pattern": "'", "repl": " "}
+    - { "pattern": '[\$\&\¡\(\)]', "repl": " "}
+    - { "pattern": '[\:\=\_\`]', "repl": " "}
+    - { "pattern": '[\{\|\}\~\¨\ª]', "repl": " "}
+    - { "pattern": '[\«\°\´\·\»]', "repl": " "}
+    - { "pattern": '[\‘\’\“\”\„]', "repl": " "}
+    - { "pattern": '[\‧\‹\›\≪\≫]', "repl": " "}
+    - { "pattern": '[\:\;\`\ʻ]', "repl": " "}  
+    - { "pattern": '[\ː\‘\’\“\→]', "repl": " "}
+    - { "pattern": '[\%\‘\”\�\ʽ\\ʿ]', "repl": " "}
+    - { "pattern": '́' , "repl": " "} # used for putting stress on Russian letters
+    - { "pattern": 'content from google book search google book search generated at ', "repl": " "}
+    - { "pattern": 'content from google book search generated at ', "repl": " "}
+    - { "pattern": 'content from ', "repl": " "}
+    - { "pattern": 'google book search generated at ', "repl": " "}
+    - { "pattern": 'search generated at ', "repl": " "}
+    - { "pattern": 'content from google ', "repl": " "}
+    - { "pattern": 'content from google book search ', "repl": " "}
+    - { "pattern": 'content from google book search generated at content from google book search generated at ', "repl": " "}
+    - { "pattern": 'book search generated at ', "repl": " "}
+    - { "pattern": 'content from google book ', "repl": " "}
+    - { "pattern": 'generated at ', "repl": " "}
+    - { "pattern": 'generated at content from google book search generated at ', "repl": " "}
+    - { "pattern": 'at content from google book search generated at ', "repl": " "}
+    - { "pattern": 'from google book search generated at ', "repl": " "}
+    - { "pattern": 'content from google book search content from google book search generated at ', "repl": " "}
+    - { "pattern": 'content from google book search generated at content from google book search generated at content from google book search generated at ', "repl": " "}
+
+    - {"pattern": "(\\.\\s+){2,20}", "repl": "."} # to remove any repeated periods from eg ".'''." => ".  ."
+
+    test_cases:
+      - {input: {text: '"abc"'}, output: {text: "abc"}}
+
+  - _target_: sdp.processors.DropNonAlphabet
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_only_alphabet.json"
+    alphabet: " abcdefghijklmnopqrstuvwxyzáéíñóúüABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÑÓÚÜ,.?¿"
+    test_cases:
+      - {input: {text: "test тест 测试"}, output: null}
+      - {input: {text: "test"}, output: {text: "test"}}
+
+  
+  # run manual normalization of roman numerals
+  - _target_: dataset_configs.spanish.mls.unique_processors.clean_roman_numerals.CleanRomanNumerals
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_only_alphabet.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_normalized.json"
+    king_triggers: [
+      "alfonso",
+      "benedicto",
+      "carlos",
+      "clemente",
+      "enrique",
+      "federico",
+      "felipe",
+      "fernando",
+      "filipo",
+      "gregorio",
+      "guillermo",
+      "jaime",
+      "jorge",
+      "león",
+      "luis",
+      "pie",
+      "tomo",
+      "sixto"
+    ]
+    queen_triggers: ["isabel"]
+    ordinal_masc_triggers: ["capítulo"]
+    ordinal_fem_triggers: [
+      "parte",
+      "escena",
+    ]
+    cardinal_triggers: [
+      "siglo",
+      "carta",
+      "libro",
+      "número",
+    ]
+    test_cases:
+      - {input: {text: "número i"}, output: {text: "número uno"}}
+      - {input: {text: "Número i"}, output: {text: "Número Uno"}}
+      - {input: {text: "felipe iv"}, output: {text: "felipe cuarto"}}
+      - {input: {text: "Sixto V y Gregorio Xv"}, output: {text: "Sixto Quinto y Gregorio Decimoquinto"}}
+
+
+  # drop spaced out regex
+  - _target_: sdp.processors.DropIfRegexMatch
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_normalized.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_spaced_out.json"
+    regex_patterns: 
+    - '(\D ){5,20}'
+
+    test_cases:
+      - {input: {text: "some s p a c e d out letters"}, output: null}
+      - {input: {text: "normal words only"}, output: {text: "normal words only"}}
+      - {input: {text: "three a b c spaced out letters"}, output: {text: "three a b c spaced out letters"}}
+      - {input: {text: "four a b c d spaced out letters"}, output: null}
+
+  # drop bad books
+  - _target_: sdp.processors.DropIfRegexMatch
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_spaced_out.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_bad_books.json"
+    text_key: "audio_filepath"
+    regex_patterns:  [
+            # books with lots of OCR errors etc.
+            "8882/10372",
+            "8882/11576",
+            "10246/11643",
+            "9972/11767",
+            "9972/12090",
+            "9972/12260",
+            "10246/12300",
+            "10246/12585",
+            "12689/12700",
+            "12341/12700",
+            "8882/12700",
+            "12953/12700",
+            "12428/12700",
+            "12921/12700",
+            "11797/12700",
+            "9972/12705",
+            "11797/13121",
+            "11797/13497",
+            "10246/13672",
+            "12367/14286",
+            "10246/14708",
+            "11048/9310",
+            "6447/9310",
+            "11040/9310",
+            "9063/9310",
+            "9972/9503",
+            "8060/9503",
+      ]
+
+    test_cases:
+      - {input: {audio_filepath: "/path/10246/12585/abc.wav"}, output: null}
+      - {input: {audio_filepath: "/path/1/1/abc.wav"}, output: {audio_filepath: "/path/1/1/abc.wav"}}    
+
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_bad_books.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_librivox.json"
+    text_key: "pred_text"
+    regex_patterns:  [
+        'librewox', 'librevox', 'librivox', 'libribox', 'libriebox', 'libriboux',
+        ' grabado por ',
+      ]
+    test_cases:
+      - {input: {pred_text: "librivox recording"}, output: null}
+      - {input: {pred_text: "abcdef"}, output: {pred_text: "abcdef"}}
+
+  - _target_: dataset_configs.spanish_pc.mls.unique_processors.make_text_no_pc.MakeTextNoPC
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_librivox.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
+
+  - _target_: sdp.processors.DropIfSubstringInInsertion
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_insertion.json"
+    text_key: "text_no_pc"
+    substrings_in_insertion: [
+      "uno ",  "dos ", "tres ", "cuatro ", "cinco ",
+      "seis ", "siete ", "ocho ", "nueve ", "diez ",
+      "once ", "doce ", "trece ", "catorce ", "quince ",
+      "veinte ", "treinta ", "cuarenta ", "cincuenta ",
+      "sesenta ", "setenta ", "ochenta ", "noventa ",
+      "cien ", "ciento", "cientos ", "mil "
+    ]
+    test_cases:
+      - {input: {text_no_pc: "el de junio", pred_text: "el diez de junio"}, output: null}
+      - {input: {text_no_pc: "el diez de junio", pred_text: "el diez de junio"}, output: {text_no_pc: "el diez de junio", pred_text: "el diez de junio"}}
+
+
+  - _target_: sdp.processors.DropASRErrorBeginningEnd
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_insertion.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_asr_error.json"
+    text_key: "text_no_pc"
+    beginning_error_char_threshold: 10
+    end_error_char_threshold: 10
+    test_cases:
+      - {input: {text_no_pc: "sí hola", pred_text: "abcdefabcdef sí hola"}, output: null}
+      - {input: {text_no_pc: "abcdefabcdef sí hola", pred_text: "sí hola"}, output: null}
+      - { input: {text_no_pc: "abcdefabcdef sí hola", pred_text: "uvwxyzuvwxyz sí hola"},
+         output: {text_no_pc: "abcdefabcdef sí hola", pred_text: "uvwxyzuvwxyz sí hola"}}
+
+  - _target_: sdp.processors.DropHighWER
+    text_key: "text_no_pc"
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_asr_error.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_wer.json"
+    wer_threshold: 90
+    test_cases:
+      - {input: {text_no_pc: "sí hola", pred_text: "abcdefgh abcdefgh"}, output: null}
+      - {input: {text_no_pc: "sí hola", pred_text: "sí hola"}, output: {text_no_pc: "sí hola", pred_text: "sí hola"}}
+
+  - _target_: sdp.processors.DropHighCER
+    text_key: "text_no_pc"
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_wer.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_cer.json"
+    cer_threshold: 90
+    test_cases:
+      - {input: {text_no_pc: "sí hola", pred_text: "abcdefgh abcdefgh"}, output: null}
+      - {input: {text_no_pc: "sí hola", pred_text: "sí hola"}, output: {text_no_pc: "sí hola", pred_text: "sí hola"}}
+
+
+  # drop high low char
+  - _target_: sdp.processors.DropHighLowCharrate
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_cer.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_charrate.json"
+    high_charrate_threshold: 20
+    low_charrate_threshold: 5
+    test_cases:
+      - {input: {text: "buenos dias", duration: 0.1}, output: null}
+      - {input: {text: "buenos dias", duration: 30}, output: null}
+      - {input: {text: "buenos dias", duration: 1}, output: {text: "buenos dias", duration: 1}}
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_charrate.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_cleaned.json"
+    regex_params_list: 
+    - {"pattern": '\.', "repl": ' . '}
+    - {"pattern": ",", "repl": " , "}
+    - {"pattern": '\?', "repl": " ? "}
+    - {"pattern": "¿", "repl": " ¿ "}
+
+    test_cases:
+      - {input: {text: "¿abc? def."}, output: {text: "¿ abc ? def ."}}
+
+  - _target_: sdp.processors.WriteManifest
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_cleaned.json"
+    output_manifest_file: "${final_manifest}"
+    fields_to_save:
+      - "audio_filepath"
+      - "text"
+      - "duration" 
+      - "text_pc_origin" 
