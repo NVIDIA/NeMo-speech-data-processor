@@ -326,12 +326,27 @@ processors:
       - {input: {pred_text: "librivox recording"}, output: null}
       - {input: {pred_text: "abcdef"}, output: {pred_text: "abcdef"}}
 
-  - _target_: dataset_configs.spanish_pc.mls.unique_processors.make_text_no_pc.MakeTextNoPC
+
+  - _target_: sdp.processors.DuplicateFields
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_librivox.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
+    duplicate_fields:
+      "text": "text_no_pc"
+
+  - _target_: sdp.processors.SubMakeLowercase
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
+    text_key: "text_no_pc"
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
+    text_key: "text_no_pc"
+    regex_params_list: 
+    - {"pattern": '[¿?.,]', "repl": ""}
+
 
   - _target_: sdp.processors.DropIfSubstringInInsertion
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_insertion.json"
     text_key: "text_no_pc"
     substrings_in_insertion: [

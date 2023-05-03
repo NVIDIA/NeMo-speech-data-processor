@@ -20,6 +20,7 @@ from sdp.processors.create_initial_manifest.create_initial_manifest_voxpopuli im
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ChangeToRelativePath,
+    DuplicateFields,
     RenameFields,
     SplitOnFixedDuration,
 )

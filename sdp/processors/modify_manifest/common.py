@@ -30,6 +30,35 @@ class AddConstantFields(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
+class DuplicateFields(BaseParallelProcessor):
+    """
+    This processor duplicates fields in all manifest entries.
+    It is useful for when you want to do downstream processing of a variant of the entry.
+    e.g. make a copy of "text" called "text_no_pc", and remove punctuation from "text_no_pc" in
+    downstream processors.
+
+    Args:
+        duplicate_fields: dictionary where keys are the original fields to be copied and their values
+            are the new names of the duplicate fields.
+    """
+
+    def __init__(
+        self, duplicate_fields: Dict, **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.duplicate_fields = duplicate_fields
+
+    def process_dataset_entry(self, data_entry: Dict):
+        for field_src, field_tgt in self.duplicate_fields.items():
+
+            if not field_src in data_entry:
+                raise ValueError(f"Expected field {field_src} in data_entry {data_entry} but there isn't one.")
+
+            data_entry[field_tgt] = data_entry[field_src]
+
+        return [DataEntry(data=data_entry)]
+
+
 class RenameFields(BaseParallelProcessor):
     """
     This processor renames the field in all manifest entries.
@@ -46,13 +75,13 @@ class RenameFields(BaseParallelProcessor):
         self.rename_fields = rename_fields
 
     def process_dataset_entry(self, data_entry: Dict):
-        for field_in, field_out in self.rename_fields.items():
+        for field_src, field_tgt in self.rename_fields.items():
 
-            if not field_in in data_entry:
-                raise ValueError(f"Expected field {field_in} in data_entry {data_entry} but there isn't one.")
+            if not field_src in data_entry:
+                raise ValueError(f"Expected field {field_src} in data_entry {data_entry} but there isn't one.")
 
-            data_entry[field_out] = data_entry[field_in]
-            del data_entry[field_in]
+            data_entry[field_tgt] = data_entry[field_src]
+            del data_entry[field_src]
 
         return [DataEntry(data=data_entry)]
 
