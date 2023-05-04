@@ -26,6 +26,7 @@ jobs:
         pip install -r tests/requirements.txt
         sudo apt-get update
         sudo apt-get install -y libsndfile1 ffmpeg sox
+        sudo apt-get install -y libsox-fmt-mp3
         pip install Cython
         pip install "nemo_toolkit[asr,nemo_text_processing]"
     - name: Run all tests
