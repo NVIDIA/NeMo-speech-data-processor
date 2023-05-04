@@ -33,7 +33,7 @@ jobs:
         AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
         AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
       run: |
-        pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=sdp --durations=30 -rs | tee pytest-coverage.txt
+        python -m pytest tests/ --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=sdp --durations=30 -rs | tee pytest-coverage.txt
 
 
 # TODO: add some way to see if e2e tests were skipped
