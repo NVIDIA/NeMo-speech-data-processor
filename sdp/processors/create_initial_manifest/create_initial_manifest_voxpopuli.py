@@ -122,7 +122,6 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
             raise RuntimeError(f"have more/less than 7 tabs in line {data_entry}")
 
         utt_id, raw_text, norm_text, spk_id, _, gender, is_gold_transcript, accent = data_entry.split("\t")
-        transcript_text = norm_text.strip()
         year = utt_id[:4]
 
         src_flac_path = os.path.join(self.download_dir, "transcribed_data", self.language_id, year, utt_id + ".ogg")
@@ -136,7 +135,7 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
         data = {
             "audio_filepath": tgt_wav_path,
             "duration": float(sox.file_info.duration(tgt_wav_path)),
-            "text": transcript_text,
+            "text": raw_text,
             "provided_norm_text": norm_text,
             "raw_text": raw_text,
             "spk_id": spk_id,

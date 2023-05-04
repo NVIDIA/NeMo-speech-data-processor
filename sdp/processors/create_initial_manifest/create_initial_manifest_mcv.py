@@ -53,6 +53,7 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
         language_id: str,
         archive_filepath: Optional[str] = None,
         use_test_data: bool = False,
+        relpath_from_test_data_root: Optional[str] = None,
         already_extracted: bool = False,
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
@@ -68,6 +69,7 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
         self.use_test_data = use_test_data
+        self.relpath_from_test_data_root = relpath_from_test_data_root
 
     def prepare(self):
         """Extracting data (unless already done).
@@ -86,7 +88,10 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
                     f" Please set 'TEST_DATA_ROOT' as an environment variable and try again."
                 )
 
-            self.test_data_path = str(Path(__TEST_DATA_ROOT) / self.language_id / "mls" / "data.tar.gz")
+            if not self.relpath_from_test_data_root:
+                raise ValueError(f"relpath_from_test_data_root needs to be specified")
+
+            self.test_data_path = str(Path(__TEST_DATA_ROOT) / self.relpath_from_test_data_root / "data.tar.gz")
 
             if not os.path.exists(self.test_data_path):
                 raise ValueError(
@@ -94,8 +99,7 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
                     f" 'TEST_DATA_ROOT' environment variable correctly?"
                 )
             data_folder = extract_archive(str(self.test_data_path), str(self.extract_archive_dir))
-            version = "-".join(self.test_data_path.split("-")[2:-1])
-            self.transcription_file = Path(data_folder) / version / self.language_id
+            self.transcription_file = Path(data_folder)
         else:
             if not self.already_extracted:
                 data_folder = extract_archive(self.archive_filepath, self.extract_archive_dir)

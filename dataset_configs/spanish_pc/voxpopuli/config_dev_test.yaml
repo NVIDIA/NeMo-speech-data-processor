@@ -1,0 +1,191 @@
+# user can specify which processors should be run
+# can be either "all" to run all processors,
+# or any Python "slice" object, e.g.,
+# ":3" (to select first 3 objects),
+# ":-1" (to select all but last)
+# "2:5" (to select 3rd to 5th)
+# "0" (to select only the first processor)
+processors_to_run: ???
+data_split: ???
+workspace_dir: ???
+language_id: "es"
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestVoxpopuli
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_initial_manifest.json"
+    language_id: "${language_id}"
+    download_dir: "${workspace_dir}"
+    data_split: "${data_split}"
+    resampled_audio_dir: "${workspace_dir}/resampled_audio/"
+
+  - _target_: sdp.processors.SortManifest
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_initial_manifest.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_sorted_manifest.json"
+    attribute_sort_by: "duration"
+    descending: false
+
+  - _target_: sdp.processors.ASRInference
+    pretrained_model: "stt_es_quartznet15x5"
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_sorted_manifest.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_transcribed.json"
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_transcribed.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_startdigit.json"
+    regex_patterns: 
+    # drop utt if starts with digit as those tend to be poorly segmented
+    # we include \s because SDP always adds spaces at the start and end
+    - '^\s\d'
+
+    test_cases:
+      - {input: {text: "2 abcd"}, output: null}
+      - {input: {text: "a2 abcd"}, output: {text: "a2 abcd"}}
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_startdigit.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_empty_norm.json"
+    regex_patterns: ["^\\s*$"]
+    text_key: "provided_norm_text"
+    test_cases:
+      - {input: {provided_norm_text: ""}, output: null}
+      - {input: {provided_norm_text: "  "}, output: null}
+      - {input: {provided_norm_text: "abcdef"}, output: {provided_norm_text: "abcdef"}}
+
+  - _target_: dataset_configs.spanish_pc.voxpopuli.unique_processors.normalize_from_non_pc_text.NormalizeFromNonPCText
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_empty_norm.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_normalized.json"
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_normalized.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_subregex.json"
+    
+    regex_params_list:
+      - {"pattern": "!", "repl": "."} 
+      - {"pattern": "[;'¡]", "repl": " "} 
+
+      - {"pattern": " xx ", "repl": " veinte "} 
+      - {"pattern": " xxi ", "repl": " veintiuno "} 
+
+    test_cases:
+      - {input: {text: "abc; def!"}, output: {text: "abc def."}}
+
+  - _target_: sdp.processors.DropHighLowCharrate
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_subregex.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_charrate.json"
+    
+    high_charrate_threshold: 30
+    low_charrate_threshold: 5
+    test_cases:
+      - {input: {text: "buenos dias", duration: 0.1}, output: null}
+      - {input: {text: "buenos dias", duration: 40}, output: null}
+      - {input: {text: "buenos dias", duration: 1}, output:  {text: "buenos dias", duration: 1}}
+
+
+  - _target_: sdp.processors.DropNonAlphabet
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_charrate.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_nonalphabet.json"
+    alphabet: " abcdefghijklmnopqrstuvwxyzáéíñóúüABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÑÓÚÜ,.?¿"
+    test_cases:
+      - {input: {text: "test тест 测试"}, output: null}
+      - {input: {text: "test"}, output: {text: "test"}}
+
+  - _target_: sdp.processors.DuplicateFields
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_nonalphabet.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    duplicate_fields:
+      "text": "text_no_pc"
+
+  - _target_: sdp.processors.SubMakeLowercase
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    text_key: "text_no_pc"
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    text_key: "text_no_pc"
+    regex_params_list: 
+    - {"pattern": '[¿?.,]', "repl": ""}
+
+  - _target_: sdp.processors.DropIfSubstringInInsertion
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_insertion.json"
+    text_key: "text_no_pc"
+    substrings_in_insertion: [ 
+      "gracias" # quite often the speaker says somthing like "Gracias Señor Presidente" but the gracias is not in the transcript
+    ]
+
+  - _target_: sdp.processors.SubIfASRSubstitution
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_insertion.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_sub_asr_sub.json"
+    text_key: "text_no_pc"
+    sub_words:
+      "cero ": "mil "
+    test_cases:
+      - {input: {text_no_pc: "dos cero personas other cero", pred_text: "dos mil personas other word"}, 
+          output: {text_no_pc: "dos mil personas other cero", pred_text: "dos mil personas other word"}}
+      - {input: {text_no_pc: "cero personas other cero", pred_text: "mil personas other word"}, 
+          output: {text_no_pc: "mil personas other cero", pred_text: "mil personas other word"}}
+
+
+  - _target_: sdp.processors.DropASRErrorBeginningEnd
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_sub_asr_sub.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_asr_error.json"
+    text_key: "text_no_pc"
+    
+    beginning_error_char_threshold: 10
+    end_error_char_threshold: 10
+    test_cases:
+      - {input: {text_no_pc: "sí hola", pred_text: "abcdefabcdef sí hola"}, output: null}
+      - {input: {text_no_pc: "abcdefabcdef sí hola", pred_text: "sí hola"}, output: null}
+      - {input: {text_no_pc: "abcdefabcdef sí hola", pred_text: "uvwxyzuvwxyz sí hola"}, output: {text_no_pc: "abcdefabcdef sí hola", pred_text: "uvwxyzuvwxyz sí hola"}}
+
+  - _target_: sdp.processors.DropHighWER
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_asr_error.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_wer.json"
+    text_key: "text_no_pc"
+    
+    wer_threshold: 75
+    test_cases:
+      - {input: {text_no_pc: "sí hola", pred_text: "no tengo"}, output: null}
+      - {input: {text_no_pc: "sí hola", pred_text: "sí hola"}, output: {text_no_pc: "sí hola", pred_text: "sí hola"}}
+
+  - _target_: sdp.processors.DropHighLowDuration
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_wer.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_duration.json"
+    
+    high_duration_threshold: 30
+    low_duration_threshold: 1
+    test_cases:
+      - {input: {duration: 0.1}, output: null}
+      - {input: {duration: 40}, output: null}
+      - {input: {duration: 5}, output: {duration: 5}} 
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_duration.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_punc_spaces.json"
+    regex_params_list: 
+    - {"pattern": '\.', "repl": ' . '}
+    - {"pattern": ",", "repl": " , "}
+    - {"pattern": '\?', "repl": " ? "}
+    - {"pattern": "¿", "repl": " ¿ "}
+
+    test_cases:
+      - {input: {text: "¿abc? def."}, output: {text: "¿ abc ? def ."}}
+
+  - _target_: sdp.processors.AddConstantFields 
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_punc_spaces.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_cleaned.json"
+    fields: {"text_pc_origin": "original"}
+
+  - _target_: sdp.processors.WriteManifest
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_cleaned.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_final.json"
+
+    fields_to_save:
+      - "audio_filepath"
+      - "text"
+      - "duration"
+      - "text_pc_origin"
+
+

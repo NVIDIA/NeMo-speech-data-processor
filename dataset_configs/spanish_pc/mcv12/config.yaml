@@ -1,0 +1,181 @@
+# user can specify which processors should be run
+# can be either "all" to run all processors,
+# or any Python "slice" object, e.g.,
+# ":3" (to select first 3 objects),
+# ":-1" (to select all but last)
+# "2:5" (to select 3rd to 5th)
+# "0" (to select only the first processor)
+processors_to_run: ???
+data_split: ???
+workspace_dir: ???
+language_id: "es"
+final_manifest: "${workspace_dir}/manifests/${data_split}_final.json"
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestMCV
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_initial_manifest.json"
+    extract_archive_dir: ${workspace_dir}/
+    resampled_audio_dir: ${workspace_dir}/${data_split}
+    data_split: ${data_split}
+    language_id: ${language_id}
+    archive_filepath: ${workspace_dir}/cv-corpus-12.0-2022-12-07-es.tar.gz
+    relpath_from_test_data_root: "spanish_pc/mcv12"
+
+  - _target_: sdp.processors.ASRInference
+    pretrained_model: "stt_es_quartznet15x5"
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_initial_manifest.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_transcribed.json"
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_transcribed.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_subregex.json"
+    regex_params_list: 
+      - {"pattern": "!", "repl": "."}
+      - {"pattern": "…\\s$", "repl": "."} # '\\s' is to to account for the fact that SDP insert spaces at start and end
+      - {"pattern": "\\.{2,20}\\s$", "repl": "."} # '\\s' is to to account for the fact that SDP insert spaces at start and end
+      
+      # remove remaining repeated periods since most of the time they are unnecessary in this data
+      - {"pattern": "\\.{2,20}", "repl": " "} 
+
+      - {"pattern": "Ö", "repl": "O"}
+      - {"pattern": "[öōòőôŏð]", "repl" : "o"}
+      - {"pattern": "[äãåàăāâ]", "repl" : "a"}
+      - {"pattern": "[êë]", "repl": "e"}
+      - {"pattern": "ń", "repl": "n"}
+      - {"pattern": "š", "repl": "s"}
+      - {"pattern": "[ū]", "repl": "u"}
+
+      - {"pattern": " www\\.(\\S)", "repl" : ' www punto \1'}
+      - {"pattern": "(\\S)\\.com ", "repl" : '\1 punto com '}
+      - {"pattern": "(\\S)\\.es ", "repl" : '\1 punto es '}
+      - {"pattern": "(\\S)\\.org ", "repl" : '\1 punto org '}
+      - {"pattern": "(\\S)\\.uk ", "repl" : '\1 punto uk '}
+      - {"pattern": "(\\S)\\.ar ", "repl" : '\1 punto ar '}
+
+      - {"pattern": " [Nn]o° ", "repl" : " número "}
+      - {"pattern": " [Nn]o°\\.", "repl" : " número "}
+      - {"pattern": " [Nn]° ", "repl" : " número "}
+      - {"pattern": " [Nn]°\\.", "repl" : " número "}
+      - {"pattern": " ([Dd])ª ", "repl" : ' \1oña '}
+      - {"pattern": " ([Pp])rofª ", "repl" : ' \1rofesora '}
+      - {"pattern": " M\\.ª ", "repl" : " maría "}
+      - {"pattern": " Mª ", "repl" : " maría "}
+      - {"pattern": " ([Dd])r ", "repl" : ' \1octor '}
+      - {"pattern": " ([Dd])r.", "repl" : ' \1octor '}
+      - {"pattern": " ([Dd])ra ", "repl" : ' \1octora '}
+
+      - {"pattern": "\\$", "repl" : "s"} # in MCV $ is used in proper nouns where it is pronounced as 's'
+      - {"pattern": " un km ", "repl" : " un kilómetro "}
+      - {"pattern": " km ", "repl" : " kilómetros "}
+
+    test_cases:
+      - {input: {text: "www.abc.com"}, output: {text: "www punto abc punto com"}}
+      - {input: {text: "hey!"}, output: {text: "hey."}}
+      - {input: {text: "hey..."}, output: {text: "hey."}}
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_subregex.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_subregex_punctuation.json"
+    regex_params_list: 
+    - {"pattern": '[\-\‐\‑\–\—\―\"]', "repl": " "}
+    - {"pattern": "'", "repl": " "}
+    - {"pattern": '[\$\&\¡\(\)]', "repl": " "}
+    - {"pattern": '[\:\=\_\`]', "repl": " "}
+    - {"pattern": '[\{\|\}\~\¨\ª]', "repl": " "}
+    - {"pattern": '[\«\°\´\·\»]', "repl": " "}
+    - {"pattern": '[\‘\’\“\”\„]', "repl": " "}
+    - {"pattern": '[\‧\‹\›\≪\≫]', "repl": " "}
+    - {"pattern": '[\:\;\`\ʻ]', "repl": " "}  # TODO: maybe semicolon should be fullstop and next letter capitalized
+    - {"pattern": '[\ː\‘\’\“\→]', "repl": " "}
+    - {"pattern": '[\%\‘\”\�\ʽ\\ʿ]', "repl": " "}
+    - {"pattern": '́' , "repl": " "} # used for putting stress on Russian letters
+
+    - {"pattern": "(\\.\\s+){2,20}", "repl": "."} # to remove any repeated periods from eg ".'''." => ".  ."
+
+    test_cases:
+      - {input: {text: "hey-"}, output: {text: "hey"}}
+
+  - _target_: sdp.processors.DropHighLowCharrate
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_subregex_punctuation.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_charrate.json"
+    high_charrate_threshold: 21  
+    low_charrate_threshold: 1
+    test_cases:
+      - {input: {text: "buenos dias", duration: 0.1}, output: null}
+      - {input: {text: "buenos dias", duration: 30}, output: null}
+      - {input: {text: "buenos dias", duration: 1}, output:  {text: "buenos dias", duration: 1}}
+
+  - _target_: sdp.processors.DropHighLowDuration
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_charrate.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_duration.json"
+    high_duration_threshold: 16
+    low_duration_threshold: 1
+    test_cases:
+      - {input: {duration: 0.1}, output: null}
+      - {input: {duration: 40}, output: null}
+      - {input: {duration: 5}, output: {duration: 5}}
+
+
+  - _target_: sdp.processors.DropNonAlphabet
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_duration.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_fixed_text.json"
+    
+    alphabet: " abcdefghijklmnopqrstuvwxyzáéíñóúüABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÑÓÚÜ,.?¿"
+    test_cases:
+      - {input: {text: "test тест 测试"}, output: null}
+      - {input: {text: "test"}, output: {text: "test"}}
+
+
+  - _target_: sdp.processors.DuplicateFields
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_fixed_text.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    duplicate_fields:
+      "text": "text_no_pc"
+
+  - _target_: sdp.processors.SubMakeLowercase
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    text_key: "text_no_pc"
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    text_key: "text_no_pc"
+    regex_params_list: 
+    - {"pattern": '[¿?.,]', "repl": ""}
+
+  - _target_: sdp.processors.DropHighCER
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_cer.json"
+    text_key: "text_no_pc" 
+    pred_text_key: "pred_text"
+    cer_threshold: 65
+    test_cases:
+      - {input: {text_no_pc: "sí hola", pred_text: "no tengo"}, output: null}
+      - {input: {text_no_pc: "sí hola", pred_text: "sí hola"}, output: {text_no_pc: "sí hola", pred_text: "sí hola"}}
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_cer.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_punc_spaces.json"
+    regex_params_list: 
+    - {"pattern": '\.', "repl": ' . '}
+    - {"pattern": ",", "repl": " , "}
+    - {"pattern": '\?', "repl": " ? "}
+    - {"pattern": "¿", "repl": " ¿ "}
+
+    test_cases:
+      - {input: {text: "¿abc? def."}, output: {text: "¿ abc ? def ."}}
+
+  - _target_: sdp.processors.AddConstantFields 
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_punc_spaces.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_cleaned.json"
+    fields: {"text_pc_origin": "original"}
+
+  - _target_: sdp.processors.WriteManifest
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_cleaned.json"
+    output_manifest_file: ${final_manifest}
+    fields_to_save:
+      - "audio_filepath"
+      - "text"
+      - "duration" 
+      - "text_pc_origin"
