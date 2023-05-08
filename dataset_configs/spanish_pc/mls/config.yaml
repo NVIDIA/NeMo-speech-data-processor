@@ -33,7 +33,7 @@ processors:
     n_jobs: -2
     show_conversion_breakdown: true
 
-  - _target_: dataset_configs.spanish_pc.mls.unique_processors.add_pc_pred.AddPCPred
+  - _target_: sdp.processors.PCInference
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_just_added_pred.json"
     model_path: "${pc_model_path}"

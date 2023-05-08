@@ -33,7 +33,20 @@ def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
     return result
 
 
-class AddPCPred(BaseProcessor):
+class PCInference(BaseProcessor):
+    """
+    Processor which will run a text-based punctuation and capitalization (PC) model on
+    the text in the field input_text_field, and save it in the text field output_text_field.
+
+    Args:
+        input_text_field: the text field that will be the input to the PC model.
+        output_text_field: the text field where the output of the PC model will be saved.
+        batch_size: the batch sized used by the PC model.
+        device: the device used by the PC model.
+        pretrained_name: the pretrained_name of the PC model.
+        model_path: the model path to the PC model.
+    """
+
     def __init__(
         self,
         input_text_field: str,
