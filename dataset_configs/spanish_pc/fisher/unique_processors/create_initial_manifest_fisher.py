@@ -163,12 +163,12 @@ class CreateInitialManifestFisher(BaseParallelProcessor):
 
         if len(transcript) == 0:
             logging.info(f"Empty transcript. Skipping trying to make wav file {tgt_wav_file}")
-            return [DataEntry(data=None)]
+            return []
 
         if float(end) - float(start) < 0.2:
             logging.info(f"start time: {start}, end time: {end}")
             logging.info(f"=> (end time) - (start time) is too small. Skipping trying to make wav file {tgt_wav_file}")
-            return [DataEntry(data=None)]
+            return []
 
         # make trimmed wave file
         transformer = Transformer()
@@ -189,7 +189,7 @@ class CreateInitialManifestFisher(BaseParallelProcessor):
         if float(duration) == 0:
             logging.info(f"created wave file with duration zero: {tgt_wav_file}")
             logging.info(f"=> will not add this file to manifest")
-            return [DataEntry(data=None)]
+            return []
 
         entry["duration"] = float(duration)
         entry["text"] = transcript
