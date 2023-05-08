@@ -83,10 +83,6 @@ class AddPCPred(BaseProcessor):
         processed_texts = model.add_punctuation_capitalization(
             texts,
             batch_size=self.batch_size,
-            # max_seq_length=args.max_seq_length,
-            # step=args.step,
-            # margin=args.margin,
-            # return_labels=args.save_labels_instead_of_text,
         )
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
         with Path(self.output_manifest_file).open('w') as f:
