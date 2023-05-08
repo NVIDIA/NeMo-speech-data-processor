@@ -12,7 +12,7 @@ processed_manifest_dir: "${workspace_dir}/manifests/"
 language_id: "es"
 
 processors:
-  - _target_: dataset_configs.spanish_pc.fisher.unique_processors.create_initial_manifest_fisher.CreateInitialManifestFisher
+  - _target_: dataset_configs.spanish_pc.fisher.unique_processors.create_initial_manifest_fisher_spanish.CreateInitialManifestFisherSpanish
     output_manifest_file: "${processed_manifest_dir}/all_initial_manifest.json"
     root_data_dir: ${workspace_dir}
     path_to_sph2pipe: ${path_to_sph2pipe}

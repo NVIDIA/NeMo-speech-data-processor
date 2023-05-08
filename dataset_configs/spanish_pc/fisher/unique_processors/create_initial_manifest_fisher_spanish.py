@@ -56,9 +56,16 @@ AUDIO_TGZ_FILE = "fisher_spa_LDC2010S01.tgz"
 TRANSCRIPT_TGZ_FILE = "LDC2010T04.tgz"
 
 
-class CreateInitialManifestFisher(BaseParallelProcessor):
+class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
     """
-    TODO: add docstring
+    Class which will create an initial manifest from the initial Fisher Spanish 
+    data files, which must be located in root_data_dir.
+
+    Args:
+        root_data_dir: path to where the initial data archive files are located. This will 
+            also be where the new audio files are processed and where the manifests are saved.
+        path_to_sph2pipe: the path to the sph2pipe tool, which will be used to convert
+            the sph audio files to wav files.
     """
 
     def __init__(self, root_data_dir: str, path_to_sph2pipe: str, **kwargs):
@@ -66,7 +73,6 @@ class CreateInitialManifestFisher(BaseParallelProcessor):
         self.root_data_dir = root_data_dir
         self.path_to_sph2pipe = path_to_sph2pipe
 
-        # TODO: this hard-coding is for Spanish only
         self.audio_archive_path = str(Path(self.root_data_dir) / AUDIO_TGZ_FILE)
         self.transcript_archive_path = str(Path(self.root_data_dir) / TRANSCRIPT_TGZ_FILE)
 
@@ -110,7 +116,6 @@ class CreateInitialManifestFisher(BaseParallelProcessor):
         logging.info("Finished converting files from .sph to .wav")
 
     def read_manifest(self) -> List[tuple[str]]:
-        # TODO: this hard-coding is for Spanish only
         transcript_src_dir = os.path.join(self.root_data_dir, "extracted/fisher_spa_tr/data/transcripts/")
 
         logging.info(f"Attempting to read transcription files in dir {transcript_src_dir}")
