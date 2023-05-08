@@ -80,10 +80,7 @@ class AddPCPred(BaseProcessor):
         for item in manifest:
             texts.append(item[self.input_text_field])
 
-        processed_texts = model.add_punctuation_capitalization(
-            texts,
-            batch_size=self.batch_size,
-        )
+        processed_texts = model.add_punctuation_capitalization(texts, batch_size=self.batch_size,)
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
         with Path(self.output_manifest_file).open('w') as f:
             for item, t in zip(manifest, processed_texts):

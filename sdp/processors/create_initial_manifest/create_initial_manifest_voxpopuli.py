@@ -135,7 +135,7 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
         data = {
             "audio_filepath": tgt_wav_path,
             "duration": float(sox.file_info.duration(tgt_wav_path)),
-            "text": raw_text,
+            "text": norm_text,
             "provided_norm_text": norm_text,
             "raw_text": raw_text,
             "spk_id": spk_id,

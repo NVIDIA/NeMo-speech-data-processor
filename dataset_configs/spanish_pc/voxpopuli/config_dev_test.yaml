@@ -18,8 +18,14 @@ processors:
     data_split: "${data_split}"
     resampled_audio_dir: "${workspace_dir}/resampled_audio/"
 
-  - _target_: sdp.processors.SortManifest
+  - _target_: sdp.processors.DuplicateFields
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_initial_manifest.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_initial_manifest_raw_text.json"
+    duplicate_fields:
+      "raw_text": "text"
+
+  - _target_: sdp.processors.SortManifest
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_initial_manifest_raw_text.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_sorted_manifest.json"
     attribute_sort_by: "duration"
     descending: false
