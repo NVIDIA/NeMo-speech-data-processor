@@ -26,9 +26,7 @@ jobs:
         pip install -r tests/requirements.txt
         sudo apt-get update
         sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
-        pip install Cython
-        pip install wheel setuptools pybind11
-        pip install fasttext -vvv
+        pip install Cython wheel  # need to pre-install to avoid error in nemo installation
         pip install "nemo_toolkit[asr,nlp]"
         pip install nemo_text_processing
     - name: Run all tests
