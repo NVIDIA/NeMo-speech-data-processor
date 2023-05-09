@@ -26,7 +26,7 @@ jobs:
         pip install -r tests/requirements.txt
         sudo apt-get update
         sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
-        pip install Cython
+        pip install Cython h5py
         pip install "nemo_toolkit[asr,nemo_text_processing]"
     - name: Run all tests
       env:
