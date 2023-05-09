@@ -25,15 +25,16 @@ jobs:
         pip install -r requirements.txt
         pip install -r tests/requirements.txt
         sudo apt-get update
-        sudo apt-get install -y libsndfile1 ffmpeg sox
-        pip install Cython
-        pip install "nemo_toolkit[asr,nemo_text_processing]"
+        sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
+        pip install Cython wheel  # need to pre-install to avoid error in nemo installation
+        pip install "nemo_toolkit[asr,nlp]"
+        pip install nemo_text_processing
     - name: Run all tests
       env:
         AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
         AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
       run: |
-        pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=sdp --durations=30 -rs | tee pytest-coverage.txt
+        python -m pytest tests/ --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=sdp --durations=30 -rs | tee pytest-coverage.txt
 
 
 # TODO: add some way to see if e2e tests were skipped

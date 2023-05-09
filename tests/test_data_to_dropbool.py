@@ -20,6 +20,7 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropHighLowDuration,
     DropHighLowWordrate,
     DropHighWER,
+    DropIfNoneOfRegexMatch,
     DropIfRegexMatch,
     DropIfSubstringInInsertion,
     DropLowWordMatchRate,
@@ -146,6 +147,18 @@ test_params_list.extend(
         (DropHighWER, {"wer_threshold": 0}, {"text": "11  22", "pred_text": "11 22"}, False,),
         (DropHighWER, {"wer_threshold": 50.1}, {"text": "11 22", "pred_text": "11 22 33"}, False,),
         (DropHighWER, {"wer_threshold": 49.9}, {"text": "11 22", "pred_text": "11 22 33"}, True,),
+    ]
+)
+
+test_params_list.extend(
+    [
+        (DropIfNoneOfRegexMatch, {"regex_patterns": ["keep this", "also this"]}, {"text": "I don't want this"}, True),
+        (
+            DropIfNoneOfRegexMatch,
+            {"regex_patterns": ["keep this", "also this"]},
+            {"text": "I want to keep this"},
+            False,
+        ),
     ]
 )
 
