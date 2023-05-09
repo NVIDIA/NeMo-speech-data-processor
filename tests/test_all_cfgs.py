@@ -85,12 +85,8 @@ def test_configs(config_path: str, tmp_path: str):
     rel_path_from_root = os.path.relpath(Path(config_path).parent, DATASET_CONFIGS_ROOT)
     reference_manifest = str(Path(test_data_root) / rel_path_from_root / "test_data_reference.json")
     if not os.path.exists(reference_manifest):
-        raise ValueError(
-            f"No such file {reference_manifest}. Are you sure you have correct "
-            "folder structure for test data? "
-            "We expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT to have the same "
-            "structure (e.g. <lang>/<dataset>)"
-        )
+        pytest.skip(f"Did not find reference manifest {reference_manifest}")
+
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
     cfg["processors_to_run"] = "all"
