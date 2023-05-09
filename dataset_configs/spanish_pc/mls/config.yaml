@@ -22,7 +22,7 @@ processors:
     resampled_audio_dir: "${workspace_dir}/mls_spanish_processed/${data_split}/audio/"
     data_split: "${data_split}"
 
-  - _target_: dataset_configs.spanish_pc.mls.unique_processors.add_pc_to_mls_initial_manifest.AddPCToMLSInitialManifest
+  - _target_: sdp.processors.RestorePCForMLS
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_initial.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc.json"
     language_long: ${language_long}
@@ -30,6 +30,7 @@ processors:
     lv_text_dir: "${lv_text_dir}"
     submanifests_dir: ${workspace_dir}/mls_spanish_processed/submanifests/${data_split}
     restored_submanifests_dir: ${workspace_dir}/mls_spanish_processed/restored_submanifests/${data_split}
+    restored_text_field: "text_pc"
     n_jobs: -2
     show_conversion_breakdown: true
 

@@ -14,32 +14,182 @@
 
 import collections
 import json
+from glob import glob
+from joblib import Parallel, delayed
 import os
 from pathlib import Path
+import re
+import string
+import sys
 from tqdm import tqdm
 
 from nemo.utils import logging
+from nemo_text_processing.text_normalization.normalize import Normalizer
 
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import download_file, extract_archive
 
+sys.setrecursionlimit(1000000)
+
+NA = "n/a"
 MLS_TEXT_URL = "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz"
 
 
-from .utils import remove_punctuation, read_text, process, abbreviations
-from nemo_text_processing.text_normalization.normalize import Normalizer
-from glob import glob
-from joblib import Parallel, delayed
-import re
-import sys
+def abbreviations(text):
+    text = (
+        text.replace("Cap'n", "Captain")
+        .replace("cap'n", "captain")
+        .replace("o'shot", "o shot")
+        .replace("o' shot", "o shot")
+        .replace("on'y", "only")
+        .replace("on' y", "only")
+        .replace(" 'a ", " a ")
+        .replace(" 'em ", " em ")
+        .replace("gen'leman", "gentleman")
+    )
+    return text
 
-sys.setrecursionlimit(1000000)
+
+def process(text):
+    text = (
+        text.replace("www.gutenberg.org", "www dot gutenberg dot org")
+        .replace(".txt", "dot txt")
+        .replace(".zip", "dot zip")
+    )
+
+    text = (
+        text.replace("’", "'")
+        .replace("_", " ")
+        .replace("\n", " ")
+        .replace("\t", " ")
+        .replace("…", "...")
+        .replace("»", '"')
+        .replace("«", '"')
+        .replace("\\", "")
+        .replace("”", '"')
+        .replace("„", '"')
+        .replace("´", "'")
+        .replace("-- --", "--")
+        .replace("--", " -- ")
+        .replace(". . .", "...")
+        .replace("’", "'")
+        .replace("“", '"')
+        .replace("“", '"')
+        .replace("‘", "'")
+        .replace("_", " ")
+        .replace("*", " ")
+        .replace("—", "-")
+        .replace("- -", "--")
+        .replace("•", " ")
+        .replace("^", " ")
+        .replace(">", " ")
+        .replace("■", " ")
+        .replace("/", " ")
+        .replace("––––", "...")
+        .replace("W⸺", "W")
+        .replace("`", "'")
+        .replace("<", " ")
+        .replace("{", " ")
+        .replace("Good-night", "Good night")
+        .replace("good-night", "good night")
+        .replace("good-bye", "goodbye")
+        .replace("Good-bye", "Goodbye")
+        .replace(" !", "!")
+        .replace(" ?", "?")
+        .replace(" ,", ",")
+        .replace(" .", ".")
+        .replace(" ;", ";")
+        .replace(" :", ":")
+        .replace("!!", "!")
+        .replace("--", "-")
+        .replace("“", '"')
+        .replace(", , ", ", ")
+        .replace("=", " ")
+        .replace("l,000", "1,000")
+        .replace("–", "-")
+    )
+    # remove dash in between the words
+    text = re.sub(r"([A-za-z0-9]+)(-)([A-Za-z0-9]+)", r"\g<1> \g<3>", text)
+    text = re.sub(r"([A-za-z0-9]+)(\.)([A-Za-z]+)", r"\g<1>\g<2> \g<3>", text)
+    text = re.sub(r"([A-za-z]+)(\.)([A-Za-z0-9]+)", r"\g<1>\g<2> \g<3>", text)
+
+    # # remove text inside square brackets
+    # text = re.sub(r"(\[.*?\])", " ", text)
+
+    def __fix_space(text):
+        # remove commas between digits
+        text = re.sub(r"([0-9]+)(,)(\d\d\d)", r"\g<1>\g<3>", text)
+        text = re.sub(r"([A-Za-z]+)(,)([A-Za-z0-9]+)", r"\g<1>\g<2> \g<3>", text)
+        return text
+
+    for _ in range(3):
+        text = __fix_space(text)
+
+    text = re.sub(r" +", " ", text)
+
+    # make sure the text starts with an alpha
+    start_idx = 0
+    while not text[start_idx].isalpha():
+        start_idx += 1
+
+    end_text = "END OF THIS PROJECT GUTENBERG"
+    end_idx = len(text)
+    if end_text in text:
+        end_idx = text.find(end_text)
+
+    end_text = "End of the Project Gutenberg"
+    if end_text in text:
+        end_idx = text.find(end_text)
+
+    return text[start_idx:end_idx]
 
 
-NA = "n/a"
+def read_text(text_f):
+    with open(text_f, "r") as f:
+        text = f.read()
+    return text
 
 
-def recover_lines(manifest, processed_text, output_dir):
+def remove_punctuation(text: str, remove_spaces=True, do_lower=True, exclude=None, remove_accents=False):
+    all_punct_marks = string.punctuation + "¿¡⸘"
+
+    if exclude is not None:
+        for p in exclude:
+            all_punct_marks = all_punct_marks.replace(p, "")
+
+        # a weird bug where commas is getting deleted when dash is present in the list of punct marks
+        all_punct_marks = all_punct_marks.replace("-", "")
+    text = re.sub("[" + all_punct_marks + "]", " ", text)
+
+    if exclude and "-" not in exclude:
+        text = text.replace("-", " ")
+
+    text = re.sub(r" +", " ", text)
+    if remove_spaces:
+        text = text.replace(" ", "").replace("\u00A0", "").strip()
+
+    if do_lower:
+        text = text.lower()
+
+    if remove_accents:
+        text = text.replace("á", "a")
+        text = text.replace("é", "e")
+        text = text.replace("í", "i")
+        text = text.replace("ó", "o")
+        text = text.replace("ú", "u")
+        text = text.replace("à", "a")
+        text = text.replace("è", "e")
+        text = text.replace("ù", "u")
+        text = text.replace("â", "a")
+        text = text.replace("ê", "e")
+        text = text.replace("î", "i")
+        text = text.replace("ô", "o")
+        text = text.replace("û", "u")
+
+    return text.strip()
+
+
+def recover_lines(manifest, processed_text, output_dir, restored_text_field):
     manifest_recovered = f"{output_dir}/{os.path.basename(manifest)}"
     if os.path.exists(manifest_recovered):
         return
@@ -121,9 +271,9 @@ def recover_lines(manifest, processed_text, output_dir):
         for idx, line in enumerate(f_in):
             line = json.loads(line)
             if idx in recovered_lines:
-                line["text_pc"] = recovered_lines[idx]
+                line[restored_text_field] = recovered_lines[idx]
             else:
-                line["text_pc"] = NA
+                line[restored_text_field] = NA
             f_out.write(json.dumps(line, ensure_ascii=False) + "\n")
 
 
@@ -177,7 +327,7 @@ def is_valid(line, recovered_line):
     return is_same
 
 
-def process_book(book_manifest, texts_dir, submanifests_dir, output_dir, normalizer):
+def process_book(book_manifest, texts_dir, submanifests_dir, output_dir, restored_text_field, normalizer):
     book_id = os.path.basename(book_manifest).split(".")[0]
     text_f = f"{texts_dir}/{book_id}.txt"
     manifests = glob(f"{submanifests_dir}/{book_id}_*.json")
@@ -200,7 +350,12 @@ def process_book(book_manifest, texts_dir, submanifests_dir, output_dir, normali
         # re-run abbreviations since new are being added
         processed_text = abbreviations(processed_text)
         [
-            recover_lines(manifest=manifest, processed_text=processed_text, output_dir=output_dir)
+            recover_lines(
+                manifest=manifest,
+                processed_text=processed_text,
+                output_dir=output_dir,
+                restored_text_field=restored_text_field,
+            )
             for manifest in manifests
         ]
     except:
@@ -208,18 +363,21 @@ def process_book(book_manifest, texts_dir, submanifests_dir, output_dir, normali
         return
 
 
-class AddPCToMLSInitialManifest(BaseProcessor):
+class RestorePCForMLS(BaseProcessor):
     """
-    Downloads and unzips raw MLS data for the specified language, and creates an initial manifest using
-    the transcripts provided in the raw data. 
+    Recovers original text from MLS Librivox texts in "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz".
+        Saves recovered text in recovered_text_field. If text was not recovered, recovered_text_field will be equal
+        to the value of the `NA` variable.
     Args:
-        TODO: update
-        language: the language of the data you wish to be downloaded. This will be used to format the 
-            URL from which we attempt to download the data.
-        download_dir: the directory where the downloaded data will be saved.
-        data_split: the data split for which the initial manifest will be created.
-        resampled_audio_dir: the directory where the resampled (16kHz) wav files will be stored.
-        use_test_data: if `True`, will use the test data manifest located at `TEST_DATA_PATH` to carry out tests.
+        language_long: the full name of the language, used for choosing the folder of the contents of 
+            "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz".
+        language_short: the short name of the language, used for specifying the normalizer we want to use.
+        lv_text_dir: the directory where the contents of "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz" will be saved.
+        submanifests_dir: the directory where submanifests (one for each combo of speak + book) will be store.
+        restored_submanifests_dir: the directory where restored submanifests (one for each combo of speak + book) will be store.
+        restored_text_field: the field where the recovered text will be stored.
+        n_jobs: number of jobs to use for parallel processing.
+        show_conversion_breakdown: bool for whether to show how much of each submanifest was restored.
     """
 
     def __init__(
@@ -229,6 +387,7 @@ class AddPCToMLSInitialManifest(BaseProcessor):
         lv_text_dir: str,
         submanifests_dir: str,
         restored_submanifests_dir: str,
+        restored_text_field: str,
         n_jobs: int,
         show_conversion_breakdown: bool = True,
         **kwargs,
@@ -239,6 +398,7 @@ class AddPCToMLSInitialManifest(BaseProcessor):
         self.lv_text_dir = Path(lv_text_dir)
         self.submanifests_dir = Path(submanifests_dir)
         self.restored_submanifests_dir = Path(restored_submanifests_dir)
+        self.restored_text_field = restored_text_field
         self.n_jobs = n_jobs
         self.show_conversion_breakdown = show_conversion_breakdown
 
@@ -301,6 +461,7 @@ class AddPCToMLSInitialManifest(BaseProcessor):
                 str(Path(lv_text_data_folder) / self.language_long),
                 str(self.submanifests_dir),
                 str(self.restored_submanifests_dir),
+                self.restored_text_field,
                 normalizer,
             )
             for book_id in tqdm(books_ids_in_submanifests)
@@ -338,7 +499,7 @@ class AddPCToMLSInitialManifest(BaseProcessor):
                 with open(manifest, "r") as f:
                     for line in f:
                         line = json.loads(line)
-                        if line["text_pc"] != NA:
+                        if line[self.restored_text_field] != NA:
                             filename_to_restored_sub_manifest_durs[f"{spk_id}_{book_id}.json"] += line["duration"]
             else:
                 filename_to_restored_sub_manifest_durs[f"{spk_id}_{book_id}.json"] = 0

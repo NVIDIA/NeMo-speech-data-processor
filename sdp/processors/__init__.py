@@ -44,5 +44,6 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropNonAlphabet,
 )
 from sdp.processors.pc_inference import PCInference
+from sdp.processors.restore_pc_for_mls import RestorePCForMLS
 from sdp.processors.sort_manifest import SortManifest
 from sdp.processors.write_manifest import WriteManifest
