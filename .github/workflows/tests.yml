@@ -25,8 +25,7 @@ jobs:
         pip install -r requirements.txt
         pip install -r tests/requirements.txt
         sudo apt-get update
-        sudo apt-get install -y libsndfile1 ffmpeg sox
-        sudo apt-get install -y libsox-fmt-mp3
+        sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3 python3-dev
         pip install Cython
         pip install pybind11
         pip install "nemo_toolkit[asr,nemo_text_processing,nlp]"
