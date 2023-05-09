@@ -25,12 +25,9 @@ jobs:
         pip install -r requirements.txt
         pip install -r tests/requirements.txt
         sudo apt-get update
-        sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3 python3-dev
+        sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
         pip install Cython
-        pip install pybind11
-        pip install fasttext-wheel
-        pip install fasttext
-        pip install "nemo_toolkit[asr,nemo_text_processing,nlp]"
+        pip install "nemo_toolkit[asr,nemo_text_processing]"
     - name: Run all tests
       env:
         AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
