@@ -29,6 +29,7 @@ jobs:
         pip install Cython
         pip install pybind11
         pip install fasttext-wheel
+        pip install fasttext
         pip install "nemo_toolkit[asr,nemo_text_processing,nlp]"
     - name: Run all tests
       env:
