@@ -31,7 +31,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
         os.makedirs(tmpdir_path / "clips")
-        for split in ["train", "validated", "test"]:
+        for split in ["train", "dev", "test"]:
             transcript_path = Path(args.extracted_data_path) / f"{split}.tsv"
             with open(transcript_path, "rt", encoding="utf8") as fin, open(
                 tmpdir_path / f"{split}.tsv", "wt", encoding="utf8"
