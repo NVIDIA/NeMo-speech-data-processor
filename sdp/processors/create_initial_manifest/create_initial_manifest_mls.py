@@ -14,6 +14,7 @@
 
 import os
 from pathlib import Path
+from typing import Optional
 
 from nemo.utils import logging
 
@@ -36,16 +37,18 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
         download_dir: the directory where the downloaded data will be saved.
         data_split: the data split for which the initial manifest will be created.
         resampled_audio_dir: the directory where the resampled (16kHz) wav files will be stored.
-        use_test_data: if `True`, will use the test data manifest located at `TEST_DATA_PATH` to carry out tests.
+        raw_data_override_archive: (default None) - if specified, the processor will extract the 
+            archive at this filepath, and use that as the data source for the remained of the processing
+            (this is helpful for e.g. running tests on a subset of the data)
     """
 
     def __init__(
         self,
         language: str,
         download_dir: str,
-        resampled_audio_dir: str,
         data_split: str,
-        use_test_data: bool = False,
+        resampled_audio_dir: str,
+        raw_data_override_archive: Optional[str] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -53,7 +56,7 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
         self.download_dir = Path(download_dir)
         self.data_split = data_split
         self.resampled_audio_dir = resampled_audio_dir
-        self.use_test_data = use_test_data
+        self.raw_data_override_archive = raw_data_override_archive
 
         # will be initialized in self.prepare method
         self.audio_path_prefix = None
@@ -66,24 +69,9 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
         copy the included test data (mainly useful for quick development or
         CI pipeline).
         """
-        if self.use_test_data:
-            try:
-                __TEST_DATA_ROOT = os.environ["TEST_DATA_ROOT"]
-                logging.info(f"Found 'TEST_DATA_ROOT' environment variable:{repr(__TEST_DATA_ROOT)}")
-            except KeyError:
-                raise KeyError(
-                    f"Tried to look for os.environ['TEST_DATA_ROOT'] but it was not set."
-                    f" Please set 'TEST_DATA_ROOT' as an environment variable and try again."
-                )
+        if self.raw_data_override_archive:
+            data_folder = extract_archive(str(self.raw_data_override_archive), str(self.download_dir))
 
-            self.test_data_path = str(Path(__TEST_DATA_ROOT) / self.language / "mls" / "data.tar.gz")
-
-            if not os.path.exists(self.test_data_path):
-                raise ValueError(
-                    f"No such file {self.test_data_path}. Are you sure you specified the "
-                    f" 'TEST_DATA_ROOT' environment variable correctly?"
-                )
-            data_folder = extract_archive(str(self.test_data_path), str(self.download_dir))
         else:
             url = MLS_URL.format(language=self.language)
             download_file(url, str(self.download_dir))

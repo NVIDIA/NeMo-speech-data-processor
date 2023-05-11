@@ -45,31 +45,50 @@ from sdp.utils.common import extract_archive
 
 
 class CreateInitialManifestMCV(BaseParallelProcessor):
+    """
+    Extracts raw MCV data for the specified language and creates an initial manifest
+    using the transcripts provided in the raw data.
+
+    Args:
+        extract_archive_dir: directory where the extracted data will be saved
+        resampled_audio_dir: directory where the resampled audio will be saved
+        data_split: the data_split to create
+        language_id: the ID of the language of the data
+        already_extracted: bool (default False) - if True (and raw_data_override_archive is False),
+            we will not try to extract the raw data.
+        target_samplerate: sample rate (Hz) to use for resampling (default: 16000)
+        target_nchannels: number of channels to create during resampling process (default: 1)
+        archive_filepath: the path to the raw data archive
+        raw_data_override_archive: (default None) - if specified, the processor will extract the 
+            archive at this filepath, and use that as the data source for the remained of the processing
+            (this is helpful for e.g. running tests on a subset of the data)
+    
+    """
+
     def __init__(
         self,
         extract_archive_dir: str,
         resampled_audio_dir: str,
         data_split: str,
         language_id: str,
-        archive_filepath: Optional[str] = None,
-        use_test_data: bool = False,
-        relpath_from_test_data_root: Optional[str] = None,
         already_extracted: bool = False,
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
+        archive_filepath: Optional[str] = None,
+        raw_data_override_archive: Optional[str] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.archive_filepath = archive_filepath
-        self.resampled_audio_dir = resampled_audio_dir
         self.extract_archive_dir = extract_archive_dir
+        self.resampled_audio_dir = resampled_audio_dir
         self.data_split = data_split
         self.language_id = language_id
         self.already_extracted = already_extracted
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
-        self.use_test_data = use_test_data
-        self.relpath_from_test_data_root = relpath_from_test_data_root
+
+        self.archive_filepath = archive_filepath
+        self.raw_data_override_archive = raw_data_override_archive
 
     def prepare(self):
         """Extracting data (unless already done).
@@ -78,27 +97,8 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
         copy the included test data (mainly useful for quick development or
         CI pipeline).
         """
-        if self.use_test_data:
-            try:
-                __TEST_DATA_ROOT = os.environ["TEST_DATA_ROOT"]
-                logging.info(f"Found 'TEST_DATA_ROOT' environment variable:{repr(__TEST_DATA_ROOT)}")
-            except KeyError:
-                raise KeyError(
-                    f"Tried to look for os.environ['TEST_DATA_ROOT'] but it was not set."
-                    f" Please set 'TEST_DATA_ROOT' as an environment variable and try again."
-                )
-
-            if not self.relpath_from_test_data_root:
-                raise ValueError(f"relpath_from_test_data_root needs to be specified")
-
-            self.test_data_path = str(Path(__TEST_DATA_ROOT) / self.relpath_from_test_data_root / "data.tar.gz")
-
-            if not os.path.exists(self.test_data_path):
-                raise ValueError(
-                    f"No such file {self.test_data_path}. Are you sure you specified the "
-                    f" 'TEST_DATA_ROOT' environment variable correctly?"
-                )
-            data_folder = extract_archive(str(self.test_data_path), str(self.extract_archive_dir))
+        if self.raw_data_override_archive:
+            data_folder = extract_archive(str(self.raw_data_override_archive), str(self.extract_archive_dir))
             self.transcription_file = Path(data_folder)
         else:
             if not self.already_extracted:

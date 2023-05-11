@@ -15,6 +15,7 @@
 import os
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 import sox
 from nemo.utils import logging
@@ -39,17 +40,18 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
             be created.
         resampled_audio_dir: the directory where the resampled (16kHz) wav
             files will be stored.
-        use_test_data: if `True`, will use the test data manifest located
-            at `TEST_DATA_PATH` to carry out tests.
+        raw_data_override_archive: (default None) - if specified, the processor will extract the 
+            archive at this filepath, and use that as the data source for the remained of the processing
+            (this is helpful for e.g. running tests on a subset of the data)
     """
 
     def __init__(
         self,
         language_id: str,
         download_dir: str,
-        resampled_audio_dir: str,
         data_split: str,
-        use_test_data: bool = False,
+        resampled_audio_dir: str,
+        raw_data_override_archive: Optional[str] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -57,7 +59,7 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
         self.download_dir = Path(download_dir)
         self.data_split = data_split
         self.resampled_audio_dir = resampled_audio_dir
-        self.use_test_data = use_test_data
+        self.raw_data_override_archive = raw_data_override_archive
 
     def prepare(self):
         """Downloading and extracting data (unless already done).
@@ -66,46 +68,31 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
         copy the included test data (mainly useful for quick development or
         CI pipeline).
         """
-        if self.use_test_data:
-            try:
-                __TEST_DATA_ROOT = os.environ["TEST_DATA_ROOT"]
-                logging.info(f"Found 'TEST_DATA_ROOT' environment variable:{repr(__TEST_DATA_ROOT)}")
-            except KeyError:
-                raise KeyError(
-                    f"Tried to look for os.environ['TEST_DATA_ROOT'] but it was not set."
-                    f" Please set 'TEST_DATA_ROOT' as an environment variable and try again."
-                )
-
-            self.test_data_path = str(Path(__TEST_DATA_ROOT) / self.language / "voxpopuli" / "data.tar.gz")
-
-            if not os.path.exists(self.test_data_path):
-                raise ValueError(
-                    f"No such file {self.test_data_path}. Are you sure you specified the "
-                    f" 'TEST_DATA_ROOT' environment variable correctly?"
-                )
+        if self.raw_data_override_archive:
             data_folder = extract_archive(str(self.test_data_path), str(self.download_dir))
-        # else:
-        # TODO: some kind of isolated environment?
-        if not os.path.exists(self.download_dir / 'voxpopuli'):
-            logging.info("Downloading voxpopuli and installing requirements")
-            subprocess.run(f"git clone {VOXPOPULI_URL} {self.download_dir / 'voxpopuli'}", check=True, shell=True)
-            subprocess.run(
-                f"pip install -r {self.download_dir / 'voxpopuli' / 'requirements.txt'}", check=True, shell=True
-            )
-        if not os.path.exists(self.download_dir / 'raw_audios'):
-            logging.info("Downloading raw audios")
-            subprocess.run(
-                f"cd {self.download_dir / 'voxpopuli'} && python -m voxpopuli.download_audios --root {self.download_dir} --subset asr",
-                check=True,
-                shell=True,
-            )
-        if not os.path.exists(self.download_dir / 'transcribed_data' / self.language_id):
-            logging.info("Segmenting and transcribing the data")
-            subprocess.run(
-                f"cd {self.download_dir / 'voxpopuli'} && python -m voxpopuli.get_asr_data  --root {self.download_dir} --lang {self.language_id}",
-                check=True,
-                shell=True,
-            )
+
+        else:
+            # TODO: some kind of isolated environment?
+            if not os.path.exists(self.download_dir / 'voxpopuli'):
+                logging.info("Downloading voxpopuli and installing requirements")
+                subprocess.run(f"git clone {VOXPOPULI_URL} {self.download_dir / 'voxpopuli'}", check=True, shell=True)
+                subprocess.run(
+                    f"pip install -r {self.download_dir / 'voxpopuli' / 'requirements.txt'}", check=True, shell=True
+                )
+            if not os.path.exists(self.download_dir / 'raw_audios'):
+                logging.info("Downloading raw audios")
+                subprocess.run(
+                    f"cd {self.download_dir / 'voxpopuli'} && python -m voxpopuli.download_audios --root {self.download_dir} --subset asr",
+                    check=True,
+                    shell=True,
+                )
+            if not os.path.exists(self.download_dir / 'transcribed_data' / self.language_id):
+                logging.info("Segmenting and transcribing the data")
+                subprocess.run(
+                    f"cd {self.download_dir / 'voxpopuli'} && python -m voxpopuli.get_asr_data  --root {self.download_dir} --lang {self.language_id}",
+                    check=True,
+                    shell=True,
+                )
 
     def read_manifest(self):
         with open(

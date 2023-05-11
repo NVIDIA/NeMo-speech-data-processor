@@ -93,7 +93,7 @@ def test_configs(config_path: str, tmp_path: str):
     cfg["workspace_dir"] = str(tmp_path)
     cfg["final_manifest"] = str(tmp_path / "final_manifest.json")
     cfg["data_split"] = "train"
-    cfg["processors"][0]["use_test_data"] = True
+    cfg["processors"][0]["raw_data_override_archive"] = str(Path(test_data_root) / rel_path_from_root / "data.tar.gz")
 
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the

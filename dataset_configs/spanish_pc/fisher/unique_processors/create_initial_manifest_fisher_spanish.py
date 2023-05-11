@@ -45,7 +45,7 @@ from pathlib import Path
 from sox import Transformer
 import subprocess
 from tqdm import tqdm
-from typing import List
+from typing import List, Optional
 
 from nemo.utils import logging
 
@@ -66,12 +66,18 @@ class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
             also be where the new audio files are processed and where the manifests are saved.
         path_to_sph2pipe: the path to the sph2pipe tool, which will be used to convert
             the sph audio files to wav files.
+        raw_data_override_archive: (default None) - if specified, the processor will extract the 
+            archive at this filepath, and use that as the data source for the remained of the processing
+            (this is helpful for e.g. running tests on a subset of the data)            
     """
 
-    def __init__(self, root_data_dir: str, path_to_sph2pipe: str, **kwargs):
+    def __init__(
+        self, root_data_dir: str, path_to_sph2pipe: str, raw_data_override_archive: Optional[str] = None, **kwargs
+    ):
         super().__init__(**kwargs)
         self.root_data_dir = root_data_dir
         self.path_to_sph2pipe = path_to_sph2pipe
+        self.raw_data_override_archive = raw_data_override_archive
 
         self.audio_archive_path = str(Path(self.root_data_dir) / AUDIO_TGZ_FILE)
         self.transcript_archive_path = str(Path(self.root_data_dir) / TRANSCRIPT_TGZ_FILE)
@@ -84,24 +90,29 @@ class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
         Check data archive as been downloaded and extract it (unless already extracted). 
         """
 
-        if not os.path.exists(self.audio_archive_path):
-            raise RuntimeError(
-                f"Did not find downloaded archive filepath. Please ensure you have downloaded the data"
-                f" from LDC and saved it at the specified filepath: {self.audio_archive_path}"
-            )
+        if self.raw_data_override_archive:
+            data_folder = extract_archive(str(self.raw_data_override_archive), str(self.extracted_path))
 
-        if not os.path.exists(self.transcript_archive_path):
-            raise RuntimeError(
-                f"Did not find downloaded archive filepath. Please ensure you have downloaded the data"
-                f" from LDC and saved it at the specified filepath: {self.transcript_archive_path}"
-            )
+        else:
 
-        extract_archive(self.audio_archive_path, self.extracted_path)
-        extract_archive(self.transcript_archive_path, self.extracted_path)
+            if not os.path.exists(self.audio_archive_path):
+                raise RuntimeError(
+                    f"Did not find downloaded archive filepath. Please ensure you have downloaded the data"
+                    f" from LDC and saved it at the specified filepath: {self.audio_archive_path}"
+                )
+
+            if not os.path.exists(self.transcript_archive_path):
+                raise RuntimeError(
+                    f"Did not find downloaded archive filepath. Please ensure you have downloaded the data"
+                    f" from LDC and saved it at the specified filepath: {self.transcript_archive_path}"
+                )
+
+            extract_archive(self.audio_archive_path, self.extracted_path)
+            extract_archive(self.transcript_archive_path, self.extracted_path)
 
         # convert audio files from .sph to .wav
-        sph_src_dir = os.path.join(self.root_data_dir, "extracted/fisher_spa/data/speech")
-        wav_tgt_dir = os.path.join(self.root_data_dir, "processed/wavs/original_duration")
+        sph_src_dir = os.path.join(self.extracted_path, "fisher_spa/data/speech")
+        wav_tgt_dir = os.path.join(self.processed_path, "wavs/original_duration")
         if not os.path.exists(wav_tgt_dir):
             os.makedirs(wav_tgt_dir)
 
@@ -116,7 +127,7 @@ class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
         logging.info("Finished converting files from .sph to .wav")
 
     def read_manifest(self) -> List[tuple[str]]:
-        transcript_src_dir = os.path.join(self.root_data_dir, "extracted/fisher_spa_tr/data/transcripts/")
+        transcript_src_dir = os.path.join(self.extracted_path, "fisher_spa_tr/data/transcripts/")
 
         logging.info(f"Attempting to read transcription files in dir {transcript_src_dir}")
         dataset_entries = []
@@ -136,9 +147,9 @@ class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry: tuple[str]):
 
-        wav_src_dir = os.path.join(self.root_data_dir, "processed/wavs/original_duration")
-        wav_tgt_dir = os.path.join(self.root_data_dir, "processed/wavs/trimmed_and_segmented")
-        manifest_dir = os.path.join(self.root_data_dir, "processed/manifests/")
+        wav_src_dir = os.path.join(self.processed_path, "wavs/original_duration")
+        wav_tgt_dir = os.path.join(self.processed_path, "wavs/trimmed_and_segmented")
+        manifest_dir = os.path.join(self.processed_path, "manifests/")
 
         os.makedirs(wav_tgt_dir, exist_ok=True)
         os.makedirs(manifest_dir, exist_ok=True)
