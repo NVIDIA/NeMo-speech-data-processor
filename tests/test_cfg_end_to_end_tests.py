@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from functools import partial
 import glob
 import json
 import os
@@ -37,10 +38,10 @@ def data_check_fn_mls(raw_data_dir: str, language: str) -> None:
 
 
 def get_test_cases():
-    """Returns paths, data check fns, and some data check fn kwargs to all configs that we want to test."""
+    """Returns paths, and data check fn for all configs that we want to test."""
 
     return [
-        (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config_mls_es.yaml", data_check_fn_mls, {"language": "spanish"}),
+        (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config_mls_es.yaml", partial(data_check_fn_mls, language="spanish")),
     ]
 
 
@@ -89,8 +90,8 @@ def get_e2e_test_data_path() -> str:
     reason="Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY "
     "and AWS_ACCESS_KEY to run e2e config tests",
 )
-@pytest.mark.parametrize("config_path,data_check_fn,some_data_check_fn_kwargs", get_test_cases())
-def test_configs(config_path: str, data_check_fn: Callable, some_data_check_fn_kwargs: Dict[str, str], tmp_path: str):
+@pytest.mark.parametrize("config_path,data_check_fn", get_test_cases())
+def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
 
     test_data_root = get_e2e_test_data_path()
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
@@ -98,7 +99,7 @@ def test_configs(config_path: str, data_check_fn: Callable, some_data_check_fn_k
     rel_path_from_root = os.path.relpath(Path(config_path).parent, DATASET_CONFIGS_ROOT)
 
     # run data_check_fn - it will raise error if the expected test data is not found
-    data_check_fn(raw_data_dir=str(Path(test_data_root) / rel_path_from_root), **some_data_check_fn_kwargs)
+    data_check_fn(raw_data_dir=str(Path(test_data_root) / rel_path_from_root))
 
     reference_manifest = str(Path(test_data_root) / rel_path_from_root / "test_data_reference.json")
     if not os.path.exists(reference_manifest):
