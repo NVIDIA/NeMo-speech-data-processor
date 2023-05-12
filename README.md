@@ -73,8 +73,8 @@ processors:
 
 SDP is officially supported for Python 3.8, but might work for other versions.
 
-SDP depends on NeMo toolkit (ASR, NLP, and nemo-text-processing parts).
-Please follow [NeMo installation instructions](https://github.com/NVIDIA/NeMo#installation).
+SDP depends on the NeMo toolkit (ASR, NLP parts) and NeMo Text Processing.
+Please follow [NeMo installation instructions](https://github.com/NVIDIA/NeMo#installation) and [NeMo Text Processing installation instruactions](https://github.com/NVIDIA/NeMo-text-processing#installation).
 
 After that, run `pip install -r requirements.txt` and (optionally) `pip install -r tests/requirements.txt` if you want to run tests.
 
