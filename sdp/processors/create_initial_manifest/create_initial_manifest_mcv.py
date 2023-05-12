@@ -56,8 +56,7 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
         resampled_audio_dir: directory where the resampled audio will be saved
         data_split: the data_split to create
         language_id: the ID of the language of the data
-        already_extracted: bool (default False) - if True, and there is no 'data.tar.gz' file,
-            we will not try to extract the raw data.
+        already_extracted: bool (default False) - if True, we will not try to extract the raw data.
         target_samplerate: sample rate (Hz) to use for resampling (default: 16000)
         target_nchannels: number of channels to create during resampling process (default: 1)
     """
@@ -95,16 +94,11 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
         elif len(tar_gz_files) > 1:
             raise RuntimeError(f"Expecting exactly one *.tar.gz file in directory {self.raw_data_dir}")
 
-        if os.path.basename(tar_gz_files[0]) == "data.tar.gz":
-            data_folder = extract_archive(tar_gz_files[0], str(self.extract_archive_dir))
+        if not self.already_extracted:
+            data_folder = extract_archive(tar_gz_files[0], self.extract_archive_dir)
             self.transcription_file = Path(data_folder)
-
         else:
-            if not self.already_extracted:
-                data_folder = extract_archive(tar_gz_files[0], self.extract_archive_dir)
-                self.transcription_file = Path(data_folder)
-            else:
-                self.transcription_file = Path(self.extract_archive_dir) / self.language_id
+            self.transcription_file = Path(self.extract_archive_dir) / self.language_id
         self.audio_path_prefix = str(self.transcription_file / "clips")
         self.transcription_file = str(self.transcription_file / (self.data_split + ".tsv"))
         os.makedirs(self.resampled_audio_dir, exist_ok=True)

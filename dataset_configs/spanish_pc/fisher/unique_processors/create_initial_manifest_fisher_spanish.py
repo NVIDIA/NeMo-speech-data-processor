@@ -84,15 +84,10 @@ class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
             extract_archive(audio_archive_path, self.extracted_path)
             extract_archive(transcript_archive_path, self.extracted_path)
 
-        elif (self.raw_data_dir / "data.tar.gz").exists():
-            extract_archive(str(self.raw_data_dir / "data.tar.gz"), self.extracted_path)
-
         else:
             raise RuntimeError(
-                "Did not find the expected raw data files. Expected to find either \n"
-                f"(i) 2 files: {audio_archive_path} and {transcript_archive_path} \n"
-                "or \n"
-                f"(ii) 1 file: {str(self.raw_data_dir / 'data.tar.gz')}"
+                "Did not find the expected raw data files. Expected to find "
+                f"2 files: {audio_archive_path} and {transcript_archive_path}"
             )
 
         # convert audio files from .sph to .wav

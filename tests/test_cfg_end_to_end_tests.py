@@ -34,7 +34,12 @@ def data_check_fn_mls(raw_data_dir: str, language: str) -> None:
     if not expected_file.exists():
         raise ValueError(f"No such file {str(expected_file)}")
 
-    return None
+
+def data_check_fn_mcv(raw_data_dir: str, archive_file_stem: str) -> None:
+    """Raises error if do not find expected data"""
+    expected_file = Path(raw_data_dir) / f"{archive_file_stem}.tar.gz"
+    if not expected_file.exists():
+        raise ValueError(f"No such file {str(expected_file)}")
 
 
 def get_test_cases():
@@ -42,6 +47,10 @@ def get_test_cases():
 
     return [
         (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config_mls_es.yaml", partial(data_check_fn_mls, language="spanish")),
+        (
+            f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml",
+            partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es"),
+        ),
     ]
 
 

@@ -52,18 +52,10 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
         self.resampled_audio_dir = resampled_audio_dir
 
     def prepare(self):
-        """Downloading data (unless already done) or extracting data.tar.gz archive if it exists"""
+        """Downloading data (unless already done)"""
 
-        if (not (self.raw_data_dir / "data.tar.gz").exists()) and (
-            not (self.raw_data_dir / "transcribed_data").exists()
-        ):
+        if not (self.raw_data_dir / "transcribed_data").exists():
 
-            if (
-                "PYTEST_CURRENT_TEST" in os.environ
-            ):  # ie we are in testing mode, and do not want to download all of the MLS raw data
-                raise RuntimeError(f"could not find file {str(self.raw_data_dir)}")
-
-            # download all the voxpopuli data
             # TODO: some kind of isolated environment?
             if not os.path.exists(self.raw_data_dir / 'voxpopuli'):
                 logging.info("Downloading voxpopuli and installing requirements")
@@ -85,9 +77,6 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
                     check=True,
                     shell=True,
                 )
-
-        elif (self.raw_data_dir / "data.tar.gz").exists():
-            data_folder = extract_archive(str(self.raw_data_dir / "data.tar.gz"), str(self.raw_data_dir))
 
     def read_manifest(self):
         with open(
