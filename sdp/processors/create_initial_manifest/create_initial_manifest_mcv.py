@@ -31,6 +31,7 @@
 # To convert mp3 files to wav using sox, you must have installed sox with mp3 support
 # For example sudo apt-get install libsox-fmt-mp3
 import csv
+import glob
 import os
 from pathlib import Path
 from typing import Tuple, Optional
@@ -50,23 +51,20 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
     using the transcripts provided in the raw data.
 
     Args:
+        raw_data_dir: the path to the directory containing the raw data archive file
         extract_archive_dir: directory where the extracted data will be saved
         resampled_audio_dir: directory where the resampled audio will be saved
         data_split: the data_split to create
         language_id: the ID of the language of the data
-        already_extracted: bool (default False) - if True (and raw_data_override_archive is False),
+        already_extracted: bool (default False) - if True, and there is no 'data.tar.gz' file,
             we will not try to extract the raw data.
         target_samplerate: sample rate (Hz) to use for resampling (default: 16000)
         target_nchannels: number of channels to create during resampling process (default: 1)
-        archive_filepath: the path to the raw data archive
-        raw_data_override_archive: (default None) - if specified, the processor will extract the 
-            archive at this filepath, and use that as the data source for the remained of the processing
-            (this is helpful for e.g. running tests on a subset of the data)
-    
     """
 
     def __init__(
         self,
+        raw_data_dir: str,
         extract_archive_dir: str,
         resampled_audio_dir: str,
         data_split: str,
@@ -74,11 +72,10 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
         already_extracted: bool = False,
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
-        archive_filepath: Optional[str] = None,
-        raw_data_override_archive: Optional[str] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
+        self.raw_data_dir = Path(raw_data_dir)
         self.extract_archive_dir = extract_archive_dir
         self.resampled_audio_dir = resampled_audio_dir
         self.data_split = data_split
@@ -87,22 +84,24 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
 
-        self.archive_filepath = archive_filepath
-        self.raw_data_override_archive = raw_data_override_archive
-
     def prepare(self):
-        """Extracting data (unless already done).
+        """Extracting data (unless already done)."""
 
-        If use_test_data is True, then will not process data, instead will
-        copy the included test data (mainly useful for quick development or
-        CI pipeline).
-        """
-        if self.raw_data_override_archive:
-            data_folder = extract_archive(str(self.raw_data_override_archive), str(self.extract_archive_dir))
+        tar_gz_files = glob.glob(str(self.raw_data_dir) + "/*.tar.gz")
+
+        if not tar_gz_files:
+            raise RuntimeError(f"Did not find any file matching {self.raw_data_dir}/*.tar.gz")
+
+        elif len(tar_gz_files) > 1:
+            raise RuntimeError(f"Expecting exactly one *.tar.gz file in directory {self.raw_data_dir}")
+
+        if os.path.basename(tar_gz_files[0]) == "data.tar.gz":
+            data_folder = extract_archive(tar_gz_files[0], str(self.extract_archive_dir))
             self.transcription_file = Path(data_folder)
+
         else:
             if not self.already_extracted:
-                data_folder = extract_archive(self.archive_filepath, self.extract_archive_dir)
+                data_folder = extract_archive(tar_gz_files[0], self.extract_archive_dir)
                 self.transcription_file = Path(data_folder)
             else:
                 self.transcription_file = Path(self.extract_archive_dir) / self.language_id

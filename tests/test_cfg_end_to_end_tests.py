@@ -87,13 +87,19 @@ def test_configs(config_path: str, tmp_path: str):
     if not os.path.exists(reference_manifest):
         pytest.skip(f"Did not find reference manifest {reference_manifest}")
 
+    initial_data = str(Path(test_data_root) / rel_path_from_root / "data.tar.gz")
+    if not os.path.exists(initial_data):
+        raise ValueError(
+            f"Found reference manifest {reference_manifest} but did not find initial data file {initial_data}"
+        )
+
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
     cfg["processors_to_run"] = "all"
     cfg["workspace_dir"] = str(tmp_path)
     cfg["final_manifest"] = str(tmp_path / "final_manifest.json")
     cfg["data_split"] = "train"
-    cfg["processors"][0]["raw_data_override_archive"] = str(Path(test_data_root) / rel_path_from_root / "data.tar.gz")
+    cfg["processors"][0]["raw_data_dir"] = str(Path(test_data_root) / rel_path_from_root)
 
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the

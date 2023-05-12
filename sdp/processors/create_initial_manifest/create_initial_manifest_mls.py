@@ -32,50 +32,49 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
     the transcripts provided in the raw data. 
 
     Args:
+        raw_data_dir: the directory where the downloaded data will be/is saved. This is also
+            where the extracted and processed data will be.
         language: the language of the data you wish to be downloaded. This will be used to format the 
             URL from which we attempt to download the data.
-        download_dir: the directory where the downloaded data will be saved.
         data_split: the data split for which the initial manifest will be created.
         resampled_audio_dir: the directory where the resampled (16kHz) wav files will be stored.
-        raw_data_override_archive: (default None) - if specified, the processor will extract the 
-            archive at this filepath, and use that as the data source for the remained of the processing
-            (this is helpful for e.g. running tests on a subset of the data)
     """
 
     def __init__(
-        self,
-        language: str,
-        download_dir: str,
-        data_split: str,
-        resampled_audio_dir: str,
-        raw_data_override_archive: Optional[str] = None,
-        **kwargs,
+        self, raw_data_dir: str, language: str, data_split: str, resampled_audio_dir: str, **kwargs,
     ):
         super().__init__(**kwargs)
+        self.raw_data_dir = Path(raw_data_dir)
         self.language = language
-        self.download_dir = Path(download_dir)
         self.data_split = data_split
-        self.resampled_audio_dir = resampled_audio_dir
-        self.raw_data_override_archive = raw_data_override_archive
+        self.resampled_audio_dir = Path(resampled_audio_dir)
 
         # will be initialized in self.prepare method
         self.audio_path_prefix = None
         self.transcription_file = None
 
     def prepare(self):
-        """Downloading and extracting data (unless already done).
+        """Downloading and extracting data (unless already done)."""
+        url = MLS_URL.format(language=self.language)
 
-        If use_test_data is True, then will not download data, instead will
-        copy the included test data (mainly useful for quick development or
-        CI pipeline).
-        """
-        if self.raw_data_override_archive:
-            data_folder = extract_archive(str(self.raw_data_override_archive), str(self.download_dir))
+        if (not (self.raw_data_dir / "data.tar.gz").exists()) and (
+            not (self.raw_data_dir / f"mls_{self.language}.tar.gz").exists()
+        ):
+
+            if (
+                "PYTEST_CURRENT_TEST" in os.environ
+            ):  # ie we are in testing mode, and do not want to download all of the MLS raw data
+                raise RuntimeError(f"could not find test data archive file {str(self.raw_data_dir)}/data.tar.gz")
+
+            download_file(url, str(self.raw_data_dir))
+            data_folder = extract_archive(str(self.raw_data_dir / os.path.basename(url)), str(self.raw_data_dir))
+
+        elif (self.raw_data_dir / "data.tar.gz").exists():
+            data_folder = extract_archive(str(self.raw_data_dir / "data.tar.gz"), str(self.raw_data_dir))
 
         else:
-            url = MLS_URL.format(language=self.language)
-            download_file(url, str(self.download_dir))
-            data_folder = extract_archive(str(self.download_dir / os.path.basename(url)), str(self.download_dir))
+            data_folder = extract_archive(str(self.raw_data_dir / os.path.basename(url)), str(self.raw_data_dir))
+
         self.audio_path_prefix = str(Path(data_folder) / self.data_split / "audio")
         self.transcription_file = str(Path(data_folder) / self.data_split / "transcripts.txt")
 

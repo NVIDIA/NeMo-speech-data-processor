@@ -62,53 +62,38 @@ class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
     data files, which must be located in root_data_dir.
 
     Args:
-        root_data_dir: path to where the initial data archive files are located. This will 
+        raw_data_dir: path to where the initial data archive files are located. This will 
             also be where the new audio files are processed and where the manifests are saved.
         path_to_sph2pipe: the path to the sph2pipe tool, which will be used to convert
             the sph audio files to wav files.
-        raw_data_override_archive: (default None) - if specified, the processor will extract the 
-            archive at this filepath, and use that as the data source for the remained of the processing
-            (this is helpful for e.g. running tests on a subset of the data)            
     """
 
-    def __init__(
-        self, root_data_dir: str, path_to_sph2pipe: str, raw_data_override_archive: Optional[str] = None, **kwargs
-    ):
+    def __init__(self, raw_data_dir: str, path_to_sph2pipe: str, **kwargs):
         super().__init__(**kwargs)
-        self.root_data_dir = root_data_dir
+        self.raw_data_dir = Path(raw_data_dir)
         self.path_to_sph2pipe = path_to_sph2pipe
-        self.raw_data_override_archive = raw_data_override_archive
 
-        self.audio_archive_path = str(Path(self.root_data_dir) / AUDIO_TGZ_FILE)
-        self.transcript_archive_path = str(Path(self.root_data_dir) / TRANSCRIPT_TGZ_FILE)
-
-        self.extracted_path = str(Path(self.root_data_dir) / "extracted")
-        self.processed_path = str(Path(self.root_data_dir) / "processed")
+        self.extracted_path = str(Path(self.raw_data_dir) / "extracted")
+        self.processed_path = str(Path(self.raw_data_dir) / "processed")
 
     def prepare(self):
-        """
-        Check data archive as been downloaded and extract it (unless already extracted). 
-        """
+        audio_archive_path = self.raw_data_dir / AUDIO_TGZ_FILE
+        transcript_archive_path = self.raw_data_dir / TRANSCRIPT_TGZ_FILE
 
-        if self.raw_data_override_archive:
-            data_folder = extract_archive(str(self.raw_data_override_archive), str(self.extracted_path))
+        if audio_archive_path.exists() and transcript_archive_path.exists():
+            extract_archive(audio_archive_path, self.extracted_path)
+            extract_archive(transcript_archive_path, self.extracted_path)
+
+        elif (self.raw_data_dir / "data.tar.gz").exists():
+            extract_archive(str(self.raw_data_dir / "data.tar.gz"), self.extracted_path)
 
         else:
-
-            if not os.path.exists(self.audio_archive_path):
-                raise RuntimeError(
-                    f"Did not find downloaded archive filepath. Please ensure you have downloaded the data"
-                    f" from LDC and saved it at the specified filepath: {self.audio_archive_path}"
-                )
-
-            if not os.path.exists(self.transcript_archive_path):
-                raise RuntimeError(
-                    f"Did not find downloaded archive filepath. Please ensure you have downloaded the data"
-                    f" from LDC and saved it at the specified filepath: {self.transcript_archive_path}"
-                )
-
-            extract_archive(self.audio_archive_path, self.extracted_path)
-            extract_archive(self.transcript_archive_path, self.extracted_path)
+            raise RuntimeError(
+                "Did not find the expected raw data files. Expected to find either \n"
+                f"(i) 2 files: {audio_archive_path} and {transcript_archive_path} \n"
+                "or \n"
+                f"(ii) 1 file: {str(self.raw_data_dir / 'data.tar.gz')}"
+            )
 
         # convert audio files from .sph to .wav
         sph_src_dir = os.path.join(self.extracted_path, "fisher_spa/data/speech")
