@@ -31,6 +31,7 @@
 # To convert mp3 files to wav using sox, you must have installed sox with mp3 support
 # For example sudo apt-get install libsox-fmt-mp3
 import csv
+import glob
 import os
 from pathlib import Path
 from typing import Tuple, Optional
@@ -45,67 +46,59 @@ from sdp.utils.common import extract_archive
 
 
 class CreateInitialManifestMCV(BaseParallelProcessor):
+    """
+    Extracts raw MCV data for the specified language and creates an initial manifest
+    using the transcripts provided in the raw data.
+
+    Args:
+        raw_data_dir: the path to the directory containing the raw data archive file
+        extract_archive_dir: directory where the extracted data will be saved
+        resampled_audio_dir: directory where the resampled audio will be saved
+        data_split: the data_split to create
+        language_id: the ID of the language of the data
+        already_extracted: bool (default False) - if True, we will not try to extract the raw data.
+        target_samplerate: sample rate (Hz) to use for resampling (default: 16000)
+        target_nchannels: number of channels to create during resampling process (default: 1)
+    """
+
     def __init__(
         self,
+        raw_data_dir: str,
         extract_archive_dir: str,
         resampled_audio_dir: str,
         data_split: str,
         language_id: str,
-        archive_filepath: Optional[str] = None,
-        use_test_data: bool = False,
-        relpath_from_test_data_root: Optional[str] = None,
         already_extracted: bool = False,
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.archive_filepath = archive_filepath
-        self.resampled_audio_dir = resampled_audio_dir
+        self.raw_data_dir = Path(raw_data_dir)
         self.extract_archive_dir = extract_archive_dir
+        self.resampled_audio_dir = resampled_audio_dir
         self.data_split = data_split
         self.language_id = language_id
         self.already_extracted = already_extracted
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
-        self.use_test_data = use_test_data
-        self.relpath_from_test_data_root = relpath_from_test_data_root
 
     def prepare(self):
-        """Extracting data (unless already done).
+        """Extracting data (unless already done)."""
 
-        If use_test_data is True, then will not process data, instead will
-        copy the included test data (mainly useful for quick development or
-        CI pipeline).
-        """
-        if self.use_test_data:
-            try:
-                __TEST_DATA_ROOT = os.environ["TEST_DATA_ROOT"]
-                logging.info(f"Found 'TEST_DATA_ROOT' environment variable:{repr(__TEST_DATA_ROOT)}")
-            except KeyError:
-                raise KeyError(
-                    f"Tried to look for os.environ['TEST_DATA_ROOT'] but it was not set."
-                    f" Please set 'TEST_DATA_ROOT' as an environment variable and try again."
-                )
+        tar_gz_files = glob.glob(str(self.raw_data_dir) + "/*.tar.gz")
 
-            if not self.relpath_from_test_data_root:
-                raise ValueError(f"relpath_from_test_data_root needs to be specified")
+        if not tar_gz_files:
+            raise RuntimeError(f"Did not find any file matching {self.raw_data_dir}/*.tar.gz")
 
-            self.test_data_path = str(Path(__TEST_DATA_ROOT) / self.relpath_from_test_data_root / "data.tar.gz")
+        elif len(tar_gz_files) > 1:
+            raise RuntimeError(f"Expecting exactly one *.tar.gz file in directory {self.raw_data_dir}")
 
-            if not os.path.exists(self.test_data_path):
-                raise ValueError(
-                    f"No such file {self.test_data_path}. Are you sure you specified the "
-                    f" 'TEST_DATA_ROOT' environment variable correctly?"
-                )
-            data_folder = extract_archive(str(self.test_data_path), str(self.extract_archive_dir))
+        if not self.already_extracted:
+            data_folder = extract_archive(tar_gz_files[0], self.extract_archive_dir)
             self.transcription_file = Path(data_folder)
         else:
-            if not self.already_extracted:
-                data_folder = extract_archive(self.archive_filepath, self.extract_archive_dir)
-                self.transcription_file = Path(data_folder)
-            else:
-                self.transcription_file = Path(self.extract_archive_dir) / self.language_id
+            self.transcription_file = Path(self.extract_archive_dir) / self.language_id
         self.audio_path_prefix = str(self.transcription_file / "clips")
         self.transcription_file = str(self.transcription_file / (self.data_split + ".tsv"))
         os.makedirs(self.resampled_audio_dir, exist_ok=True)

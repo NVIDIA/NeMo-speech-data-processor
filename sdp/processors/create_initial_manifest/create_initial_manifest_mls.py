@@ -14,6 +14,7 @@
 
 import os
 from pathlib import Path
+from typing import Optional
 
 from nemo.utils import logging
 
@@ -31,63 +32,36 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
     the transcripts provided in the raw data. 
 
     Args:
+        raw_data_dir: the directory where the downloaded data will be/is saved. This is also
+            where the extracted and processed data will be.
         language: the language of the data you wish to be downloaded. This will be used to format the 
             URL from which we attempt to download the data.
-        download_dir: the directory where the downloaded data will be saved.
         data_split: the data split for which the initial manifest will be created.
         resampled_audio_dir: the directory where the resampled (16kHz) wav files will be stored.
-        use_test_data: if `True`, will use the test data manifest located at `TEST_DATA_PATH` to carry out tests.
     """
 
     def __init__(
-        self,
-        language: str,
-        download_dir: str,
-        resampled_audio_dir: str,
-        data_split: str,
-        use_test_data: bool = False,
-        **kwargs,
+        self, raw_data_dir: str, language: str, data_split: str, resampled_audio_dir: str, **kwargs,
     ):
         super().__init__(**kwargs)
+        self.raw_data_dir = Path(raw_data_dir)
         self.language = language
-        self.download_dir = Path(download_dir)
         self.data_split = data_split
-        self.resampled_audio_dir = resampled_audio_dir
-        self.use_test_data = use_test_data
+        self.resampled_audio_dir = Path(resampled_audio_dir)
 
         # will be initialized in self.prepare method
         self.audio_path_prefix = None
         self.transcription_file = None
 
     def prepare(self):
-        """Downloading and extracting data (unless already done).
+        """Downloading and extracting data (unless already done)."""
+        url = MLS_URL.format(language=self.language)
 
-        If use_test_data is True, then will not download data, instead will
-        copy the included test data (mainly useful for quick development or
-        CI pipeline).
-        """
-        if self.use_test_data:
-            try:
-                __TEST_DATA_ROOT = os.environ["TEST_DATA_ROOT"]
-                logging.info(f"Found 'TEST_DATA_ROOT' environment variable:{repr(__TEST_DATA_ROOT)}")
-            except KeyError:
-                raise KeyError(
-                    f"Tried to look for os.environ['TEST_DATA_ROOT'] but it was not set."
-                    f" Please set 'TEST_DATA_ROOT' as an environment variable and try again."
-                )
+        if not (self.raw_data_dir / f"mls_{self.language}.tar.gz").exists():
+            download_file(url, str(self.raw_data_dir))
 
-            self.test_data_path = str(Path(__TEST_DATA_ROOT) / self.language / "mls" / "data.tar.gz")
+        data_folder = extract_archive(str(self.raw_data_dir / os.path.basename(url)), str(self.raw_data_dir))
 
-            if not os.path.exists(self.test_data_path):
-                raise ValueError(
-                    f"No such file {self.test_data_path}. Are you sure you specified the "
-                    f" 'TEST_DATA_ROOT' environment variable correctly?"
-                )
-            data_folder = extract_archive(str(self.test_data_path), str(self.download_dir))
-        else:
-            url = MLS_URL.format(language=self.language)
-            download_file(url, str(self.download_dir))
-            data_folder = extract_archive(str(self.download_dir / os.path.basename(url)), str(self.download_dir))
         self.audio_path_prefix = str(Path(data_folder) / self.data_split / "audio")
         self.transcription_file = str(Path(data_folder) / self.data_split / "transcripts.txt")
 

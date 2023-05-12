@@ -13,8 +13,8 @@ language_id: "es"
 processors:
   - _target_: sdp.processors.CreateInitialManifestVoxpopuli
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_initial_manifest.json"
+    raw_data_dir: "${workspace_dir}"
     language_id: "${language_id}"
-    download_dir: "${workspace_dir}"
     data_split: "${data_split}"
     resampled_audio_dir: "${workspace_dir}/resampled_audio/"
 

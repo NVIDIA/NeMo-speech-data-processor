@@ -16,9 +16,9 @@ final_manifest: ${workspace_dir}/mls_spanish_processed/${data_split}_final.json
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestMLS
+    raw_data_dir: ${workspace_dir}
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_initial.json"
     language: ${language_long}
-    download_dir: ${workspace_dir}
     resampled_audio_dir: "${workspace_dir}/mls_spanish_processed/${data_split}/audio/"
     data_split: "${data_split}"
 
