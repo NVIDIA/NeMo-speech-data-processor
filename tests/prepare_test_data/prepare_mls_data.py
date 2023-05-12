@@ -24,6 +24,11 @@ from pathlib import Path
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Preparing MLS test data")
     parser.add_argument("--extracted_data_path", required=True, help="Path to the downloaded and extracted data.")
+    parser.add_argument(
+        "--language",
+        required=True,
+        help="The name of the language, used to determine output file name mls_{language}.tar.gz",
+    )
     parser.add_argument("--num_entries", default=200, type=int, help="How many entries to keep (in each split)")
     parser.add_argument("--test_data_folder", required=True, help="Where to place the prepared data")
 
@@ -47,6 +52,6 @@ if __name__ == "__main__":
                     tgt_flac_dir = os.path.join(tmpdir_path, split, "audio", *utt_id.split("_")[:2])
                     os.makedirs(tgt_flac_dir, exist_ok=True)
                     shutil.copy(src_flac_path, os.path.join(tgt_flac_dir, utt_id + ".flac"))
-        with tarfile.open(os.path.join(args.test_data_folder, "data.tar.gz"), "w:gz") as tar:
+        with tarfile.open(os.path.join(args.test_data_folder, f"mls_{args.language}.tar.gz"), "w:gz") as tar:
             # has to be the same as what's before .tar.gz
-            tar.add(tmpdir, arcname="data")
+            tar.add(tmpdir, arcname=f"mls_{args.language}")

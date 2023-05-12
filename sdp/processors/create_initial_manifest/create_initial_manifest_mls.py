@@ -57,23 +57,10 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
         """Downloading and extracting data (unless already done)."""
         url = MLS_URL.format(language=self.language)
 
-        if (not (self.raw_data_dir / "data.tar.gz").exists()) and (
-            not (self.raw_data_dir / f"mls_{self.language}.tar.gz").exists()
-        ):
-
-            if (
-                "PYTEST_CURRENT_TEST" in os.environ
-            ):  # ie we are in testing mode, and do not want to download all of the MLS raw data
-                raise RuntimeError(f"could not find test data archive file {str(self.raw_data_dir)}/data.tar.gz")
-
+        if not (self.raw_data_dir / f"mls_{self.language}.tar.gz").exists():
             download_file(url, str(self.raw_data_dir))
-            data_folder = extract_archive(str(self.raw_data_dir / os.path.basename(url)), str(self.raw_data_dir))
 
-        elif (self.raw_data_dir / "data.tar.gz").exists():
-            data_folder = extract_archive(str(self.raw_data_dir / "data.tar.gz"), str(self.raw_data_dir))
-
-        else:
-            data_folder = extract_archive(str(self.raw_data_dir / os.path.basename(url)), str(self.raw_data_dir))
+        data_folder = extract_archive(str(self.raw_data_dir / os.path.basename(url)), str(self.raw_data_dir))
 
         self.audio_path_prefix = str(Path(data_folder) / self.data_split / "audio")
         self.transcription_file = str(Path(data_folder) / self.data_split / "transcripts.txt")

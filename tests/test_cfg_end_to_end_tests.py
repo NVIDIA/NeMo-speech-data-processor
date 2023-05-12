@@ -16,6 +16,7 @@ import glob
 import json
 import os
 from pathlib import Path
+from typing import Callable, Dict
 
 import pytest
 from omegaconf import OmegaConf
@@ -26,10 +27,21 @@ from sdp.run_processors import run_processors
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
 
 
+def data_check_fn_mls(raw_data_dir: str, language: str) -> None:
+    """Raises error if do not find expected data"""
+    expected_file = Path(raw_data_dir) / f"mls_{language}.tar.gz"
+    if not expected_file.exists():
+        raise ValueError(f"No such file {str(expected_file)}")
+
+    return None
+
+
 def get_test_cases():
-    """Returns paths to all configs that are checked in."""
-    for config_path in glob.glob(f"{DATASET_CONFIGS_ROOT}/**/*.yaml", recursive=True):
-        yield config_path
+    """Returns paths, data check fns, and some data check fn kwargs to all configs that we want to test."""
+
+    return [
+        (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config_mls_es.yaml", data_check_fn_mls, {"language": "spanish"}),
+    ]
 
 
 def check_e2e_test_data() -> bool:
@@ -77,21 +89,20 @@ def get_e2e_test_data_path() -> str:
     reason="Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY "
     "and AWS_ACCESS_KEY to run e2e config tests",
 )
-@pytest.mark.parametrize("config_path", get_test_cases())
-def test_configs(config_path: str, tmp_path: str):
+@pytest.mark.parametrize("config_path,data_check_fn,some_data_check_fn_kwargs", get_test_cases())
+def test_configs(config_path: str, data_check_fn: Callable, some_data_check_fn_kwargs: Dict[str, str], tmp_path: str):
+
     test_data_root = get_e2e_test_data_path()
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
     # to have the same structure (e.g. <lang>/<dataset>)
     rel_path_from_root = os.path.relpath(Path(config_path).parent, DATASET_CONFIGS_ROOT)
+
+    # run data_check_fn - it will raise error if the expected test data is not found
+    data_check_fn(raw_data_dir=str(Path(test_data_root) / rel_path_from_root), **some_data_check_fn_kwargs)
+
     reference_manifest = str(Path(test_data_root) / rel_path_from_root / "test_data_reference.json")
     if not os.path.exists(reference_manifest):
-        pytest.skip(f"Did not find reference manifest {reference_manifest}")
-
-    initial_data = str(Path(test_data_root) / rel_path_from_root / "data.tar.gz")
-    if not os.path.exists(initial_data):
-        raise ValueError(
-            f"Found reference manifest {reference_manifest} but did not find initial data file {initial_data}"
-        )
+        raise ValueError(f"Did not find reference manifest {reference_manifest}")
 
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
