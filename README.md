@@ -99,8 +99,7 @@ To run processing for a dataset with a config that is not inside the SDP directo
 python <SDP_ROOT>/main.py \
     --config-path="<path to config: either absolute path or relative path *from SDP_ROOT directory*>" \
     --config-name="<config file name>.yaml" \
-    data_split="test" \ # or other data_split
-    workspace_dir="<dir to use as workspace>"
+    ... # any other parameters
 ```
 
 ### Run own config and use own SDP processors
@@ -110,8 +109,7 @@ To run processing for a dataset with a config that is not inside the SDP directo
 PYTHONPATH=<path to dir containing your custom processor either directly or in subdirectory> python <SDP_ROOT>/main.py \
     --config-path="<path to config: either absolute path or relative path *from SDP_ROOT directory*>" \
     --config-name="<config file name>.yaml" \
-    data_split="test" \ # or other data_split
-    workspace_dir="<dir to use as workspace>"
+    ... # any other parameters
 ```
 Furthermore, when you add your own SDP processors in the YAML config file, you will need to define the `_target_` correctly by making sure it describes the relative path to the processor class from the `PYTHONPATH` you defined.
 
