@@ -8,6 +8,9 @@ SDP's philosophy is to represent processing operations as 'processor' classes. M
 
 SDP is specifically intended for the use case when you have an existing dataset with the audio & text pairs already specified in some form, and you wish to create a JSON manifest suitable for use with NeMo. SDP allows for intermediate cleaning and filtering steps which involve amending the 'ground truth' `"text"` (or some other field, specified using `"text_key"`) or dropping utterances which are deemed to be too inaccurate for training on.
 
+
+![SDP overview](https://github.com/NVIDIA/NeMo/releases/download/v1.17.0/sdp_overview_diagram.png)
+
 ## Quick intro to Speech Data Processor
 
 * The steps to process a dataset are specified by a YAML config file.
@@ -15,6 +18,7 @@ SDP is specifically intended for the use case when you have an existing dataset 
 * Each processor class inputs an existing manifest (except for classes which create an 'initial' manifest from some external transcript file)  & outputs a modified version of the manifest. It may change other files in the process, e.g. resample audio.
 * To process a manifest, you need to list the chain of processors you wish to use.
 * If a processor is not included, you can make your own.
+
 
 ## YAML config file layout
 A simplified version of an SDP file can be:
@@ -65,11 +69,53 @@ processors:
   ...
 ```
 
-## Installation
+## Installing requirements
 
 SDP is officially supported for Python 3.8, but might work for other versions.
 
-SDP depends on NeMo toolkit (ASR and nemo-text-processing parts).
-Please follow (NeMo installation instructions)[https://github.com/NVIDIA/NeMo#installation].
-After that, run `pip install -r requirements.txt` and (optionally)
-`pip install -r tests/requirements.txt` if you want to run tests.
+SDP depends on NeMo toolkit (ASR, NLP, and nemo-text-processing parts).
+Please follow [NeMo installation instructions](https://github.com/NVIDIA/NeMo#installation).
+
+After that, run `pip install -r requirements.txt` and (optionally) `pip install -r tests/requirements.txt` if you want to run tests.
+
+## Running SDP
+After installing the requirements for SDP, to use it, you will need to download it using e.g. `git clone https://github.com/NVIDIA/NeMo-speech-data-processor.git`.
+
+### Run config in repository
+To run processing for a dataset that has a config and all processor code inside the SDP directory structure, run commands like below:
+
+```bash
+python <SDP_ROOT>/main.py \
+    --config-path="dataset_configs/spanish_pc/mcv12/" \
+    --config-name="config.yaml" \
+    data_split="test" \
+    workspace_dir="<dir where processed data will be saved, and where initial data tar file is already located>"
+```
+
+### Run own config
+To run processing for a dataset with a config that is not inside the SDP directory structure, but all processors are within the SDP directory, run commands like:
+
+```bash
+python <SDP_ROOT>/main.py \
+    --config-path="<path to config: either absolute path or relative path *from SDP_ROOT directory*>" \
+    --config-name="<config file name>.yaml" \
+    data_split="test" \ # or other data_split
+    workspace_dir="<dir to use as workspace>"
+```
+
+### Run own config and use own SDP processors
+To run processing for a dataset with a config that is not inside the SDP directory structure, and at least one processor is outside the SDP directory structure run:
+
+```bash
+PYTHONPATH=<path to dir containing your custom processor either directly or in subdirectory> python <SDP_ROOT>/main.py \
+    --config-path="<path to config: either absolute path or relative path *from SDP_ROOT directory*>" \
+    --config-name="<config file name>.yaml" \
+    data_split="test" \ # or other data_split
+    workspace_dir="<dir to use as workspace>"
+```
+Furthermore, when you add your own SDP processors in the YAML config file, you will need to define the `_target_` correctly by making sure it describes the relative path to the processor class from the `PYTHONPATH` you defined.
+
+For example, if a custom processor `MyProcessor` is in `/my/files/a/b/c/my_processor.py`, you can use combinations such as: `PYTHONPATH="/my/files/a/b/c/"` & `_target_: my_processor.MyProcessor`, or `PYTHONPATH="/my/files/a/b/"` & `_target_: c.my_processor.MyProcessor`.
+
+## Additional documentation
+More information about SDP can be found in the [NeMo docs](https://docs.nvidia.com/deeplearning/nemo/user-guide/docs/en/main/tools/speech_data_processor.html).
