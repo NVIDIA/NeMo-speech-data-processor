@@ -113,7 +113,9 @@ PYTHONPATH=<path to dir containing your custom processor either directly or in s
 ```
 Furthermore, when you add your own SDP processors in the YAML config file, you will need to define the `_target_` correctly by making sure it describes the relative path to the processor class from the `PYTHONPATH` you defined.
 
-For example, if a custom processor `MyProcessor` is in `/my/files/a/b/c/my_processor.py`, you can use combinations such as: `PYTHONPATH="/my/files/a/b/c/"` & `_target_: my_processor.MyProcessor`, or `PYTHONPATH="/my/files/a/b/"` & `_target_: c.my_processor.MyProcessor`.
+For example, if a new custom processor `MyProcessor` is in `/my/files/a/b/c/my_processor.py`, you can use combinations such as: `PYTHONPATH="/my/files/a/b/c/"` & `_target_: my_processor.MyProcessor`, or `PYTHONPATH="/my/files/a/b/"` & `_target_: c.my_processor.MyProcessor`.
+
+If you add new processors within `<SDP_ROOT>`, to use them when you call SDP, you will not need to specify a `PYTHONPATH` variable, but you will need to make sure that the `_target_` inside the YAML config file is correct. If a new custom processor is `MyProcessor` inside `<SDP_ROOT>/dir/my_processor.py`, `_target_` will need to be `dir.my_processor.MyProcessor`. 
 
 ## Additional documentation
 More information about SDP can be found in the [NeMo docs](https://docs.nvidia.com/deeplearning/nemo/user-guide/docs/en/main/tools/speech_data_processor.html).
