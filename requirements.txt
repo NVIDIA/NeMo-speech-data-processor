@@ -4,4 +4,5 @@ wget
 joblib
 pandas
 hydra
+omegaconf
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
