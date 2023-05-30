@@ -3,4 +3,5 @@ sox
 wget
 joblib
 pandas
+hydra
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
