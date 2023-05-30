@@ -3,6 +3,6 @@ sox
 wget
 joblib
 pandas
-hydra
+hydra-core
 omegaconf
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
