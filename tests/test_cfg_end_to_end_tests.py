@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from functools import partial
 import glob
 import json
 import os
+from functools import partial
 from pathlib import Path
 from typing import Callable, Dict
 
 import pytest
 from omegaconf import OmegaConf
-from nemo.utils import logging
-from sdp.run_processors import run_processors
 
+from sdp.logging import logger
+from sdp.run_processors import run_processors
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
 

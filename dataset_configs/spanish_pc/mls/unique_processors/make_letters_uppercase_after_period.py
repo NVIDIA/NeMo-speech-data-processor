@@ -15,10 +15,9 @@
 import collections
 from typing import Dict, List
 
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
-
-from nemo.utils import logging
 
 
 class MakeLettersUppercaseAfterPeriod(ModifyManifestTextProcessor):
@@ -48,9 +47,9 @@ class MakeLettersUppercaseAfterPeriod(ModifyManifestTextProcessor):
         for counter in metrics:
             for word, count in counter.items():
                 total_counter[word] += count
-        logging.info("Some of the substrings that were substituted")
+        logger.info("Some of the substrings that were substituted")
         total_counter_sorted = dict(sorted(total_counter.items(), key=lambda x: x[1], reverse=True))
         for word, count in total_counter_sorted.items():
             if count > 1:
-                logging.info(f"{word} {count}")
+                logger.info(f"{word} {count}")
         super().finalize(metrics)

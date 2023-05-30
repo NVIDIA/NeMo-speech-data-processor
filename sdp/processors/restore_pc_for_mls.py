@@ -14,18 +14,17 @@
 
 import collections
 import json
-from glob import glob
-from joblib import Parallel, delayed
 import os
-from pathlib import Path
 import re
 import string
 import sys
+from glob import glob
+from pathlib import Path
+
+from joblib import Parallel, delayed
 from tqdm import tqdm
 
-from nemo.utils import logging
-from nemo_text_processing.text_normalization.normalize import Normalizer
-
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import download_file, extract_archive
 
@@ -200,8 +199,8 @@ def recover_lines(manifest, processed_text, output_dir, restored_text_field):
             line = json.loads(line)
             lines.append(line["text"])
 
-    logging.debug(f"processing {manifest}")
-    logging.debug(f"processing - {len(lines)} lines")
+    logger.debug(f"processing {manifest}")
+    logger.debug(f"processing - {len(lines)} lines")
 
     last_found_start_idx = 0
     recovered_lines = {}
@@ -263,7 +262,7 @@ def recover_lines(manifest, processed_text, output_dir, restored_text_field):
             if not end_match_found:
                 stop_search_for_line = True
 
-    logging.debug(
+    logger.debug(
         f"recovered {len(recovered_lines)} lines out of {len(lines)} -- {round(len(recovered_lines)/len(lines)*100, 2)}% -- {os.path.basename(manifest)}"
     )
 
@@ -277,13 +276,13 @@ def recover_lines(manifest, processed_text, output_dir, restored_text_field):
             f_out.write(json.dumps(line, ensure_ascii=False) + "\n")
 
 
-def normalize_text(text_f: str, normalizer: Normalizer):
+def normalize_text(text_f: str, normalizer: 'Normalizer'):
     """
     Pre-process and normalized text_f file.
 
     Args:
         text_f: path to .txt file to normalize
-        normalizer: 
+        normalizer:
     """
     raw_text = read_text(text_f)
     processed_text = abbreviations(process(raw_text))
@@ -331,16 +330,16 @@ def process_book(book_manifest, texts_dir, submanifests_dir, output_dir, restore
     book_id = os.path.basename(book_manifest).split(".")[0]
     text_f = f"{texts_dir}/{book_id}.txt"
     manifests = glob(f"{submanifests_dir}/{book_id}_*.json")
-    logging.info(f"{book_id} -- {len(manifests)} manifests")
+    logger.info(f"{book_id} -- {len(manifests)} manifests")
 
     # only continue (i.e. do not make early 'return') if there are {book_id}_{spk_id}.json files in submanifests_dir
     # that are not in output dir - else return early
     for book_id_spk_id in [os.path.basename(x).strip(".json") for x in manifests]:
         if not os.path.exists(os.path.join(output_dir, f"{book_id_spk_id}.json")):
-            logging.info(f"Did not find {book_id_spk_id} in {output_dir} => will process this book")
+            logger.info(f"Did not find {book_id_spk_id} in {output_dir} => will process this book")
             break
     else:
-        # logging.info(
+        # logger.info(
         #    f"All manifests {manifests} were also found in {output_dir} => skipping processing of this book"
         # )
         return
@@ -359,7 +358,7 @@ def process_book(book_manifest, texts_dir, submanifests_dir, output_dir, restore
             for manifest in manifests
         ]
     except:
-        logging.info(f"{text_f} failed")
+        logger.info(f"{text_f} failed")
         return
 
 
@@ -369,7 +368,7 @@ class RestorePCForMLS(BaseProcessor):
         Saves recovered text in recovered_text_field. If text was not recovered, recovered_text_field will be equal
         to the value of the `NA` variable.
     Args:
-        language_long: the full name of the language, used for choosing the folder of the contents of 
+        language_long: the full name of the language, used for choosing the folder of the contents of
             "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz".
         language_short: the short name of the language, used for specifying the normalizer we want to use.
         lv_text_dir: the directory where the contents of "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz" will be saved.
@@ -409,6 +408,8 @@ class RestorePCForMLS(BaseProcessor):
         Restore P&C to submanifests.
         Group back submanifests into 1 single manifest
         """
+        from nemo_text_processing.text_normalization.normalize import Normalizer
+
         # Download & extract lv_text.
         download_file(MLS_TEXT_URL, str(self.lv_text_dir))
         lv_text_data_folder = extract_archive(
@@ -476,7 +477,7 @@ class RestorePCForMLS(BaseProcessor):
                 book_id, spk_id = os.path.basename(line["audio_filepath"]).strip('.wav').split("_")[:2]
                 book_id_spk_ids_in_datasplit.add((book_id, spk_id))
                 original_manifest_duration += line["duration"]
-        logging.info(
+        logger.info(
             f"duration ORIGINAL total (for current datasplit): {round(original_manifest_duration / 60 / 60, 2)} hrs"
         )
 
@@ -511,21 +512,21 @@ class RestorePCForMLS(BaseProcessor):
 
                 pc_restored = 100 * restored_dur / orig_dur
 
-                logging.info(
+                logger.info(
                     f"{filename}: {orig_dur/60:.2f} mins -> {restored_dur/60:.2f} mins\t({pc_restored:.2f}% restored)"
                 )
 
         sub_manifest_duration = sum(list(filename_to_sub_manifest_durs.values()))
         restored_manifest_duration = sum(list(filename_to_restored_sub_manifest_durs.values()))
 
-        logging.info(
+        logger.info(
             f"duration in submanifests (for current datasplit): {round(sub_manifest_duration / 60 / 60, 2)} hrs"
         )
-        logging.info(
+        logger.info(
             f"duration restored (for current datasplit): {round(restored_manifest_duration / 60 / 60, 2)} hrs ({round(restored_manifest_duration/sub_manifest_duration * 100, 2)}%), lost: {round((sub_manifest_duration - restored_manifest_duration) / 60 / 60, 2)} hrs"
         )
 
-        logging.info(
+        logger.info(
             f"Combining restored manifest for current datasplit into single manifest at {self.output_manifest_file}"
         )
 

@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import itertools
 import json
 import multiprocessing
+import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Optional
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
-from nemo.utils import logging
+from sdp.logging import logger
 
 
 @dataclass
@@ -141,9 +141,9 @@ class BaseParallelProcessor(BaseProcessor):
 
         By default outputs new number of entries/hours.
         """
-        logging.info("Total number of entries after processing: %d", self.number_of_entries)
+        logger.info("Total number of entries after processing: %d", self.number_of_entries)
         if self.total_duration != -1:
-            logging.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
+            logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
 
     @abstractmethod
     def process_dataset_entry(self, data_entry) -> List[DataEntry]:

@@ -18,9 +18,8 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-import torch
-from nemo.utils import logging
-from nemo.collections.nlp.models import PunctuationCapitalizationModel
+
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 
 
@@ -73,6 +72,8 @@ class PCInference(BaseProcessor):
             raise ValueError("pretrained_name and model_path cannot both be not None")
 
     def process(self):
+        from nemo.collections.nlp.models import PunctuationCapitalizationModel
+        import torch  # importing after nemo to make sure users first install nemo, instead of torch, then nemo
 
         if self.pretrained_name:
             model = PunctuationCapitalizationModel.from_pretrained(self.pretrained_name)

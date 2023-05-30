@@ -41,14 +41,14 @@ required, and result in the following tree:
 import glob
 import json
 import os
-from pathlib import Path
-from sox import Transformer
 import subprocess
-from tqdm import tqdm
+from pathlib import Path
 from typing import List, Optional
 
-from nemo.utils import logging
+from sox import Transformer
+from tqdm import tqdm
 
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import extract_archive
 
@@ -58,11 +58,11 @@ TRANSCRIPT_TGZ_FILE = "LDC2010T04.tgz"
 
 class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
     """
-    Class which will create an initial manifest from the initial Fisher Spanish 
+    Class which will create an initial manifest from the initial Fisher Spanish
     data files, which must be located in root_data_dir.
 
     Args:
-        raw_data_dir: path to where the initial data archive files are located. This will 
+        raw_data_dir: path to where the initial data archive files are located. This will
             also be where the new audio files are processed and where the manifests are saved.
         path_to_sph2pipe: the path to the sph2pipe tool, which will be used to convert
             the sph audio files to wav files.
@@ -96,7 +96,7 @@ class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
         if not os.path.exists(wav_tgt_dir):
             os.makedirs(wav_tgt_dir)
 
-        logging.info("Converting files from .sph to .wav")
+        logger.info("Converting files from .sph to .wav")
         sph_list = glob.glob(sph_src_dir + "/*.sph")
 
         for sph_path in tqdm(sph_list):
@@ -104,12 +104,12 @@ class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
             wav_path = os.path.join(wav_tgt_dir, file_id + ".wav")
             cmd = [self.path_to_sph2pipe, "-f", "wav", "-p", sph_path, wav_path]
             subprocess.run(cmd)
-        logging.info("Finished converting files from .sph to .wav")
+        logger.info("Finished converting files from .sph to .wav")
 
     def read_manifest(self) -> List[tuple[str]]:
         transcript_src_dir = os.path.join(self.extracted_path, "fisher_spa_tr/data/transcripts/")
 
-        logging.info(f"Attempting to read transcription files in dir {transcript_src_dir}")
+        logger.info(f"Attempting to read transcription files in dir {transcript_src_dir}")
         dataset_entries = []
 
         for transcript_file in tqdm(glob.glob(transcript_src_dir + "/*.tdf")):
@@ -158,12 +158,12 @@ class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
         )
 
         if len(transcript) == 0:
-            logging.info(f"Empty transcript. Skipping trying to make wav file {tgt_wav_file}")
+            logger.info(f"Empty transcript. Skipping trying to make wav file {tgt_wav_file}")
             return []
 
         if float(end) - float(start) < 0.2:
-            logging.info(f"start time: {start}, end time: {end}")
-            logging.info(f"=> (end time) - (start time) is too small. Skipping trying to make wav file {tgt_wav_file}")
+            logger.info(f"start time: {start}, end time: {end}")
+            logger.info(f"=> (end time) - (start time) is too small. Skipping trying to make wav file {tgt_wav_file}")
             return []
 
         # make trimmed wave file
@@ -183,8 +183,8 @@ class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
         duration = subprocess.check_output("soxi -D {0}".format(entry["audio_filepath"]), shell=True)
 
         if float(duration) == 0:
-            logging.info(f"created wave file with duration zero: {tgt_wav_file}")
-            logging.info(f"=> will not add this file to manifest")
+            logger.info(f"created wave file with duration zero: {tgt_wav_file}")
+            logger.info(f"=> will not add this file to manifest")
             return []
 
         entry["duration"] = float(duration)

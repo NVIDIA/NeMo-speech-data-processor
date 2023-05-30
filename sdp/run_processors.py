@@ -12,15 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 import tempfile
-from typing import List
 import uuid
+from typing import List
 
 import hydra
 from omegaconf import OmegaConf
 
-from nemo.utils import logging
+from sdp.logging import logger
+
+# customizing logger
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter(
+    '[SDP %(levelname)1.1s %(asctime)s %(module)s:%(lineno)d] %(message)s',
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+handler.setFormatter(formatter)
+logger.handlers
+logger.addHandler(handler)
+logger.propagate = False
 
 
 def select_subset(input_list: List, select_str: str) -> List:
@@ -66,13 +80,13 @@ def select_subset(input_list: List, select_str: str) -> List:
 
 
 def run_processors(cfg):
-    logging.info(f"Hydra config: {OmegaConf.to_yaml(cfg)}")
+    logger.info(f"Hydra config: {OmegaConf.to_yaml(cfg)}")
     processors_to_run = cfg.get("processors_to_run", "all")
 
     if processors_to_run == "all":
         processors_to_run = ":"
     processors_cfgs = select_subset(cfg.processors, processors_to_run)
-    logging.info(
+    logger.info(
         "Specified to run the following processors: %s ", [cfg["_target_"] for cfg in processors_cfgs],
     )
 
@@ -95,7 +109,7 @@ def run_processors(cfg):
                     break
 
         for idx, processor_cfg in enumerate(processors_cfgs):
-            logging.info('=> Building processor "%s"', processor_cfg["_target_"])
+            logger.info('=> Building processor "%s"', processor_cfg["_target_"])
 
             # we assume that each processor defines "output_manifest_file"
             # and "input_manifest_file" keys, which can be optional. In case they
@@ -119,5 +133,5 @@ def run_processors(cfg):
 
         for processor in processors:
             # TODO: add proper str method to all classes for good display
-            logging.info('=> Running processor "%s"', processor)
+            logger.info('=> Running processor "%s"', processor)
             processor.process()

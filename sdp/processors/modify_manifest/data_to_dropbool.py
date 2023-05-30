@@ -16,13 +16,18 @@ import collections
 import re
 from typing import Dict, List
 
+from sdp.logging import logger
 from sdp.processors.base_processor import DataEntry
 from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
 from sdp.utils.edit_spaces import remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
-from sdp.utils.metrics_computation import get_cer, get_charrate, get_wer, get_wmr, get_wordrate
-
-from nemo.utils import logging
+from sdp.utils.metrics_computation import (
+    get_cer,
+    get_charrate,
+    get_wer,
+    get_wmr,
+    get_wordrate,
+)
 
 
 class DropHighLowCharrate(ModifyManifestTextProcessor):
@@ -65,13 +70,13 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
         for (dropped_low, dropped_high) in metrics:
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
-        logging.info(
+        logger.info(
             "Num of utterances that were dropped due to char rate > %d: %d",
             self.high_charrate_threshold,
             high_drop_counter,
         )
 
-        logging.info(
+        logger.info(
             "Num of utterances that were dropped due to char rate < %d: %d",
             self.low_charrate_threshold,
             low_drop_counter,
@@ -119,12 +124,12 @@ class DropHighLowWordrate(ModifyManifestTextProcessor):
         for (dropped_low, dropped_high) in metrics:
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
-        logging.info(
+        logger.info(
             "Num of utterances that were dropped due to word rate > %d: %d",
             self.high_wordrate_threshold,
             high_drop_counter,
         )
-        logging.info(
+        logger.info(
             "Num of utterances that were dropped due to word rate < %d: %d",
             self.low_wordrate_threshold,
             low_drop_counter,
@@ -170,12 +175,12 @@ class DropHighLowDuration(ModifyManifestTextProcessor):
         for (dropped_low, dropped_high) in metrics:
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
-        logging.info(
+        logger.info(
             "Num of utterances that were dropped due to duration > %f: %d",
             self.high_duration_threshold,
             high_drop_counter,
         )
-        logging.info(
+        logger.info(
             "Num of utterances that were dropped due to duration < %f: %d",
             self.low_duration_threshold,
             low_drop_counter,
@@ -188,7 +193,7 @@ class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
     Class for processor that drops utterances if data[self.text_attribute] does
     not match any of regex_patterns.
     Args:
-        regex_patterns: a list of strings. If data_entry[self.attribute] does not match any 
+        regex_patterns: a list of strings. If data_entry[self.attribute] does not match any
             of the regex patterns in the list, that utterance will be dropped.
     """
 
@@ -214,8 +219,8 @@ class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
         for value in metrics:
             if value:
                 total_counter += value
-        logging.info("Num of utterances that were dropped due to not containing any of the specified regex patterns")
-        logging.info(f"{total_counter}")
+        logger.info("Num of utterances that were dropped due to not containing any of the specified regex patterns")
+        logger.info(f"{total_counter}")
         super().finalize(metrics)
 
 
@@ -254,9 +259,9 @@ class DropNonAlphabet(ModifyManifestTextProcessor):
         for counter in metrics:
             for char, value in counter.items():
                 total_counter[char] += value
-        logging.info("Num of non-alphabet characters")
+        logger.info("Num of non-alphabet characters")
         for char, count in total_counter.items():
-            logging.info(f"{char}: {count}")
+            logger.info(f"{char}: {count}")
         super().finalize(metrics)
 
 
@@ -327,11 +332,11 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
         for (dropped_beginning, dropped_end) in metrics:
             beginning_drop_counter += dropped_beginning
             end_drop_counter += dropped_end
-        logging.info(
+        logger.info(
             "Num of utterances that were dropped due to asr " "insertions/deletions at the beginning: %d",
             beginning_drop_counter,
         )
-        logging.info(
+        logger.info(
             "Num of utterances that were dropped due to asr insertions/deletions at the end: %d", end_drop_counter,
         )
         super().finalize(metrics)
@@ -368,7 +373,7 @@ class DropHighCER(ModifyManifestTextProcessor):
         drop_counter = 0
         for dropped in metrics:
             drop_counter += dropped
-        logging.info(
+        logger.info(
             "Num of utterances that were dropped due to CER > %d: %d", self.cer_threshold, drop_counter,
         )
         super().finalize(metrics)
@@ -403,7 +408,7 @@ class DropHighWER(ModifyManifestTextProcessor):
         drop_counter = 0
         for dropped in metrics:
             drop_counter += dropped
-        logging.info(
+        logger.info(
             "Num of utterances that were dropped due to WER > %d: %d", self.wer_threshold, drop_counter,
         )
         super().finalize(metrics)
@@ -441,7 +446,7 @@ class DropLowWordMatchRate(ModifyManifestTextProcessor):
         drop_counter = 0
         for dropped in metrics:
             drop_counter += dropped
-        logging.info(
+        logger.info(
             "Num of utterances that were dropped due to WMR < %d: %d", self.wmr_threshold, drop_counter,
         )
         super().finalize(metrics)
@@ -477,9 +482,9 @@ class DropIfRegexMatch(ModifyManifestTextProcessor):
         for counter in metrics:
             for attribute, value in counter.items():
                 total_counter[attribute] += value
-        logging.info("Regex matches that were dropped in attribute")
+        logger.info("Regex matches that were dropped in attribute")
         for attribute, matches in total_counter.items():
-            logging.info(f"{attribute}, {matches}")
+            logger.info(f"{attribute}, {matches}")
         super().finalize(metrics)
 
 
@@ -521,9 +526,9 @@ class DropIfSubstringInInsertion(ModifyManifestTextProcessor):
         for diff_entry in metrics:
             if diff_entry:
                 total_counter[diff_entry] += 1
-        logging.info("Some of the insertions that cause the utterance to be dropped:")
+        logger.info("Some of the insertions that cause the utterance to be dropped:")
         total_counter_sorted = dict(sorted(total_counter.items(), key=lambda x: x[1], reverse=True))
 
         for insertion, count in total_counter_sorted.items():
-            logging.info(f"{insertion}, {count}")
+            logger.info(f"{insertion}, {count}")
         super().finalize(metrics)

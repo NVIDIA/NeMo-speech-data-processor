@@ -10,7 +10,27 @@ permissions:
   contents: read
 
 jobs:
-  tests:
+  no-nemo-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.8"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r tests/requirements.txt
+    - name: Checking that SDP can be imported and basic configs can be run without nemo
+      # in the future this might fail if some runtime tests require nemo
+      # in that case this test will need to be changed
+      run: |
+        python -m pytest tests/test_cfg_runtime_tests.py
+
+  main-tests:
     runs-on: ubuntu-latest
 
     steps:
