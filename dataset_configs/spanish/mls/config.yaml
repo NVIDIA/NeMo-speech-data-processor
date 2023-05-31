@@ -5,7 +5,7 @@
 # ":-1" (to select all but last)
 # "2:5" (to select 3rd to 5th)
 # "0" (to select only the first processor)
-processors_to_run: ???
+processors_to_run: all
 data_split: ???
 workspace_dir: ???
 final_manifest: ???
@@ -106,11 +106,11 @@ processors:
 
   - _target_: sdp.processors.SubRegex
     regex_params_list:
-      - {"pattern": '[\.\-\‐\‑\–\—\―\"\$\&]', "repl": " "} 
-      - {"pattern": "['']", "repl": " "} 
-      - {"pattern": '[\,\,\:\=\?\_\`\{\|\}\~\¨\ª]', "repl": " "} 
-      - {"pattern": '[\«\°\´\·\»\¿\‘\’\“\”\„\…\‧\‹\›\≪\≫\!]', "repl": " "} 
-      - {"pattern": '[\:\;\`\ʻ\ː\‘\’\“\→\"\%\‘\”\�\ʽ\ʿ]', "repl": " "} 
+      - {"pattern": '[\.\-\‐\‑\–\—\―\"\$\&]', "repl": " "}
+      - {"pattern": "['']", "repl": " "}
+      - {"pattern": '[\,\,\:\=\?\_\`\{\|\}\~\¨\ª]', "repl": " "}
+      - {"pattern": '[\«\°\´\·\»\¿\‘\’\“\”\„\…\‧\‹\›\≪\≫\!]', "repl": " "}
+      - {"pattern": '[\:\;\`\ʻ\ː\‘\’\“\→\"\%\‘\”\�\ʽ\ʿ]', "repl": " "}
       - {"pattern": '́', "repl": " "} #used for putting stress on Russian letters
       - {"pattern": '̇', "repl": " "}
       - {"pattern": 'content from google book search google book search generated at ', "repl": " "}

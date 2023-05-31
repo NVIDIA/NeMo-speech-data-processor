@@ -6,9 +6,15 @@
 # "2:5" (to select 3rd to 5th)
 # "0" (to select only the first processor)
 processors_to_run: ???
-data_split: train
+data_split: ???
 workspace_dir: ???
 language_id: "es"
+
+high_duration_thresholds:
+  train: 20
+  dev: 30
+  test: 30
+
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestVoxpopuli
@@ -38,7 +44,7 @@ processors:
   - _target_: sdp.processors.DropIfRegexMatch
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_transcribed.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_startdigit.json"
-    regex_patterns: 
+    regex_patterns:
     # drop utt if starts with digit as those tend to be poorly segmented
     # we include \s because SDP always adds spaces at the start and end
     - '^\s\d'
@@ -57,20 +63,20 @@ processors:
       - {input: {provided_norm_text: "  "}, output: null}
       - {input: {provided_norm_text: "abcdef"}, output: {provided_norm_text: "abcdef"}}
 
-  - _target_: dataset_configs.spanish_pc.voxpopuli.unique_processors.normalize_from_non_pc_text.NormalizeFromNonPCText
+  - _target_: sdp.processors.NormalizeFromNonPCTextVoxpopuli
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_empty_norm.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_normalized.json"
 
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_normalized.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_subregex.json"
-    
-    regex_params_list:
-      - {"pattern": "!", "repl": "."} 
-      - {"pattern": "[;'¡]", "repl": " "} 
 
-      - {"pattern": " xx ", "repl": " veinte "} 
-      - {"pattern": " xxi ", "repl": " veintiuno "} 
+    regex_params_list:
+      - {"pattern": "!", "repl": "."}
+      - {"pattern": "[;'¡]", "repl": " "}
+
+      - {"pattern": " xx ", "repl": " veinte "}
+      - {"pattern": " xxi ", "repl": " veintiuno "}
 
     test_cases:
       - {input: {text: "abc; def!"}, output: {text: "abc def."}}
@@ -78,7 +84,7 @@ processors:
   - _target_: sdp.processors.DropHighLowCharrate
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_subregex.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_charrate.json"
-    
+
     high_charrate_threshold: 30
     low_charrate_threshold: 5
     test_cases:
@@ -110,14 +116,14 @@ processors:
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
     text_key: "text_no_pc"
-    regex_params_list: 
+    regex_params_list:
     - {"pattern": '[¿?.,]', "repl": ""}
 
   - _target_: sdp.processors.DropIfSubstringInInsertion
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_insertion.json"
     text_key: "text_no_pc"
-    substrings_in_insertion: [ 
+    substrings_in_insertion: [
       "gracias" # quite often the speaker says somthing like "Gracias Señor Presidente" but the gracias is not in the transcript
     ]
 
@@ -128,9 +134,9 @@ processors:
     sub_words:
       "cero ": "mil "
     test_cases:
-      - {input: {text_no_pc: "dos cero personas other cero", pred_text: "dos mil personas other word"}, 
+      - {input: {text_no_pc: "dos cero personas other cero", pred_text: "dos mil personas other word"},
           output: {text_no_pc: "dos mil personas other cero", pred_text: "dos mil personas other word"}}
-      - {input: {text_no_pc: "cero personas other cero", pred_text: "mil personas other word"}, 
+      - {input: {text_no_pc: "cero personas other cero", pred_text: "mil personas other word"},
           output: {text_no_pc: "mil personas other cero", pred_text: "mil personas other word"}}
 
 
@@ -138,7 +144,7 @@ processors:
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_sub_asr_sub.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_asr_error.json"
     text_key: "text_no_pc"
-    
+
     beginning_error_char_threshold: 10
     end_error_char_threshold: 10
     test_cases:
@@ -150,7 +156,7 @@ processors:
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_asr_error.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_wer.json"
     text_key: "text_no_pc"
-    
+
     wer_threshold: 75
     test_cases:
       - {input: {text_no_pc: "sí hola", pred_text: "no tengo"}, output: null}
@@ -159,18 +165,21 @@ processors:
   - _target_: sdp.processors.DropHighLowDuration
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_wer.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_duration.json"
-    
-    high_duration_threshold: 20
+
+    # will select corresponding threshold from the dictionary defined at the top
+    # note that this depends on the custom resolver in OmegaConf that we register
+    # in sdp/run_processor.py
+    high_duration_threshold: ${subfield:${high_duration_thresholds},${data_split}}
     low_duration_threshold: 1
     test_cases:
       - {input: {duration: 0.1}, output: null}
       - {input: {duration: 40}, output: null}
-      - {input: {duration: 5}, output: {duration: 5}} 
+      - {input: {duration: 5}, output: {duration: 5}}
 
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_duration.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_punc_spaces.json"
-    regex_params_list: 
+    regex_params_list:
     - {"pattern": '\.', "repl": ' . '}
     - {"pattern": ",", "repl": " , "}
     - {"pattern": '\?', "repl": " ? "}
@@ -179,7 +188,7 @@ processors:
     test_cases:
       - {input: {text: "¿abc? def."}, output: {text: "¿ abc ? def ."}}
 
-  - _target_: sdp.processors.AddConstantFields 
+  - _target_: sdp.processors.AddConstantFields
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_punc_spaces.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_cleaned.json"
     fields: {"text_pc_origin": "original"}
@@ -193,5 +202,3 @@ processors:
       - "text"
       - "duration"
       - "text_pc_origin"
-
-

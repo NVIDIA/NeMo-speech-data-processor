@@ -46,7 +46,7 @@ def get_test_cases():
     """Returns paths, and data check fn for all configs that we want to test."""
 
     return [
-        (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config_mls_es.yaml", partial(data_check_fn_mls, language="spanish")),
+        (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
         (
             f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml",
             partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es"),

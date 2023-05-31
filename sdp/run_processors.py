@@ -19,9 +19,12 @@ import uuid
 from typing import List
 
 import hydra
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, open_dict
 
 from sdp.logging import logger
+
+# registering a new resolver to allow specifying different config values based on the data_split
+OmegaConf.register_new_resolver("subfield", lambda node, field: node[field])
 
 # customizing logger
 logger.setLevel(logging.INFO)
@@ -85,11 +88,18 @@ def run_processors(cfg):
 
     if processors_to_run == "all":
         processors_to_run = ":"
-    processors_cfgs = select_subset(cfg.processors, processors_to_run)
+    selected_cfgs = select_subset(cfg.processors, processors_to_run)
+    # filtering out any processors that have should_run=False
+    processors_cfgs = []
+    for processor_cfg in selected_cfgs:
+        with open_dict(processor_cfg):
+            should_run = processor_cfg.pop("should_run", True)
+        if should_run:
+            processors_cfgs.append(processor_cfg)
+
     logger.info(
         "Specified to run the following processors: %s ", [cfg["_target_"] for cfg in processors_cfgs],
     )
-
     processors = []
     # let's build all processors first to automatically check
     # for errors in parameters
@@ -103,9 +113,8 @@ def run_processors(cfg):
             for idx, processor in enumerate(cfg.processors):
                 if processor is processors_cfgs[0]:  # we don't do a copy, so can just check object ids
                     if "output_manifest_file" in cfg.processors[idx - 1]:
-                        OmegaConf.set_struct(processors_cfgs[0], False)
-                        processors_cfgs[0]["input_manifest_file"] = cfg.processors[idx - 1]["output_manifest_file"]
-                        OmegaConf.set_struct(processors_cfgs[0], True)
+                        with open_dict(processors_cfgs[0]):
+                            processors_cfgs[0]["input_manifest_file"] = cfg.processors[idx - 1]["output_manifest_file"]
                     break
 
         for idx, processor_cfg in enumerate(processors_cfgs):
@@ -116,14 +125,12 @@ def run_processors(cfg):
             # are missing, we create tmp files here for them
             if "output_manifest_file" not in processor_cfg:
                 tmp_file_path = os.path.join(tmp_dir, str(uuid.uuid4()))
-                OmegaConf.set_struct(processor_cfg, False)
-                processor_cfg["output_manifest_file"] = tmp_file_path
-                OmegaConf.set_struct(processor_cfg, True)
+                with open_dict(processor_cfg):
+                    processor_cfg["output_manifest_file"] = tmp_file_path
 
             if idx != len(processors_cfgs) - 1 and "input_manifest_file" not in processors_cfgs[idx + 1]:
-                OmegaConf.set_struct(processors_cfgs[idx + 1], False)
-                processors_cfgs[idx + 1]["input_manifest_file"] = processor_cfg["output_manifest_file"]
-                OmegaConf.set_struct(processors_cfgs[idx + 1], True)
+                with open_dict(processors_cfgs[idx + 1]):
+                    processors_cfgs[idx + 1]["input_manifest_file"] = processor_cfg["output_manifest_file"]
 
             processor = hydra.utils.instantiate(processor_cfg)
             # running runtime tests to fail right-away if something is not
