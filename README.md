@@ -34,7 +34,7 @@ processors:
 
   # use existing classes for common operations or write your own
   - _target_: sdp.processors.SubRegex
-    regex_params_list: 
+    regex_params_list:
       # specify the parameters needed for your usecase
       - {"pattern": " mr ", "repl": " mister "}
       - {"pattern": " misteak ", "repl": " mistake "}
@@ -58,7 +58,7 @@ For example:
 processors:
   ...
   - _target_: sdp.processors.DropIfRegexMatch
-  regex_patterns: 
+  regex_patterns:
   - '(\D ){5,20}' # looks for between 4 and 19 characters surrounded by space
 
   test_cases:
@@ -73,10 +73,11 @@ processors:
 
 SDP is officially supported for Python 3.8, but might work for other versions.
 
-SDP depends on the NeMo toolkit (ASR, NLP parts) and NeMo Text Processing.
-Please follow [NeMo installation instructions](https://github.com/NVIDIA/NeMo#installation) and [NeMo Text Processing installation instruactions](https://github.com/NVIDIA/NeMo-text-processing#installation).
+To install all required dependencies run `pip install -r requirements.txt` and (optionally) `pip install -r tests/requirements.txt` if you want to run tests.
 
-After that, run `pip install -r requirements.txt` and (optionally) `pip install -r tests/requirements.txt` if you want to run tests.
+Some SDP processors depend on the NeMo toolkit (ASR, NLP parts) and NeMo Text Processing.
+Please follow [NeMo installation instructions](https://github.com/NVIDIA/NeMo#installation) and [NeMo Text Processing installation instructions](https://github.com/NVIDIA/NeMo-text-processing#installation).
+
 
 ## Running SDP
 After installing the requirements for SDP, to use it, you will need to download it using e.g. `git clone https://github.com/NVIDIA/NeMo-speech-data-processor.git`.
@@ -115,7 +116,7 @@ Furthermore, when you add your own SDP processors in the YAML config file, you w
 
 For example, if a new custom processor `MyProcessor` is in `/my/files/a/b/c/my_processor.py`, you can use combinations such as: `PYTHONPATH="/my/files/a/b/c/"` & `_target_: my_processor.MyProcessor`, or `PYTHONPATH="/my/files/a/b/"` & `_target_: c.my_processor.MyProcessor`.
 
-If you add new processors within `<SDP_ROOT>`, to use them when you call SDP, you will not need to specify a `PYTHONPATH` variable, but you will need to make sure that the `_target_` inside the YAML config file is correct. If a new custom processor is `MyProcessor` inside `<SDP_ROOT>/dir/my_processor.py`, `_target_` will need to be `dir.my_processor.MyProcessor`. 
+If you add new processors within `<SDP_ROOT>`, to use them when you call SDP, you will not need to specify a `PYTHONPATH` variable, but you will need to make sure that the `_target_` inside the YAML config file is correct. If a new custom processor is `MyProcessor` inside `<SDP_ROOT>/dir/my_processor.py`, `_target_` will need to be `dir.my_processor.MyProcessor`.
 
 ## Additional documentation
 More information about SDP can be found in the [NeMo docs](https://docs.nvidia.com/deeplearning/nemo/user-guide/docs/en/main/tools/speech_data_processor.html).

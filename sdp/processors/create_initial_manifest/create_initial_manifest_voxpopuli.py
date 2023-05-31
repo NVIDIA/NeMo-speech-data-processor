@@ -18,9 +18,9 @@ from pathlib import Path
 from typing import Optional
 
 import sox
-from nemo.utils import logging
 from sox import Transformer
 
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import extract_archive
 
@@ -58,20 +58,20 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
 
             # TODO: some kind of isolated environment?
             if not os.path.exists(self.raw_data_dir / 'voxpopuli'):
-                logging.info("Downloading voxpopuli and installing requirements")
+                logger.info("Downloading voxpopuli and installing requirements")
                 subprocess.run(f"git clone {VOXPOPULI_URL} {self.raw_data_dir / 'voxpopuli'}", check=True, shell=True)
                 subprocess.run(
                     f"pip install -r {self.raw_data_dir / 'voxpopuli' / 'requirements.txt'}", check=True, shell=True
                 )
             if not os.path.exists(self.raw_data_dir / 'raw_audios'):
-                logging.info("Downloading raw audios")
+                logger.info("Downloading raw audios")
                 subprocess.run(
                     f"cd {self.raw_data_dir / 'voxpopuli'} && python -m voxpopuli.download_audios --root {self.raw_data_dir} --subset asr",
                     check=True,
                     shell=True,
                 )
             if not os.path.exists(self.raw_data_dir / 'transcribed_data' / self.language_id):
-                logging.info("Segmenting and transcribing the data")
+                logger.info("Segmenting and transcribing the data")
                 subprocess.run(
                     f"cd {self.raw_data_dir / 'voxpopuli'} && python -m voxpopuli.get_asr_data  --root {self.raw_data_dir} --lang {self.language_id}",
                     check=True,

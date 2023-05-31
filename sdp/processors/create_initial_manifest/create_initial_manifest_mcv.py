@@ -34,13 +34,13 @@ import csv
 import glob
 import os
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import sox
 from sox import Transformer
-from nemo.utils import logging
 from tqdm.contrib.concurrent import process_map
 
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import extract_archive
 

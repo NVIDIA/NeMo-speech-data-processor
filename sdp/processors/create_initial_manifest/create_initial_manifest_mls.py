@@ -16,12 +16,12 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from nemo.utils import logging
-
 import sox
+from sox import Transformer
+
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import download_file, extract_archive
-from sox import Transformer
 
 MLS_URL = "https://dl.fbaipublicfiles.com/mls/mls_{language}.tar.gz"
 
@@ -29,12 +29,12 @@ MLS_URL = "https://dl.fbaipublicfiles.com/mls/mls_{language}.tar.gz"
 class CreateInitialManifestMLS(BaseParallelProcessor):
     """
     Downloads and unzips raw MLS data for the specified language, and creates an initial manifest using
-    the transcripts provided in the raw data. 
+    the transcripts provided in the raw data.
 
     Args:
         raw_data_dir: the directory where the downloaded data will be/is saved. This is also
             where the extracted and processed data will be.
-        language: the language of the data you wish to be downloaded. This will be used to format the 
+        language: the language of the data you wish to be downloaded. This will be used to format the
             URL from which we attempt to download the data.
         data_split: the data split for which the initial manifest will be created.
         resampled_audio_dir: the directory where the resampled (16kHz) wav files will be stored.

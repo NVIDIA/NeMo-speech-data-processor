@@ -20,10 +20,10 @@ import urllib.request
 from typing import List
 
 import pandas as pd
+
+from sdp.logging import logger
 from sdp.processors.base_processor import DataEntry
 from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
-
-from nemo.utils import logging
 
 
 class CleanRomanNumerals(ModifyManifestTextProcessor):
@@ -85,10 +85,10 @@ class CleanRomanNumerals(ModifyManifestTextProcessor):
         for counter in metrics:
             for word, count in counter.items():
                 total_counter[word] += count
-        logging.info("Num of roman numeral substitutions")
+        logger.info("Num of roman numeral substitutions")
         total_counter_sorted = dict(sorted(total_counter.items(), key=lambda x: x[1], reverse=True,))
         for word, count in total_counter_sorted.items():
-            logging.info(f"{word} {count}")
+            logger.info(f"{word} {count}")
         super().finalize(metrics)
 
     def clean_operation(self, data, triggers, roman_numeral_to_num_written):

@@ -16,12 +16,11 @@ import collections
 import re
 from typing import Dict, List
 
+from sdp.logging import logger
 from sdp.processors.base_processor import DataEntry
 from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
 from sdp.utils.edit_spaces import add_start_end_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
-
-from nemo.utils import logging
 
 
 class InsIfASRInsertion(ModifyManifestTextProcessor):
@@ -84,9 +83,9 @@ class InsIfASRInsertion(ModifyManifestTextProcessor):
         for counter in metrics:
             for word, count in counter.items():
                 total_counter[word] += count
-        logging.info("Num of words that were inserted")
+        logger.info("Num of words that were inserted")
         for word, count in total_counter.items():
-            logging.info(f"{word} {count}")
+            logger.info(f"{word} {count}")
         super().finalize(metrics)
 
 
@@ -163,9 +162,9 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
         for counter in metrics:
             for word, count in counter.items():
                 total_counter[word] += count
-        logging.info("Num of words that were substituted")
+        logger.info("Num of words that were substituted")
         for word, count in total_counter.items():
-            logging.info(f"{word} {count}")
+            logger.info(f"{word} {count}")
         super().finalize(metrics)
 
 
@@ -184,7 +183,7 @@ class SubMakeLowercase(ModifyManifestTextProcessor):
         return [DataEntry(data=data_entry)]
 
     def finalize(self, metrics):
-        logging.info("Made all letters lowercase")
+        logger.info("Made all letters lowercase")
         super().finalize(metrics)
 
 
@@ -194,7 +193,7 @@ class SubRegex(ModifyManifestTextProcessor):
     by key-value pairs in regex_to_sub.
 
     Args:
-        regex_params_list: list of dicts. Each dict must contain a 'pattern' and 'repl' key, 
+        regex_params_list: list of dicts. Each dict must contain a 'pattern' and 'repl' key,
             and optionally a 'count' key (by default, 'count' will be 0).
             This processor will go through the list in order, and apply a re.sub operation on
             the input text in data_entry[self.text_key], feeding in the specified 'pattern', 'repl'
@@ -246,8 +245,8 @@ class SubRegex(ModifyManifestTextProcessor):
         for counter in metrics:
             for word, count in counter.items():
                 total_counter[word] += count
-        logging.info("Number of utterances which applied substitutions for the following patterns:")
+        logger.info("Number of utterances which applied substitutions for the following patterns:")
         total_counter_sorted = dict(sorted(total_counter.items(), key=lambda x: x[1], reverse=True))
         for word, count in total_counter_sorted.items():
-            logging.info(f"{word} {count}")
+            logger.info(f"{word} {count}")
         super().finalize(metrics)

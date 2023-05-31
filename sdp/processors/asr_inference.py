@@ -16,7 +16,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from nemo.utils import logging
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 
 

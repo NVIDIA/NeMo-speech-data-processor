@@ -16,8 +16,7 @@ import re
 import string
 from typing import Dict
 
-from nemo.utils import logging
-
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
@@ -125,7 +124,7 @@ class NormalizeFromNonPCText(BaseParallelProcessor):
             data_entry["text"] = restored_norm_text
             return [DataEntry(data=data_entry)]
         except:
-            logging.warning(f"failed to restore normalization for text {data_entry['text']}. Dropping utterance")
+            logger.warning(f"failed to restore normalization for text {data_entry['text']}. Dropping utterance")
             return [DataEntry(data=None)]
 
 
