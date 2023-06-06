@@ -1,7 +1,9 @@
 import os
-from typing import Dict
+import json
+from tqdm import tqdm
+from typing import Dict, List
 
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry, BaseProcessor
 
 
 class AddConstantFields(BaseParallelProcessor):
@@ -151,3 +153,63 @@ class ChangeToRelativePath(BaseParallelProcessor):
         data_entry["audio_filepath"] = os.path.relpath(data_entry["audio_filepath"], self.base_dir)
 
         return [DataEntry(data=data_entry)]
+
+
+class SortManifest(BaseProcessor):
+    """
+    Processor which will sort the manifest by some specified attribute.
+
+    Args:
+        output_manifest: the path to the output manifest. It will be the same as the
+            input manifest, but resorted.
+        input_manifest_file: the path to the input manifest which will be resorted.
+        attribute_sort_by: the attribute by which the manifest will be sorted.
+        descending: if set to False (default), attribute will be in ascending order.
+            If True, attribute will be in descending order.
+
+    """
+
+    def __init__(
+        self, output_manifest_file: str, input_manifest_file: str, attribute_sort_by: str, descending: bool = True
+    ):
+        self.output_manifest_file = output_manifest_file
+        self.input_manifest_file = input_manifest_file
+        self.attribute_sort_by = attribute_sort_by
+        self.descending = descending
+
+    def process(self):
+
+        with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
+            dataset_entries = [json.loads(line) for line in fin.readlines()]
+
+        dataset_entries = sorted(dataset_entries, key=lambda x: x[self.attribute_sort_by], reverse=self.descending)
+
+        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
+            for line in dataset_entries:
+                fout.write(json.dumps(line) + "\n")
+
+
+class WriteManifest(BaseProcessor):
+    """
+    Saves a copy of a manifest but only with the fields specified in fields_to_save.
+
+    Args:
+        output_manifest_file: path of where the output file will be saved.
+        input_manifest_file: path of where the input file that we will be copying is saved.
+        fields_to_save: list of the fields in the input manifest that we want to copy over.
+            The output file will only contain these fields.
+    """
+
+    def __init__(self, output_manifest_file: str, input_manifest_file: str, fields_to_save: List[str]):
+        self.output_manifest_file = output_manifest_file
+        self.input_manifest_file = input_manifest_file
+        self.fields_to_save = fields_to_save
+
+    def process(self):
+        with open(self.input_manifest_file, "rt", encoding="utf8") as fin, open(
+            self.output_manifest_file, "wt", encoding="utf8"
+        ) as fout:
+            for line in tqdm(fin):
+                line = json.loads(line)
+                new_line = {field: line[field] for field in self.fields_to_save}
+                fout.write(json.dumps(new_line) + "\n")

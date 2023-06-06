@@ -13,32 +13,50 @@
 # limitations under the License.
 
 import collections
-from typing import Dict, List
+from typing import List
 
 from sdp.logging import logger
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.processors.base_processor import DataEntry
 from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
 
 
 class MakeLettersUppercaseAfterPeriod(ModifyManifestTextProcessor):
-    """
+    """Can be used to replace characters with upper-case version after punctuation.
+
+    Args:
+        punctuation (str): string with all punctuation characters to consider.
+            Defaults to ".!?".
     """
 
     def __init__(
-        self, **kwargs,
+        self, punctuation=".!?", **kwargs,
     ):
+        self.punctuation = punctuation
         super().__init__(**kwargs)
 
     def _process_dataset_entry(self, data_entry) -> List:
         replace_word_counter = collections.defaultdict(int)
 
-        for p in ".!?":
-            for letter in "abcdefghijklmnopqrstuvwxyzáéíóúü":
-                replace_in = f"{p} {letter}"
-                replace_out = f"{p} {letter}".upper()
-                if replace_in in data_entry[self.text_key]:
-                    data_entry[self.text_key] = data_entry[self.text_key].replace(replace_in, replace_out)
-                    replace_word_counter[replace_in] += 1
+        # keeping in a list, since strings are immutable
+        new_text = []
+
+        idx = 0
+        while idx < len(data_entry[self.text_key]):
+            character = data_entry[self.text_key][idx]
+            # checking that next is space and then we upper whatever is after that
+            # note that Python's upper correctly does not change anything that's not a letter
+            if (
+                character in self.punctuation
+                and idx + 2 < len(data_entry[self.text_key])
+                and data_entry[self.text_key][idx + 1] == " "
+            ):
+                new_text.extend([character, " ", data_entry[self.text_key][idx + 2].upper()])
+                replace_word_counter[data_entry[self.text_key][idx : idx + 3]] += 1
+                idx += 2
+            else:
+                new_text.append(character)
+            idx += 1
+        data_entry[self.text_key] = "".join(new_text)
 
         return [DataEntry(data=data_entry, metrics=replace_word_counter)]
 
@@ -47,7 +65,7 @@ class MakeLettersUppercaseAfterPeriod(ModifyManifestTextProcessor):
         for counter in metrics:
             for word, count in counter.items():
                 total_counter[word] += count
-        logger.info("Some of the substrings that were substituted")
+        logger.info("Some of the substrings that were uppercased")
         total_counter_sorted = dict(sorted(total_counter.items(), key=lambda x: x[1], reverse=True))
         for word, count in total_counter_sorted.items():
             if count > 1:

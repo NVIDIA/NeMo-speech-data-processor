@@ -5,13 +5,14 @@
 # ":-1" (to select all but last)
 # "2:5" (to select 3rd to 5th)
 # "0" (to select only the first processor)
-processors_to_run: ???
+processors_to_run: all
 data_split: ???
 workspace_dir: ???
 language_long: "spanish"
 language_short: "es"
+# https://catalog.ngc.nvidia.com/orgs/nvidia/teams/riva/models/punctuationcapitalization_es_us_bert_base can be used
+# subject to the Riva license listed on that page
 pc_model_path: ???
-lv_text_dir: ???
 final_manifest: ${workspace_dir}/mls_spanish_processed/${data_split}_final.json
 
 processors:
@@ -27,7 +28,7 @@ processors:
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc.json"
     language_long: ${language_long}
     language_short: ${language_short}
-    lv_text_dir: "${lv_text_dir}"
+    lv_text_dir: "${workspace_dir}/librivox_text"
     submanifests_dir: ${workspace_dir}/mls_spanish_processed/submanifests/${data_split}
     restored_submanifests_dir: ${workspace_dir}/mls_spanish_processed/restored_submanifests/${data_split}
     restored_text_field: "text_pc"
@@ -47,13 +48,13 @@ processors:
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_just_added_pred.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
     text_key: "text_pc_pred"
-    regex_params_list: 
+    regex_params_list:
     - {"pattern": ' (\w+)¿ ', "repl": ' ¿\1 '}
 
     test_cases:
       - {input: {text_pc_pred: "cómo¿ estás? def."}, output: {text_pc_pred: "¿cómo estás? def."}}
 
-  - _target_: dataset_configs.spanish_pc.mls.unique_processors.make_letters_uppercase_after_period.MakeLettersUppercaseAfterPeriod
+  - _target_: sdp.processors.MakeLettersUppercaseAfterPeriod
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
     text_key: "text_pc_pred"
@@ -63,10 +64,10 @@ processors:
   - _target_: sdp.processors.RenameFields
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
-    rename_fields: 
+    rename_fields:
       "text": "original_dataset_text"
 
-  - _target_: dataset_configs.spanish_pc.mls.unique_processors.change_pc_fields.ChangePCFields
+  - _target_: sdp.processors.ChangePCFields
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
 
@@ -78,7 +79,7 @@ processors:
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_inference.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex.json"
-    regex_params_list: 
+    regex_params_list:
       - {"pattern": "!", "repl": "."}
       - {"pattern": "…", "repl": "."}
       - {"pattern": "(\\. ){2,20}", "repl": "."}
@@ -174,7 +175,7 @@ processors:
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex.json"
-    regex_params_list: 
+    regex_params_list:
     - {"pattern": '[\-\‐\‑\–\—\―\"]', "repl": " "}
     - {"pattern": "'", "repl": " "}
     - { "pattern": '[\$\&\¡\(\)]', "repl": " "}
@@ -183,7 +184,7 @@ processors:
     - { "pattern": '[\«\°\´\·\»]', "repl": " "}
     - { "pattern": '[\‘\’\“\”\„]', "repl": " "}
     - { "pattern": '[\‧\‹\›\≪\≫]', "repl": " "}
-    - { "pattern": '[\:\;\`\ʻ]', "repl": " "}  
+    - { "pattern": '[\:\;\`\ʻ]', "repl": " "}
     - { "pattern": '[\ː\‘\’\“\→]', "repl": " "}
     - { "pattern": '[\%\‘\”\�\ʽ\\ʿ]', "repl": " "}
     - { "pattern": '́' , "repl": " "} # used for putting stress on Russian letters
@@ -217,7 +218,7 @@ processors:
       - {input: {text: "test тест 测试"}, output: null}
       - {input: {text: "test"}, output: {text: "test"}}
 
-  
+
   # run manual normalization of roman numerals
   - _target_: dataset_configs.spanish.mls.unique_processors.clean_roman_numerals.CleanRomanNumerals
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_only_alphabet.json"
@@ -265,7 +266,7 @@ processors:
   - _target_: sdp.processors.DropIfRegexMatch
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_normalized.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_spaced_out.json"
-    regex_patterns: 
+    regex_patterns:
     - '(\D ){5,20}'
 
     test_cases:
@@ -312,7 +313,7 @@ processors:
 
     test_cases:
       - {input: {audio_filepath: "/path/10246/12585/abc.wav"}, output: null}
-      - {input: {audio_filepath: "/path/1/1/abc.wav"}, output: {audio_filepath: "/path/1/1/abc.wav"}}    
+      - {input: {audio_filepath: "/path/1/1/abc.wav"}, output: {audio_filepath: "/path/1/1/abc.wav"}}
 
 
   - _target_: sdp.processors.DropIfRegexMatch
@@ -343,7 +344,7 @@ processors:
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
     text_key: "text_no_pc"
-    regex_params_list: 
+    regex_params_list:
     - {"pattern": '[¿?.,]', "repl": ""}
 
 
@@ -408,7 +409,7 @@ processors:
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_charrate.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_cleaned.json"
-    regex_params_list: 
+    regex_params_list:
     - {"pattern": '\.', "repl": ' . '}
     - {"pattern": ",", "repl": " , "}
     - {"pattern": '\?', "repl": " ? "}
@@ -423,5 +424,5 @@ processors:
     fields_to_save:
       - "audio_filepath"
       - "text"
-      - "duration" 
-      - "text_pc_origin" 
+      - "duration"
+      - "text_pc_origin"

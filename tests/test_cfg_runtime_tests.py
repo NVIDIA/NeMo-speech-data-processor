@@ -13,11 +13,10 @@
 # limitations under the License.
 
 import glob
-import json
 from pathlib import Path
 
 import hydra
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, open_dict
 import pytest
 
 
@@ -32,15 +31,20 @@ def get_test_cases():
 
 @pytest.mark.parametrize("config_path", get_test_cases())
 def test_configs(config_path: str):
+    try:
+        # to be able to correctly read some of the configs
+        OmegaConf.register_new_resolver("subfield", lambda node, field: node[field])
+    except ValueError:  # already registered
+        pass
+
     cfg = OmegaConf.load(config_path)
+    cfg["data_split"] = "train"  # in case it's required for tests
     for processor_cfg in cfg.processors:
         if "test_cases" in processor_cfg:
             # clear input_manifest_file and output_manifest_file to make sure we don't get
             # a MissingMandatoryValue error when we instantiate the processor
-            OmegaConf.set_struct(processor_cfg, False)
-            processor_cfg["output_manifest_file"] = None
-            processor_cfg["input_manifest_file"] = None
-            OmegaConf.set_struct(processor_cfg, True)
-
+            with open_dict(processor_cfg):
+                processor_cfg["output_manifest_file"] = None
+                processor_cfg["input_manifest_file"] = None
             processor = hydra.utils.instantiate(processor_cfg)
             processor.test()

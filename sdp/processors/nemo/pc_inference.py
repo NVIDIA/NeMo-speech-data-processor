@@ -13,13 +13,10 @@
 # limitations under the License.
 
 import json
-import os
-import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 
-from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 
 

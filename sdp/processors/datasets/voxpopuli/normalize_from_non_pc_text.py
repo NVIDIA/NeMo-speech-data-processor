@@ -17,7 +17,8 @@ import string
 from typing import Dict
 
 from sdp.logging import logger
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.processors.base_processor import DataEntry
+from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
 
 
 def is_same(orig_word, norm_word):
@@ -109,33 +110,24 @@ def restore_pc(orig_words, norm_words):
         print(idx_orig, idx_norm, len(orig_text), len(norm_text), orig_text, norm_text, merged_text)
         raise RuntimeError("Something went wrong during merging")
 
-    return " ".join(merged_text[:-1])  # removing end_text token
+    # merging all "¿ " to the next word and removing end_text token
+    norm_text = " ".join(merged_text[:-1]).replace("¿ ", "¿")
+
+    return norm_text
 
 
-class NormalizeFromNonPCText(BaseParallelProcessor):
+class NormalizeFromNonPCTextVoxpopuli(ModifyManifestTextProcessor):
+    """Tries to restore puncutation and capitalization from the unnormalized text version."""
     def __init__(
         self, **kwargs,
     ):
         super().__init__(**kwargs)
 
-    def process_dataset_entry(self, data_entry: Dict):
+    def _process_dataset_entry(self, data_entry: Dict):
         try:
             restored_norm_text = restore_pc(data_entry["text"], data_entry["provided_norm_text"])
             data_entry["text"] = restored_norm_text
             return [DataEntry(data=data_entry)]
         except:
-            logger.warning(f"failed to restore normalization for text {data_entry['text']}. Dropping utterance")
+            logger.warning(f"Failed to restore normalization for text {data_entry['text']}. Dropping utterance")
             return [DataEntry(data=None)]
-
-
-if __name__ == "__main__":
-    # usage example
-    try:
-        # raw_text = ". So 623 Abc?"
-        raw_text = "¿So, it's ¿ 62.3 Abc Abc?"
-        norm_text = "so it's six two point three abc abc;"
-
-        transcript_text = restore_pc(raw_text, norm_text)
-        print(transcript_text)
-    except:
-        print("Failed to restore punctuation! Skipping utterance")
