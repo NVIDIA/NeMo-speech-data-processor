@@ -55,6 +55,8 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
 
     def prepare(self):
         """Downloading and extracting data (unless already done)."""
+        os.makedirs(self.raw_data_dir, exist_ok=True)
+
         url = MLS_URL.format(language=self.language)
 
         if not (self.raw_data_dir / f"mls_{self.language}.tar.gz").exists():

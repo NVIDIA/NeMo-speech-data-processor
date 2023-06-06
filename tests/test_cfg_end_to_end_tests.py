@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import glob
 import json
 import os
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict
+from typing import Callable
+import tarfile
 
 import pytest
 from omegaconf import OmegaConf
 
-from sdp.logging import logger
 from sdp.run_processors import run_processors
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
@@ -42,6 +41,22 @@ def data_check_fn_mcv(raw_data_dir: str, archive_file_stem: str) -> None:
         raise ValueError(f"No such file {str(expected_file)}")
 
 
+def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
+    """Raises error if do not find expected data.
+
+    Will also extract the archive as initial processor expects extracted data.
+    """
+    if (Path(raw_data_dir) / "transcribed_data").exists():
+        return
+
+    expected_file = Path(raw_data_dir) / "transcribed_data.tar.gz"
+    if not expected_file.exists():
+        raise ValueError(f"No such file {str(expected_file)}")
+
+    with tarfile.open(Path(raw_data_dir) / "transcribed_data.tar.gz", 'r:gz') as tar:
+        tar.extractall(path=raw_data_dir)
+
+
 def get_test_cases():
     """Returns paths, and data check fn for all configs that we want to test."""
 
@@ -51,6 +66,7 @@ def get_test_cases():
             f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml",
             partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es"),
         ),
+        (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
     ]
 
 
@@ -84,11 +100,12 @@ def get_e2e_test_data_path() -> str:
         "s3", aws_access_key_id=os.getenv("AWS_ACCESS_KEY"), aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
     )
     bucket = s3_resource.Bucket("sdp-test-data")
+    print("Downloading test data from s3")
     for obj in bucket.objects.all():
         if not os.path.exists(os.path.dirname(obj.key)):
             os.makedirs(os.path.dirname(obj.key))
         bucket.download_file(obj.key, obj.key)
-
+    print("Test data downloaded to 'test_data' folder.")
     os.environ["TEST_DATA_ROOT"] = os.path.abspath("test_data")
 
     return os.environ["TEST_DATA_ROOT"]

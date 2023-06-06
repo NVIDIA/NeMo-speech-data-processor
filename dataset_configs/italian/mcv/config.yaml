@@ -1,0 +1,56 @@
+processors_to_run: all
+data_split: ???
+workspace_dir: ???
+final_manifest: ${workspace_dir}/${data_split}_manifest.json
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestMCV
+    output_manifest_file: ${workspace_dir}/${data_split}_manifest0.json
+    language_id: it
+    extract_archive_dir: ${workspace_dir}/raw_data
+    resampled_audio_dir: ${workspace_dir}/${data_split}/audio/
+    data_split: ${data_split}
+    raw_data_dir: ${workspace_dir}/raw_data
+
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      - {"pattern": "!", "repl": "."}
+      - {"pattern": "…", "repl": "."}
+      - {"pattern": "’", "repl": "'"}
+      - {"pattern": '[\":\(\)“”;]', "repl": ''}
+      - {"pattern": "[-/]", "repl": " "}
+      # note that we exclude î and ó - according to wikipedia they are very
+      # rarely used in modern italian. So it's safer to replace them, as they
+      # often represent other languages (e.g., french or spanish, most often
+      # in names), rather than actual italian
+      - {"pattern": "î", "repl": "i"}
+      - {"pattern": "ó", "repl": "o"}
+      - {"pattern": "Î", "repl": "I"}
+      - {"pattern": "Ó", "repl": "O"}
+    test_cases:
+      - {input: {text: "Wow!"}, output: {text: "Wow."}}
+
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: ".,? 'abcdefghijklmnopqrstuvwxyzàèéìíòùúABCDEFGHIJKLMNOPQRSTUVWXYZÀÈÉÌÍÒÙÚ"
+    test_cases:
+      - {input: {text: "test тест 测试"}, output: null}
+      - {input: {text: "test"}, output: {text: "test"}}
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    regex_patterns: [
+          # transcription errors
+          "common_voice_it_17553281.wav",
+          "common_voice_it_19976820.wav",
+          "common_voice_it_17553352.wav",
+    ]
+    text_key: audio_filepath
+
+  - _target_: sdp.processors.ChangeToRelativePath
+    base_dir: ${workspace_dir}
+
+  - _target_: sdp.processors.WriteManifest
+    output_manifest_file: ${final_manifest}
+    fields_to_save:
+      - audio_filepath
+      - text
+      - duration

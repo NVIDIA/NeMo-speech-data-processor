@@ -20,6 +20,7 @@ import string
 import sys
 from glob import glob
 from pathlib import Path
+from typing import Optional
 
 from joblib import Parallel, delayed
 from tqdm import tqdm
@@ -276,7 +277,27 @@ def recover_lines(manifest, processed_text, output_dir, restored_text_field):
             f_out.write(json.dumps(line, ensure_ascii=False) + "\n")
 
 
-def normalize_text(text_f: str, normalizer: 'Normalizer'):
+def split_text_into_sentences(text: str):
+    """
+    Split text into sentences.
+
+    Args:
+        text: text
+
+    Returns list of sentences
+    """
+    # TODO: should this be filled up and exposed as a parameter?
+    lower_case_unicode = ''
+    upper_case_unicode = ''
+
+    # Read and split transcript by utterance (roughly, sentences)
+    split_pattern = rf"(?<!\w\.\w.)(?<![A-Z{upper_case_unicode}][a-z{lower_case_unicode}]+\.)(?<![A-Z{upper_case_unicode}]\.)(?<=\.|\?|\!|\.”|\?”\!”)\s(?![0-9]+[a-z]*\.)"
+
+    sentences = re.split(split_pattern, text)
+    return sentences
+
+
+def normalize_text(text_f: str, normalizer: Optional['Normalizer'] = None):
     """
     Pre-process and normalized text_f file.
 
@@ -286,8 +307,10 @@ def normalize_text(text_f: str, normalizer: 'Normalizer'):
     """
     raw_text = read_text(text_f)
     processed_text = abbreviations(process(raw_text))
-
-    processed_text_list = normalizer.split_text_into_sentences(processed_text)
+    if normalizer is not None:
+        processed_text_list = normalizer.split_text_into_sentences(processed_text)
+    else:
+        processed_text_list = split_text_into_sentences(processed_text)
     processed_text_list_merged = []
     last_segment = ""
     max_len = 7500
@@ -302,9 +325,12 @@ def normalize_text(text_f: str, normalizer: 'Normalizer'):
             processed_text_list_merged.append(last_segment.strip())
 
     for i, text in enumerate(tqdm(processed_text_list_merged)):
-        processed_text_list_merged[i] = normalizer.normalize(
-            text=text, punct_post_process=True, punct_pre_process=True
-        )
+        if normalizer is not None:
+            processed_text_list_merged[i] = normalizer.normalize(
+                text=text, punct_post_process=True, punct_pre_process=True
+            )
+        else:
+            processed_text_list_merged[i] = re.sub(r"\d", r"", processed_text_list_merged[i])
     processed_text = " ".join(processed_text_list_merged)
     return processed_text
 
@@ -410,6 +436,8 @@ class RestorePCForMLS(BaseProcessor):
         """
         from nemo_text_processing.text_normalization.normalize import Normalizer
 
+        os.makedirs(self.lv_text_dir, exist_ok=True)
+
         # Download & extract lv_text.
         download_file(MLS_TEXT_URL, str(self.lv_text_dir))
         lv_text_data_folder = extract_archive(
@@ -417,7 +445,7 @@ class RestorePCForMLS(BaseProcessor):
         )
 
         # Create submanifests
-        os.makedirs(str(self.submanifests_dir), exist_ok=True)
+        os.makedirs(self.submanifests_dir, exist_ok=True)
 
         data = {}
         with open(self.input_manifest_file, "r") as f:
@@ -439,20 +467,17 @@ class RestorePCForMLS(BaseProcessor):
         # Restore P&C to submanifests.
         os.makedirs(str(self.restored_submanifests_dir), exist_ok=True)
 
-        normalizer = Normalizer(
-            input_case="cased",
-            lang=self.language_short,
-            cache_dir="CACHE_DIR",
-            overwrite_cache=False,
-            post_process=True,
-        )
+        try:
+            normalizer = Normalizer(
+                input_case="cased",
+                lang=self.language_short,
+                cache_dir="CACHE_DIR",
+                overwrite_cache=False,
+                post_process=True,
+            )
+        except NotImplementedError:  # some languages don't support text normalization
+            normalizer = None
 
-        # books_ids_in_submanifests = set(
-        #     [
-        #         os.path.basename(x).split("_")[0]
-        #         for x in glob(f"{str(self.submanifests_dir)}/*.json")
-        #     ]
-        # )
         # TODO: rename to maybe books_ids_in_datasplit
         books_ids_in_submanifests = set([x.split("_")[0] for x in data.keys()])
 
@@ -519,15 +544,16 @@ class RestorePCForMLS(BaseProcessor):
         sub_manifest_duration = sum(list(filename_to_sub_manifest_durs.values()))
         restored_manifest_duration = sum(list(filename_to_restored_sub_manifest_durs.values()))
 
+        logger.info("duration in submanifests (for current datasplit): %.2f hrs", sub_manifest_duration / 60 / 60)
         logger.info(
-            f"duration in submanifests (for current datasplit): {round(sub_manifest_duration / 60 / 60, 2)} hrs"
-        )
-        logger.info(
-            f"duration restored (for current datasplit): {round(restored_manifest_duration / 60 / 60, 2)} hrs ({round(restored_manifest_duration/sub_manifest_duration * 100, 2)}%), lost: {round((sub_manifest_duration - restored_manifest_duration) / 60 / 60, 2)} hrs"
+            "duration restored (for current datasplit): %.2f hrs (%.2f%%), lost: %.2f hrs",
+            restored_manifest_duration / 60 / 60,
+            restored_manifest_duration / sub_manifest_duration * 100,
+            (sub_manifest_duration - restored_manifest_duration) / 60 / 60,
         )
 
         logger.info(
-            f"Combining restored manifest for current datasplit into single manifest at {self.output_manifest_file}"
+            "Combining restored manifest for current datasplit into single manifest at %s", self.output_manifest_file
         )
 
         # duration in restored_submanifests

@@ -46,5 +46,7 @@ def test_configs(config_path: str):
             with open_dict(processor_cfg):
                 processor_cfg["output_manifest_file"] = None
                 processor_cfg["input_manifest_file"] = None
+                # in case should_run is specified, we need to remove it
+                processor_cfg.pop("should_run", None)
             processor = hydra.utils.instantiate(processor_cfg)
             processor.test()

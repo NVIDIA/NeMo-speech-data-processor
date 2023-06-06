@@ -15,14 +15,12 @@
 import os
 import subprocess
 from pathlib import Path
-from typing import Optional
 
 import sox
 from sox import Transformer
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
-from sdp.utils.common import extract_archive
 
 VOXPOPULI_URL = "https://github.com/facebookresearch/voxpopuli"
 
@@ -53,9 +51,9 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
 
     def prepare(self):
         """Downloading data (unless already done)"""
+        os.makedirs(self.raw_data_dir, exist_ok=True)
 
         if not (self.raw_data_dir / "transcribed_data").exists():
-
             # TODO: some kind of isolated environment?
             if not os.path.exists(self.raw_data_dir / 'voxpopuli'):
                 logger.info("Downloading voxpopuli and installing requirements")
@@ -95,13 +93,13 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
         utt_id, raw_text, norm_text, spk_id, _, gender, is_gold_transcript, accent = data_entry.split("\t")
         year = utt_id[:4]
 
-        src_flac_path = os.path.join(self.raw_data_dir, "transcribed_data", self.language_id, year, utt_id + ".ogg")
+        src_audio_path = os.path.join(self.raw_data_dir, "transcribed_data", self.language_id, year, utt_id + ".ogg")
         tgt_wav_path = os.path.join(self.resampled_audio_dir, utt_id + ".wav")
 
         if not os.path.exists(os.path.dirname(tgt_wav_path)):
             os.makedirs(os.path.dirname(tgt_wav_path), exist_ok=True)
         if not os.path.exists(tgt_wav_path):
-            Transformer().build(src_flac_path, tgt_wav_path)
+            Transformer().build(src_audio_path, tgt_wav_path)
 
         data = {
             "audio_filepath": tgt_wav_path,
