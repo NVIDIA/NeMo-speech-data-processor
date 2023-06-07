@@ -342,7 +342,7 @@ dmp.Diff_Timeout = 0
 
 
 def is_valid(line, recovered_line):
-    """ Checks that the restore line matches the original line in everything but casing and punctuation marks"""
+    """Checks that the restore line matches the original line in everything but casing and punctuation marks"""
     line = abbreviations(line)
     line_no_punc = remove_punctuation(line, remove_spaces=True, do_lower=True, remove_accents=True)
     recovered_line_no_punc = remove_punctuation(recovered_line, remove_spaces=True, do_lower=True, remove_accents=True)
@@ -558,7 +558,6 @@ class RestorePCForMLS(BaseProcessor):
 
         # duration in restored_submanifests
         with open(self.output_manifest_file, 'w') as fout:
-
             for book_id, spk_id in book_id_spk_ids_in_datasplit:
                 manifest = os.path.join(self.restored_submanifests_dir, f"{spk_id}_{book_id}.json")
                 if os.path.exists(manifest):

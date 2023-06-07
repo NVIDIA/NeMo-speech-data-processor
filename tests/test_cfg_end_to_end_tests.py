@@ -14,10 +14,10 @@
 
 import json
 import os
+import tarfile
 from functools import partial
 from pathlib import Path
 from typing import Callable
-import tarfile
 
 import pytest
 from omegaconf import OmegaConf
@@ -97,7 +97,9 @@ def get_e2e_test_data_path() -> str:
     import boto3
 
     s3_resource = boto3.resource(
-        "s3", aws_access_key_id=os.getenv("AWS_ACCESS_KEY"), aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
+        "s3",
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
     )
     bucket = s3_resource.Bucket("sdp-test-data")
     print("Downloading test data from s3")
@@ -118,7 +120,6 @@ def get_e2e_test_data_path() -> str:
 )
 @pytest.mark.parametrize("config_path,data_check_fn", get_test_cases())
 def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
-
     test_data_root = get_e2e_test_data_path()
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
     # to have the same structure (e.g. <lang>/<dataset>)

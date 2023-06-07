@@ -16,9 +16,8 @@ import glob
 from pathlib import Path
 
 import hydra
-from omegaconf import OmegaConf, open_dict
 import pytest
-
+from omegaconf import OmegaConf, open_dict
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
 

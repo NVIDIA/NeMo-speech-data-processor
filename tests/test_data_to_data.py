@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+
 from sdp.processors.modify_manifest.data_to_data import (
     InsIfASRInsertion,
     SubIfASRSubstitution,
@@ -63,7 +64,12 @@ test_params_list.extend(
 
 test_params_list.extend(
     [
-        (SubMakeLowercase, {}, {"text": "Hello Привет 123"}, {"text": "hello привет 123"},),
+        (
+            SubMakeLowercase,
+            {},
+            {"text": "Hello Привет 123"},
+            {"text": "hello привет 123"},
+        ),
         (
             SubMakeLowercase,
             {"text_key": "text_new"},

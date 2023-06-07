@@ -22,8 +22,6 @@ from typing import Optional
 
 import pytorch_lightning as pl
 import torch
-from omegaconf import OmegaConf
-
 from nemo.collections.asr.metrics.rnnt_wer import RNNTDecodingConfig
 from nemo.collections.asr.metrics.wer import CTCDecodingConfig
 from nemo.collections.asr.models import ASRModel
@@ -32,7 +30,7 @@ from nemo.collections.asr.parts.utils.transcribe_utils import transcribe_partial
 from nemo.collections.common.tokenizers.aggregate_tokenizer import AggregateTokenizer
 from nemo.core.config import hydra_runner
 from nemo.utils import logging, model_utils
-
+from omegaconf import OmegaConf
 
 """
 Transcribe audio file on a single CPU/GPU. Useful for transcription of moderate amounts of audio data.

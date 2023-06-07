@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRErrorBeginningEnd,
     DropHighCER,
@@ -77,8 +78,18 @@ test_params_list.extend(
 
 test_params_list.extend(
     [
-        (DropHighLowDuration, {"high_duration_threshold": 3.9, "low_duration_threshold": 0}, {"duration": 4}, True,),
-        (DropHighLowDuration, {"high_duration_threshold": 99, "low_duration_threshold": 4.1}, {"duration": 4}, True,),
+        (
+            DropHighLowDuration,
+            {"high_duration_threshold": 3.9, "low_duration_threshold": 0},
+            {"duration": 4},
+            True,
+        ),
+        (
+            DropHighLowDuration,
+            {"high_duration_threshold": 99, "low_duration_threshold": 4.1},
+            {"duration": 4},
+            True,
+        ),
         (
             DropHighLowDuration,
             {"high_duration_threshold": 4.1, "low_duration_threshold": 3.9},
@@ -91,8 +102,18 @@ test_params_list.extend(
 
 test_params_list.extend(
     [
-        (DropNonAlphabet, {"alphabet": " abc"}, {"text": "ab ba cab dac"}, True,),
-        (DropNonAlphabet, {"alphabet": " abcd"}, {"text": "ab ba cab dac"}, False,),
+        (
+            DropNonAlphabet,
+            {"alphabet": " abc"},
+            {"text": "ab ba cab dac"},
+            True,
+        ),
+        (
+            DropNonAlphabet,
+            {"alphabet": " abcd"},
+            {"text": "ab ba cab dac"},
+            False,
+        ),
     ]
 )
 
@@ -137,16 +158,41 @@ test_params_list.extend(
 
 test_params_list.extend(
     [
-        (DropHighCER, {"cer_threshold": 9.9}, {"text": "0123456789", "pred_text": "012345678"}, True,),
-        (DropHighCER, {"cer_threshold": 10.1}, {"text": "0123456789", "pred_text": "012345678"}, False,),
+        (
+            DropHighCER,
+            {"cer_threshold": 9.9},
+            {"text": "0123456789", "pred_text": "012345678"},
+            True,
+        ),
+        (
+            DropHighCER,
+            {"cer_threshold": 10.1},
+            {"text": "0123456789", "pred_text": "012345678"},
+            False,
+        ),
     ]
 )
 
 test_params_list.extend(
     [
-        (DropHighWER, {"wer_threshold": 0}, {"text": "11  22", "pred_text": "11 22"}, False,),
-        (DropHighWER, {"wer_threshold": 50.1}, {"text": "11 22", "pred_text": "11 22 33"}, False,),
-        (DropHighWER, {"wer_threshold": 49.9}, {"text": "11 22", "pred_text": "11 22 33"}, True,),
+        (
+            DropHighWER,
+            {"wer_threshold": 0},
+            {"text": "11  22", "pred_text": "11 22"},
+            False,
+        ),
+        (
+            DropHighWER,
+            {"wer_threshold": 50.1},
+            {"text": "11 22", "pred_text": "11 22 33"},
+            False,
+        ),
+        (
+            DropHighWER,
+            {"wer_threshold": 49.9},
+            {"text": "11 22", "pred_text": "11 22 33"},
+            True,
+        ),
     ]
 )
 

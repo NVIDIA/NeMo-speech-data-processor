@@ -126,7 +126,6 @@ class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
         return dataset_entries
 
     def process_dataset_entry(self, data_entry: tuple[str]):
-
         wav_src_dir = os.path.join(self.processed_path, "wavs/original_duration")
         wav_tgt_dir = os.path.join(self.processed_path, "wavs/trimmed_and_segmented")
         manifest_dir = os.path.join(self.processed_path, "manifests/")
@@ -154,7 +153,8 @@ class CreateInitialManifestFisherSpanish(BaseParallelProcessor):
 
         src_wav_file = os.path.join(wav_src_dir, f"{file_id}.wav")
         tgt_wav_file = os.path.join(
-            wav_tgt_dir, f"{file_id}_line{line_i}_channel{channel}_{section}_{turn}_{segment}.wav",
+            wav_tgt_dir,
+            f"{file_id}_line{line_i}_channel{channel}_{section}_{turn}_{segment}.wav",
         )
 
         if len(transcript) == 0:

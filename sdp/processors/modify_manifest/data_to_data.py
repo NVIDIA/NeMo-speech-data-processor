@@ -39,7 +39,9 @@ class InsIfASRInsertion(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, insert_words: List[str], **kwargs,
+        self,
+        insert_words: List[str],
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.insert_words = insert_words
@@ -53,7 +55,6 @@ class InsIfASRInsertion(ModifyManifestTextProcessor):
             diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
             if len(diff) > 0:  # ie if there are differences between text and pred_text
-
                 new_sent = ""
 
                 for diff_entry in diff:
@@ -112,7 +113,9 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, sub_words: Dict, **kwargs,
+        self,
+        sub_words: Dict,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.sub_words = sub_words
@@ -126,7 +129,6 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
             diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
             if len(diff) > 0:  # ie if there are differences between text and pred_text
-
                 new_sent = ""
 
                 for diff_entry in diff:
@@ -174,7 +176,8 @@ class SubMakeLowercase(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, **kwargs,
+        self,
+        **kwargs,
     ):
         super().__init__(**kwargs)
 
@@ -201,7 +204,9 @@ class SubRegex(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, regex_params_list: List[Dict], **kwargs,
+        self,
+        regex_params_list: List[Dict],
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_params_list = regex_params_list
@@ -223,7 +228,6 @@ class SubRegex(ModifyManifestTextProcessor):
         text_in = data_entry[self.text_key]
 
         for regex_params in self.regex_params_list:
-
             text_out = re.sub(
                 pattern=regex_params["pattern"],
                 repl=regex_params["repl"],

@@ -23,8 +23,10 @@ class ChangePCFields(BaseParallelProcessor):
     """Getting text from either text_pc or text_pc_pred and marking the origin
     with either "original" or "synthetic".
     """
+
     def __init__(
-        self, **kwargs,
+        self,
+        **kwargs,
     ):
         super().__init__(**kwargs)
 

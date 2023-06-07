@@ -41,7 +41,12 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
     """
 
     def __init__(
-        self, raw_data_dir: str, language: str, data_split: str, resampled_audio_dir: str, **kwargs,
+        self,
+        raw_data_dir: str,
+        language: str,
+        data_split: str,
+        resampled_audio_dir: str,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.raw_data_dir = Path(raw_data_dir)
