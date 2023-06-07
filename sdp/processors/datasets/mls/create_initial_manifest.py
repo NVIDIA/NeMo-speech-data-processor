@@ -18,7 +18,6 @@ from pathlib import Path
 import sox
 from sox import Transformer
 
-from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import download_file, extract_archive
 

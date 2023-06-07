@@ -1,0 +1,27 @@
+processors_to_run: all
+data_split: ???
+workspace_dir: ???
+final_manifest: ${workspace_dir}/${data_split}_manifest.json
+dialect: ???
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestSLR83
+    dialect: irish_english_male
+    raw_data_dir: ${workspace_dir}/raw_data
+    data_split: ${data_split}
+
+  - _target_: sdp.processors.SubMakeLowercase
+
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      - {"pattern": "’", "repl": "'"}
+
+  - _target_: sdp.processors.ChangeToRelativePath
+    base_dir: ${workspace_dir}
+
+  - _target_: sdp.processors.WriteManifest
+    output_manifest_file: ${final_manifest}
+    fields_to_save:
+      - audio_filepath
+      - text
+      - duration

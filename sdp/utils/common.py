@@ -15,6 +15,7 @@
 import os
 import tarfile
 import urllib
+import zipfile
 
 import wget
 
@@ -39,16 +40,26 @@ def download_file(source_url: str, target_directory: str):
 def extract_archive(archive_path: str, extract_path: str) -> str:
     logger.info(f"Attempting to extract all contents from tar file {archive_path}" f" and save in {extract_path}")
 
-    with tarfile.open(archive_path, "r") as archive:
-        archive_extracted_dir = archive.getnames()[0]
+    if archive_path.endswith(".tar") or archive_path.endswith(".tar.gz"):
+        with tarfile.open(archive_path, "r") as archive:
+            archive_extracted_dir = archive.getnames()[0]
+    elif archive_path.endswith(".zip"):
+        with zipfile.ZipFile(archive_path, "r") as archive:
+            archive_extracted_dir = archive.namelist()[0]
+    else:
+        raise RuntimeError(f"Unknown archive format: {archive_path}. We only support tar and zip archives.")
 
     archive_contents_dir = os.path.join(extract_path, archive_extracted_dir)
 
     if os.path.exists(archive_contents_dir):
         logger.info(f"Directory {archive_contents_dir} already exists => will not attempt to extract file")
     else:
-        with tarfile.open(archive_path, "r") as archive:
-            archive.extractall(path=extract_path)
+        if archive_path.endswith(".tar") or archive_path.endswith(".tar.gz"):
+            with tarfile.open(archive_path, "r") as archive:
+                archive.extractall(path=extract_path)
+        elif archive_path.endswith(".zip"):
+            with zipfile.ZipFile(archive_path, "r") as archive:
+                archive.extractall(extract_path)
         logger.info("Finished extracting")
 
     return archive_contents_dir
