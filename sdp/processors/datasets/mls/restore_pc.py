@@ -109,9 +109,9 @@ def process(text):
         .replace("–", "-")
     )
     # remove dash in between the words
-    text = re.sub(r"([A-za-z0-9]+)(-)([A-Za-z0-9]+)", r"\g<1> \g<3>", text)
-    text = re.sub(r"([A-za-z0-9]+)(\.)([A-Za-z]+)", r"\g<1>\g<2> \g<3>", text)
-    text = re.sub(r"([A-za-z]+)(\.)([A-Za-z0-9]+)", r"\g<1>\g<2> \g<3>", text)
+    text = re.sub(r"([A-Za-z0-9]+)(-)([A-Za-z0-9]+)", r"\g<1> \g<3>", text)
+    text = re.sub(r"([A-Za-z0-9]+)(\.)([A-Za-z]+)", r"\g<1>\g<2> \g<3>", text)
+    text = re.sub(r"([A-Za-z]+)(\.)([A-Za-z0-9]+)", r"\g<1>\g<2> \g<3>", text)
 
     # # remove text inside square brackets
     # text = re.sub(r"(\[.*?\])", " ", text)
