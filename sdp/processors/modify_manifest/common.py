@@ -4,7 +4,11 @@ from typing import Dict, List
 
 from tqdm import tqdm
 
-from sdp.processors.base_processor import BaseParallelProcessor, BaseProcessor, DataEntry
+from sdp.processors.base_processor import (
+    BaseParallelProcessor,
+    BaseProcessor,
+    DataEntry,
+)
 
 
 class AddConstantFields(BaseParallelProcessor):
