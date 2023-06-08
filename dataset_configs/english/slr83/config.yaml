@@ -2,7 +2,7 @@ processors_to_run: all
 data_split: ???
 workspace_dir: ???
 final_manifest: ${workspace_dir}/${dialect}/${data_split}_manifest.json
-dialect: ???
+dialect: irish_english_male
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestSLR83

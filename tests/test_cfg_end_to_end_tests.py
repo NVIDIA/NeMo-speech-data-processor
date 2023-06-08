@@ -67,6 +67,8 @@ def get_test_cases():
             partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es"),
         ),
         (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
+        # audio will be downloaded on the fly, so nothing to check here
+        (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
     ]
 
 
