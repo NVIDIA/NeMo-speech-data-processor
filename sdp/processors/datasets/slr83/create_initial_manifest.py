@@ -26,9 +26,16 @@ DATASET_URL = "https://www.openslr.org/resources/83/{dialect}.zip"
 
 
 class CreateInitialManifestSLR83(BaseParallelProcessor):
-    """TBD
+    """Processor to create initial manifest for the SLR83 dataset.
 
-    Mention custom splits
+    This is a dataset introduced in `Open-source Multi-speaker Corpora of the
+    English Accents in the British Isles <https://aclanthology.org/2020.lrec-1.804/>`_.
+
+    The original paper does not provide train/dev/test split, so we include a
+    custom splits.json file that can be used as a standardized split to compare
+    results. For more details on this data split see `Damage Control During
+    Domain Adaptation for Transducer Based Automatic Speech Recognition
+    <https://arxiv.org/abs/2210.03255>`_.
     """
 
     AVAILABLE_DIALECTS = [
