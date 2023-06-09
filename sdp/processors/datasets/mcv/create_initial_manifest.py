@@ -11,22 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-
-# Copyright (c) 2020, SeanNaren.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
 
 # To convert mp3 files to wav using sox, you must have installed sox with mp3 support
 # For example sudo apt-get install libsox-fmt-mp3
@@ -85,16 +69,22 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
 
     def prepare(self):
         """Extracting data (unless already done)."""
-
-        tar_gz_files = glob.glob(str(self.raw_data_dir) + "/*.tar.gz")
-
-        if not tar_gz_files:
-            raise RuntimeError(f"Did not find any file matching {self.raw_data_dir}/*.tar.gz")
-
-        elif len(tar_gz_files) > 1:
-            raise RuntimeError(f"Expecting exactly one *.tar.gz file in directory {self.raw_data_dir}")
+        os.makedirs(self.raw_data_dir, exist_ok=True)
 
         if not self.already_extracted:
+            tar_gz_files = glob.glob(str(self.raw_data_dir) + f"/*{self.language_id}.tar.gz")
+            if not tar_gz_files:
+                raise RuntimeError(
+                    f"Did not find any file matching {self.raw_data_dir}/*.tar.gz. "
+                    "For MCV dataset we cannot automatically download the data, so "
+                    "make sure to get the data from https://commonvoice.mozilla.org/ "
+                    "and put it in the 'raw_data_dir' folder."
+                )
+            elif len(tar_gz_files) > 1:
+                raise RuntimeError(
+                    f"Expecting exactly one *{self.language_id}.tar.gz file in directory {self.raw_data_dir}"
+                )
+
             data_folder = extract_archive(tar_gz_files[0], self.extract_archive_dir)
             self.transcription_file = Path(data_folder)
         else:

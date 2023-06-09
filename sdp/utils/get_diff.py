@@ -21,30 +21,7 @@ diff = diff_match_patch.diff_match_patch()
 diff.Diff_Timeout = 0
 
 
-def get_diff_with_subs_grouped(orig_words: str, pred_words: str) -> List[tuple]:
-    """
-    Function to produce a list of word-level diffs, but with the substitutions 
-    grouped together.
-        e.g. 
-        orig_words = "hello there nemo"
-        pred_words = "hello my name is nemo"
-        will give an output of:
-        [(0, 'hello '), ((-1, 'there '), (1, 'my name is ')), (0, 'nemo ')]
-        (note how the 'there' nad 'my name is' entry are grouped together in a tuple)
-
-        This is to make it easier to find substitutions in the diffs, as 
-        dif_match_patch does not show substitutions clearly, only as a deletion followed by
-        an insertion.
-
-    Args:
-        orig_words: a string containing the groud truth.
-        pred_words: a string containing the text predicted by ASR.
-
-    Returns:
-        A list of tuples containing the word-level diffs between the ground truth
-        and ASR. 
-    """
-
+def get_diff(orig_words: str, pred_words: str) -> List[tuple]:
     orig_words = remove_extra_spaces(orig_words)
     orig_words = orig_words.replace(" ", "\n") + "\n"
 
@@ -58,7 +35,33 @@ def get_diff_with_subs_grouped(orig_words: str, pred_words: str) -> List[tuple]:
 
     for d in diffs:
         diffs_post.append((d[0], d[1].replace("\n", " ")))
-    diffs = diffs_post
+    return diffs_post
+
+
+def get_diff_with_subs_grouped(orig_words: str, pred_words: str) -> List[tuple]:
+    """
+    Function to produce a list of word-level diffs, but with the substitutions
+    grouped together.
+        e.g.
+        orig_words = "hello there nemo"
+        pred_words = "hello my name is nemo"
+        will give an output of:
+        [(0, 'hello '), ((-1, 'there '), (1, 'my name is ')), (0, 'nemo ')]
+        (note how the 'there' nad 'my name is' entry are grouped together in a tuple)
+
+        This is to make it easier to find substitutions in the diffs, as
+        dif_match_patch does not show substitutions clearly, only as a deletion followed by
+        an insertion.
+
+    Args:
+        orig_words: a string containing the groud truth.
+        pred_words: a string containing the text predicted by ASR.
+
+    Returns:
+        A list of tuples containing the word-level diffs between the ground truth
+        and ASR.
+    """
+    diffs = get_diff(orig_words, pred_words)
 
     diffs_group_subs = []
     i = 0

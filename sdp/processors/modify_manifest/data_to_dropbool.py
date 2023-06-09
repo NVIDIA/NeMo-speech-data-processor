@@ -14,13 +14,13 @@
 
 import collections
 import re
-from typing import Dict, List
+from typing import List
 
 from sdp.logging import logger
 from sdp.processors.base_processor import DataEntry
 from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
 from sdp.utils.edit_spaces import remove_extra_spaces
-from sdp.utils.get_diff import get_diff_with_subs_grouped
+from sdp.utils.get_diff import get_diff_with_subs_grouped, get_diff
 from sdp.utils.metrics_computation import (
     get_cer,
     get_charrate,
@@ -340,6 +340,36 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
             "Num of utterances that were dropped due to asr insertions/deletions at the end: %d", end_drop_counter,
         )
         super().finalize(metrics)
+
+
+# TODO: needs unification with above class in some way
+class DropASRError(ModifyManifestTextProcessor):
+    """
+    Class for processor that drops utterances if there is a sufficiently long
+    ASR mismatch anywhere in the utterance.
+
+    Args:
+        consecutive_words_threshold (int): will drop if there is a mismatch of
+            at least this many words in a row.
+    """
+
+    def __init__(
+        self, consecutive_words_threshold: int, **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.consecutive_words_threshold = consecutive_words_threshold
+
+    def _process_dataset_entry(self, data_entry) -> List:
+        orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
+        diffs = get_diff(orig_words, pred_words)
+
+        for diff_entry in diffs:
+            if diff_entry[0] == 0:
+                continue
+            if len(diff_entry[1].split()) >= self.consecutive_words_threshold:
+                return []
+
+        return [DataEntry(data=data_entry)]
 
 
 class DropHighCER(ModifyManifestTextProcessor):
