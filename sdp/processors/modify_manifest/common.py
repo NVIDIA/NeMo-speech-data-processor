@@ -1,9 +1,14 @@
-import os
 import json
-from tqdm import tqdm
+import os
 from typing import Dict, List
 
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry, BaseProcessor
+from tqdm import tqdm
+
+from sdp.processors.base_processor import (
+    BaseParallelProcessor,
+    BaseProcessor,
+    DataEntry,
+)
 
 
 class AddConstantFields(BaseParallelProcessor):
@@ -22,7 +27,9 @@ class AddConstantFields(BaseParallelProcessor):
     """
 
     def __init__(
-        self, fields: Dict, **kwargs,
+        self,
+        fields: Dict,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.fields = fields
@@ -45,14 +52,15 @@ class DuplicateFields(BaseParallelProcessor):
     """
 
     def __init__(
-        self, duplicate_fields: Dict, **kwargs,
+        self,
+        duplicate_fields: Dict,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.duplicate_fields = duplicate_fields
 
     def process_dataset_entry(self, data_entry: Dict):
         for field_src, field_tgt in self.duplicate_fields.items():
-
             if not field_src in data_entry:
                 raise ValueError(f"Expected field {field_src} in data_entry {data_entry} but there isn't one.")
 
@@ -71,14 +79,15 @@ class RenameFields(BaseParallelProcessor):
     """
 
     def __init__(
-        self, rename_fields: Dict, **kwargs,
+        self,
+        rename_fields: Dict,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.rename_fields = rename_fields
 
     def process_dataset_entry(self, data_entry: Dict):
         for field_src, field_tgt in self.rename_fields.items():
-
             if not field_src in data_entry:
                 raise ValueError(f"Expected field {field_src} in data_entry {data_entry} but there isn't one.")
 
@@ -104,7 +113,11 @@ class SplitOnFixedDuration(BaseParallelProcessor):
     """
 
     def __init__(
-        self, segment_duration: float, drop_last: bool = True, drop_text: bool = True, **kwargs,
+        self,
+        segment_duration: float,
+        drop_last: bool = True,
+        drop_text: bool = True,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.segment_duration = segment_duration
@@ -144,7 +157,9 @@ class ChangeToRelativePath(BaseParallelProcessor):
     """
 
     def __init__(
-        self, base_dir: str, **kwargs,
+        self,
+        base_dir: str,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.base_dir = base_dir
@@ -178,7 +193,6 @@ class SortManifest(BaseProcessor):
         self.descending = descending
 
     def process(self):
-
         with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
             dataset_entries = [json.loads(line) for line in fin.readlines()]
 

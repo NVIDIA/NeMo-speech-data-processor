@@ -109,9 +109,9 @@ def process(text):
         .replace("–", "-")
     )
     # remove dash in between the words
-    text = re.sub(r"([A-za-z0-9]+)(-)([A-Za-z0-9]+)", r"\g<1> \g<3>", text)
-    text = re.sub(r"([A-za-z0-9]+)(\.)([A-Za-z]+)", r"\g<1>\g<2> \g<3>", text)
-    text = re.sub(r"([A-za-z]+)(\.)([A-Za-z0-9]+)", r"\g<1>\g<2> \g<3>", text)
+    text = re.sub(r"([A-Za-z0-9]+)(-)([A-Za-z0-9]+)", r"\g<1> \g<3>", text)
+    text = re.sub(r"([A-Za-z0-9]+)(\.)([A-Za-z]+)", r"\g<1>\g<2> \g<3>", text)
+    text = re.sub(r"([A-Za-z]+)(\.)([A-Za-z0-9]+)", r"\g<1>\g<2> \g<3>", text)
 
     # # remove text inside square brackets
     # text = re.sub(r"(\[.*?\])", " ", text)
@@ -342,7 +342,7 @@ dmp.Diff_Timeout = 0
 
 
 def is_valid(line, recovered_line):
-    """ Checks that the restore line matches the original line in everything but casing and punctuation marks"""
+    """Checks that the restore line matches the original line in everything but casing and punctuation marks"""
     line = abbreviations(line)
     line_no_punc = remove_punctuation(line, remove_spaces=True, do_lower=True, remove_accents=True)
     recovered_line_no_punc = remove_punctuation(recovered_line, remove_spaces=True, do_lower=True, remove_accents=True)
@@ -558,7 +558,6 @@ class RestorePCForMLS(BaseProcessor):
 
         # duration in restored_submanifests
         with open(self.output_manifest_file, 'w') as fout:
-
             for book_id, spk_id in book_id_spk_ids_in_datasplit:
                 manifest = os.path.join(self.restored_submanifests_dir, f"{spk_id}_{book_id}.json")
                 if os.path.exists(manifest):

@@ -98,7 +98,8 @@ def run_processors(cfg):
             processors_cfgs.append(processor_cfg)
 
     logger.info(
-        "Specified to run the following processors: %s ", [cfg["_target_"] for cfg in processors_cfgs],
+        "Specified to run the following processors: %s ",
+        [cfg["_target_"] for cfg in processors_cfgs],
     )
     processors = []
     # let's build all processors first to automatically check

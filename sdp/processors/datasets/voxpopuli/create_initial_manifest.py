@@ -41,7 +41,12 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
     """
 
     def __init__(
-        self, raw_data_dir: str, language_id: str, data_split: str, resampled_audio_dir: str, **kwargs,
+        self,
+        raw_data_dir: str,
+        language_id: str,
+        data_split: str,
+        resampled_audio_dir: str,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.raw_data_dir = Path(raw_data_dir)
@@ -64,14 +69,16 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
             if not os.path.exists(self.raw_data_dir / 'raw_audios'):
                 logger.info("Downloading raw audios")
                 subprocess.run(
-                    f"cd {self.raw_data_dir / 'voxpopuli'} && python -m voxpopuli.download_audios --root {self.raw_data_dir} --subset asr",
+                    f"cd {self.raw_data_dir / 'voxpopuli'} && "
+                    f"python -m voxpopuli.download_audios --root {self.raw_data_dir} --subset asr",
                     check=True,
                     shell=True,
                 )
             if not os.path.exists(self.raw_data_dir / 'transcribed_data' / self.language_id):
                 logger.info("Segmenting and transcribing the data")
                 subprocess.run(
-                    f"cd {self.raw_data_dir / 'voxpopuli'} && python -m voxpopuli.get_asr_data  --root {self.raw_data_dir} --lang {self.language_id}",
+                    f"cd {self.raw_data_dir / 'voxpopuli'} && "
+                    f"python -m voxpopuli.get_asr_data  --root {self.raw_data_dir} --lang {self.language_id}",
                     check=True,
                     shell=True,
                 )

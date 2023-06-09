@@ -29,7 +29,9 @@ class MakeLettersUppercaseAfterPeriod(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, punctuation=".!?", **kwargs,
+        self,
+        punctuation=".!?",
+        **kwargs,
     ):
         self.punctuation = punctuation
         super().__init__(**kwargs)

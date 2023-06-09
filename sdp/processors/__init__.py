@@ -12,11 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# let's import all supported processors here to simplify target specification
-from sdp.processors.nemo.asr_inference import ASRInference
 from sdp.processors.datasets.mcv.create_initial_manifest import CreateInitialManifestMCV
 from sdp.processors.datasets.mls.create_initial_manifest import CreateInitialManifestMLS
-from sdp.processors.datasets.voxpopuli.create_initial_manifest import CreateInitialManifestVoxpopuli
+from sdp.processors.datasets.mls.restore_pc import RestorePCForMLS
+from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
+    CreateInitialManifestVoxpopuli,
+)
+from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
+    NormalizeFromNonPCTextVoxpopuli,
+)
+from sdp.processors.modify_manifest.change_pc_fields import ChangePCFields
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ChangeToRelativePath,
@@ -32,21 +37,23 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubRegex,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
-    DropASRErrorBeginningEnd,
     DropASRError,
+    DropASRErrorBeginningEnd,
     DropHighCER,
     DropHighLowCharrate,
     DropHighLowDuration,
     DropHighLowWordrate,
     DropHighWER,
-    DropIfRegexMatch,
     DropIfNoneOfRegexMatch,
+    DropIfRegexMatch,
     DropIfSubstringInInsertion,
     DropLowWordMatchRate,
     DropNonAlphabet,
 )
-from sdp.processors.modify_manifest.make_letters_uppercase_after_period import MakeLettersUppercaseAfterPeriod
-from sdp.processors.modify_manifest.change_pc_fields import ChangePCFields
+from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
+    MakeLettersUppercaseAfterPeriod,
+)
+
+# let's import all supported processors here to simplify target specification
+from sdp.processors.nemo.asr_inference import ASRInference
 from sdp.processors.nemo.pc_inference import PCInference
-from sdp.processors.datasets.mls.restore_pc import RestorePCForMLS
-from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import NormalizeFromNonPCTextVoxpopuli

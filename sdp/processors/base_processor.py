@@ -119,7 +119,10 @@ class BaseParallelProcessor(BaseProcessor):
         # this will unroll all inner lists
         data = itertools.chain(
             *process_map(
-                self.process_dataset_entry, dataset_entries, max_workers=self.max_workers, chunksize=self.chunksize,
+                self.process_dataset_entry,
+                dataset_entries,
+                max_workers=self.max_workers,
+                chunksize=self.chunksize,
             )
         )
         metrics = []

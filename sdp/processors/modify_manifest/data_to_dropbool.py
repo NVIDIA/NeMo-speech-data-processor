@@ -20,7 +20,7 @@ from sdp.logging import logger
 from sdp.processors.base_processor import DataEntry
 from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
 from sdp.utils.edit_spaces import remove_extra_spaces
-from sdp.utils.get_diff import get_diff_with_subs_grouped, get_diff
+from sdp.utils.get_diff import get_diff, get_diff_with_subs_grouped
 from sdp.utils.metrics_computation import (
     get_cer,
     get_charrate,
@@ -48,7 +48,10 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, high_charrate_threshold: float, low_charrate_threshold: float, **kwargs,
+        self,
+        high_charrate_threshold: float,
+        low_charrate_threshold: float,
+        **kwargs,
     ):
         super().__init__(**kwargs)
 
@@ -67,7 +70,7 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
     def finalize(self, metrics):
         high_drop_counter = 0
         low_drop_counter = 0
-        for (dropped_low, dropped_high) in metrics:
+        for dropped_low, dropped_high in metrics:
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
         logger.info(
@@ -102,7 +105,10 @@ class DropHighLowWordrate(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, high_wordrate_threshold: float, low_wordrate_threshold: float, **kwargs,
+        self,
+        high_wordrate_threshold: float,
+        low_wordrate_threshold: float,
+        **kwargs,
     ):
         super().__init__(**kwargs)
 
@@ -121,7 +127,7 @@ class DropHighLowWordrate(ModifyManifestTextProcessor):
     def finalize(self, metrics):
         high_drop_counter = 0
         low_drop_counter = 0
-        for (dropped_low, dropped_high) in metrics:
+        for dropped_low, dropped_high in metrics:
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
         logger.info(
@@ -152,7 +158,10 @@ class DropHighLowDuration(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, high_duration_threshold: float, low_duration_threshold: float, **kwargs,
+        self,
+        high_duration_threshold: float,
+        low_duration_threshold: float,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.high_duration_threshold = high_duration_threshold
@@ -172,7 +181,7 @@ class DropHighLowDuration(ModifyManifestTextProcessor):
     def finalize(self, metrics):
         high_drop_counter = 0
         low_drop_counter = 0
-        for (dropped_low, dropped_high) in metrics:
+        for dropped_low, dropped_high in metrics:
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
         logger.info(
@@ -198,13 +207,14 @@ class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, regex_patterns: List[str], **kwargs,
+        self,
+        regex_patterns: List[str],
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_patterns = regex_patterns
 
     def _process_dataset_entry(self, data_entry) -> List:
-
         for regex_pattern in self.regex_patterns:
             if re.search(regex_pattern, data_entry[self.text_key]):
                 break
@@ -238,7 +248,9 @@ class DropNonAlphabet(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, alphabet: str, **kwargs,
+        self,
+        alphabet: str,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.alphabet = alphabet
@@ -286,7 +298,10 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, beginning_error_char_threshold: int, end_error_char_threshold: int, **kwargs,
+        self,
+        beginning_error_char_threshold: int,
+        end_error_char_threshold: int,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.beginning_error_char_threshold = beginning_error_char_threshold
@@ -329,7 +344,7 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
     def finalize(self, metrics):
         beginning_drop_counter = 0
         end_drop_counter = 0
-        for (dropped_beginning, dropped_end) in metrics:
+        for dropped_beginning, dropped_end in metrics:
             beginning_drop_counter += dropped_beginning
             end_drop_counter += dropped_end
         logger.info(
@@ -337,7 +352,8 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
             beginning_drop_counter,
         )
         logger.info(
-            "Num of utterances that were dropped due to asr insertions/deletions at the end: %d", end_drop_counter,
+            "Num of utterances that were dropped due to asr insertions/deletions at the end: %d",
+            end_drop_counter,
         )
         super().finalize(metrics)
 
@@ -354,7 +370,9 @@ class DropASRError(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, consecutive_words_threshold: int, **kwargs,
+        self,
+        consecutive_words_threshold: int,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.consecutive_words_threshold = consecutive_words_threshold
@@ -385,14 +403,17 @@ class DropHighCER(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, cer_threshold: float, **kwargs,
+        self,
+        cer_threshold: float,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.cer_threshold = cer_threshold
 
     def _process_dataset_entry(self, data_entry) -> List:
         cer = get_cer(
-            remove_extra_spaces(data_entry[self.text_key]), remove_extra_spaces(data_entry[self.pred_text_key]),
+            remove_extra_spaces(data_entry[self.text_key]),
+            remove_extra_spaces(data_entry[self.pred_text_key]),
         )
         if cer > self.cer_threshold:
             return [DataEntry(data=None, metrics=1)]
@@ -404,7 +425,9 @@ class DropHighCER(ModifyManifestTextProcessor):
         for dropped in metrics:
             drop_counter += dropped
         logger.info(
-            "Num of utterances that were dropped due to CER > %d: %d", self.cer_threshold, drop_counter,
+            "Num of utterances that were dropped due to CER > %d: %d",
+            self.cer_threshold,
+            drop_counter,
         )
         super().finalize(metrics)
 
@@ -422,7 +445,9 @@ class DropHighWER(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, wer_threshold: float, **kwargs,
+        self,
+        wer_threshold: float,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.wer_threshold = wer_threshold
@@ -439,7 +464,9 @@ class DropHighWER(ModifyManifestTextProcessor):
         for dropped in metrics:
             drop_counter += dropped
         logger.info(
-            "Num of utterances that were dropped due to WER > %d: %d", self.wer_threshold, drop_counter,
+            "Num of utterances that were dropped due to WER > %d: %d",
+            self.wer_threshold,
+            drop_counter,
         )
         super().finalize(metrics)
 
@@ -457,7 +484,9 @@ class DropLowWordMatchRate(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, wmr_threshold: float, **kwargs,
+        self,
+        wmr_threshold: float,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.wmr_threshold = wmr_threshold
@@ -477,7 +506,9 @@ class DropLowWordMatchRate(ModifyManifestTextProcessor):
         for dropped in metrics:
             drop_counter += dropped
         logger.info(
-            "Num of utterances that were dropped due to WMR < %d: %d", self.wmr_threshold, drop_counter,
+            "Num of utterances that were dropped due to WMR < %d: %d",
+            self.wmr_threshold,
+            drop_counter,
         )
         super().finalize(metrics)
 
@@ -493,7 +524,9 @@ class DropIfRegexMatch(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, regex_patterns: List[str], **kwargs,
+        self,
+        regex_patterns: List[str],
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_patterns = regex_patterns
@@ -533,13 +566,14 @@ class DropIfSubstringInInsertion(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, substrings_in_insertion: List[str], **kwargs,
+        self,
+        substrings_in_insertion: List[str],
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.substrings_in_insertion = substrings_in_insertion
 
     def _process_dataset_entry(self, data_entry) -> List:
-
         for substring_in_insertion in self.substrings_in_insertion:
             if substring_in_insertion in data_entry[self.pred_text_key]:
                 orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]

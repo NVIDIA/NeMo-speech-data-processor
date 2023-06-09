@@ -16,7 +16,6 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-
 from sdp.processors.base_processor import BaseProcessor
 
 
@@ -69,8 +68,8 @@ class PCInference(BaseProcessor):
             raise ValueError("pretrained_name and model_path cannot both be not None")
 
     def process(self):
-        from nemo.collections.nlp.models import PunctuationCapitalizationModel
         import torch  # importing after nemo to make sure users first install nemo, instead of torch, then nemo
+        from nemo.collections.nlp.models import PunctuationCapitalizationModel
 
         if self.pretrained_name:
             model = PunctuationCapitalizationModel.from_pretrained(self.pretrained_name)
@@ -91,7 +90,10 @@ class PCInference(BaseProcessor):
         for item in manifest:
             texts.append(item[self.input_text_field])
 
-        processed_texts = model.add_punctuation_capitalization(texts, batch_size=self.batch_size,)
+        processed_texts = model.add_punctuation_capitalization(
+            texts,
+            batch_size=self.batch_size,
+        )
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
         with Path(self.output_manifest_file).open('w') as f:
             for item, t in zip(manifest, processed_texts):

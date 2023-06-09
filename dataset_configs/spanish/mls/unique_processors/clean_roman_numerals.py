@@ -86,14 +86,24 @@ class CleanRomanNumerals(ModifyManifestTextProcessor):
             for word, count in counter.items():
                 total_counter[word] += count
         logger.info("Num of roman numeral substitutions")
-        total_counter_sorted = dict(sorted(total_counter.items(), key=lambda x: x[1], reverse=True,))
+        total_counter_sorted = dict(
+            sorted(
+                total_counter.items(),
+                key=lambda x: x[1],
+                reverse=True,
+            )
+        )
         for word, count in total_counter_sorted.items():
             logger.info(f"{word} {count}")
         super().finalize(metrics)
 
     def clean_operation(self, data, triggers, roman_numeral_to_num_written):
         for trigger in triggers:
-            trigger_match = re.search(pattern=f"({trigger} \S*)\s", string=data[self.text_key], flags=re.IGNORECASE,)
+            trigger_match = re.search(
+                pattern=f"({trigger} \S*)\s",
+                string=data[self.text_key],
+                flags=re.IGNORECASE,
+            )
 
             if trigger_match:
                 trigger_numeral = trigger_match.group(0).strip()

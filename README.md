@@ -120,3 +120,6 @@ If you add new processors within `<SDP_ROOT>`, to use them when you call SDP, yo
 
 ## Additional documentation
 More information about SDP can be found in the [NeMo docs](https://docs.nvidia.com/deeplearning/nemo/user-guide/docs/en/main/tools/speech_data_processor.html).
+
+## Contributing
+We welcome community contributions! Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) for the process.

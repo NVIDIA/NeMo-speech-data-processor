@@ -18,7 +18,7 @@ import csv
 import glob
 import os
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Tuple
 
 import sox
 from sox import Transformer

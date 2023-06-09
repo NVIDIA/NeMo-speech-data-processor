@@ -83,8 +83,8 @@ class ModifyManifestTextProcessor(BaseParallelProcessor):
     def process_dataset_entry(self, data_entry):
         """Wrapper for 'process_dataset_entry' abstract method.
 
-        Before 'process_dataset_entry' is called, the function 
-        'add_start_end_spaces' is applied to the self.text_key 
+        Before 'process_dataset_entry' is called, the function
+        'add_start_end_spaces' is applied to the self.text_key
         and self.pred_text_key in the input data.
         After 'process_dataset_entry' is called, the function
         'remove_extra_spaces' is applied to the "text" and "pred_text" to
