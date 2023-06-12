@@ -173,7 +173,7 @@ class CustomDataSplitSLR83(BaseProcessor):
         validation_duration, test_duration = 1800, 3600  # 30 minutes, 1 hour
         if duration <= 3600:  # 1 hour
             validation_duration, test_duration = 300, 600  # 5 minutes, 10 minutes
-        elif duration > 3600 and duration <= 9000:  # 3 hours
+        elif duration > 3600 and duration <= 9000:  # 2.5 hours
             validation_duration, test_duration = 900, 1800  # 15 minutes, 30 minutes
 
         split_data = {}
