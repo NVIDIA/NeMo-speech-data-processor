@@ -17,6 +17,7 @@ from sdp.processors.datasets.mls.create_initial_manifest import CreateInitialMan
 from sdp.processors.datasets.mls.restore_pc import RestorePCForMLS
 from sdp.processors.datasets.slr83.create_initial_manifest import (
     CreateInitialManifestSLR83,
+    CustomDataSplitSLR83,
 )
 from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
     CreateInitialManifestVoxpopuli,
