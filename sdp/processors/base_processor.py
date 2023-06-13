@@ -82,7 +82,7 @@ class BaseParallelProcessor(BaseProcessor):
         self.max_workers = max_workers
         self.chunksize = chunksize
         self.number_of_entries = 0
-        self.total_duration = -1
+        self.total_duration = 0
 
     def read_manifest(self):
         """
@@ -145,7 +145,7 @@ class BaseParallelProcessor(BaseProcessor):
         By default outputs new number of entries/hours.
         """
         logger.info("Total number of entries after processing: %d", self.number_of_entries)
-        if self.total_duration != -1:
+        if self.total_duration != 0:
             logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
 
     @abstractmethod

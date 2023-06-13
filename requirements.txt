@@ -2,6 +2,7 @@ diff_match_patch
 editdistance
 hydra-core
 joblib
+numpy
 omegaconf
 pandas
 sox

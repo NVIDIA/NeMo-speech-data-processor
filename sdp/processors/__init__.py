@@ -15,6 +15,10 @@
 from sdp.processors.datasets.mcv.create_initial_manifest import CreateInitialManifestMCV
 from sdp.processors.datasets.mls.create_initial_manifest import CreateInitialManifestMLS
 from sdp.processors.datasets.mls.restore_pc import RestorePCForMLS
+from sdp.processors.datasets.slr83.create_initial_manifest import (
+    CreateInitialManifestSLR83,
+    CustomDataSplitSLR83,
+)
 from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
     CreateInitialManifestVoxpopuli,
 )
