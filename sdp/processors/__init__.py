@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from sdp.processors.datasets.coraal import (
+    CreateInitialManifestCORAAL,
+    TrainDevTestSplitCORAAL,
+)
 from sdp.processors.datasets.mcv.create_initial_manifest import CreateInitialManifestMCV
 from sdp.processors.datasets.mls.create_initial_manifest import CreateInitialManifestMLS
 from sdp.processors.datasets.mls.restore_pc import RestorePCForMLS
@@ -53,6 +57,7 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropIfSubstringInInsertion,
     DropLowWordMatchRate,
     DropNonAlphabet,
+    DropOnAttribute,
 )
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,

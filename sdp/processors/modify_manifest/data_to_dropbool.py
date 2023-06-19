@@ -551,6 +551,42 @@ class DropIfRegexMatch(ModifyManifestTextProcessor):
         super().finalize(metrics)
 
 
+class DropOnAttribute(ModifyManifestTextProcessor):
+    """
+    Class for processor that drops utterances if attribute is set to True/False.
+
+    Args:
+        key (str): which key to use for dropping utterances.
+        drop_if_false (bool): whether to drop if value is False. Defaults
+            to dropping if True.
+    """
+
+    # TODO: maybe need not to subclass from the base here, because text_key/pred_text_key are not used.
+    #    But still want to leverage test-cases functionality. Probably need some redesign of API here.
+
+    def __init__(
+        self,
+        key: str,
+        drop_if_false: bool = False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.key = key
+        self.drop_if_false = drop_if_false
+
+    def _process_dataset_entry(self, data_entry) -> List:
+        if data_entry[self.key] is not self.drop_if_false:
+            return [DataEntry(data=None, metrics=1)]
+        return [DataEntry(data=data_entry, metrics=0)]
+
+    def finalize(self, metrics):
+        total_counter = 0
+        for counter in metrics:
+            total_counter += counter
+        logger.info("Dropped %d utterances", total_counter)
+        super().finalize(metrics)
+
+
 class DropIfSubstringInInsertion(ModifyManifestTextProcessor):
     """
     Class for processor that drops utterances if a substring matches an insertion
