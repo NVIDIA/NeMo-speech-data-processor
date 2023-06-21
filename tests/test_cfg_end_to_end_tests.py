@@ -164,8 +164,9 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
     with open(reference_manifest, "rt", encoding="utf8") as reference_fin, open(
         cfg["final_manifest"], "rt", encoding="utf8"
     ) as generated_fin:
-        reference_lines = reference_fin.readlines()
-        generated_lines = generated_fin.readlines()
+        # sorting to avoid mismatches because of randomness in utterances order
+        reference_lines = sorted(reference_fin.readlines())
+        generated_lines = sorted(generated_fin.readlines())
         assert len(reference_lines) == len(generated_lines)
         for reference_line, generated_line in zip(reference_lines, generated_lines):
             reference_data = json.loads(reference_line)
