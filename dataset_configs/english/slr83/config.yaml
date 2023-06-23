@@ -24,7 +24,7 @@ processors:
     dialect: ${dialect}
 
   - _target_: sdp.processors.ChangeToRelativePath
-    base_dir: ${workspace_dir}
+    base_dir: ${workspace_dir}/${dialect}
 
   - _target_: sdp.processors.WriteManifest
     output_manifest_file: ${final_manifest}
