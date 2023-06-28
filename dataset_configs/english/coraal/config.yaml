@@ -57,7 +57,7 @@ processors:
       - {input: {text: "something /else/"}, output: {text: "something else"}}
       - {input: {text: "something [els]e"}, output: {text: "something else"}}
 
-  # change if want to preseve P&C
+  # remove if need to preserve uppercase letters
   - _target_: sdp.processors.SubMakeLowercase
 
   - _target_: sdp.processors.DropNonAlphabet
