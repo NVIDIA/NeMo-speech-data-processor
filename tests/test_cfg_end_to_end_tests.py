@@ -18,10 +18,12 @@ import tarfile
 from functools import partial
 from pathlib import Path
 from typing import Callable
+from unittest import mock
 
 import pytest
 from omegaconf import OmegaConf
 
+import sdp.processors.datasets.coraal.create_initial_manifest as coraal_processor
 from sdp.run_processors import run_processors
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
@@ -57,6 +59,17 @@ def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
         tar.extractall(path=raw_data_dir)
 
 
+coraal_processor.get_coraal_url_list = mock.Mock(
+    return_value=[
+        'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_metadata_2021.07.txt',
+        'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_audio_part01_2021.07.tar.gz',
+        'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_audio_part02_2021.07.tar.gz',
+        'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_audio_part03_2021.07.tar.gz',
+        'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_textfiles_2021.07.tar.gz',
+    ]
+)
+
+
 def get_test_cases():
     """Returns paths, and data check fn for all configs that we want to test."""
 
@@ -69,6 +82,9 @@ def get_test_cases():
         (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
         # audio will be downloaded on the fly, so nothing to check here
         (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
+        # audio will be downloaded on the fly from a subset of files.
+        # No checks, but need to mock the url list function (done above)
+        (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
     ]
 
 
@@ -148,8 +164,9 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
     with open(reference_manifest, "rt", encoding="utf8") as reference_fin, open(
         cfg["final_manifest"], "rt", encoding="utf8"
     ) as generated_fin:
-        reference_lines = reference_fin.readlines()
-        generated_lines = generated_fin.readlines()
+        # sorting to avoid mismatches because of randomness in utterances order
+        reference_lines = sorted(reference_fin.readlines())
+        generated_lines = sorted(generated_fin.readlines())
         assert len(reference_lines) == len(generated_lines)
         for reference_line, generated_line in zip(reference_lines, generated_lines):
             reference_data = json.loads(reference_line)
