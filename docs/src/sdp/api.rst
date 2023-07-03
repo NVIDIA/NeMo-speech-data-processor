@@ -189,15 +189,18 @@ BaseProcessor
 
 .. autoclass:: sdp.processors.base_processor.BaseProcessor
    :show-inheritance:
+   :member-order: bysource
 
 BaseParallelProcessor
 #####################
 
 .. autoclass:: sdp.processors.base_processor.BaseParallelProcessor
    :show-inheritance:
+   :member-order: bysource
 
 ModifyManifestTextProcessor
 ###########################
 
 .. autoclass:: sdp.processors.base_processor.BaseParallelProcessor
    :show-inheritance:
+   :member-order: bysource
