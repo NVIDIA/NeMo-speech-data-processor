@@ -128,3 +128,11 @@ Most SDP processors support run-time tests with a ``test_cases`` argument. Make 
 when you create new configs. It can be very helpful to ensure that what you have in the config does
 indeed work as you intended. All of our configs have test cases included, so any file is good to
 look at as an example.
+
+**Use "local" processors.**
+
+If you need to add some additional functionality to SDP, you don't need to modify the source code.
+Instead, you can just create a separate file anywhere you want and then use the full path
+to that file in the ``_target_`` section of the config file. E.g., have a look at
+`Spanish MLS config file <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish/mls/config.yaml>`_
+for an example.

@@ -1,5 +1,9 @@
 .. Make sure to run docs/gen_docs.py before running any of the sphinx commands
 .. to make sure the config-docs are available in the .rst format!
+
+.. TODO: currently the per-config documentation is not in any toctree.
+..       Do we want to fix that?
+
 Supported datasets
 ------------------
 
