@@ -35,10 +35,11 @@ To learn more about SDP, have a look at the following sections.
 .. toctree::
    :maxdepth: 1
 
-   config_structure.rst
-   adding_processors.rst
-   existing_configs.rst
-   api.rst
+   config_structure
+   adding_processors
+   existing_configs
+   architecture_description
+   api
 
 .. Processor classes
 .. -----------------

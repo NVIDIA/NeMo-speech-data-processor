@@ -26,7 +26,7 @@ from sdp.processors.base_processor import BaseProcessor
 
 
 class ASRInference(BaseProcessor):
-    """This processor performs ASR inference on the input manifest.
+    """This processor performs ASR inference on each utterance of the input manifest.
 
     ASR predictions will be saved in the ``pred_text`` key.
 
