@@ -46,16 +46,6 @@ To learn more about SDP, have a look at the following sections.
 ..    e. runs the processing method (``processor.process()``) of each processor in order.
 
 
-.. Layout of config YAML files
-.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. The YAML config file for processing a dataset must contain a key ``processors``, the value of which is a list. Each item in that list is expected to be a dictionary specifying a processor class, i.e. it must have a key ``_target_``, the value of which is a path to a "processor" class, and the remaining keys must be the kwargs necessary to instantiate that class with ``hydra.utils.instantiate()`` (c.f. https://hydra.cc/docs/advanced/instantiate_objects/overview/).
-
-.. SDP will run the processors specified in the ``processors`` list in the config file. It will also check for a ``processors_to_run`` key in the config file, which can be either the string ``"all"``, or any Python "slice" object like ``3:4``, ``2:`` etc. (if there is no ``processors_to_run`` key, then all of the processors will be run).
-
-.. .. note::
-..     SDP will run the processors in the order in which they are listed in the config YAML file. Make sure to list the processors in an order which makes sense, e.g. create an initial manifest first; make sure to run asr inference before doing any processing which looks at ``pred_text`` fields in the manifest.
-
 .. Processor classes
 .. -----------------
 
