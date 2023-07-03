@@ -189,18 +189,25 @@ BaseProcessor
 
 .. autoclass:: sdp.processors.base_processor.BaseProcessor
    :show-inheritance:
+   :private-members:
    :member-order: bysource
+   :exclude-members: _abc_impl
 
 BaseParallelProcessor
 #####################
 
 .. autoclass:: sdp.processors.base_processor.BaseParallelProcessor
    :show-inheritance:
+   :private-members:
    :member-order: bysource
+   :exclude-members: _abc_impl
 
 ModifyManifestTextProcessor
 ###########################
 
-.. autoclass:: sdp.processors.base_processor.BaseParallelProcessor
+.. autoclass:: sdp.processors.modify_manifest.modify_manifest.ModifyManifestTextProcessor
    :show-inheritance:
+   :private-members:
    :member-order: bysource
+   :no-inherited-members:
+   :exclude-members: _abc_impl
