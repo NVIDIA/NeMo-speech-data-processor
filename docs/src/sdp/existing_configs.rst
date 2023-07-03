@@ -36,17 +36,15 @@ Multilingual LibriSpeech (MLS)
 
 **Supported configs**.
 
-*Italian.*
-
-.. include:: config-docs/italian/mls/config.rst
-
-*Spanish (no punctuation and capitalization).*
-
-.. include:: config-docs/spanish/mls/config.rst
-
-*Spanish (with punctuation and capitalization).*
-
-.. include:: config-docs/spanish_pc/mls/config.rst
+* **Italian**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/mls/config.yaml>`_ |
+  :doc:`documentation <config-docs/italian/mls/config>`
+* **Spanish (with punctuation and capitalization)**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/mls/config.yaml>`_ |
+  :doc:`documentation <config-docs/spanish_pc/mls/config>`
+* **Spanish (no punctuation and capitalization)**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish/mls/config.yaml>`_ |
+  :doc:`documentation <config-docs/spanish/mls/config>`
 
 VoxPopuli
 ~~~~~~~~~
@@ -55,13 +53,12 @@ VoxPopuli
 
 **Supported configs**.
 
-*Italian.*
-
-.. include:: config-docs/italian/voxpopuli/config.rst
-
-*Spanish.*
-
-.. include:: config-docs/spanish_pc/voxpopuli/config.rst
+* **Italian**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/voxpopuli/config.yaml>`_ |
+  :doc:`documentation <config-docs/italian/voxpopuli/config>`
+* **Spanish**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/voxpopuli/config.yaml>`_ |
+  :doc:`documentation <config-docs/spanish_pc/voxpopuli/config>`
 
 Fisher
 ~~~~~~
@@ -72,9 +69,9 @@ Fisher
 
 **Supported configs**.
 
-*Spanish.*
-
-.. include:: config-docs/spanish_pc/fisher/config.rst
+* **Spanish**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/fisher/config.yaml>`_ |
+  :doc:`documentation <config-docs/spanish_pc/fisher/config>`
 
 
 UK and Ireland English Dialect (SLR83)
@@ -82,7 +79,8 @@ UK and Ireland English Dialect (SLR83)
 
 **Dataset link:** https://openslr.org/83/
 
-TBD
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/slr83/config.yaml>`_ |
+:doc:`documentation <config-docs/english/slr83/config>`
 
 
 Corpus of Regional African American Language (CORAAL)
@@ -90,4 +88,5 @@ Corpus of Regional African American Language (CORAAL)
 
 **Dataset link:** https://oraal.uoregon.edu/coraal
 
-TBD
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/coraal/config.yaml>`_ |
+:doc:`documentation <config-docs/english/coraal/config>`

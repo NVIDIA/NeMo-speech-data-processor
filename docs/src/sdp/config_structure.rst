@@ -60,6 +60,35 @@ the processors you're using.
         high_duration_threshold: ${subfield:${high_duration_thresholds},${data_split}}
         ...
 
+* **test_cases (list[dict])**: most of the processors support a special ``test_cases`` argument.
+  It does not change the processor behavior in any way, but is a useful feature to make sure
+  the processors are going to work as you expect. The format of this argument is to provide a list
+  of dictionaries indicating the input data and corresponding output data. E.g.::
+
+      - _target_: sdp.processors.SubRegex
+        regex_params_list:
+          - {"pattern": "!", "repl": "."}
+          - {"pattern": ";", "repl": ""}
+          - {"pattern": " www\\.(\\S)", "repl" : ' www punto \1'}
+          - {"pattern": "(\\S)\\.com ", "repl" : '\1 punto com '}
+        test_cases:
+          - {input: {text: "www.abc.com"}, output: {text: "www punto abc punto com"}}
+          - {input: {text: "hey!"}, output: {text: "hey."}}
+          - {input: {text: "hey;"}, output: {text: "hey."}}
+
+  or another example::
+
+      - _target_: sdp.processors.DropIfRegexMatch
+        regex_patterns:
+          - "(\\D ){5,20}" # looks for between 4 and 19 characters surrounded by spaces
+        test_cases:
+          - {input: {text: "some s p a c e d out letters"}, output: null}
+          - {input: {text: "normal words only"}, output: {text: "normal words only"}}
+
+  Regular expressions can be tricky to get right and so you can provide any number
+  of examples that we will run through the processor to make sure that all inputs
+  map to the desired outputs.
+
 See the next section for some tips and examples of how to effectively use the above parameters.
 
 
@@ -92,3 +121,10 @@ There are two common examples of the conditions we might want to support.
   `Italian MLS config file <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/mls/config.yaml>`_
   we skip all the filtering processors for both validation and test splits to ensure we don't modify the provided
   dev/test data to enable fair comparison with prior works.
+
+**Write run-time tests.**
+
+Most SDP processors support run-time tests with a ``test_cases`` argument. Make sure to utilize it
+when you create new configs. It can be very helpful to ensure that what you have in the config does
+indeed work as you intended. All of our configs have test cases included, so any file is good to
+look at as an example.
