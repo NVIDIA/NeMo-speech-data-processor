@@ -24,7 +24,8 @@ from pathlib import Path
 
 ROOT_LINK = "https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main"
 
-if __name__ == '__main__':
+
+def gen_docs():
     config_dir = str(Path(__file__).parents[1] / 'dataset_configs')
     config_docs_dir = str(Path(__file__).parents[0] / 'src' / 'sdp' / 'config-docs')
 
@@ -45,3 +46,7 @@ if __name__ == '__main__':
                 link = f"Config link: `{source_path} <{ROOT_LINK}/{source_path}>`_"
                 with open(destination_path, "wt", encoding="utf-8") as fout:
                     fout.write(docs + link)
+
+
+if __name__ == '__main__':
+    gen_docs()
