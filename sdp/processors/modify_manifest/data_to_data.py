@@ -191,16 +191,15 @@ class SubMakeLowercase(ModifyManifestTextProcessor):
 
 
 class SubRegex(ModifyManifestTextProcessor):
-    """
-    Class for processor that converts a regex match to a string, as defined
-    by key-value pairs in regex_to_sub.
+    """Converts a regex match to a string, as defined by key-value pairs in ``regex_to_sub``.
 
     Args:
-        regex_params_list: list of dicts. Each dict must contain a 'pattern' and 'repl' key,
-            and optionally a 'count' key (by default, 'count' will be 0).
-            This processor will go through the list in order, and apply a re.sub operation on
-            the input text in data_entry[self.text_key], feeding in the specified 'pattern', 'repl'
-            and 'count' parameters to re.sub.
+        regex_params_list (list[dict]): list of dicts.
+            Each dict must contain a ``pattern`` and a ``repl`` key,
+            and optionally a ``count`` key (by default, ``count`` will be 0).
+            This processor will go through the list in order, and apply a ``re.sub`` operation on
+            the input text in ``data_entry[self.text_key]``, feeding in the specified ``pattern``, ``repl``
+            and ``count`` parameters to ``re.sub``.
     """
 
     def __init__(
@@ -223,6 +222,7 @@ class SubRegex(ModifyManifestTextProcessor):
                 )
 
     def _process_dataset_entry(self, data_entry) -> List:
+        """Replaces each found regex match with a given string."""
         replace_word_counter = collections.defaultdict(int)
 
         text_in = data_entry[self.text_key]
@@ -245,6 +245,7 @@ class SubRegex(ModifyManifestTextProcessor):
         return [DataEntry(data=data_entry, metrics=replace_word_counter)]
 
     def finalize(self, metrics):
+        """Reports how many substitutions were made for each pattern."""
         total_counter = collections.defaultdict(int)
         for counter in metrics:
             for word, count in counter.items():

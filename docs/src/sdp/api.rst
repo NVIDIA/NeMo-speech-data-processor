@@ -21,8 +21,10 @@ MCV
 MLS
 '''
 
+.. indexed in the adding_processors section with methods description
 .. autodata:: sdp.processors.CreateInitialManifestMLS
    :annotation:
+   :no-index:
 
 .. autodata:: sdp.processors.RestorePCForMLS
    :annotation:
@@ -79,8 +81,11 @@ Text-only modifications
 Data modifications
 ''''''''''''''''''
 
+.. indexed in the adding_processors section with methods description
+
 .. autodata:: sdp.processors.SubRegex
    :annotation:
+   :no-index:
 
 .. autodata:: sdp.processors.SubMakeLowercase
    :annotation:
@@ -137,8 +142,10 @@ Data filtering
 .. autodata:: sdp.processors.DropHighCER
    :annotation:
 
+.. indexed in the adding_processors section with methods description
 .. autodata:: sdp.processors.DropHighLowCharrate
    :annotation:
+   :no-index:
 
 .. autodata:: sdp.processors.DropHighLowDuration
    :annotation:
@@ -178,6 +185,7 @@ Miscellaneous
    :annotation:
 
 
+.. _sdp-base-classes:
 Base classes
 ~~~~~~~~~~~~
 

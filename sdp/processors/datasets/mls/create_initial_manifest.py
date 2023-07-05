@@ -71,6 +71,7 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
         self.transcription_file = str(Path(data_folder) / self.data_split / "transcripts.txt")
 
     def read_manifest(self):
+        """Reading the initial data line-by-line."""
         if self.transcription_file is None:
             raise RuntimeError("self.process has to be called before processing the data.")
 
@@ -80,6 +81,11 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
         return dataset_entries
 
     def process_dataset_entry(self, data_entry: str):
+        """Processing the data entries.
+
+        Converts all audio into wav format and outputs filepath, duration and
+        transcription text.
+        """
         if len(data_entry.split("\t")) != 2:
             raise RuntimeError(f"have more than one tab in line {data_entry}")
 

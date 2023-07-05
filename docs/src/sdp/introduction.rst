@@ -4,8 +4,9 @@ Speech Data Processor
 ========================
 
 Speech Data Processor (SDP) is a toolkit to make it easy to:
-  1. write code to process a new dataset, minimizing the amount of boilerplate code required.
-  2. share the steps for processing a speech dataset.
+
+1. Write code to process a new dataset, minimizing the amount of boilerplate code required.
+2. Share the steps for processing a speech dataset.
 
 SDP is hosted here: https://github.com/NVIDIA/NeMo-speech-data-processor.
 
@@ -19,16 +20,6 @@ new dataset is to write a single YAML file containing the parameters needed to p
 
 .. image:: https://github.com/NVIDIA/NeMo/releases/download/v1.17.0/sdp_overview_diagram.png
    :alt: Overview diagram of Speech Data Processor
-
-After you created a config file (or re-used `one of the existing
-ones <https://github.com/NVIDIA/NeMo-speech-data-processor/tree/main/dataset_configs>`_) you only need to run::
-
-  python main.py \
-    --config-path <path to the config folder> \
-    --config-name <config file name> \
-    <any other supported arguments>
-
-You can run the script with ``--help`` argument to see all available config parameters.
 
 To learn more about SDP, have a look at the following sections.
 
