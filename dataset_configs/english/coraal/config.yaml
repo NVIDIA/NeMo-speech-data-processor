@@ -1,0 +1,87 @@
+processors_to_run: all
+workspace_dir: ???
+final_manifest: ${workspace_dir}/full_manifest.json
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestCORAAL
+    output_manifest_file: ${workspace_dir}/manifest0.json
+    resampled_audio_dir: ${workspace_dir}/audio/
+    raw_data_dir: ${workspace_dir}/raw_data
+    drop_pauses: True
+    group_duration_threshold: 20.0
+
+  - _target_: sdp.processors.DropHighLowDuration
+    low_duration_threshold: 2
+    high_duration_threshold: 30
+
+  # dropping non-interviewee to only keep accented utterances
+  - _target_: sdp.processors.DropOnAttribute
+    key: "is_interviewee"
+    drop_if_false: True
+
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      # fixing common typos (\b is word boundary)
+      - {"pattern": '\bbusses\b', "repl": "buses"}
+      - {"pattern": '\baks\b', "repl": 'ask'}
+      - {"pattern": '\baksing\b', "repl": "asking"}
+      - {"pattern": '\baksed\b', "repl": "asked"}
+      # removing unintelligible/redacted flags
+      - {"pattern": '/(?i)unintelligible/', "repl": ""}
+      - {"pattern": '/(?i)inaudible/', "repl": ""}
+      - {"pattern": '/RD(.*?)/', "repl": ""}
+      - {"pattern": '/(\?)\1*/', "repl": ""}
+      # # removing non-linguistic markers
+      - {"pattern": ' ?<[^>]+>', "repl": ""}
+      - {"pattern": ' ?\([^\)]+\)', "repl": ""}
+      - {"pattern": ' ?{[^}]+}', "repl": ""}
+      # # removing characters not in vocabulary
+      - {"pattern": "’", "repl": "'"}
+      - {"pattern": '[\[\],!\?\":\.\(\)“”;""]', "repl": ''}
+      - {"pattern": "[-/]", "repl": " "}
+      # double space to single space
+      - {"pattern": "  ", "repl": " "}
+    test_cases:
+      - {input: {text: "something busses else"}, output: {text: "something buses else"}}
+      - {input: {text: "something aks else"}, output: {text: "something ask else"}}
+      - {input: {text: "something aksa else"}, output: {text: "something aksa else"}}
+      - {input: {text: "something aksing else"}, output: {text: "something asking else"}}
+      - {input: {text: "something busses aksed"}, output: {text: "something buses asked"}}
+      - {input: {text: "something busses aksed"}, output: {text: "something buses asked"}}
+
+      - {input: {text: "something /RD-ADDRESS-4/ else"}, output: {text: "something else"}}
+      - {input: {text: "something <laugh> else"}, output: {text: "something else"}}
+      - {input: {text: "something (pause 0.17) else"}, output: {text: "something else"}}
+      - {input: {text: "something {pause 0.17} else"}, output: {text: "something else"}}
+      - {input: {text: "something /unintelligible/ else /inaudible/ w"}, output: {text: "something else w"}}
+      - {input: {text: "something /else/"}, output: {text: "something else"}}
+      - {input: {text: "something [els]e"}, output: {text: "something else"}}
+
+  # remove if need to preserve uppercase letters
+  - _target_: sdp.processors.SubMakeLowercase
+
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: "' abcdefghijklmnopqrstuvwxyz"
+    test_cases:
+      - {input: {text: "test тест 测试"}, output: null}
+      - {input: {text: "test"}, output: {text: "test"}}
+
+  - _target_: sdp.processors.ChangeToRelativePath
+    base_dir: ${workspace_dir}
+    output_manifest_file: ${final_manifest}
+
+  # custom speaker-based data split
+  - _target_: sdp.processors.TrainDevTestSplitCORAAL
+    input_manifest_file: ${final_manifest}
+    output_manifest_file: ${workspace_dir}/train_manifest.json
+    data_split: train
+
+  - _target_: sdp.processors.TrainDevTestSplitCORAAL
+    input_manifest_file: ${final_manifest}
+    output_manifest_file: ${workspace_dir}/dev_manifest.json
+    data_split: dev
+
+  - _target_: sdp.processors.TrainDevTestSplitCORAAL
+    input_manifest_file: ${final_manifest}
+    output_manifest_file: ${workspace_dir}/test_manifest.json
+    data_split: test

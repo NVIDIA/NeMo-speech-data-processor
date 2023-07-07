@@ -13,34 +13,15 @@
 # limitations under the License.
 
 import pytest
+
 from sdp.processors.modify_manifest.data_to_data import (
     InsIfASRInsertion,
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
-    SubSubstringToSpace,
-    SubSubstringToSubstring,
 )
 
 test_params_list = []
-
-test_params_list.extend(
-    [
-        (SubSubstringToSpace, {"substrings": [","]}, {"text": "hello, nemo"}, {"text": "hello nemo"}),
-        (SubSubstringToSpace, {"substrings": ["-"]}, {"text": "ice-cream"}, {"text": "ice cream"}),
-    ]
-)
-
-test_params_list.extend(
-    [
-        (
-            SubSubstringToSubstring,
-            {"substring_pairs": {"nemon": "nemo"}},
-            {"text": "using nemon"},
-            {"text": "using nemo"},
-        ),
-    ]
-)
 
 test_params_list.extend(
     [
@@ -82,11 +63,31 @@ test_params_list.extend(
 )
 
 test_params_list.extend(
-    [(SubMakeLowercase, {}, {"text": "Hello Привет 123"}, {"text": "hello привет 123"},),]
+    [
+        (
+            SubMakeLowercase,
+            {},
+            {"text": "Hello Привет 123"},
+            {"text": "hello привет 123"},
+        ),
+        (
+            SubMakeLowercase,
+            {"text_key": "text_new"},
+            {"text_new": "Hello Привет 123"},
+            {"text_new": "hello привет 123"},
+        ),
+    ]
 )
 
 test_params_list.extend(
-    [(SubRegex, {"regex_to_sub": {"\s<.*>\s": " "}}, {"text": "hello <cough> world"}, {"text": "hello world"},),]
+    [
+        (
+            SubRegex,
+            {"regex_params_list": [{"pattern": "\s<.*>\s", "repl": " "}]},
+            {"text": "hello <cough> world"},
+            {"text": "hello world"},
+        ),
+    ]
 )
 
 

@@ -13,28 +13,56 @@
 # limitations under the License.
 
 # let's import all supported processors here to simplify target specification
-from sdp.processors.asr_inference import ASRInference
-from sdp.processors.create_initial_manifest.create_initial_manifest_mls import CreateInitialManifestMLS
+
+from sdp.processors.datasets.coraal import (
+    CreateInitialManifestCORAAL,
+    TrainDevTestSplitCORAAL,
+)
+from sdp.processors.datasets.mcv.create_initial_manifest import CreateInitialManifestMCV
+from sdp.processors.datasets.mls.create_initial_manifest import CreateInitialManifestMLS
+from sdp.processors.datasets.mls.restore_pc import RestorePCForMLS
+from sdp.processors.datasets.slr83.create_initial_manifest import (
+    CreateInitialManifestSLR83,
+    CustomDataSplitSLR83,
+)
+from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
+    CreateInitialManifestVoxpopuli,
+)
+from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
+    NormalizeFromNonPCTextVoxpopuli,
+)
+from sdp.processors.modify_manifest.change_pc_fields import ChangePCFields
+from sdp.processors.modify_manifest.common import (
+    AddConstantFields,
+    ChangeToRelativePath,
+    DuplicateFields,
+    RenameFields,
+    SplitOnFixedDuration,
+    WriteManifest,
+)
 from sdp.processors.modify_manifest.data_to_data import (
     InsIfASRInsertion,
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
-    SubSubstringToSpace,
-    SubSubstringToSubstring,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
+    DropASRError,
     DropASRErrorBeginningEnd,
     DropHighCER,
     DropHighLowCharrate,
     DropHighLowDuration,
     DropHighLowWordrate,
     DropHighWER,
-    DropIfRegexInAttribute,
-    DropIfSubstringInAttribute,
+    DropIfNoneOfRegexMatch,
+    DropIfRegexMatch,
     DropIfSubstringInInsertion,
-    DropIfTextIsEmpty,
     DropLowWordMatchRate,
     DropNonAlphabet,
+    DropOnAttribute,
 )
-from sdp.processors.write_manifest import WriteManifest
+from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
+    MakeLettersUppercaseAfterPeriod,
+)
+from sdp.processors.nemo.asr_inference import ASRInference
+from sdp.processors.nemo.pc_inference import PCInference

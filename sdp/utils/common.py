@@ -15,40 +15,53 @@
 import os
 import tarfile
 import urllib
+import zipfile
 
 import wget
 
-from nemo.utils import logging
+from sdp.logging import logger
 
 # TODO: seems like this download code is saving initial file
 #     in the local directory!
 
 
 def download_file(source_url: str, target_directory: str):
-    logging.info(f"Trying to download data from {source_url} " f"and save it in this directory: {target_directory}")
+    logger.info(f"Trying to download data from {source_url} and save it in this directory: {target_directory}")
     filename = os.path.basename(urllib.parse.urlparse(source_url).path)
     target_filepath = os.path.join(target_directory, filename)
 
     if os.path.exists(target_filepath):
-        logging.info(f"Found file {target_filepath} => will not be attempting" f" download from {source_url}")
+        logger.info(f"Found file {target_filepath} => will not be attempting download from {source_url}")
     else:
         wget.download(source_url, target_directory)
-        logging.info("Download completed")
+        logger.info("Download completed")
 
 
-def extract_archive(archive_path: str, extract_path: str) -> str:
-    logging.info(f"Attempting to extract all contents from tar file {archive_path}" f" and save in {extract_path}")
+def extract_archive(archive_path: str, extract_path: str, force_extract: bool = False) -> str:
+    logger.info(f"Attempting to extract all contents from tar file {archive_path} and save in {extract_path}")
+    if not force_extract:
+        if archive_path.endswith(".tar") or archive_path.endswith(".tar.gz"):
+            with tarfile.open(archive_path, "r") as archive:
+                archive_extracted_dir = archive.getnames()[0]
+        elif archive_path.endswith(".zip"):
+            with zipfile.ZipFile(archive_path, "r") as archive:
+                archive_extracted_dir = archive.namelist()[0]
+        else:
+            raise RuntimeError(f"Unknown archive format: {archive_path}. We only support tar and zip archives.")
 
-    with tarfile.open(archive_path, "r") as archive:
-        archive_extracted_dir = archive.getnames()[0]
+        archive_contents_dir = os.path.join(extract_path, archive_extracted_dir)
 
-    archive_contents_dir = os.path.join(extract_path, archive_extracted_dir)
-
-    if os.path.exists(archive_contents_dir):
-        logging.info(f"Directory {archive_contents_dir} already exists => " "will not attempt to extract file")
+    if not force_extract and os.path.exists(archive_contents_dir):
+        logger.info(f"Directory {archive_contents_dir} already exists => will not attempt to extract file")
     else:
-        with tarfile.open(archive_path, "r") as archive:
-            archive.extractall(path=extract_path)
-        logging.info("Finished extracting")
+        if archive_path.endswith(".tar") or archive_path.endswith(".tar.gz"):
+            with tarfile.open(archive_path, "r") as archive:
+                archive.extractall(path=extract_path)
+        elif archive_path.endswith(".zip"):
+            with zipfile.ZipFile(archive_path, "r") as archive:
+                archive.extractall(extract_path)
+        logger.info("Finished extracting")
 
+    if force_extract:
+        return None
     return archive_contents_dir

@@ -1,0 +1,189 @@
+processors_to_run: all
+data_split: ???
+workspace_dir: ???
+final_manifest: "${workspace_dir}/${data_split}_manifest.json"
+language: "italian"
+language_id: "it"
+# https://catalog.ngc.nvidia.com/orgs/nvidia/teams/riva/models/punctuationcapitalization_it_it_bert_base can be used
+# subject to the Riva license listed on that page
+pc_model_path: ???
+
+run_filtering:
+  train: True
+  # disabling dropping data for dev/test
+  dev: False
+  test: False
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestMLS
+    output_manifest_file: "${workspace_dir}/${data_split}_manifest0.json"
+    language: ${language}
+    raw_data_dir: ${workspace_dir}/raw_data
+    resampled_audio_dir: "${workspace_dir}/${data_split}/audio/"
+    data_split: "${data_split}"
+
+  - _target_: sdp.processors.RestorePCForMLS
+    input_manifest_file: "${workspace_dir}/${data_split}_manifest0.json"
+    output_manifest_file: "${workspace_dir}/${data_split}_manifest1.json"
+    language_long: ${language}
+    language_short: ${language_id}
+    lv_text_dir: "${workspace_dir}/librivox_text"
+    submanifests_dir: ${workspace_dir}/submanifests/${data_split}
+    restored_submanifests_dir: ${workspace_dir}/restored_submanifests/${data_split}
+    restored_text_field: "text_pc"
+    n_jobs: -1
+    show_conversion_breakdown: true
+
+  - _target_: sdp.processors.PCInference
+    input_manifest_file: "${workspace_dir}/${data_split}_manifest1.json"
+    output_manifest_file: "${workspace_dir}/${data_split}_manifest2.json"
+    model_path: "${pc_model_path}"
+    input_text_field: "text"
+    output_text_field: "text_pc_pred"
+    batch_size: 32
+
+  - _target_: sdp.processors.MakeLettersUppercaseAfterPeriod
+    input_manifest_file: "${workspace_dir}/${data_split}_manifest2.json"
+    output_manifest_file: "${workspace_dir}/${data_split}_manifest3.json"
+    text_key: "text_pc_pred"
+    test_cases:
+      - {input: {text_pc_pred: "¿cómo estás? def. asdf"}, output: {text_pc_pred: "¿cómo estás? Def. Asdf"}}
+      - {input: {text_pc_pred: "asdf"}, output: {text_pc_pred: "asdf"}}
+      - {input: {text_pc_pred: "wow, hey!"}, output: {text_pc_pred: "wow, hey!"}}
+      - {input: {text_pc_pred: "wow, hey! How is life? great."}, output: {text_pc_pred: "wow, hey! How is life? Great."}}
+
+  - _target_: sdp.processors.RenameFields
+    input_manifest_file: "${workspace_dir}/${data_split}_manifest3.json"
+    rename_fields:
+      "text": "original_dataset_text"
+
+  - _target_: sdp.processors.ChangePCFields
+
+  # bunch of strings we map to spaces
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+    - {"pattern": '[\-\‐\‑\–\—\―\"]', "repl": " "}
+    - {"pattern": '[\$\&\¡\(\)]', "repl": " "}
+    - {"pattern": '[\:\=\_\`]', "repl": " "}
+    - {"pattern": '[\{\|\}\~\¨\ª]', "repl": " "}
+    - {"pattern": '[\«\°\´\·\»]', "repl": " "}
+    - {"pattern": '[\‘\’\“\”\„]', "repl": " "}
+    - {"pattern": '[\‧\‹\›\≪\≫]', "repl": " "}
+    - {"pattern": '[\:\;\`\ʻ]', "repl": " "}  # TODO: maybe semicolon should be fullstop and next letter capitalized
+    - {"pattern": '[\ː\‘\’\“\→]', "repl": " "}
+    - {"pattern": '[\%\‘\”\�\ʽ\\ʿ]', "repl": " "}
+    - {"pattern": '́' , "repl": " "} # used for putting stress on Russian letters
+    - {"pattern": 'content from google book search google book search generated at ', "repl": " "}
+    - {"pattern": 'content from google book search generated at ', "repl": " "}
+    - {"pattern": 'content from ', "repl": " "}
+    - {"pattern": 'google book search generated at ', "repl": " "}
+    - {"pattern": 'search generated at ', "repl": " "}
+    - {"pattern": 'content from google ', "repl": " "}
+    - {"pattern": 'content from google book search ', "repl": " "}
+    - {"pattern": 'content from google book search generated at content from google book search generated at ', "repl": " "}
+    - {"pattern": 'book search generated at ', "repl": " "}
+    - {"pattern": 'content from google book ', "repl": " "}
+    - {"pattern": 'generated at ', "repl": " "}
+    - {"pattern": 'generated at content from google book search generated at ', "repl": " "}
+    - {"pattern": 'at content from google book search generated at ', "repl": " "}
+    - {"pattern": 'from google book search generated at ', "repl": " "}
+    - {"pattern": 'content from google book search content from google book search generated at ', "repl": " "}
+    - {"pattern": 'content from google book search generated at content from google book search generated at content from google book search generated at ', "repl": " "}
+
+    test_cases:
+      - {input: {text: '"abc"'}, output: {text: "abc"}}
+
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+    - {"pattern": "!", "repl": "."}
+    - {"pattern": "…", "repl": "."}
+    - {"pattern": "’", "repl": "'"}
+    - {"pattern": '[\":\(\)“”;]', "repl": ''}
+    - {"pattern": "[-/]", "repl": " "}
+    # note that we exclude î and ó - according to wikipedia they are very
+    # rarely used in modern italian. So it's safer to replace them, as they
+    # often represent other languages (e.g., french or spanish, most often
+    # in names), rather than actual italian
+    - {"pattern": "î", "repl": "i"}
+    - {"pattern": "ó", "repl": "o"}
+    - {"pattern": "Î", "repl": "I"}
+    - {"pattern": "Ó", "repl": "O"}
+    test_cases:
+      - {input: {text: "Wow!"}, output: {text: "Wow."}}
+
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: ".,? 'abcdefghijklmnopqrstuvwxyzàèéìíòùúABCDEFGHIJKLMNOPQRSTUVWXYZÀÈÉÌÍÒÙÚ"
+    test_cases:
+      - {input: {text: "test тест 测试"}, output: null}
+      - {input: {text: "test"}, output: {text: "test"}}
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    regex_patterns: [
+        # transcription errors
+        "1595/5616/1595_5616_000923.wav",
+    ]
+    text_key: audio_filepath
+    test_cases:
+      - {input: {audio_filepath: "/path/1595/5616/1595_5616_000923.wav"}, output: null}
+      - {input: {audio_filepath: "/path/1/1/abc.wav"}, output: {audio_filepath: "/path/1/1/abc.wav"}}
+
+  # --------------------- only runs in training --------------------------
+
+  # drop spaced out regex
+  - _target_: sdp.processors.DropIfRegexMatch
+    regex_patterns:
+    - '(\D ){5,20}'
+    should_run: ${subfield:${run_filtering},${data_split}}
+    test_cases:
+      - {input: {text: "some s p a c e d out letters"}, output: null}
+      - {input: {text: "normal words only"}, output: {text: "normal words only"}}
+      - {input: {text: "three a b c spaced out letters"}, output: {text: "three a b c spaced out letters"}}
+      - {input: {text: "four a b c d spaced out letters"}, output: null}
+
+  # drop when there is .... in utterance as this indicates a non-standard punctuation
+  # that we don't want to learn
+  - _target_: sdp.processors.DropIfRegexMatch
+    regex_patterns:
+    - '\.\.\.\.'
+    should_run: ${subfield:${run_filtering},${data_split}}
+    test_cases:
+      - {input: {text: "Sì, mi ricordo.... Frivolo.... mondano.... vent'anni appena...."}, output: null}
+      - {input: {text: "Sì, mi ricordo... Frivolo, mondano! vent'anni appena."}, output: {text: "Sì, mi ricordo... Frivolo, mondano! vent'anni appena."}}
+
+  - _target_: sdp.processors.ASRInference
+    pretrained_model: "stt_it_quartznet15x5"
+    output_manifest_file: "${workspace_dir}/${data_split}_manifest_with_preds.json"
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  - _target_: sdp.processors.DuplicateFields
+    duplicate_fields:
+      "text": "text_no_pc"
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: "text_no_pc"
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  - _target_: sdp.processors.SubRegex
+    text_key: "text_no_pc"
+    regex_params_list:
+    - {"pattern": '[?.,]', "repl": ""}
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  - _target_: sdp.processors.DropASRError
+    consecutive_words_threshold: 5
+    text_key: "text_no_pc"
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  # ----------------------------------------------------------------------
+
+  - _target_: sdp.processors.ChangeToRelativePath
+    base_dir: ${workspace_dir}
+
+  - _target_: sdp.processors.WriteManifest
+    output_manifest_file: ${final_manifest}
+    fields_to_save:
+      - audio_filepath
+      - text
+      - duration
+      - text_pc_origin

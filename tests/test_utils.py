@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 
 

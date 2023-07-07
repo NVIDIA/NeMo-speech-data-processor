@@ -14,36 +14,43 @@
 
 import collections
 import re
-from typing import Dict, List
+from typing import List
 
+from sdp.logging import logger
 from sdp.processors.base_processor import DataEntry
 from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
 from sdp.utils.edit_spaces import remove_extra_spaces
-from sdp.utils.get_diff import get_diff_with_subs_grouped
-from sdp.utils.metrics_computation import get_cer, get_charrate, get_wer, get_wmr, get_wordrate
-
-from nemo.utils import logging
+from sdp.utils.get_diff import get_diff, get_diff_with_subs_grouped
+from sdp.utils.metrics_computation import (
+    get_cer,
+    get_charrate,
+    get_wer,
+    get_wmr,
+    get_wordrate,
+)
 
 
 class DropHighLowCharrate(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if their character rate is
-    too low or too high. Character rate = (num of characters in "text")/
-    (duration of audio).
+    """Drops utterances if their character rate is too low or too high.
+
+    Character rate = ``(num of characters in self.text_key) / (duration of audio)``.
     A too-low or too-high character rate often implies that the ground
-    truth text is inaccurate.
+    truth transcription is inaccurate.
 
     Args:
-        high_charrate_threshold: a float for the upper character rate threshold.
+        high_charrate_threshold (float): upper character rate threshold.
             If the character rate of an utterance is higher than this number,
             the utterance will be dropped.
-        low_charrate_threshold: a float for the lower character rate threshold.
+        low_charrate_threshold (float): lower character rate threshold.
             If the character rate of an utterance is lower than this number,
             the utterance will be dropped.
     """
 
     def __init__(
-        self, high_charrate_threshold: float, low_charrate_threshold: float, **kwargs,
+        self,
+        high_charrate_threshold: float,
+        low_charrate_threshold: float,
+        **kwargs,
     ):
         super().__init__(**kwargs)
 
@@ -51,7 +58,8 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
         self.low_charrate_threshold = low_charrate_threshold
 
     def _process_dataset_entry(self, data_entry) -> List:
-        charrate = get_charrate(remove_extra_spaces(data_entry["text"]), data_entry["duration"])
+        """Drops utterances based on the provided thresholds."""
+        charrate = get_charrate(remove_extra_spaces(data_entry[self.text_key]), data_entry["duration"])
         if charrate > self.high_charrate_threshold:
             return [DataEntry(data=None, metrics=(0, 1))]
         elif charrate < self.low_charrate_threshold:
@@ -60,19 +68,20 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
         return [DataEntry(data=data_entry, metrics=(0, 0))]
 
     def finalize(self, metrics):
+        """Will report how many utterances were dropped for each threshold."""
         high_drop_counter = 0
         low_drop_counter = 0
-        for (dropped_low, dropped_high) in metrics:
+        for dropped_low, dropped_high in metrics:
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
-        logging.info(
-            "Num of utterances that were dropped due to char rate > %d: %d",
+        logger.info(
+            "Num of utterances that were dropped due to char rate > %f: %d",
             self.high_charrate_threshold,
             high_drop_counter,
         )
 
-        logging.info(
-            "Num of utterances that were dropped due to char rate < %d: %d",
+        logger.info(
+            "Num of utterances that were dropped due to char rate < %f: %d",
             self.low_charrate_threshold,
             low_drop_counter,
         )
@@ -82,7 +91,7 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
 class DropHighLowWordrate(ModifyManifestTextProcessor):
     """
     Class for processor that drops utterances if their word rate is
-    too low or too high. Word rate = (num of words in "text")/
+    too low or too high. Word rate = (num of words in self.text_key)/
     (duration of audio).
     A too-low or too-high word rate often implies that the ground
     truth text is inaccurate.
@@ -97,7 +106,10 @@ class DropHighLowWordrate(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, high_wordrate_threshold: float, low_wordrate_threshold: float, **kwargs,
+        self,
+        high_wordrate_threshold: float,
+        low_wordrate_threshold: float,
+        **kwargs,
     ):
         super().__init__(**kwargs)
 
@@ -105,7 +117,7 @@ class DropHighLowWordrate(ModifyManifestTextProcessor):
         self.low_wordrate_threshold = low_wordrate_threshold
 
     def _process_dataset_entry(self, data_entry) -> List:
-        wordrate = get_wordrate(data_entry["text"], data_entry["duration"])
+        wordrate = get_wordrate(data_entry[self.text_key], data_entry["duration"])
         if wordrate > self.high_wordrate_threshold:
             return [DataEntry(data=None, metrics=(0, 1))]
         elif wordrate < self.low_wordrate_threshold:
@@ -116,16 +128,16 @@ class DropHighLowWordrate(ModifyManifestTextProcessor):
     def finalize(self, metrics):
         high_drop_counter = 0
         low_drop_counter = 0
-        for (dropped_low, dropped_high) in metrics:
+        for dropped_low, dropped_high in metrics:
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
-        logging.info(
-            "Num of utterances that were dropped due to word rate > %d: %d",
+        logger.info(
+            "Num of utterances that were dropped due to word rate > %f: %d",
             self.high_wordrate_threshold,
             high_drop_counter,
         )
-        logging.info(
-            "Num of utterances that were dropped due to word rate < %d: %d",
+        logger.info(
+            "Num of utterances that were dropped due to word rate < %f: %d",
             self.low_wordrate_threshold,
             low_drop_counter,
         )
@@ -147,7 +159,10 @@ class DropHighLowDuration(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, high_duration_threshold: float, low_duration_threshold: float, **kwargs,
+        self,
+        high_duration_threshold: float,
+        low_duration_threshold: float,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.high_duration_threshold = high_duration_threshold
@@ -167,19 +182,56 @@ class DropHighLowDuration(ModifyManifestTextProcessor):
     def finalize(self, metrics):
         high_drop_counter = 0
         low_drop_counter = 0
-        for (dropped_low, dropped_high) in metrics:
+        for dropped_low, dropped_high in metrics:
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
-        logging.info(
-            "Num of utterances that were dropped due to duration > %d: %d",
+        logger.info(
+            "Num of utterances that were dropped due to duration > %f: %d",
             self.high_duration_threshold,
             high_drop_counter,
         )
-        logging.info(
-            "Num of utterances that were dropped due to duration < %d: %d",
+        logger.info(
+            "Num of utterances that were dropped due to duration < %f: %d",
             self.low_duration_threshold,
             low_drop_counter,
         )
+        super().finalize(metrics)
+
+
+class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
+    """
+    Class for processor that drops utterances if data[self.text_attribute] does
+    not match any of regex_patterns.
+    Args:
+        regex_patterns: a list of strings. If data_entry[self.attribute] does not match any
+            of the regex patterns in the list, that utterance will be dropped.
+    """
+
+    def __init__(
+        self,
+        regex_patterns: List[str],
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.regex_patterns = regex_patterns
+
+    def _process_dataset_entry(self, data_entry) -> List:
+        for regex_pattern in self.regex_patterns:
+            if re.search(regex_pattern, data_entry[self.text_key]):
+                break
+        else:  # will only reach this if none of the regex match
+            return [DataEntry(data=None, metrics=1)]
+
+        # will reach this part of code if at least one of the regexes matches
+        return [DataEntry(data=data_entry, metrics=0)]
+
+    def finalize(self, metrics):
+        total_counter = 0
+        for value in metrics:
+            if value:
+                total_counter += value
+        logger.info("Num of utterances that were dropped due to not containing any of the specified regex patterns")
+        logger.info(f"{total_counter}")
         super().finalize(metrics)
 
 
@@ -197,7 +249,9 @@ class DropNonAlphabet(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, alphabet: str, **kwargs,
+        self,
+        alphabet: str,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.alphabet = alphabet
@@ -205,7 +259,7 @@ class DropNonAlphabet(ModifyManifestTextProcessor):
     def _process_dataset_entry(self, data_entry) -> List:
         drop_this_utt = False
         non_alphabet_counter = collections.defaultdict(int)
-        for char in data_entry["text"]:
+        for char in data_entry[self.text_key]:
             if char not in self.alphabet:
                 drop_this_utt = True
                 non_alphabet_counter[char] += 1
@@ -218,9 +272,9 @@ class DropNonAlphabet(ModifyManifestTextProcessor):
         for counter in metrics:
             for char, value in counter.items():
                 total_counter[char] += value
-        logging.info("Num of non-alphabet characters")
+        logger.info("Num of non-alphabet characters")
         for char, count in total_counter.items():
-            logging.info(f"{char}: {count}")
+            logger.info(f"{char}: {count}")
         super().finalize(metrics)
 
 
@@ -245,18 +299,21 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, beginning_error_char_threshold: int, end_error_char_threshold: int, **kwargs,
+        self,
+        beginning_error_char_threshold: int,
+        end_error_char_threshold: int,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.beginning_error_char_threshold = beginning_error_char_threshold
         self.end_error_char_threshold = end_error_char_threshold
 
     def _process_dataset_entry(self, data_entry) -> List:
-        orig_words, pred_words = data_entry["text"], data_entry["pred_text"]
+        orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
 
         # remove spaces at start and end. Otherwise all utterances
-        # will have no errors at the begining (because both 'text'
-        # and 'pred_text' will begin with " ")
+        # will have no errors at the begining (because both self.text_key
+        # and self.pred_text_key will begin with " ")
         orig_words = remove_extra_spaces(orig_words)
         pred_words = remove_extra_spaces(pred_words)
 
@@ -288,23 +345,56 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
     def finalize(self, metrics):
         beginning_drop_counter = 0
         end_drop_counter = 0
-        for (dropped_beginning, dropped_end) in metrics:
+        for dropped_beginning, dropped_end in metrics:
             beginning_drop_counter += dropped_beginning
             end_drop_counter += dropped_end
-        logging.info(
+        logger.info(
             "Num of utterances that were dropped due to asr " "insertions/deletions at the beginning: %d",
             beginning_drop_counter,
         )
-        logging.info(
-            "Num of utterances that were dropped due to asr insertions/deletions at the end: %d", end_drop_counter,
+        logger.info(
+            "Num of utterances that were dropped due to asr insertions/deletions at the end: %d",
+            end_drop_counter,
         )
         super().finalize(metrics)
+
+
+# TODO: needs unification with above class in some way
+class DropASRError(ModifyManifestTextProcessor):
+    """
+    Class for processor that drops utterances if there is a sufficiently long
+    ASR mismatch anywhere in the utterance.
+
+    Args:
+        consecutive_words_threshold (int): will drop if there is a mismatch of
+            at least this many words in a row.
+    """
+
+    def __init__(
+        self,
+        consecutive_words_threshold: int,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.consecutive_words_threshold = consecutive_words_threshold
+
+    def _process_dataset_entry(self, data_entry) -> List:
+        orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
+        diffs = get_diff(orig_words, pred_words)
+
+        for diff_entry in diffs:
+            if diff_entry[0] == 0:
+                continue
+            if len(diff_entry[1].split()) >= self.consecutive_words_threshold:
+                return []
+
+        return [DataEntry(data=data_entry)]
 
 
 class DropHighCER(ModifyManifestTextProcessor):
     """
     Class for processor that drops utterances if there is a sufficiently
-    high CER between data['text'] and data['pred_text'].
+    high CER between data[self.text_key] and data[self.pred_text_key].
     Note: we only drop the utterance if CER > threshold (ie strictly greater
     than) so that if we set the threshold to 0, we will not remove
     utterances with CER == 0.
@@ -314,13 +404,18 @@ class DropHighCER(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, cer_threshold: float, **kwargs,
+        self,
+        cer_threshold: float,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.cer_threshold = cer_threshold
 
     def _process_dataset_entry(self, data_entry) -> List:
-        cer = get_cer(remove_extra_spaces(data_entry["text"]), remove_extra_spaces(data_entry["pred_text"]))
+        cer = get_cer(
+            remove_extra_spaces(data_entry[self.text_key]),
+            remove_extra_spaces(data_entry[self.pred_text_key]),
+        )
         if cer > self.cer_threshold:
             return [DataEntry(data=None, metrics=1)]
         else:
@@ -330,8 +425,10 @@ class DropHighCER(ModifyManifestTextProcessor):
         drop_counter = 0
         for dropped in metrics:
             drop_counter += dropped
-        logging.info(
-            "Num of utterances that were dropped due to CER > %d: %d", self.cer_threshold, drop_counter,
+        logger.info(
+            "Num of utterances that were dropped due to CER > %d: %d",
+            self.cer_threshold,
+            drop_counter,
         )
         super().finalize(metrics)
 
@@ -339,7 +436,7 @@ class DropHighCER(ModifyManifestTextProcessor):
 class DropHighWER(ModifyManifestTextProcessor):
     """
     Class for processor that drops utterances if there is a sufficiently
-    high WER between data['text'] and data['pred_text'].
+    high WER between data[self.text_key] and data[self.pred_text_key].
     Note: we only drop the utterance if CER > threshold (ie strictly greater
     than) so that if we set the threshold to 0, we will not remove
     utterances with WER == 0.
@@ -349,13 +446,15 @@ class DropHighWER(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, wer_threshold: float, **kwargs,
+        self,
+        wer_threshold: float,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.wer_threshold = wer_threshold
 
     def _process_dataset_entry(self, data_entry) -> List:
-        wer = get_wer(data_entry["text"], data_entry["pred_text"])
+        wer = get_wer(data_entry[self.text_key], data_entry[self.pred_text_key])
         if wer > self.wer_threshold:
             return [DataEntry(data=None, metrics=1)]
         else:
@@ -365,8 +464,10 @@ class DropHighWER(ModifyManifestTextProcessor):
         drop_counter = 0
         for dropped in metrics:
             drop_counter += dropped
-        logging.info(
-            "Num of utterances that were dropped due to WER > %d: %d", self.wer_threshold, drop_counter,
+        logger.info(
+            "Num of utterances that were dropped due to WER > %d: %d",
+            self.wer_threshold,
+            drop_counter,
         )
         super().finalize(metrics)
 
@@ -374,7 +475,7 @@ class DropHighWER(ModifyManifestTextProcessor):
 class DropLowWordMatchRate(ModifyManifestTextProcessor):
     """
     Class for processor that drops utterances if there is a sufficiently
-    low WMR between data['text'] and data['pred_text'].
+    low WMR between data[self.text_key] and data[self.pred_text_key].
     Note: we only drop the utterance if WMR < threshold (ie strictly lower
     than) so that if we set the threshold to 100, we will not remove
     utterances with WMR == 100.
@@ -384,13 +485,15 @@ class DropLowWordMatchRate(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, wmr_threshold: float, **kwargs,
+        self,
+        wmr_threshold: float,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.wmr_threshold = wmr_threshold
 
     def _process_dataset_entry(self, data_entry) -> List:
-        orig_words, pred_words = data_entry["text"], data_entry["pred_text"]
+        orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
         orig_words = remove_extra_spaces(orig_words)
         pred_words = remove_extra_spaces(pred_words)
         wmr = get_wmr(orig_words, pred_words)
@@ -403,97 +506,92 @@ class DropLowWordMatchRate(ModifyManifestTextProcessor):
         drop_counter = 0
         for dropped in metrics:
             drop_counter += dropped
-        logging.info(
-            "Num of utterances that were dropped due to WMR < %d: %d", self.wmr_threshold, drop_counter,
+        logger.info(
+            "Num of utterances that were dropped due to WMR < %d: %d",
+            self.wmr_threshold,
+            drop_counter,
         )
         super().finalize(metrics)
 
 
-class DropIfSubstringInAttribute(ModifyManifestTextProcessor):
+class DropIfRegexMatch(ModifyManifestTextProcessor):
     """
-    Class for processor that drops utterances if an attribute of 'data' contains
-    a string, as specified by attribute_to_substring.
+    Class for processor that drops utterances if data[self.text_key] matches
+    a regex pattern.
 
     Args:
-        attribute_to_substring: a dictionary where the keys are existing attributes
-            of 'data', and the values are lists of strings which the utterances might
-            contain. If the specified attribute contains the specified string, that
-            utterance will be dropped.
+        regex_patterns: a list of strings. The list will be traversed in order.
+            If data_entry.data[self.text_key] matches the regex, the entry will be dropped.
     """
 
     def __init__(
-        self, attribute_to_substring: Dict, **kwargs,
+        self,
+        regex_patterns: List[str],
+        **kwargs,
     ):
         super().__init__(**kwargs)
-        self.attribute_to_substring = attribute_to_substring
+        self.regex_patterns = regex_patterns
 
     def _process_dataset_entry(self, data_entry) -> List:
-        for attribute in self.attribute_to_substring.keys():
-            if attribute not in data_entry:
-                raise ValueError(f"attribute {attribute} not in data {data_entry}")
-            else:
-                for substring_to_drop in self.attribute_to_substring[attribute]:
-                    if substring_to_drop in data_entry[attribute]:
-                        return [DataEntry(data=None, metrics=f'"{attribute}" contains "{substring_to_drop}"')]
-        return [DataEntry(data=data_entry, metrics="")]
-
-    def finalize(self, metrics):
-        total_counter = collections.defaultdict(int)
-        for value in metrics:
-            if value:
-                total_counter[value] += 1
-        logging.info("Num of utterances that were dropped containing substring in attribute")
-        for idx, count in total_counter.items():
-            logging.info(f"{idx}, {count}")
-        super().finalize(metrics)
-
-
-class DropIfRegexInAttribute(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if an attribute of 'data' matches
-    a regex pattern, as specified by attribute_to_regex.
-
-    Args:
-        attribute_to_regex: a dictionary where the keys are existing attributes
-            of 'data', and the values are lists of strings containing regex patterns
-            which the utterance might contain. If the specified attribute contains
-            the specified regex pattern, the utterance will be dropped.
-    """
-
-    def __init__(
-        self, attribute_to_regex: Dict, **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.attribute_to_regex = attribute_to_regex
-
-    def _process_dataset_entry(self, data_entry) -> List:
-        drop_counter = collections.defaultdict(set)
-        for attribute in self.attribute_to_regex.keys():
-            if attribute not in data_entry:
-                raise ValueError(f"attribute {attribute} not in data {data_entry}")
-            else:
-                for regex in self.attribute_to_regex[attribute]:
-                    if re.search(regex, data_entry[attribute]):
-                        for match in re.finditer(regex, data_entry[attribute]):
-                            drop_counter[attribute].add(match.group(0))
-                        return [DataEntry(data=None, metrics=drop_counter)]
+        drop_counter = collections.defaultdict(int)
+        for regex_pattern in self.regex_patterns:
+            if re.search(regex_pattern, data_entry[self.text_key]):
+                for match in re.finditer(regex_pattern, data_entry[self.text_key]):
+                    drop_counter[regex_pattern] += 1
+                return [DataEntry(data=None, metrics=drop_counter)]
         return [DataEntry(data=data_entry, metrics=drop_counter)]
 
     def finalize(self, metrics):
-        total_counter = collections.defaultdict(set)
+        total_counter = collections.defaultdict(int)
         for counter in metrics:
             for attribute, value in counter.items():
-                total_counter[attribute].add(value)
-        logging.info("Regex matches that were dropped in attribute")
+                total_counter[attribute] += value
+        logger.info("Regex matches that were dropped in attribute")
         for attribute, matches in total_counter.items():
-            logging.info(f"{attribute}, {matches}")
+            logger.info(f"{attribute}, {matches}")
+        super().finalize(metrics)
+
+
+class DropOnAttribute(ModifyManifestTextProcessor):
+    """
+    Class for processor that drops utterances if attribute is set to True/False.
+
+    Args:
+        key (str): which key to use for dropping utterances.
+        drop_if_false (bool): whether to drop if value is False. Defaults
+            to dropping if True.
+    """
+
+    # TODO: maybe need not to subclass from the base here, because text_key/pred_text_key are not used.
+    #    But still want to leverage test-cases functionality. Probably need some redesign of API here.
+
+    def __init__(
+        self,
+        key: str,
+        drop_if_false: bool = False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.key = key
+        self.drop_if_false = drop_if_false
+
+    def _process_dataset_entry(self, data_entry) -> List:
+        if data_entry[self.key] is not self.drop_if_false:
+            return [DataEntry(data=None, metrics=1)]
+        return [DataEntry(data=data_entry, metrics=0)]
+
+    def finalize(self, metrics):
+        total_counter = 0
+        for counter in metrics:
+            total_counter += counter
+        logger.info("Dropped %d utterances", total_counter)
         super().finalize(metrics)
 
 
 class DropIfSubstringInInsertion(ModifyManifestTextProcessor):
     """
     Class for processor that drops utterances if a substring matches an insertion
-    made between data['text'] and data['pred_text'].
+    made between data[self.text_key] and data[self.pred_text_key].
     Note: we check for exact matches, so you need to be mindful of spaces, e.g.
     you may wish to do substrings_in_insertion = ["nemo ", ...] instead
     of substrings_in_insertion = ["nemo", ...]
@@ -505,16 +603,17 @@ class DropIfSubstringInInsertion(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self, substrings_in_insertion: List[str], **kwargs,
+        self,
+        substrings_in_insertion: List[str],
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.substrings_in_insertion = substrings_in_insertion
 
     def _process_dataset_entry(self, data_entry) -> List:
-
         for substring_in_insertion in self.substrings_in_insertion:
-            if substring_in_insertion in data_entry["pred_text"]:
-                orig_words, pred_words = data_entry["text"], data_entry["pred_text"]
+            if substring_in_insertion in data_entry[self.pred_text_key]:
+                orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
                 diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
                 for diff_entry in diff:
@@ -528,36 +627,9 @@ class DropIfSubstringInInsertion(ModifyManifestTextProcessor):
         for diff_entry in metrics:
             if diff_entry:
                 total_counter[diff_entry] += 1
-        logging.info("Some of the insertions that cause the utterance to be dropped:")
+        logger.info("Some of the insertions that cause the utterance to be dropped:")
         total_counter_sorted = dict(sorted(total_counter.items(), key=lambda x: x[1], reverse=True))
 
         for insertion, count in total_counter_sorted.items():
-            logging.info(f"{insertion}, {count}")
-        super().finalize(metrics)
-
-
-class DropIfTextIsEmpty(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if data['text'] is an empty string.
-    """
-
-    def __init__(
-        self, **kwargs,
-    ):
-        super().__init__(**kwargs)
-
-    def _process_dataset_entry(self, data_entry) -> List:
-        if "text" not in data_entry:
-            raise ValueError(f'attribute "text" not in data {data_entry}')
-        else:
-            if len(data_entry["text"].strip()) == 0:  # {text: "  "} is considered empty
-                return [DataEntry(data=None, metrics=1)]
-            else:
-                return [DataEntry(data=data_entry, metrics=0)]
-
-    def finalize(self, metrics):
-        drop_counter = 0
-        for dropped in metrics:
-            drop_counter += dropped
-        logging.info("Num of utterances that were dropped because text was empty: %d", drop_counter)
+            logger.info(f"{insertion}, {count}")
         super().finalize(metrics)

@@ -1,0 +1,97 @@
+processors_to_run: all
+data_split: ???
+workspace_dir: ???
+final_manifest: ${workspace_dir}/${data_split}_manifest.json
+
+run_filtering:
+  train: True
+  # disabling dropping data for dev/test
+  dev: False
+  test: False
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestVoxpopuli
+    output_manifest_file: ${workspace_dir}/${data_split}_manifest0.json
+    language_id: it
+    raw_data_dir: ${workspace_dir}/raw_data
+    resampled_audio_dir: ${workspace_dir}/${data_split}/audio
+    data_split: ${data_split}
+
+  - _target_: sdp.processors.DuplicateFields
+    duplicate_fields:
+      "raw_text": "text"
+
+  - _target_: sdp.processors.NormalizeFromNonPCTextVoxpopuli
+    test_cases:
+      - {input: {text: "¿So, it's ¿62.3 Abc Abc?",
+                 provided_norm_text: "so it's six two point three abc abc"},
+         output: {text: "¿So, it's ¿six two point three Abc Abc?",
+                  provided_norm_text: "so it's six two point three abc abc"}}
+
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      - {"pattern": "!", "repl": "."}
+      - {"pattern": "…", "repl": "."}
+      - {"pattern": "’", "repl": "'"}
+      - {"pattern": '[!\":\(\)“”;]', "repl": ''}
+      - {"pattern": "[-/]", "repl": " "}
+      # note that we exclude î and ó - according to wikipedia they are very
+      # rarely used in modern italian. So it's safer to replace them, as they
+      # often represent other languages (e.g., french or spanish, most often
+      # in names), rather than actual italian
+      - {"pattern": "î", "repl": "i"}
+      - {"pattern": "ó", "repl": "o"}
+      - {"pattern": "Î", "repl": "I"}
+      - {"pattern": "Ó", "repl": "O"}
+    test_cases:
+      - {input: {text: "Wow!"}, output: {text: "Wow."}}
+
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: ".,? 'abcdefghijklmnopqrstuvwxyzàèéìíòùúABCDEFGHIJKLMNOPQRSTUVWXYZÀÈÉÌÍÒÙÚ"
+    test_cases:
+      - {input: {text: "test тест 测试"}, output: null}
+      - {input: {text: "test"}, output: {text: "test"}}
+
+  # --------------------- only runs in training --------------------------
+
+  - _target_: sdp.processors.ASRInference
+    pretrained_model: "stt_it_quartznet15x5"
+    output_manifest_file: "${workspace_dir}/${data_split}_manifest_with_preds.json"
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  - _target_: sdp.processors.DuplicateFields
+    duplicate_fields:
+      "text": "text_no_pc"
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: "text_no_pc"
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  - _target_: sdp.processors.SubRegex
+    text_key: "text_no_pc"
+    regex_params_list:
+    - {"pattern": '[?.,]', "repl": ""}
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  - _target_: sdp.processors.DropASRError
+    consecutive_words_threshold: 5
+    text_key: "text_no_pc"
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  - _target_: sdp.processors.DropHighLowDuration
+    high_duration_threshold: 999
+    low_duration_threshold: 1.5
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  # ----------------------------------------------------------------------
+
+  - _target_: sdp.processors.ChangeToRelativePath
+    base_dir: ${workspace_dir}
+
+  - _target_: sdp.processors.WriteManifest
+    output_manifest_file: ${final_manifest}
+    fields_to_save:
+      - audio_filepath
+      - text
+      - duration

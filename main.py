@@ -12,15 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
+
+import hydra
+
 from sdp.run_processors import run_processors
 
-from nemo.core.config import hydra_runner
 
-
-@hydra_runner()
+@hydra.main(version_base=None)
 def main(cfg):
     run_processors(cfg)
 
 
 if __name__ == "__main__":
+    # hacking the arguments to always disable hydra's output
+    # TODO: maybe better to copy-paste hydra_runner from nemo if there are
+    #    any problems with this approach
+    sys.argv.extend(
+        ["hydra.run.dir=.", "hydra.output_subdir=null", "hydra/job_logging=none", "hydra/hydra_logging=none"]
+    )
     main()

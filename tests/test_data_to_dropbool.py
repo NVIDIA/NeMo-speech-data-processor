@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRErrorBeginningEnd,
     DropHighCER,
@@ -20,10 +21,9 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropHighLowDuration,
     DropHighLowWordrate,
     DropHighWER,
-    DropIfRegexInAttribute,
-    DropIfSubstringInAttribute,
+    DropIfNoneOfRegexMatch,
+    DropIfRegexMatch,
     DropIfSubstringInInsertion,
-    DropIfTextIsEmpty,
     DropLowWordMatchRate,
     DropNonAlphabet,
 )
@@ -78,8 +78,18 @@ test_params_list.extend(
 
 test_params_list.extend(
     [
-        (DropHighLowDuration, {"high_duration_threshold": 3.9, "low_duration_threshold": 0}, {"duration": 4}, True,),
-        (DropHighLowDuration, {"high_duration_threshold": 99, "low_duration_threshold": 4.1}, {"duration": 4}, True,),
+        (
+            DropHighLowDuration,
+            {"high_duration_threshold": 3.9, "low_duration_threshold": 0},
+            {"duration": 4},
+            True,
+        ),
+        (
+            DropHighLowDuration,
+            {"high_duration_threshold": 99, "low_duration_threshold": 4.1},
+            {"duration": 4},
+            True,
+        ),
         (
             DropHighLowDuration,
             {"high_duration_threshold": 4.1, "low_duration_threshold": 3.9},
@@ -92,8 +102,18 @@ test_params_list.extend(
 
 test_params_list.extend(
     [
-        (DropNonAlphabet, {"alphabet": " abc"}, {"text": "ab ba cab dac"}, True,),
-        (DropNonAlphabet, {"alphabet": " abcd"}, {"text": "ab ba cab dac"}, False,),
+        (
+            DropNonAlphabet,
+            {"alphabet": " abc"},
+            {"text": "ab ba cab dac"},
+            True,
+        ),
+        (
+            DropNonAlphabet,
+            {"alphabet": " abcd"},
+            {"text": "ab ba cab dac"},
+            False,
+        ),
     ]
 )
 
@@ -138,16 +158,65 @@ test_params_list.extend(
 
 test_params_list.extend(
     [
-        (DropHighCER, {"cer_threshold": 9.9}, {"text": "0123456789", "pred_text": "012345678"}, True,),
-        (DropHighCER, {"cer_threshold": 10.1}, {"text": "0123456789", "pred_text": "012345678"}, False,),
+        (
+            DropHighCER,
+            {"cer_threshold": 9.9},
+            {"text": "0123456789", "pred_text": "012345678"},
+            True,
+        ),
+        (
+            DropHighCER,
+            {"cer_threshold": 10.1},
+            {"text": "0123456789", "pred_text": "012345678"},
+            False,
+        ),
     ]
 )
 
 test_params_list.extend(
     [
-        (DropHighWER, {"wer_threshold": 0}, {"text": "11  22", "pred_text": "11 22"}, False,),
-        (DropHighWER, {"wer_threshold": 50.1}, {"text": "11 22", "pred_text": "11 22 33"}, False,),
-        (DropHighWER, {"wer_threshold": 49.9}, {"text": "11 22", "pred_text": "11 22 33"}, True,),
+        (
+            DropHighWER,
+            {"wer_threshold": 0},
+            {"text": "11  22", "pred_text": "11 22"},
+            False,
+        ),
+        (
+            DropHighWER,
+            {"wer_threshold": 50.1},
+            {"text": "11 22", "pred_text": "11 22 33"},
+            False,
+        ),
+        (
+            DropHighWER,
+            {"wer_threshold": 49.9},
+            {"text": "11 22", "pred_text": "11 22 33"},
+            True,
+        ),
+    ]
+)
+
+test_params_list.extend(
+    [
+        (DropIfNoneOfRegexMatch, {"regex_patterns": ["keep this", "also this"]}, {"text": "I don't want this"}, True),
+        (
+            DropIfNoneOfRegexMatch,
+            {"regex_patterns": ["keep this", "also this"]},
+            {"text": "I want to keep this"},
+            False,
+        ),
+    ]
+)
+
+test_params_list.extend(
+    [
+        (DropIfRegexMatch, {"regex_patterns": ["incorrect_text"]}, {"text": "incorrect_text"}, True),
+        (
+            DropIfRegexMatch,
+            {"regex_patterns": ["001/002"], "text_key": "audio_filepath"},
+            {"audio_filepath": "001/002/003.wav"},
+            True,
+        ),
     ]
 )
 
@@ -171,35 +240,6 @@ test_params_list.extend(
 test_params_list.extend(
     [
         (
-            DropIfSubstringInAttribute,
-            {"attribute_to_substring": {"filepath": ["002"]}},
-            {"text": "hello world", "filepath": "path/to/file/002.wav"},
-            True,
-        ),
-        (
-            DropIfSubstringInAttribute,
-            {"attribute_to_substring": {"filepath": ["002"]}},
-            {"text": "hello world", "filepath": "path/to/file/001.wav"},
-            False,
-        ),
-    ]
-)
-
-test_params_list.extend(
-    [
-        (
-            DropIfRegexInAttribute,
-            {"attribute_to_regex": {"text": ["(\\D ){5,20}"]}},
-            {"text": "h e l l o world"},
-            True,
-        ),
-        (DropIfRegexInAttribute, {"attribute_to_regex": {"text": ["(\\D ){5,20}"]}}, {"text": "hello world"}, False,),
-    ]
-)
-
-test_params_list.extend(
-    [
-        (
             DropIfSubstringInInsertion,
             {"substrings_in_insertion": ["might "]},
             {"text": "we miss certain words", "pred_text": "we might miss certain words"},
@@ -211,13 +251,6 @@ test_params_list.extend(
             {"text": "we may certain words", "pred_text": "we might miss certain words"},
             False,
         ),
-    ]
-)
-
-test_params_list.extend(
-    [
-        (DropIfTextIsEmpty, {}, {"text": "", "pred_text": "uuuu"}, True,),
-        (DropIfTextIsEmpty, {}, {"text": "uhuh", "pred_text": "uuuu"}, False,),
     ]
 )
 

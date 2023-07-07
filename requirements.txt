@@ -1,2 +1,11 @@
 diff_match_patch
-nemo
+editdistance
+hydra-core
+joblib
+numpy
+omegaconf
+pandas
+sox
+tqdm
+wget
+# for some processers, additionally https://github.com/NVIDIA/NeMo is required
