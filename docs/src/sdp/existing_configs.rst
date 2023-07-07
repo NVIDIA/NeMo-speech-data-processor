@@ -21,7 +21,7 @@ Mozilla Common Voice (MCV)
 
 **Required manual steps:** MCV requires agreeing to certain conditions, so you'd need to manually
 download the data archive and specify its location with the ``raw_data_dir`` parameter of the
-:ref:`CreateInitialManifestMCV <TODO>` class.
+:class:`sdp.processors.CreateInitialManifestMCV` class.
 
 **Supported configs**.
 
