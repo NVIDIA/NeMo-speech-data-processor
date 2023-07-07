@@ -389,10 +389,12 @@ def process_book(book_manifest, texts_dir, submanifests_dir, output_dir, restore
 
 
 class RestorePCForMLS(BaseProcessor):
-    """
-    Recovers original text from MLS Librivox texts in "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz".
-        Saves recovered text in recovered_text_field. If text was not recovered, recovered_text_field will be equal
-        to the value of the `NA` variable.
+    """Recovers original text from MLS Librivox texts.
+
+    Uses the original data in https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz.
+    Saves recovered text in ``restored_text_field`` field.
+    If text was not recovered, ``restored_text_field`` will be equal to ``"n/a"``
+
     Args:
         language_long: the full name of the language, used for choosing the folder of the contents of
             "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz".

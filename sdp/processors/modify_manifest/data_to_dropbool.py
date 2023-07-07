@@ -31,18 +31,17 @@ from sdp.utils.metrics_computation import (
 
 
 class DropHighLowCharrate(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if their character rate is
-    too low or too high. Character rate = (num of characters in self.text_key)/
-    (duration of audio).
+    """Drops utterances if their character rate is too low or too high.
+
+    Character rate = ``(num of characters in self.text_key) / (duration of audio)``.
     A too-low or too-high character rate often implies that the ground
-    truth text is inaccurate.
+    truth transcription is inaccurate.
 
     Args:
-        high_charrate_threshold: a float for the upper character rate threshold.
+        high_charrate_threshold (float): upper character rate threshold.
             If the character rate of an utterance is higher than this number,
             the utterance will be dropped.
-        low_charrate_threshold: a float for the lower character rate threshold.
+        low_charrate_threshold (float): lower character rate threshold.
             If the character rate of an utterance is lower than this number,
             the utterance will be dropped.
     """
@@ -59,6 +58,7 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
         self.low_charrate_threshold = low_charrate_threshold
 
     def _process_dataset_entry(self, data_entry) -> List:
+        """Drops utterances based on the provided thresholds."""
         charrate = get_charrate(remove_extra_spaces(data_entry[self.text_key]), data_entry["duration"])
         if charrate > self.high_charrate_threshold:
             return [DataEntry(data=None, metrics=(0, 1))]
@@ -68,19 +68,20 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
         return [DataEntry(data=data_entry, metrics=(0, 0))]
 
     def finalize(self, metrics):
+        """Will report how many utterances were dropped for each threshold."""
         high_drop_counter = 0
         low_drop_counter = 0
         for dropped_low, dropped_high in metrics:
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
         logger.info(
-            "Num of utterances that were dropped due to char rate > %d: %d",
+            "Num of utterances that were dropped due to char rate > %f: %d",
             self.high_charrate_threshold,
             high_drop_counter,
         )
 
         logger.info(
-            "Num of utterances that were dropped due to char rate < %d: %d",
+            "Num of utterances that were dropped due to char rate < %f: %d",
             self.low_charrate_threshold,
             low_drop_counter,
         )
@@ -131,12 +132,12 @@ class DropHighLowWordrate(ModifyManifestTextProcessor):
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
         logger.info(
-            "Num of utterances that were dropped due to word rate > %d: %d",
+            "Num of utterances that were dropped due to word rate > %f: %d",
             self.high_wordrate_threshold,
             high_drop_counter,
         )
         logger.info(
-            "Num of utterances that were dropped due to word rate < %d: %d",
+            "Num of utterances that were dropped due to word rate < %f: %d",
             self.low_wordrate_threshold,
             low_drop_counter,
         )

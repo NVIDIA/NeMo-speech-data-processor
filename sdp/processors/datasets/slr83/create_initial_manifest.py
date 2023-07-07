@@ -147,7 +147,7 @@ class CustomDataSplitSLR83(BaseProcessor):
     Domain Adaptation for Transducer Based Automatic Speech Recognition
     <https://arxiv.org/abs/2210.03255>`_.
 
-    ..note::
+    .. note::
         All data dropping has to be done before the split. We will check the
         total number of files to be what is expected in the reference split.
         But if you add any custom pre-processing that changes duration or

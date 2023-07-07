@@ -204,19 +204,16 @@ class SortManifest(BaseProcessor):
 
 
 class WriteManifest(BaseProcessor):
-    """
-    Saves a copy of a manifest but only with the fields specified in fields_to_save.
+    """Saves a copy of a manifest but only with a subset of the fields.
 
     Args:
-        output_manifest_file: path of where the output file will be saved.
-        input_manifest_file: path of where the input file that we will be copying is saved.
-        fields_to_save: list of the fields in the input manifest that we want to copy over.
-            The output file will only contain these fields.
+        fields_to_save (list[str]): list of the fields in the input manifest
+            that we want to retain. The output file will only contain these
+            fields.
     """
 
-    def __init__(self, output_manifest_file: str, input_manifest_file: str, fields_to_save: List[str]):
-        self.output_manifest_file = output_manifest_file
-        self.input_manifest_file = input_manifest_file
+    def __init__(self, fields_to_save: List[str], **kwargs):
+        super().__init__(**kwargs)
         self.fields_to_save = fields_to_save
 
     def process(self):
