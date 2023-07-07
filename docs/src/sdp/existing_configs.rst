@@ -1,9 +1,6 @@
 .. Make sure to run docs/gen_docs.py before running any of the sphinx commands
 .. to make sure the config-docs are available in the .rst format!
 
-.. TODO: currently the per-config documentation is not in any toctree.
-..       Do we want to fix that?
-
 Supported datasets
 ------------------
 
@@ -21,17 +18,22 @@ Mozilla Common Voice (MCV)
 
 **Required manual steps:** MCV requires agreeing to certain conditions, so you'd need to manually
 download the data archive and specify its location with the ``raw_data_dir`` parameter of the
-:ref:`CreateInitialManifestMCV <TODO>` class.
+:class:`sdp.processors.CreateInitialManifestMCV` class.
 
 **Supported configs**.
 
 * **Italian**:
-  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/mcv/config.yaml>`_ |
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/mcv/config.yaml>`__ |
   :doc:`documentation <config-docs/italian/mcv/config>`
 * **Spanish**:
-  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/mcv12/config.yaml>`_ |
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/mcv12/config.yaml>`__ |
   :doc:`documentation <config-docs/spanish_pc/mcv12/config>`
 
+.. toctree::
+   :hidden:
+
+   config-docs/italian/mcv/config
+   config-docs/spanish_pc/mcv12/config
 
 Multilingual LibriSpeech (MLS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -41,14 +43,21 @@ Multilingual LibriSpeech (MLS)
 **Supported configs**.
 
 * **Italian**:
-  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/mls/config.yaml>`_ |
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/mls/config.yaml>`__ |
   :doc:`documentation <config-docs/italian/mls/config>`
 * **Spanish (with punctuation and capitalization)**:
-  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/mls/config.yaml>`_ |
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/mls/config.yaml>`__ |
   :doc:`documentation <config-docs/spanish_pc/mls/config>`
 * **Spanish (no punctuation and capitalization)**:
-  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish/mls/config.yaml>`_ |
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish/mls/config.yaml>`__ |
   :doc:`documentation <config-docs/spanish/mls/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/italian/mls/config
+   config-docs/spanish_pc/mls/config
+   config-docs/spanish/mls/config
 
 VoxPopuli
 ~~~~~~~~~
@@ -58,11 +67,17 @@ VoxPopuli
 **Supported configs**.
 
 * **Italian**:
-  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/voxpopuli/config.yaml>`_ |
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/voxpopuli/config.yaml>`__ |
   :doc:`documentation <config-docs/italian/voxpopuli/config>`
 * **Spanish**:
-  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/voxpopuli/config.yaml>`_ |
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/voxpopuli/config.yaml>`__ |
   :doc:`documentation <config-docs/spanish_pc/voxpopuli/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/italian/voxpopuli/config
+   config-docs/spanish_pc/voxpopuli/config
 
 Fisher
 ~~~~~~
@@ -74,23 +89,36 @@ Fisher
 **Supported configs**.
 
 * **Spanish**:
-  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/fisher/config.yaml>`_ |
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/fisher/config.yaml>`__ |
   :doc:`documentation <config-docs/spanish_pc/fisher/config>`
 
+.. toctree::
+   :hidden:
+
+   config-docs/spanish_pc/fisher/config
 
 UK and Ireland English Dialect (SLR83)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Dataset link:** https://openslr.org/83/
 
-`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/slr83/config.yaml>`_ |
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/slr83/config.yaml>`__ |
 :doc:`documentation <config-docs/english/slr83/config>`
 
+.. toctree::
+   :hidden:
+
+   config-docs/english/slr83/config
 
 Corpus of Regional African American Language (CORAAL)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Dataset link:** https://oraal.uoregon.edu/coraal
 
-`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/coraal/config.yaml>`_ |
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/coraal/config.yaml>`__ |
 :doc:`documentation <config-docs/english/coraal/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/english/coraal/config

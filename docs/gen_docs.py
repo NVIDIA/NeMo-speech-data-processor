@@ -24,6 +24,11 @@ from pathlib import Path
 
 ROOT_LINK = "https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs"
 
+# let's ignore some of the configs we don't (yet) want to be exposed in the documentation
+IGNORE_CONFIGS = [
+    'language-id-example.yaml',
+]
+
 
 def gen_docs():
     config_dir = str(Path(__file__).absolute().parents[1] / 'dataset_configs')
@@ -40,10 +45,13 @@ def gen_docs():
         for file in files:
             if file.endswith('.yaml'):
                 source_path = os.path.join(root, file)
+                config_path = source_path.replace(config_dir, '')[1:]  # removing leading /
+                if config_path in IGNORE_CONFIGS:
+                    continue
                 destination_path = source_path.replace(config_dir, config_docs_dir).replace('.yaml', '.rst')
                 with open(source_path, "rt", encoding="utf-8") as fin:
                     docs = yaml.safe_load(fin).get('documentation', "Documentation is not yet available.") + "\n\n"
-                link = f"Config link: `{source_path} <{ROOT_LINK}/{source_path.replace(config_dir, '')}>`_"
+                link = f"Config link: `dataset_configs/{config_path} <{ROOT_LINK}/{config_path}>`_"
                 with open(destination_path, "wt", encoding="utf-8") as fout:
                     fout.write(docs + link)
 

@@ -1,6 +1,6 @@
 documentation: |
-  Italian MCV data preparation config
-  ###################################
+  MCV Italian
+  ###########
 
   This config was originally designed for the MCV 12.0 release, but should work
   for any subsequent releases as well.

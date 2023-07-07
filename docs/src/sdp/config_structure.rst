@@ -4,8 +4,7 @@ How to write config files?
 The YAML config file for processing a dataset must contain a key ``processors``, the value of which is a list.
 Each item in that list is expected to be a dictionary specifying a processor class, i.e. it must have a key
 ``_target_``, the value of which is a path to a "processor" class, and the remaining keys must be the kwargs
-necessary to instantiate that class with ``hydra.utils.instantiate()``
-(c.f. https://hydra.cc/docs/advanced/instantiate_objects/overview/).
+necessary to instantiate that class with `hydra.utils.instantiate() <https://hydra.cc/docs/advanced/instantiate_objects/overview/>`_.
 
 SDP will run the processors specified in the ``processors`` list in the config file. It will also check for a
 ``processors_to_run`` key in the config file, which can be either the string ``all``, or any Python "slice" object
@@ -38,6 +37,7 @@ the processors you're using.
 * **subfield (resolver)**: ``subfield`` is not an argument, but a
   `resolver <https://omegaconf.readthedocs.io/en/latest/usage.html#resolvers>`_ that can be used to add conditions
   to the config files. It uses the following syntax::
+
     ${subfield:<dictionary>,<field to select>}
 
   E.g., you can use this resolver to pick the right parameter value for each data split::

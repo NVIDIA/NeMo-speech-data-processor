@@ -24,7 +24,7 @@ MLS
 .. indexed in the adding_processors section with methods description
 .. autodata:: sdp.processors.CreateInitialManifestMLS
    :annotation:
-   :no-index:
+   :noindex:
 
 .. autodata:: sdp.processors.RestorePCForMLS
    :annotation:
@@ -85,15 +85,12 @@ Data modifications
 
 .. autodata:: sdp.processors.SubRegex
    :annotation:
-   :no-index:
+   :noindex:
 
 .. autodata:: sdp.processors.SubMakeLowercase
    :annotation:
 
 .. autodata:: sdp.processors.MakeLettersUppercaseAfterPeriod
-   :annotation:
-
-.. autodata:: sdp.processors.ChangePCFields
    :annotation:
 
 Data filtering
@@ -129,7 +126,6 @@ Data modifications
 .. autodata:: sdp.processors.SubIfASRSubstitution
    :annotation:
 
-
 Data filtering
 ''''''''''''''
 
@@ -145,7 +141,7 @@ Data filtering
 .. indexed in the adding_processors section with methods description
 .. autodata:: sdp.processors.DropHighLowCharrate
    :annotation:
-   :no-index:
+   :noindex:
 
 .. autodata:: sdp.processors.DropHighLowDuration
    :annotation:
@@ -186,6 +182,7 @@ Miscellaneous
 
 
 .. _sdp-base-classes:
+
 Base classes
 ~~~~~~~~~~~~
 

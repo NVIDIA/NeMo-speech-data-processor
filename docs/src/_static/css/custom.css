@@ -14,27 +14,6 @@ body {
 
 /* Standard Text Formatting */
 
-h1 {
-	color: #76b900;
-	text-align: center;
-	/* background-color: #ffffff; */
-}
-
-h2 {
-	color: #ffffff;
-	/* background-color: #ffffff; */
-	/* #76b900 */
-	Padding: 5px;
-}
-
-h3 {
-	padding-top: 0px;
-	border-top: solid 3px #000000;
-	/* #76b900 */
-	border-bottom: solid 3px #000000;
-	/* #76b900 */
-}
-
 p {
 	margin-bottom: 24px;
 }

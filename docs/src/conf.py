@@ -70,7 +70,6 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.inheritance_diagram",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.autosectionlabel",
     "sphinx_copybutton",
     "sphinxext.opengraph",
 ]
@@ -125,21 +124,11 @@ pygments_style = "default"
 htmlhelp_basename = "nemosdpdoc"
 
 html_theme = "sphinx_book_theme"
-html_title = 'NVIDIA NeMo Speech Data Processor'
+html_title = 'NVIDIA NeMo SDP'
 
 html_theme_options = {
-    'logo_only': True,
-    'display_version': True,
-    # 'prev_next_buttons_location': 'bottom',
-    # 'style_external_links': False,
-    # 'style_nav_header_background': '#000000',
-    # Toc options
     'collapse_navigation': False,
-    # 'sticky_navigation': False,
     'navigation_depth': 10,
-    # 'includehidden': False,
-    # 'titles_only': False,
-    # Sphinx Book theme,
     'repository_url': 'https://github.com/NVIDIA/NeMo-speech-data-processor/',
     'use_repository_button': True,
     'show_navbar_depth': 1,
@@ -164,8 +153,15 @@ def setup(app):
 
 
 # OpenGraph settings
-ogp_site_url = 'https://nvidia.github.io/NeMo/'
+ogp_site_url = 'https://nvidia.github.io/NeMo-speech-data-processor/'
 ogp_image = 'https://docs.nvidia.com/deeplearning/nemo/user-guide/docs/en/main/_static/nv_logo.png'
 
 # MathJax CDN
 mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/mml-chtml.min.js"
+
+
+nitpick_ignore = [
+    ('py:class', 'abc.ABC'),
+    ('py:class', 'sdp.processors.base_processor.DataEntry'),
+]
+# nitpick_ignore_regex = [('py:class', '*')]

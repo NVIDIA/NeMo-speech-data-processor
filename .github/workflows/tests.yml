@@ -21,9 +21,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements/docs.txt
-    - name: Checking that documentation builds with no errors and all links are working
+    # we are being quite strict here, but hopefully that will not be too inconvenient
+    - name: Checking that documentation builds with no warnings and all links are working
       run: |
-        cd docs && make clean && make html SPHINXOPTS="-b linkcheck"
+        cd docs && make clean && make html SPHINXOPTS="-b linkcheck -W --keep-going -n"
 
   no-nemo-tests:
     runs-on: ubuntu-latest
