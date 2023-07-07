@@ -29,7 +29,7 @@ download the data archive and specify its location with the ``raw_data_dir`` par
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/mcv/config.yaml>`_ |
   :doc:`documentation <config-docs/italian/mcv/config>`
 * **Spanish**:
-  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/mcv/config.yaml>`_ |
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/mcv12/config.yaml>`_ |
   :doc:`documentation <config-docs/spanish_pc/mcv12/config>`
 
 

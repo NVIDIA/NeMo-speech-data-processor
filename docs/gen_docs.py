@@ -22,11 +22,11 @@ import yaml
 import os
 from pathlib import Path
 
-ROOT_LINK = "https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main"
+ROOT_LINK = "https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs"
 
 
 def gen_docs():
-    config_dir = str(Path(__file__).parents[1] / 'dataset_configs')
+    config_dir = str(Path(__file__).absolute().parents[1] / 'dataset_configs')
     config_docs_dir = str(Path(__file__).parents[0] / 'src' / 'sdp' / 'config-docs')
 
     for root, dirs, files in os.walk(config_dir):
@@ -43,7 +43,7 @@ def gen_docs():
                 destination_path = source_path.replace(config_dir, config_docs_dir).replace('.yaml', '.rst')
                 with open(source_path, "rt", encoding="utf-8") as fin:
                     docs = yaml.safe_load(fin).get('documentation', "Documentation is not yet available.") + "\n\n"
-                link = f"Config link: `{source_path} <{ROOT_LINK}/{source_path}>`_"
+                link = f"Config link: `{source_path} <{ROOT_LINK}/{source_path.replace(config_dir, '')}>`_"
                 with open(destination_path, "wt", encoding="utf-8") as fout:
                     fout.write(docs + link)
 
