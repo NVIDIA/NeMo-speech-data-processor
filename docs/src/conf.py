@@ -30,7 +30,7 @@ templates_path = ["_templates"]
 
 autodoc_mock_imports = []
 
-_skipped_autodoc_mock_imports = ['wrapt', 'numpy']
+_skipped_autodoc_mock_imports = []
 
 for req_path in sorted(list(glob.glob("../../requirements/*.txt"))):
     if "docs.txt" in req_path:
