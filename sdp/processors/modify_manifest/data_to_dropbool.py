@@ -199,12 +199,12 @@ class DropHighLowDuration(ModifyManifestTextProcessor):
 
 
 class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if data[self.text_attribute] does
-    not match any of regex_patterns.
+    """Drops utterances if ``data[self.text_key]`` does not match any of regex_patterns.
+
     Args:
-        regex_patterns: a list of strings. If data_entry[self.attribute] does not match any
-            of the regex patterns in the list, that utterance will be dropped.
+        regex_patterns (list[str]): If ``data_entry[self.text_key]`` does not
+            match any of the regex patterns in the list, that utterance
+            will be dropped.
     """
 
     def __init__(

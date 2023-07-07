@@ -1,3 +1,9 @@
+documentation: |
+  Fisher Spanish
+  ##############
+
+  TBD
+
 # user can specify which processors should be run
 # can be either "all" to run all processors,
 # or any Python "slice" object, e.g.,
@@ -31,7 +37,7 @@ processors:
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${processed_manifest_dir}/all_transcribed.json"
     output_manifest_file: "${processed_manifest_dir}/all_sub_hesitations.json"
-    regex_params_list: 
+    regex_params_list:
       - {"pattern": "\\s(\\S+-\\s)+", "repl": " "}
 
     test_cases:
@@ -44,7 +50,7 @@ processors:
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${processed_manifest_dir}/all_sub_hesitations.json"
     output_manifest_file: "${processed_manifest_dir}/all_sub_to_spaces.json"
-    
+
     regex_params_list:
       - {"pattern": "!", "repl": "."}
       - {"pattern": "'", "repl": " "}
@@ -72,10 +78,10 @@ processors:
     regex_patterns: [
         "\\(\\)", "\\(\\(", "\\)\\)", "<foreign", "</foreign", "< foreign" ,
         "<lname",
-      ]    
+      ]
     test_cases:
       - {input: {text: "hola (()) cómo estás"}, output: null}
-      - {input: {text: "abcdef"}, output: {text: "abcdef"}}        
+      - {input: {text: "abcdef"}, output: {text: "abcdef"}}
 
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${processed_manifest_dir}/all_drop_brackets.json"
@@ -86,7 +92,7 @@ processors:
       - {"pattern": "ì", "repl" : "pi"} # typo, infrequent
       - {"pattern": "@", "repl" : " arroba " }
     test_cases:
-      - {input: {text: "@ abc"}, output: {text: "arroba abc"}}        
+      - {input: {text: "@ abc"}, output: {text: "arroba abc"}}
 
   - _target_: sdp.processors.DropIfRegexMatch
     input_manifest_file: "${processed_manifest_dir}/all_sub_typos.json"
@@ -100,7 +106,7 @@ processors:
   - _target_: sdp.processors.DropNonAlphabet
     input_manifest_file: "${processed_manifest_dir}/all_drop_empty.json"
     output_manifest_file: "${processed_manifest_dir}/all_only_alphabet.json"
-    
+
     alphabet: " abcdefghijklmnopqrstuvwxyzáéíñóúüABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÑÓÚÜ,.?¿"
     test_cases:
       - {input: {text: "test тест 测试"}, output: null}
@@ -112,14 +118,14 @@ processors:
     high_duration_threshold: 20
     low_duration_threshold: 1 # there are about 6 hours of utterances less than 1 second (short phrases like "mhm", "claro", "y tu"...)
     test_cases:
-      - {input: {duration: 0.1}, output: null} 
+      - {input: {duration: 0.1}, output: null}
       - {input: {duration: 40}, output: null}
       - {input: {duration: 5}, output: {duration: 5}}
 
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${processed_manifest_dir}/all_drop_duration.json"
     output_manifest_file: "${processed_manifest_dir}/all_punc_spaces.json"
-    regex_params_list: 
+    regex_params_list:
     - {"pattern": '\.', "repl": ' . '}
     - {"pattern": ",", "repl": " , "}
     - {"pattern": '\?', "repl": " ? "}
@@ -128,35 +134,35 @@ processors:
     test_cases:
       - {input: {text: "¿abc? def."}, output: {text: "¿ abc ? def ."}}
 
-  - _target_: sdp.processors.AddConstantFields 
+  - _target_: sdp.processors.AddConstantFields
     input_manifest_file: "${workspace_dir}/manifests/all_punc_spaces.json"
     output_manifest_file: "${workspace_dir}/manifests/all_cleaned.json"
     fields: {"text_pc_origin": "original"}
-  
+
   # MAKE TRAIN SPLIT
   - _target_: sdp.processors.DropIfRegexMatch
     input_manifest_file: "${processed_manifest_dir}/all_cleaned.json"
     output_manifest_file: "${processed_manifest_dir}/train_cleaned.json"
     text_key: "audio_filepath"
-    regex_patterns: [ 
+    regex_patterns: [
       '20051109_183631_449_fsp', '20051007_191217_206_fsp', '20051022_232428_317_fsp',
-      '20050930_200308_159_fsp', '20051109_211151_452_fsp', '20051126_181804_597_fsp', 
-      '20051119_212315_559_fsp', '20051109_180253_445_fsp', '20051031_220447_379_fsp', 
-      '20051223_180346_856_fsp', '20051113_210908_497_fsp', '20050921_210340_98_fsp', 
-      '20051210_210535_717_fsp', '20051024_180624_328_fsp', '20051118_180619_547_fsp', 
-      '20051012_193952_237_fsp', '20051121_181357_570_fsp', '20051012_190241_236_fsp', 
-      '20051015_210138_260_fsp', '20051213_211953_742_fsp', '20051207_214411_686_fsp', 
-      '20051227_220309_890_fsp', '20051219_223123_817_fsp', '20051127_211200_604_fsp', 
-      '20051123_212412_586_fsp', '20051030_180521_368_fsp', '20050909_210428_25_fsp', 
+      '20050930_200308_159_fsp', '20051109_211151_452_fsp', '20051126_181804_597_fsp',
+      '20051119_212315_559_fsp', '20051109_180253_445_fsp', '20051031_220447_379_fsp',
+      '20051223_180346_856_fsp', '20051113_210908_497_fsp', '20050921_210340_98_fsp',
+      '20051210_210535_717_fsp', '20051024_180624_328_fsp', '20051118_180619_547_fsp',
+      '20051012_193952_237_fsp', '20051121_181357_570_fsp', '20051012_190241_236_fsp',
+      '20051015_210138_260_fsp', '20051213_211953_742_fsp', '20051207_214411_686_fsp',
+      '20051227_220309_890_fsp', '20051219_223123_817_fsp', '20051127_211200_604_fsp',
+      '20051123_212412_586_fsp', '20051030_180521_368_fsp', '20050909_210428_25_fsp',
       '20051130_181543_619_fsp', '20051221_212911_842_fsp', '20051228_223227_901_fsp',
-      '20051120_210347_566_fsp', '20051206_181649_664_fsp', '20051112_231502_491_fsp', 
-      '20051229_214024_909_fsp', '20051203_182100_650_fsp', '20051206_183057_665_fsp', 
-      '20051110_210233_462_fsp', '20051008_180249_209_fsp', '20051005_220917_192_fsp', 
-      '20060104_212844_936_fsp', '20060118_180229_1076_fsp', '20051022_001311_309_fsp', 
-      '20051002_180726_170_fsp', '20051117_220412_544_fsp', '20050925_231407_123_fsp', 
-      '20051208_180810_688_fsp', '20060112_182612_1022_fsp', '20051023_180530_319_fsp', 
+      '20051120_210347_566_fsp', '20051206_181649_664_fsp', '20051112_231502_491_fsp',
+      '20051229_214024_909_fsp', '20051203_182100_650_fsp', '20051206_183057_665_fsp',
+      '20051110_210233_462_fsp', '20051008_180249_209_fsp', '20051005_220917_192_fsp',
+      '20060104_212844_936_fsp', '20060118_180229_1076_fsp', '20051022_001311_309_fsp',
+      '20051002_180726_170_fsp', '20051117_220412_544_fsp', '20050925_231407_123_fsp',
+      '20051208_180810_688_fsp', '20060112_182612_1022_fsp', '20051023_180530_319_fsp',
       '20051017_234550_276_fsp'
-    ]    
+    ]
     test_cases:
       - {input: {audio_filepath: "/path/20051109_183631_449_fsp_rest_of_path"}, output: null}
       - {input: {audio_filepath: "/path/000000_fsp_rest_of_path"}, output: {audio_filepath: "/path/000000_fsp_rest_of_path"}}
@@ -168,16 +174,16 @@ processors:
     text_key: "audio_filepath"
     regex_patterns: [ # 30 randomly-selected conversations
       '20051109_183631_449_fsp', '20051007_191217_206_fsp', '20051022_232428_317_fsp',
-      '20050930_200308_159_fsp', '20051109_211151_452_fsp', '20051126_181804_597_fsp', 
-      '20051119_212315_559_fsp', '20051109_180253_445_fsp', '20051031_220447_379_fsp', 
-      '20051223_180346_856_fsp', '20051113_210908_497_fsp', '20050921_210340_98_fsp', 
-      '20051210_210535_717_fsp', '20051024_180624_328_fsp', '20051118_180619_547_fsp', 
-      '20051012_193952_237_fsp', '20051121_181357_570_fsp', '20051012_190241_236_fsp', 
-      '20051015_210138_260_fsp', '20051213_211953_742_fsp', '20051207_214411_686_fsp', 
-      '20051227_220309_890_fsp', '20051219_223123_817_fsp', '20051127_211200_604_fsp', 
-      '20051123_212412_586_fsp', '20051030_180521_368_fsp', '20050909_210428_25_fsp', 
+      '20050930_200308_159_fsp', '20051109_211151_452_fsp', '20051126_181804_597_fsp',
+      '20051119_212315_559_fsp', '20051109_180253_445_fsp', '20051031_220447_379_fsp',
+      '20051223_180346_856_fsp', '20051113_210908_497_fsp', '20050921_210340_98_fsp',
+      '20051210_210535_717_fsp', '20051024_180624_328_fsp', '20051118_180619_547_fsp',
+      '20051012_193952_237_fsp', '20051121_181357_570_fsp', '20051012_190241_236_fsp',
+      '20051015_210138_260_fsp', '20051213_211953_742_fsp', '20051207_214411_686_fsp',
+      '20051227_220309_890_fsp', '20051219_223123_817_fsp', '20051127_211200_604_fsp',
+      '20051123_212412_586_fsp', '20051030_180521_368_fsp', '20050909_210428_25_fsp',
       '20051130_181543_619_fsp', '20051221_212911_842_fsp', '20051228_223227_901_fsp'
-    ]    
+    ]
     test_cases:
       - {input: {audio_filepath: "/path/20051109_183631_449_fsp_rest_of_path"}, output: {audio_filepath: "/path/20051109_183631_449_fsp_rest_of_path"}}
       - {input: {audio_filepath: "/path/000000_fsp_rest_of_path"}, output: null}
@@ -188,39 +194,39 @@ processors:
     output_manifest_file: "${processed_manifest_dir}/test_cleaned.json"
     text_key: "audio_filepath"
     regex_patterns: [ # 19 randomly-selected conversations
-      '20051120_210347_566_fsp', '20051206_181649_664_fsp', '20051112_231502_491_fsp', 
-      '20051229_214024_909_fsp', '20051203_182100_650_fsp', '20051206_183057_665_fsp', 
-      '20051110_210233_462_fsp', '20051008_180249_209_fsp', '20051005_220917_192_fsp', 
-      '20060104_212844_936_fsp', '20060118_180229_1076_fsp', '20051022_001311_309_fsp', 
-      '20051002_180726_170_fsp', '20051117_220412_544_fsp', '20050925_231407_123_fsp', 
-      '20051208_180810_688_fsp', '20060112_182612_1022_fsp', '20051023_180530_319_fsp', 
+      '20051120_210347_566_fsp', '20051206_181649_664_fsp', '20051112_231502_491_fsp',
+      '20051229_214024_909_fsp', '20051203_182100_650_fsp', '20051206_183057_665_fsp',
+      '20051110_210233_462_fsp', '20051008_180249_209_fsp', '20051005_220917_192_fsp',
+      '20060104_212844_936_fsp', '20060118_180229_1076_fsp', '20051022_001311_309_fsp',
+      '20051002_180726_170_fsp', '20051117_220412_544_fsp', '20050925_231407_123_fsp',
+      '20051208_180810_688_fsp', '20060112_182612_1022_fsp', '20051023_180530_319_fsp',
       '20051017_234550_276_fsp'
-    ]    
+    ]
     test_cases:
       - {input: {audio_filepath: "/path/20051120_210347_566_fsp_rest_of_path"}, output: {audio_filepath: "/path/20051120_210347_566_fsp_rest_of_path"}}
       - {input: {audio_filepath: "/path/000000_fsp_rest_of_path"}, output: null}
 
   - _target_: sdp.processors.WriteManifest
-    input_manifest_file: "${processed_manifest_dir}/train_cleaned.json"    
-    output_manifest_file: "${processed_manifest_dir}/train_final.json"    
+    input_manifest_file: "${processed_manifest_dir}/train_cleaned.json"
+    output_manifest_file: "${processed_manifest_dir}/train_final.json"
     fields_to_save:
       - "audio_filepath"
       - "text"
-      - "duration"  
+      - "duration"
       - "text_pc_origin"
 
   - _target_: sdp.processors.WriteManifest
-    input_manifest_file: "${processed_manifest_dir}/dev_cleaned.json"    
-    output_manifest_file: "${processed_manifest_dir}/dev_final.json"    
+    input_manifest_file: "${processed_manifest_dir}/dev_cleaned.json"
+    output_manifest_file: "${processed_manifest_dir}/dev_final.json"
     fields_to_save:
       - "audio_filepath"
       - "text"
-      - "duration"  
+      - "duration"
       - "text_pc_origin"
 
   - _target_: sdp.processors.WriteManifest
-    input_manifest_file: "${processed_manifest_dir}/test_cleaned.json"    
-    output_manifest_file: "${processed_manifest_dir}/test_final.json"    
+    input_manifest_file: "${processed_manifest_dir}/test_cleaned.json"
+    output_manifest_file: "${processed_manifest_dir}/test_final.json"
     fields_to_save:
       - "audio_filepath"
       - "text"

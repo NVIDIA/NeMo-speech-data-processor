@@ -2,6 +2,3 @@ boto3
 # additional packages required to run tests
 pytest
 pytest-cov
-# additional packages for docs building
-sphinx
-sphinx-book-theme

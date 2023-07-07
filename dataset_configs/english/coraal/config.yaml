@@ -1,3 +1,9 @@
+documentation: |
+  CORAAL
+  ######
+
+  TBD
+
 processors_to_run: all
 workspace_dir: ???
 final_manifest: ${workspace_dir}/full_manifest.json
