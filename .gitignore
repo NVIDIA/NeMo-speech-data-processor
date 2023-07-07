@@ -5,3 +5,4 @@ pytest-coverage.txt
 .coverage
 docs/html
 docs/src/sdp/config-docs/
+.hypothesis

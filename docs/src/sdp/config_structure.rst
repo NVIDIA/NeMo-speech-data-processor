@@ -136,3 +136,9 @@ Instead, you can just create a separate file anywhere you want and then use the 
 to that file in the ``_target_`` section of the config file. E.g., have a look at
 `Spanish MLS config file <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish/mls/config.yaml>`_
 for an example.
+
+.. note::
+  You might need to change python path if you get import errors with "local" processors.
+  You can do that by prepending::
+
+    PYTHONPATH=<path to the code folder> python main.py ...
