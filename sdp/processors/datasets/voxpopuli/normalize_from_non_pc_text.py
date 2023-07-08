@@ -117,19 +117,43 @@ def restore_pc(orig_words, norm_words):
 
 
 class NormalizeFromNonPCTextVoxpopuli(ModifyManifestTextProcessor):
-    """Tries to restore punctuation and capitalization from the unnormalized text version."""
+    """Tries to restore punctuation and capitalization from the unnormalized text version.
+
+    VoxPopuli contains two versions of the transcription - original (non-normalized,
+    but with punctuation and capitalization) and normalized (without punctuation or capitalization),
+    but with digits and other forms normalized. This processor can be used
+    to map the normalized and non-normalized versions and produce a normalized
+    version with restored punctuation and capitalization.
+
+    .. note::
+        The current map logic is highly heuristical and might not work for all
+        languages. The processor will return ``n/a`` for any text it was not able
+        to restore, so make sure you check how much data was removed and
+        consider updating the heuristics to retain more data.
+
+    Args:
+        restored_text_field (str): the field where the recovered text (or ``n/a``)
+            will be stored. Defaults to "text".
+
+    Returns:
+        All the same data as in the input manifest with an additional key::
+
+            <restored_text_field>: <restored text or n/a if mapping failed>``
+    """
 
     def __init__(
         self,
+        restored_text_field: str = "text",
         **kwargs,
     ):
         super().__init__(**kwargs)
+        self.restored_text_field = restored_text_field
 
     def _process_dataset_entry(self, data_entry: Dict):
         try:
-            restored_norm_text = restore_pc(data_entry["text"], data_entry["provided_norm_text"])
-            data_entry["text"] = restored_norm_text
-            return [DataEntry(data=data_entry)]
+            restored_norm_text = restore_pc(data_entry["raw_text"], data_entry["provided_norm_text"])
         except:
-            logger.warning(f"Failed to restore normalization for text {data_entry['text']}. Dropping utterance")
-            return [DataEntry(data=None)]
+            logger.warning(f"Failed to restore normalization for text {data_entry['text']}.")
+            restored_norm_text = "n/a"
+        data_entry[self.restored_text_field] = restored_norm_text
+        return [DataEntry(data=data_entry)]

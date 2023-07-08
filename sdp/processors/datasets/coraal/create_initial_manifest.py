@@ -45,7 +45,9 @@ def get_coraal_url_list():
 
 
 class CreateInitialManifestCORAAL(BaseParallelProcessor):
-    """Processor to create initial manifest for CORAAL data.
+    """Processor to create initial manifest for the Corpus of Regional African American Language (CORAAL) dataset.
+
+    Dataset link: https://oraal.uoregon.edu/coraal/
 
     Will download all files, extract tars and split wav files based on the
     provided durations in the transcripts.
@@ -61,8 +63,24 @@ class CreateInitialManifestCORAAL(BaseParallelProcessor):
         group_duration_threshold (float): can be used to group consequtive
             utterances from the same speaker to a longer duration. Set to 0
             to disable this grouping (but note that many utterances are
-            transcribe with only a few seconds, so grouping is generally
+            transcribed with only a few seconds, so grouping is generally
             advised). Defaults to 20.
+
+    Returns:
+        This processor generates an initial manifest file with the following fields::
+
+            {
+                "audio_filepath": <path to the audio file>,
+                "duration": <duration of the audio in seconds>,
+                "text": <transcription>,
+                "original_file": <name of the original file in the dataset this audio came from>,
+                "speaker_id": <speaker id>,
+                "is_interviewee": <whether this is an interviewee (accented speach)>,
+                "gender": <speaker gender>,
+                "age": <speaker age>,
+                "education": <speaker education>,
+                "occupation": <speaker occupation>,
+            }
     """
 
     def __init__(
@@ -188,7 +206,7 @@ class CreateInitialManifestCORAAL(BaseParallelProcessor):
             "duration": end_time - start_time,
             "text": content.strip(),
             "original_file": basefile,
-            "speaker": speaker,
+            "speaker_id": speaker,
             "is_interviewee": is_interviewee,
             "gender": gender,
             "age": age,

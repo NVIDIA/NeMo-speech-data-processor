@@ -25,9 +25,7 @@ from pathlib import Path
 ROOT_LINK = "https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs"
 
 # let's ignore some of the configs we don't (yet) want to be exposed in the documentation
-IGNORE_CONFIGS = [
-    'language-id-example.yaml',
-]
+IGNORE_CONFIGS = []
 
 
 def gen_docs():

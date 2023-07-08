@@ -38,8 +38,6 @@ processors:
     submanifests_dir: ${workspace_dir}/submanifests/${data_split}
     restored_submanifests_dir: ${workspace_dir}/restored_submanifests/${data_split}
     restored_text_field: "text_pc"
-    n_jobs: -1
-    show_conversion_breakdown: true
 
   - _target_: sdp.processors.PCInference
     input_manifest_file: "${workspace_dir}/${data_split}_manifest1.json"
