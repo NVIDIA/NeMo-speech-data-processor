@@ -33,6 +33,7 @@ def test_configs(config_path: str):
     try:
         # to be able to correctly read some of the configs
         OmegaConf.register_new_resolver("subfield", lambda node, field: node[field])
+        OmegaConf.register_new_resolver("not", lambda x: not x)
     except ValueError:  # already registered
         pass
 

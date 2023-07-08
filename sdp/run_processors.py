@@ -23,8 +23,9 @@ from omegaconf import OmegaConf, open_dict
 
 from sdp.logging import logger
 
-# registering a new resolver to allow specifying different config values based on the data_split
+# registering new resolvers to simplify config files
 OmegaConf.register_new_resolver("subfield", lambda node, field: node[field])
+OmegaConf.register_new_resolver("not", lambda x: not x)
 
 # customizing logger
 logger.setLevel(logging.INFO)

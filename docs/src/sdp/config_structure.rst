@@ -33,33 +33,7 @@ the processors you're using.
   debugging purposes).
 * **should_run (bool)**: this boolean field allows to skip any processors in the config. It can be useful to either
   temporarily skip the optional processors or to add certain conditions on when the processors should run, using the
-  `OmageConf's resolvers logic <https://omegaconf.readthedocs.io/en/latest/usage.html#resolvers>`_.
-* **subfield (resolver)**: ``subfield`` is not an argument, but a
-  `resolver <https://omegaconf.readthedocs.io/en/latest/usage.html#resolvers>`_ that can be used to add conditions
-  to the config files. It uses the following syntax::
-
-    ${subfield:<dictionary>,<field to select>}
-
-  E.g., you can use this resolver to pick the right parameter value for each data split::
-
-    # data_split should be provided by the user in a command-line argument
-    data_split: ???
-
-    # first we define a dictionary that holds the parameters
-    high_duration_thresholds:
-      train: 20
-      dev: 25
-      test: 30
-
-    processors:
-      ...
-
-      # then we use the subfield resolver to pick the right
-      # value from this dictionary as an argument
-      - _target_: sdp.processors.DropHighLowDuration
-        high_duration_threshold: ${subfield:${high_duration_thresholds},${data_split}}
-        ...
-
+  :ref:`custom resolvers <custom_resolvers>`.
 * **test_cases (list[dict])**: most of the processors support a special ``test_cases`` argument.
   It does not change the processor behavior in any way, but is a useful feature to make sure
   the processors are going to work as you expect. The format of this argument is to provide a list
@@ -89,7 +63,60 @@ the processors you're using.
   of examples that we will run through the processor to make sure that all inputs
   map to the desired outputs.
 
-See the next section for some tips and examples of how to effectively use the above parameters.
+.. _custom_resolvers:
+
+Custom resolvers
+~~~~~~~~~~~~~~~~
+
+We define a few custom `OmegaConf resolvers <https://omegaconf.readthedocs.io/en/latest/usage.html#resolvers>`_
+to simplify common operations useful across many config files.
+
+* **subfield**: can be used to add conditions to the config files. It uses the following syntax::
+
+    ${subfield:<dictionary>,<field to select>}
+
+  E.g., you can use this resolver to pick the right parameter value for each data split::
+
+    # data_split should be provided by the user in a command-line argument
+    data_split: ???
+
+    # first we define a dictionary that holds the parameters
+    high_duration_thresholds:
+      train: 20
+      dev: 25
+      test: 30
+
+    processors:
+      ...
+
+      # then we use the subfield resolver to pick the right
+      # value from this dictionary as an argument
+      - _target_: sdp.processors.DropHighLowDuration
+        high_duration_threshold: ${subfield:${high_duration_thresholds},${data_split}}
+        ...
+* **not**: can be used to negate the boolean arguments of the config file. It uses the following syntax::
+
+    ${not:<parameter to negate>}
+
+  E.g., if you have a parameter that's used to select when a certain
+  processor should run, but some other processors require a negation of
+  that parameter, you can use a ``not`` resolver to simplify the logic::
+
+    # can be used to control if we need to restore punctuation and capitalization
+    restore_pc: True
+
+    processors:
+      ...
+
+      # for one processor we want ot use the value directly
+      - _target_: sdp.processors.NormalizeFromNonPCTextVoxpopuli
+        should_run: ${restore_pc}
+
+      ...
+
+      # but for another we might need to specify a negation of the argument
+      - _target_: sdp.processors.SubMakeLowercase
+        should_run: ${not:${restore_pc}}
 
 
 Tips for writing effective configs
