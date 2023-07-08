@@ -62,7 +62,12 @@ processors:
     rename_fields:
       "text": "original_dataset_text"
 
-  - _target_: sdp.processors.ChangePCFields
+  - _target_: sdp.processors.CombineSources
+    source1: text_pc
+    source1_origin: original
+    source2: text_pc_pred
+    source2_origin: synthetic
+    target: text
 
   # bunch of strings we map to spaces
   - _target_: sdp.processors.SubRegex

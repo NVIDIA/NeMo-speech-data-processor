@@ -31,10 +31,10 @@ from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
 from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
-from sdp.processors.modify_manifest.change_pc_fields import ChangePCFields
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ChangeToRelativePath,
+    CombineSources,
     DuplicateFields,
     RenameFields,
     SplitOnFixedDuration,

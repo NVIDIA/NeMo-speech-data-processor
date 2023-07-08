@@ -159,10 +159,10 @@ Data filtering
 Miscellaneous
 #############
 
-.. autodata:: sdp.processors.ChangePCFields
+.. autodata:: sdp.processors.AddConstantFields
    :annotation:
 
-.. autodata:: sdp.processors.AddConstantFields
+.. autodata:: sdp.processors.CombineSources
    :annotation:
 
 .. autodata:: sdp.processors.ChangeToRelativePath
