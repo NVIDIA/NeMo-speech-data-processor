@@ -6,6 +6,11 @@ Available processors
 
 Here is the full list of all available processors and their supported arguments.
 
+.. note::
+    All SDP processors optionally accept ``input_manifest_file`` and
+    ``output_manifest_file`` keys. See :ref:`<special_fields>` section
+    for more details.
+
 .. Using autodata everywhere to only have class name and docs and save on space
 
 
@@ -75,8 +80,13 @@ used in the downstream processing for additional enhancement or filtering.
    :annotation:
 
 
-Text-only modifications
-#######################
+Text-only processors
+####################
+
+.. note::
+    All processors in this section accept additional parameter
+    ``text_key (defaults to "text")`` to control which field is used
+    for modifications/filtering.
 
 Data modifications
 ''''''''''''''''''
@@ -109,13 +119,18 @@ Data filtering
    :annotation:
 
 
-ASR-based modifications
-#######################
+ASR-based processors
+####################
 
 .. note::
     All processors in this section depend on the :class:`sdp.processors.ASRInference`.
     So make sure to include it in the config at some prior stage with an applicable
     ASR model.
+
+.. note::
+    All processors in this section accept additional parameters
+    ``text_key (defaults to "text")`` and ``pred_text_key (defaults to "text_pred")``
+    to control which fields contain transcription and ASR model predictions.
 
 Data modifications
 ''''''''''''''''''
@@ -135,7 +150,16 @@ Data filtering
 .. autodata:: sdp.processors.DropASRErrorBeginningEnd
    :annotation:
 
+.. autodata:: sdp.processors.DropIfSubstringInInsertion
+   :annotation:
+
 .. autodata:: sdp.processors.DropHighCER
+   :annotation:
+
+.. autodata:: sdp.processors.DropHighWER
+   :annotation:
+
+.. autodata:: sdp.processors.DropLowWordMatchRate
    :annotation:
 
 .. indexed in the adding_processors section with methods description
@@ -143,16 +167,10 @@ Data filtering
    :annotation:
    :noindex:
 
-.. autodata:: sdp.processors.DropHighLowDuration
-   :annotation:
-
 .. autodata:: sdp.processors.DropHighLowWordrate
    :annotation:
 
-.. autodata:: sdp.processors.DropIfSubstringInInsertion
-   :annotation:
-
-.. autodata:: sdp.processors.DropLowWordMatchRate
+.. autodata:: sdp.processors.DropHighLowDuration
    :annotation:
 
 
@@ -165,9 +183,6 @@ Miscellaneous
 .. autodata:: sdp.processors.CombineSources
    :annotation:
 
-.. autodata:: sdp.processors.ChangeToRelativePath
-   :annotation:
-
 .. autodata:: sdp.processors.DuplicateFields
    :annotation:
 
@@ -175,6 +190,12 @@ Miscellaneous
    :annotation:
 
 .. autodata:: sdp.processors.SplitOnFixedDuration
+   :annotation:
+
+.. autodata:: sdp.processors.ChangeToRelativePath
+   :annotation:
+
+.. autodata:: sdp.processors.SortManifest
    :annotation:
 
 .. autodata:: sdp.processors.WriteManifest

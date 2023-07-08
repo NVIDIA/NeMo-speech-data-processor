@@ -37,6 +37,7 @@ from sdp.processors.modify_manifest.common import (
     CombineSources,
     DuplicateFields,
     RenameFields,
+    SortManifest,
     SplitOnFixedDuration,
     WriteManifest,
 )

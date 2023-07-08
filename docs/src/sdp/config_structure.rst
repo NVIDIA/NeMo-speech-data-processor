@@ -18,6 +18,8 @@ like ``3:4``, ``2:`` etc. (if there is no ``processors_to_run`` key, then all of
 For an example of the config file, see the :ref:`introduction <sdp-introduction>` or have a look at one of the many
 config files in https://github.com/NVIDIA/NeMo-speech-data-processor/tree/main/dataset_configs.
 
+.. _special_fields:
+
 Special fields
 ~~~~~~~~~~~~~~
 

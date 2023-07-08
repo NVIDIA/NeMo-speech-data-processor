@@ -31,9 +31,13 @@ class ASRInference(BaseProcessor):
     ASR predictions will be saved in the ``pred_text`` key.
 
     Args:
-        pretrained_model: the name of the pretrained NeMo ASR model
+        pretrained_model (str): the name of the pretrained NeMo ASR model
             which will be used to do inference.
-        batch_size: the batch size to use for ASR inference.
+        batch_size (int): the batch size to use for ASR inference. Defaults to 32.
+
+    Returns:
+         The same data as in the input manifest with an additional field
+         ``pred_text`` containing ASR model's predictions.
     """
 
     def __init__(
