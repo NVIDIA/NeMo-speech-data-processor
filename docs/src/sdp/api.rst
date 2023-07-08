@@ -8,7 +8,7 @@ Here is the full list of all available processors and their supported arguments.
 
 .. note::
     All SDP processors optionally accept ``input_manifest_file`` and
-    ``output_manifest_file`` keys. See :ref:`<special_fields>` section
+    ``output_manifest_file`` keys. See :ref:`Special fields <special_fields>` section
     for more details.
 
 .. Using autodata everywhere to only have class name and docs and save on space
@@ -85,7 +85,7 @@ Text-only processors
 
 .. note::
     All processors in this section accept additional parameter
-    ``text_key (defaults to "text")`` to control which field is used
+    ``text_key`` (defaults to "text") to control which field is used
     for modifications/filtering.
 
 Data modifications
@@ -129,7 +129,7 @@ ASR-based processors
 
 .. note::
     All processors in this section accept additional parameters
-    ``text_key (defaults to "text")`` and ``pred_text_key (defaults to "text_pred")``
+    ``text_key`` (defaults to "text") and ``pred_text_key`` (defaults to "text_pred")
     to control which fields contain transcription and ASR model predictions.
 
 Data modifications

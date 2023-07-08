@@ -253,7 +253,7 @@ class DropNonAlphabet(ModifyManifestTextProcessor):
             ``alphabet``, then that utterance will be dropped.
 
             .. note::
-                don't forget to include spaces in your alphabet, unless you
+                Don't forget to include spaces in your alphabet, unless you
                 want to make sure none of the utterances contain spaces.
 
     Returns:
@@ -412,7 +412,7 @@ class DropHighCER(ModifyManifestTextProcessor):
     CER is measured between ``data[self.text_key]`` and ``data[self.pred_text_key]``.
 
     .. note::
-        we only drop the utterance if ``CER > threshold`` (i.e. strictly greater
+        We only drop the utterance if ``CER > threshold`` (i.e. strictly greater
         than) so that if we set the threshold to 0, we will not remove
         utterances with ``CER == 0``.
 
@@ -459,7 +459,7 @@ class DropHighWER(ModifyManifestTextProcessor):
     WER is measured between ``data[self.text_key]`` and ``data[self.pred_text_key]``.
 
     .. note::
-        we only drop the utterance if ``WER > threshold`` (i.e. strictly greater
+        We only drop the utterance if ``WER > threshold`` (i.e. strictly greater
         than) so that if we set the threshold to 0, we will not remove
         utterances with ``WER == 0``.
 
@@ -503,7 +503,7 @@ class DropLowWordMatchRate(ModifyManifestTextProcessor):
     WMR is measured between ``data[self.text_key]`` and ``data[self.pred_text_key]``.
 
     .. note::
-        we only drop the utterance if ``WMR < threshold`` (i.e. strictly lower
+        We only drop the utterance if ``WMR < threshold`` (i.e. strictly lower
         than) so that if we set the threshold to 100, we will not remove
         utterances with ``WMR == 100``.
 
@@ -629,9 +629,9 @@ class DropIfSubstringInInsertion(ModifyManifestTextProcessor):
     ``data[self.pred_text_key]``.
 
     .. note::
-        we check for exact matches, so you need to be mindful of spaces, e.g.
-        you may wish to do ``substrings_in_insertion = ["nemo ", ...]`` instead
-        of ``substrings_in_insertion = ["nemo", ...]``.
+        We check for exact matches, so you need to be mindful of spaces, e.g.
+        you may wish to do ``substrings_in_insertion = ["nemo "]`` instead
+        of ``substrings_in_insertion = ["nemo"]``.
 
     Args:
         substrings_in_insertion (list[str]): a list of strings which might be

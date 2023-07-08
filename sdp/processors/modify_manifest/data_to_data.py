@@ -37,7 +37,7 @@ class InsIfASRInsertion(ModifyManifestTextProcessor):
             only that string) in ``data[self.pred_text_key]``.
 
             .. note::
-                because this processor looks for an exact match in the insertion,
+                Because this processor looks for an exact match in the insertion,
                 we recommend including variations with different spaces in
                 ``insert_words``, e.g. ``[' nemo', 'nemo ', ' nemo ']``.
 
@@ -116,7 +116,7 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
             in ``data[self.text_key]``.
 
             .. note::
-                this processor looks for exact string matches of substitutions,
+                This processor looks for exact string matches of substitutions,
                 so you may need to be careful with spaces in ``sub_words``. E.g.
                 it is recommended to do ``sub_words = {"nmo ": "nemo "}``
                 instead of ``sub_words = {"nmo" : "nemo"}``.
