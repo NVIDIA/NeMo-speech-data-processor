@@ -2,8 +2,9 @@ documentation: |
   MCV Italian
   ###########
 
-  This config was originally designed for the MCV 12.0 release, but should work
-  for any subsequent releases as well.
+  This config was originally designed for the
+  `Mozilla Common Voice (MCV) <https://commonvoice.mozilla.org/>`_ dataset
+  12.0 release, but should work for any subsequent releases as well.
 
   It performs the following data processing.
 

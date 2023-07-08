@@ -2,7 +2,9 @@ documentation: |
   CORAAL
   ######
 
-  This config can be used to prepare CORAAL dataset in the NeMo format.
+  This config can be used to prepare
+  `Corpus of Regional African American Language (CORAAL) <https://oraal.uoregon.edu/coraal>`_
+  dataset in the NeMo format.
   It produces 3 manifests for train/dev/test splits as well as a single
   manifest with all the data. The original data does not contain any
   splits, so we provide a custom way to split the data based on the speaker

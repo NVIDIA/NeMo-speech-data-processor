@@ -14,7 +14,7 @@ The following datasets are already supported by SDP.
 Mozilla Common Voice (MCV)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Dataset link:** https://commonvoice.mozilla.org/en
+**Dataset link:** https://commonvoice.mozilla.org/
 
 **Required manual steps:** MCV requires agreeing to certain conditions, so you'd need to manually
 download the data archive and specify its location with the ``raw_data_dir`` parameter of the
