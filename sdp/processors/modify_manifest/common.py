@@ -83,16 +83,20 @@ class CombineSources(BaseParallelProcessor):
 class AddConstantFields(BaseParallelProcessor):
     """This processor adds constant fields to all manifest entries.
 
-    E.g., can be useful to add fixes "label: <language>" field for downstream
-    lang-id model training.
+    E.g., can be useful to add fixed ``label: <language>`` field for downstream
+    language identification model training.
 
     Args:
         fields: dictionary with any additional information to add. E.g.::
 
             fields = {
                 "label": "en",
-                "metadata": "mcv-11.0-2022-09-21"
+                "metadata": "mcv-11.0-2022-09-21",
             }
+
+    Returns:
+        The same data as in the input manifest with added fields
+        as specified in the ``fields`` input dictionary.
     """
 
     def __init__(
@@ -109,15 +113,20 @@ class AddConstantFields(BaseParallelProcessor):
 
 
 class DuplicateFields(BaseParallelProcessor):
-    """
-    This processor duplicates fields in all manifest entries.
-    It is useful for when you want to do downstream processing of a variant of the entry.
-    e.g. make a copy of "text" called "text_no_pc", and remove punctuation from "text_no_pc" in
-    downstream processors.
+    """This processor duplicates fields in all manifest entries.
+
+    It is useful for when you want to do downstream processing of a variant
+    of the entry. E.g. make a copy of "text" called "text_no_pc", and
+    remove punctuation from "text_no_pc" in downstream processors.
 
     Args:
-        duplicate_fields: dictionary where keys are the original fields to be copied and their values
-            are the new names of the duplicate fields.
+        duplicate_fields (dict): dictionary where keys are the original
+            fields to be copied and their values are the new names of
+            the duplicate fields.
+
+    Returns:
+        The same data as in the input manifest with duplicated fields
+        as specified in the ``duplicate_fields`` input dictionary.
     """
 
     def __init__(
@@ -139,12 +148,15 @@ class DuplicateFields(BaseParallelProcessor):
 
 
 class RenameFields(BaseParallelProcessor):
-    """
-    This processor renames the field in all manifest entries.
+    """This processor renames fields in all manifest entries.
 
     Args:
-        rename_fields: dictionary where keys are the fields to be renamed and their values
-            are the new names of the fields.
+        rename_fields: dictionary where keys are the fields to be
+            renamed and their values are the new names of the fields.
+
+    Returns:
+        The same data as in the input manifest with renamed fields
+        as specified in the ``rename_fields`` input dictionary.
     """
 
     def __init__(
@@ -170,15 +182,24 @@ class SplitOnFixedDuration(BaseParallelProcessor):
     """This processor splits audio into a fixed length segments.
 
     It does not actually create different audio files, but simply adds
-    corresponding "offset" and "duration" fields.
+    corresponding ``offset`` and ``duration`` fields. These fields can
+    be automatically processed by NeMo to split audio on the fly during
+    training.
 
     Args:
-        segment_duration: fixed desired duraiton of each segment.
-        drop_last: whether to drop the last segment if total duration is not
-            divisible by desired segment duration. If False, the last segment
-            will be of a different lenth which is ``< segment_duration``.
-        drop_text: whether to drop text from entries as it is most likely
-            inaccurate after the split on duration.
+        segment_duration (float): fixed desired duraiton of each segment.
+        drop_last (bool): whether to drop the last segment if total duration is
+            not divisible by desired segment duration. If False, the last
+            segment will be of a different lenth which is ``< segment_duration``.
+            Defaults to True.
+        drop_text (bool): whether to drop text from entries as it is most likely
+            inaccurate after the split on duration. Defaults to True.
+
+    Returns:
+        The same data as in the input manifest but all audio that's longer
+        than the ``segment_duration`` will be duplicated multiple times with
+        additional ``offset`` and ``duration`` fields. If ``drop_text=True``
+        will also drop ``text`` field from all entries.
     """
 
     def __init__(
@@ -223,6 +244,10 @@ class ChangeToRelativePath(BaseParallelProcessor):
     Args:
         base_dir: typically a folder where manifest file is going to be
             stored. All passes will be relative to that folder.
+
+    Returns:
+         The same data as in the input manifest with ``audio_filepath`` key
+         changed to contain relative path to the ``base_dir``.
     """
 
     def __init__(
@@ -240,24 +265,25 @@ class ChangeToRelativePath(BaseParallelProcessor):
 
 
 class SortManifest(BaseProcessor):
-    """
-    Processor which will sort the manifest by some specified attribute.
+    """Processor which will sort the manifest by some specified attribute.
 
     Args:
-        output_manifest: the path to the output manifest. It will be the same as the
-            input manifest, but resorted.
-        input_manifest_file: the path to the input manifest which will be resorted.
-        attribute_sort_by: the attribute by which the manifest will be sorted.
-        descending: if set to False (default), attribute will be in ascending order.
-            If True, attribute will be in descending order.
+        attribute_sort_by (Str): the attribute by which the manifest will be sorted.
+        descending (bool): if set to False, attribute will be in ascending order.
+            If True, attribute will be in descending order. Defaults to True.
 
+    Returns:
+        The same entries as in the input manifest, but sorted based
+        on the provided parameters.
     """
 
     def __init__(
-        self, output_manifest_file: str, input_manifest_file: str, attribute_sort_by: str, descending: bool = True
+        self,
+        attribute_sort_by: str,
+        descending: bool = True,
+        **kwargs,
     ):
-        self.output_manifest_file = output_manifest_file
-        self.input_manifest_file = input_manifest_file
+        super().__init__(**kwargs)
         self.attribute_sort_by = attribute_sort_by
         self.descending = descending
 
@@ -275,10 +301,17 @@ class SortManifest(BaseProcessor):
 class WriteManifest(BaseProcessor):
     """Saves a copy of a manifest but only with a subset of the fields.
 
+    Typically will be the final processor to save only relevant fields
+    in the desired location.
+
     Args:
         fields_to_save (list[str]): list of the fields in the input manifest
             that we want to retain. The output file will only contain these
             fields.
+
+    Returns:
+        The same data as in input manifest, but re-saved in the new location
+        with only ``fields_to_save`` fields retained.
     """
 
     def __init__(self, fields_to_save: List[str], **kwargs):
