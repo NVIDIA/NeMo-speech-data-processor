@@ -34,6 +34,11 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
     and creates an initial manifest using the transcripts provided in the
     raw data.
 
+    .. note::
+        This processor will install a couple of Python packages, including
+        PyTorch, so it might be a good idea to run it in an isolated Python
+        environment.
+
     Args:
         raw_data_dir (str): the directory where the downloaded data will be/is saved.
         language_id (str): the language of the data you wish to be downloaded.

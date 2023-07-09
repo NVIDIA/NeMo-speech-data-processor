@@ -61,15 +61,17 @@ processors:
     data_split: ${data_split}
 
   - _target_: sdp.processors.DuplicateFields
+    should_run: ${not:${remove_pc}}
     duplicate_fields:
-      "raw_text": "text"
+      "text": "provided_norm_text"
 
   - _target_: sdp.processors.NormalizeFromNonPCTextVoxpopuli
     should_run: ${not:${remove_pc}}
     test_cases:
-      - {input: {text: "¿So, it's ¿62.3 Abc Abc?",
+      - {input: {raw_text: "¿So, it's ¿62.3 Abc Abc?",
                  provided_norm_text: "so it's six two point three abc abc"},
-         output: {text: "¿So, it's ¿six two point three Abc Abc?",
+         output: {raw_text: "¿So, it's ¿62.3 Abc Abc?",
+                  text: "¿So, it's ¿six two point three Abc Abc?",
                   provided_norm_text: "so it's six two point three abc abc"}}
 
   - _target_: sdp.processors.SubRegex

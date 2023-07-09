@@ -134,6 +134,10 @@ class NormalizeFromNonPCTextVoxpopuli(ModifyManifestTextProcessor):
     Args:
         restored_text_field (str): the field where the recovered text (or ``n/a``)
             will be stored. Defaults to "text".
+        raw_text_key (str): which field contains the original text without normalization.
+            Defaults to "raw_text".
+        norm_text_key (str): which field contains the normalized text.
+            Defaults to "provided_norm_text".
 
     Returns:
         All the same data as in the input manifest with an additional key::
@@ -144,16 +148,24 @@ class NormalizeFromNonPCTextVoxpopuli(ModifyManifestTextProcessor):
     def __init__(
         self,
         restored_text_field: str = "text",
+        raw_text_key: str = "raw_text",
+        norm_text_key: str = "provided_norm_text",
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.restored_text_field = restored_text_field
+        self.raw_text_key = raw_text_key
+        self.norm_text_key = norm_text_key
 
     def _process_dataset_entry(self, data_entry: Dict):
         try:
-            restored_norm_text = restore_pc(data_entry["raw_text"], data_entry["provided_norm_text"])
+            restored_norm_text = restore_pc(data_entry[self.raw_text_key], data_entry[self.norm_text_key])
         except:
-            logger.warning(f"Failed to restore normalization for text {data_entry['text']}.")
+            logger.warning(
+                f"Failed to restore normalization.\nRaw text: %s\nNormalized text: %s",
+                data_entry[self.raw_text_key],
+                data_entry[self.norm_text_key],
+            )
             restored_norm_text = "n/a"
         data_entry[self.restored_text_field] = restored_norm_text
         return [DataEntry(data=data_entry)]
