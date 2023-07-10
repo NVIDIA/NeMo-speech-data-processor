@@ -26,6 +26,8 @@ from sdp.logging import logger
 # registering new resolvers to simplify config files
 OmegaConf.register_new_resolver("subfield", lambda node, field: node[field])
 OmegaConf.register_new_resolver("not", lambda x: not x)
+OmegaConf.register_new_resolver("equal", lambda field, value: field == value)
+
 
 # customizing logger
 logger.setLevel(logging.INFO)

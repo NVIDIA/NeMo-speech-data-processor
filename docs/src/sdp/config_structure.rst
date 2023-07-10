@@ -120,6 +120,15 @@ to simplify common operations useful across many config files.
       - _target_: sdp.processors.SubMakeLowercase
         should_run: ${not:${restore_pc}}
 
+* **equal**: can be used to compare argument to another argument or constant. It uses the following syntax::
+
+    ${equal:<argument to compare>,<value for comparison>}
+
+  E.g., you can use this resolver to create more complex config flows by allowing
+  multiple values to control which processors should run.
+  See `Italian MLS (with P&C) config file <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/mls/config.yaml>`_
+  for an example.
+
 
 Tips for writing effective configs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -10,6 +10,9 @@ from sdp.processors.base_processor import (
     DataEntry,
 )
 
+# TODO: I think we should have a default test implementation for any baseparallalprocessor
+#       that will compare input/output pairs
+
 
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.
@@ -17,65 +20,67 @@ class CombineSources(BaseParallelProcessor):
     E.g.::
 
         _target_: sdp.processors.CombineSources
-        source1: text_pc
-        source1_origin: original
-        source2: text_pc_pred
-        source2_origin: synthetic
+        sources:
+            - field: text_pc
+              origin_label: original
+            - field: text_pc_pred
+              origin_label: synthetic
+            - field: text
+              origin_label: no_pc
         target: text
 
     will populate the ``text`` field with data from ``text_pc`` field if it's
-    present and not equal to ``n/a`` (can be customized). Alternatively, it
-    will populate ``text`` from ``text_pc_pred`` field. In both cases it will
-    specify which source was used in the ``text_origin`` field by using either
-    ``original`` or ``synthetic`` labels.
+    present and not equal to ``n/a`` (can be customized). If ``text_pc`` is
+    not avaialable, it  will populate ``text`` from ``text_pc_pred`` field,
+    following the same rules. If both are not available, it will fall back to
+    the ``text`` field itself. In all cases it will specify which source was
+    used in the ``text_origin`` field by using the label from the
+    ``origin_label`` field.. If non of the sources is available,
+    it will populate both the target and the origin fields with ``n/a``.
 
     Args:
-        source1 (str): first source field to use by default if it's available.
-        source2 (str): second source field to use if first is not available.
-            Has to be present in that case.
+        sources (list[dict]): list of the sources to use in order of preference.
+            Each element in the list should be in the following format::
+
+                {
+                    field: <which field to take the data from>
+                    origin_label: <what to write in the "<target>_origin"
+                }
         target (str): target field that we are populating.
-        source1_origin (str): a label that will be written in the ``<target>_origin``
-            field to specify that the data was populated from the first source.
-            Defaults to "source1".
-        source2_origin (str): a label that will be written in the ``<target>_origin``
-            field to specify that the data was populated from the second source.
-            Defaults to "source2".
-        na_indicator (str): if the first source field has text equal to the
-            ``na_indicator`` it will be considered as not available.
-            Defaults to ``n/a``.
+        na_indicator (str): if any source field has text equal to the
+            ``na_indicator`` it will be considered as not available. If none
+            of the sources are present, this will also be used as the value
+            for the target and origin fields. Defaults to ``n/a``.
 
     Returns:
         The same data as in the input manifest enhanced with the following fields::
 
-            <target>: <populated with data from either <source1> or <source2>>
+            <target>: <populated with data from either <source1> or <source2> \
+                       or with <na_indicator> if none are available>
             <target>_origin: <label that marks where the data came from>
     """
 
     def __init__(
         self,
-        source1: str,
-        source2: str,
+        sources: List[Dict[str, str]],
         target: str,
-        source1_origin: str = "source1",
-        source2_origin: str = "source2",
         na_indicator: str = "n/a",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.source1 = source1
-        self.source2 = source2
+        self.sources = sources
         self.target = target
-        self.source1_origin = source1_origin
-        self.source2_origin = source2_origin
         self.na_indicator = na_indicator
 
     def process_dataset_entry(self, data_entry: Dict):
-        if data_entry.get(self.source1, self.na_indicator) != self.na_indicator:
-            data_entry[self.target] = data_entry[self.source1]
-            data_entry[f"{self.target}_origin"] = self.source1_origin
-        else:
-            data_entry[self.target] = data_entry[self.source2]
-            data_entry[f"{self.target}_origin"] = self.source2_origin
+        for source_dict in self.sources:
+            if data_entry.get(source_dict['field'], self.na_indicator) != self.na_indicator:
+                data_entry[self.target] = source_dict['field']
+                data_entry[f"{self.target}_origin"] = source_dict['origin_label']
+                break  # breaking out on the first present label
+        else:  # going here if no break was triggered
+            data_entry[self.target] = self.na_indicator
+            data_entry[f"{self.target}_origin"] = self.na_indicator
 
         return [DataEntry(data=data_entry)]
 

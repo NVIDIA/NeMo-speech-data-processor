@@ -117,7 +117,7 @@ processors:
   - _target_: sdp.processors.SubRegex
     text_key: "text_no_pc"
     regex_params_list:
-    - {"pattern": '[?.,]', "repl": ""}
+    - {"pattern": '[\?\.,]', "repl": ""}
     should_run: ${subfield:${run_filtering},${data_split}}
 
   - _target_: sdp.processors.DropASRError
@@ -140,7 +140,10 @@ processors:
   - _target_: sdp.processors.SubRegex
     should_run: ${remove_pc}
     regex_params_list:
-    - {"pattern": '[?.,]', "repl": ""}
+      - {"pattern": '[\?\.,]', "repl": ""}
+    test_cases:
+      - {input: {text: "test."}, output: {text: "test"}}
+      - {input: {text: "t,e?st. ah."}, output: {text: "test ah"}}
 
   # ----------------------------------------------------------------------
 
