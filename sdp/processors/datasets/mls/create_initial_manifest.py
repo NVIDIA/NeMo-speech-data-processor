@@ -33,7 +33,7 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
     and creates an initial manifest using the transcripts provided in the raw data.
 
     Args:
-        raw_data_dir (Str): the directory where the downloaded data will be/is saved.
+        raw_data_dir (str): the directory where the downloaded data will be/is saved.
             This is also where the extracted and processed data will be.
         language (str): the language of the data you wish to be downloaded.
             This will be used to format the URL from which we attempt to download the data.

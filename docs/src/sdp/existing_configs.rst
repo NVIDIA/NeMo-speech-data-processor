@@ -42,9 +42,12 @@ Multilingual LibriSpeech (MLS)
 
 **Supported configs**.
 
-* **Italian**:
+* **Italian (with punctuation and capitalization)**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/mls/config.yaml>`__ |
   :doc:`documentation <config-docs/italian/mls/config>`
+* **Italian (no punctuation and capitalization)**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/italian/mls/config_nopc.yaml>`__ |
+  :doc:`documentation <config-docs/italian/mls/config_nopc>`
 * **Spanish (with punctuation and capitalization)**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/mls/config.yaml>`__ |
   :doc:`documentation <config-docs/spanish_pc/mls/config>`
@@ -56,6 +59,7 @@ Multilingual LibriSpeech (MLS)
    :hidden:
 
    config-docs/italian/mls/config
+   config-docs/italian/mls/config_nopc
    config-docs/spanish_pc/mls/config
    config-docs/spanish/mls/config
 

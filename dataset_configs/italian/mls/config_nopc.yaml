@@ -11,9 +11,9 @@ documentation: |
 
   1. Downloads and extract the data from the original website.
   2. Converts all audio files into the wav format and generates initial nemo manifest file.
-  4. Lower-cases text and removes all punctuation markers.
-  5. Drops any data that contains symbols not in the supported alphabet.
-  6. For training subset, the following additional filtering is performed:
+  3. Lower-cases text and removes all punctuation markers.
+  4. Drops any data that contains symbols not in the supported alphabet.
+  5. For training subset, the following additional filtering is performed:
 
      a. Runs ASR inference with an older model and drops all utterances which contain more than
         5 consecutive word insertions or deletions. 5 was found to be a good threshold to filter

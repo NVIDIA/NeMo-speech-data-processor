@@ -43,8 +43,8 @@ class PCInference(BaseProcessor):
         pretrained_name (str): the pretrained_name of the P&C model.
         model_path (str): the model path to the P&C model.
 
-        .. note::
-            Either ``pretrained_name`` or ``model_path`` have to be specified.
+    .. note::
+        Either ``pretrained_name`` or ``model_path`` have to be specified.
 
     Returns:
          The same data as in the input manifest with an additional field

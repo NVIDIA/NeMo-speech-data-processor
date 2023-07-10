@@ -273,7 +273,7 @@ class SortManifest(BaseProcessor):
     """Processor which will sort the manifest by some specified attribute.
 
     Args:
-        attribute_sort_by (Str): the attribute by which the manifest will be sorted.
+        attribute_sort_by (str): the attribute by which the manifest will be sorted.
         descending (bool): if set to False, attribute will be in ascending order.
             If True, attribute will be in descending order. Defaults to True.
 
