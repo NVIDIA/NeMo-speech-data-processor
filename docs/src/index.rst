@@ -1,7 +1,7 @@
 .. _sdp-introduction:
 
 Speech Data Processor
-========================
+=====================
 
 Speech Data Processor (SDP) is a toolkit to make it easy to:
 
@@ -9,6 +9,7 @@ Speech Data Processor (SDP) is a toolkit to make it easy to:
 2. Share the steps for processing a speech dataset.
 
 SDP is hosted here: https://github.com/NVIDIA/NeMo-speech-data-processor.
+It's mainly used to prepare datasets for `NeMo toolkit <https://github.com/NVIDIA/NeMo>`_.
 
 SDP's philosophy is to represent processing operations as 'processor' classes, which take in a path to a NeMo-style
 data manifest as input (or a path to the raw data directory if you do not have a NeMo-style manifest to start with),

@@ -62,9 +62,8 @@ SLR83
    :annotation:
 
 .. TODO: Fisher config is not accessible - should we require moving everything to SDP
-
-.. TODO: Should look through all the classes to make sure docs list all parameters with enough details
-
+..       Probably need some policy on shat lives in main folder vs configs.
+..       To control the number of processors we support.
 
 Data enrichment
 ###############
