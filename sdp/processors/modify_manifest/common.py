@@ -75,7 +75,7 @@ class CombineSources(BaseParallelProcessor):
     def process_dataset_entry(self, data_entry: Dict):
         for source_dict in self.sources:
             if data_entry.get(source_dict['field'], self.na_indicator) != self.na_indicator:
-                data_entry[self.target] = source_dict['field']
+                data_entry[self.target] = data_entry[source_dict['field']]
                 data_entry[f"{self.target}_origin"] = source_dict['origin_label']
                 break  # breaking out on the first present label
         else:  # going here if no break was triggered
