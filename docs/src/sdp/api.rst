@@ -236,3 +236,28 @@ ModifyManifestTextProcessor
    :member-order: bysource
    :no-inherited-members:
    :exclude-members: _abc_impl
+
+.. _sdp-runtime-tests:
+
+Runtime tests
+#############
+
+Before running the specified processors, SDP runs ``processor.test()`` on all specified processors.
+Currently, the only provided processor classes with a test method are subclasses of
+:class:`sdp.processors.modify_manifest.modify_manifest.ModifyManifestTextProcessor`.
+
+:meth:`sdp.processors.modify_manifest.modify_manifest.ModifyManifestTextProcessor.test`
+runs any ``test_cases`` that were provided in the object constructor.
+This means you can provided test cases in the YAML config file, and the
+dataset will only be processed if the test cases pass.
+
+This is helpful to (a) make sure that the rules you wrote have the effect
+you desired, and (b) demonstrate why you wrote those rules.
+An example of test cases we could include in the YAML config file::
+
+    - _target_: sdp.processors.DropIfRegexMatch
+    regex_patterns:
+        - "(\\D ){5,20}" # looks for between 4 and 19 characters surrounded by spaces
+    test_cases:
+        - {input: {text: "some s p a c e d out letters"}, output: null}
+        - {input: {text: "normal words only"}, output: {text: "normal words only"}}

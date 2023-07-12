@@ -42,7 +42,7 @@ documentation: |
   * **drop_pauses**: set to False if you want to retain silence-only segments. Defaults to True.
   * **group_duration_threshold**: controls the maximum duration to use for merging
     consecutive segments from the same speaker. Defaults to 20.0.
-  * **drop_interviewers**: set to False if you want to retain interviewers speach
+  * **drop_interviewers**: set to False if you want to retain interviewers speech
     (standard American English). Defaults to True.
 
   **Output format**.

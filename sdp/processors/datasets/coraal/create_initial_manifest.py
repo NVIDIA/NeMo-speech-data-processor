@@ -29,7 +29,7 @@ def get_coraal_url_list():
     """Returns url list for CORAAL dataset.
 
     There are a few mistakes in the official url list that are fixed here.
-    Can be overriden by tests to select a subset of urls.
+    Can be overridden by tests to select a subset of urls.
     """
     dataset_url = "http://lingtools.uoregon.edu/coraal/coraal_download_list.txt"
     urls = []
@@ -60,7 +60,7 @@ class CreateInitialManifestCORAAL(BaseParallelProcessor):
         drop_pauses (bool): if True, will drop all transcriptions that contain
             only silence (indicated by ``(pause X)`` in the transcript).
             Defaults to True.
-        group_duration_threshold (float): can be used to group consequtive
+        group_duration_threshold (float): can be used to group consecutive
             utterances from the same speaker to a longer duration. Set to 0
             to disable this grouping (but note that many utterances are
             transcribed with only a few seconds, so grouping is generally
@@ -75,7 +75,7 @@ class CreateInitialManifestCORAAL(BaseParallelProcessor):
                 "text": <transcription>,
                 "original_file": <name of the original file in the dataset this audio came from>,
                 "speaker": <speaker id>,
-                "is_interviewee": <whether this is an interviewee (accented speach)>,
+                "is_interviewee": <whether this is an interviewee (accented speech)>,
                 "gender": <speaker gender>,
                 "age": <speaker age>,
                 "education": <speaker education>,

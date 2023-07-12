@@ -98,7 +98,7 @@ class InsIfASRInsertion(ModifyManifestTextProcessor):
 
 
 class SubIfASRSubstitution(ModifyManifestTextProcessor):
-    """Processor that substituites substrings to transcription if they are present in ASR predictions.
+    """Processor that substitutes substrings to transcription if they are present in ASR predictions.
 
     Will convert a substring in ``data[self.text_key]`` to a
     substring in ``data[self.pred_text_key]`` if both are located in the

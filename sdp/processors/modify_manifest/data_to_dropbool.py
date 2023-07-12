@@ -326,7 +326,7 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
         orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
 
         # remove spaces at start and end. Otherwise all utterances
-        # will have no errors at the begining (because both self.text_key
+        # will have no errors at the beginning (because both self.text_key
         # and self.pred_text_key will begin with " ")
         orig_words = remove_extra_spaces(orig_words)
         pred_words = remove_extra_spaces(pred_words)
@@ -417,7 +417,7 @@ class DropHighCER(ModifyManifestTextProcessor):
         utterances with ``CER == 0``.
 
     Args:
-        cer_thershold (float): CER threshold above which the utterance will be dropped.
+        cer_threshold (float): CER threshold above which the utterance will be dropped.
 
     Returns:
          The same data as in the input manifest with some entries dropped.
@@ -464,7 +464,7 @@ class DropHighWER(ModifyManifestTextProcessor):
         utterances with ``WER == 0``.
 
     Args:
-        wer_thershold (float): WER threshold above which the utterance will be dropped.
+        wer_threshold (float): WER threshold above which the utterance will be dropped.
 
     Returns:
          The same data as in the input manifest with some entries dropped.
@@ -508,7 +508,7 @@ class DropLowWordMatchRate(ModifyManifestTextProcessor):
         utterances with ``WMR == 100``.
 
     Args:
-        wmr_thershold (float): WMR threshold below which the utterance will be dropped.
+        wmr_threshold (float): WMR threshold below which the utterance will be dropped.
 
     Returns:
          The same data as in the input manifest with some entries dropped.

@@ -117,7 +117,7 @@ def restore_pc(orig_words, norm_words):
 
 
 class NormalizeFromNonPCTextVoxpopuli(ModifyManifestTextProcessor):
-    """Tries to restore punctuation and capitalization from the unnormalized text version.
+    """Tries to restore punctuation and capitalization from the un-normalized text version.
 
     VoxPopuli contains two versions of the transcription - original (non-normalized,
     but with punctuation and capitalization) and normalized (without punctuation or capitalization),

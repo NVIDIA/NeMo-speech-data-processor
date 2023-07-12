@@ -50,7 +50,7 @@ Transcribe audio file on a single CPU/GPU. Useful for transcription of moderate 
   amp: Bool to decide if Automatic Mixed Precision should be used during inference
   audio_type: Str filetype of the audio. Supported = wav, flac, mp3
 
-  overwrite_transcripts: Bool which when set allowes repeated transcriptions to overwrite previous results.
+  overwrite_transcripts: Bool which when set allows repeated transcriptions to overwrite previous results.
 
   rnnt_decoding: Decoding sub-config for RNNT. Refer to documentation for specific values.
 

@@ -12,7 +12,7 @@ documentation: |
   * **full_drop**: we can fully drop the utterances for which P&C was not restored.
     This is currently the recommended (and default) option as it results in the
     best overall performance.
-  * **synthetic**: we can generate synthetic P&C by using a preptrained NeMo
+  * **synthetic**: we can generate synthetic P&C by using a pretrained NeMo
     model. Make sure to specify which model to use with the ``pc_model_path``
     parameter. Recommended model for this config is
     `punctuationcapitalization_it_it_bert_base <https://catalog.ngc.nvidia.com/orgs/nvidia/teams/riva/models/punctuationcapitalization_it_it_bert_base>`_

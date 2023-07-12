@@ -3,7 +3,7 @@ documentation: |
   #################
 
   This config can be used to prepare `VoxPopuli <https://github.com/facebookresearch/voxpopuli>`_
-  Italian data in the NeMo format with restored punctuation and capitalizatoin (P&C).
+  Italian data in the NeMo format with restored punctuation and capitalization (P&C).
 
   It performs the following data processing.
 

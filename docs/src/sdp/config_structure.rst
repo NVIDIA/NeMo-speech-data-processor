@@ -12,7 +12,7 @@ like ``3:4``, ``2:`` etc. (if there is no ``processors_to_run`` key, then all of
 
 .. note::
     SDP will run the processors in the order in which they are listed in the config YAML file. Make sure to list the
-    processors in an order which makes sense, e.g. create an initial manifest first; make sure to run asr inference
+    processors in an order which makes sense, e.g. create an initial manifest first; make sure to run ASR inference
     before doing any processing which looks at ``pred_text`` fields in the manifest.
 
 For an example of the config file, see the :ref:`introduction <sdp-introduction>` or have a look at one of the many
@@ -29,7 +29,7 @@ the processors you're using.
 * **input_manifest_file/output_manifest_file (str)**: virtually all SDP processors accept ``input_manifest_file`` and
   ``output_manifest_file`` arguments to specify where the input is coming from and where to save the output.
   Since most often the input to the next processor is the output of the current processor, you can skip specifying
-  those arguments for any processors and SDP will automatically "stitch" consequtive processors together by creating
+  those arguments for any processors and SDP will automatically "stitch" consecutive processors together by creating
   temporary files. So most often you only need to specify those arguments for the final processors or any other processors
   that you need to retain an output for (either for caching of the costly computation or to inspect the output for
   debugging purposes).
@@ -166,6 +166,8 @@ Most SDP processors support run-time tests with a ``test_cases`` argument. Make 
 when you create new configs. It can be very helpful to ensure that what you have in the config does
 indeed work as you intended. All of our configs have test cases included, so any file is good to
 look at as an example.
+
+For more information about the run-time tests see :ref:`run-time tests <sdp-runtime-tests>`.
 
 **Use "local" processors.**
 

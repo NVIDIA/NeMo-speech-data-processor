@@ -15,9 +15,8 @@ SDP's philosophy is to represent processing operations as 'processor' classes, w
 data manifest as input (or a path to the raw data directory if you do not have a NeMo-style manifest to start with),
 apply some processing to it, and then save the output manifest file.
 
-You specifiy which processors you want to run using a YAML config file. Many common processing operations are provided,
-and it is easy to add your own. If you do not need to add your own processors, then all that is needed to process a
-new dataset is to write a single YAML file containing the parameters needed to process your dataset.
+You specify which processors you want to run using a YAML config file. Many common processing operations are provided,
+and it is easy to add your own.
 
 .. image:: https://github.com/NVIDIA/NeMo/releases/download/v1.17.0/sdp_overview_diagram.png
    :alt: Overview diagram of Speech Data Processor
@@ -30,5 +29,4 @@ To learn more about SDP, have a look at the following sections.
    sdp/config_structure
    sdp/adding_processors
    sdp/existing_configs
-   sdp/architecture_description
    sdp/api

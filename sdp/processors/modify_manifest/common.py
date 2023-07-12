@@ -10,7 +10,7 @@ from sdp.processors.base_processor import (
     DataEntry,
 )
 
-# TODO: I think we should have a default test implementation for any baseparallalprocessor
+# TODO: I think we should have a default test implementation for any BaseParallelProcessor
 #       that will compare input/output pairs
 
 
@@ -31,7 +31,7 @@ class CombineSources(BaseParallelProcessor):
 
     will populate the ``text`` field with data from ``text_pc`` field if it's
     present and not equal to ``n/a`` (can be customized). If ``text_pc`` is
-    not avaialable, it  will populate ``text`` from ``text_pc_pred`` field,
+    not available, it  will populate ``text`` from ``text_pc_pred`` field,
     following the same rules. If both are not available, it will fall back to
     the ``text`` field itself. In all cases it will specify which source was
     used in the ``text_origin`` field by using the label from the
@@ -192,10 +192,10 @@ class SplitOnFixedDuration(BaseParallelProcessor):
     training.
 
     Args:
-        segment_duration (float): fixed desired duraiton of each segment.
+        segment_duration (float): fixed desired duration of each segment.
         drop_last (bool): whether to drop the last segment if total duration is
             not divisible by desired segment duration. If False, the last
-            segment will be of a different lenth which is ``< segment_duration``.
+            segment will be of a different length which is ``< segment_duration``.
             Defaults to True.
         drop_text (bool): whether to drop text from entries as it is most likely
             inaccurate after the split on duration. Defaults to True.

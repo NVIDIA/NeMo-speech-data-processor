@@ -193,7 +193,7 @@ class BaseParallelProcessor(BaseProcessor):
 
         Each returned value should be a ``DataEntry`` object that will hold
         a dictionary (or anything else that can be json-serialized) with
-        the actual data + any additional metrics required for statistcs
+        the actual data + any additional metrics required for statistics
         reporting. Those metrics can be used in :meth:`finalize` to
         prepare for final reporting.
 
@@ -225,7 +225,7 @@ class BaseParallelProcessor(BaseProcessor):
                 from the original raw MLS transcript. In general it is an element
                 of the list returned from the :meth:`read_manifest` method.
         """
-        # TODO: it would be more strightforward to use a generator here, but
+        # TODO: it would be more straightforward to use a generator here, but
         #     seems that it's not supported with multiprocessing. Is there a
         #     way to make it work?
 
