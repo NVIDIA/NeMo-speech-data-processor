@@ -5,6 +5,7 @@ joblib
 numpy
 omegaconf
 pandas
+regex
 sox
 tqdm
 wget
