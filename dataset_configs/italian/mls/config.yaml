@@ -72,7 +72,6 @@ processors:
     data_split: "${data_split}"
 
   - _target_: sdp.processors.RestorePCForMLS
-    input_manifest_file: "${workspace_dir}/${data_split}_manifest0.json"
     output_manifest_file: "${workspace_dir}/${data_split}_manifest1.json"
     language_long: ${language}
     language_short: ${language_id}
@@ -82,16 +81,14 @@ processors:
     restored_text_field: "text_pc"
 
   - _target_: sdp.processors.PCInference
-    input_manifest_file: "${workspace_dir}/${data_split}_manifest1.json"
-    output_manifest_file: "${workspace_dir}/${data_split}_manifest2.json"
     model_path: "${pc_model_path}"
+    output_manifest_file: "${workspace_dir}/${data_split}_manifest2.json"
     input_text_field: "text"
     output_text_field: "text_pc_pred"
     batch_size: 32
     should_run: ${equal:${pc_mode},"synthetic"}
 
   - _target_: sdp.processors.MakeLettersUppercaseAfterPeriod
-    input_manifest_file: "${workspace_dir}/${data_split}_manifest2.json"
     output_manifest_file: "${workspace_dir}/${data_split}_manifest3.json"
     text_key: "text_pc_pred"
     test_cases:

@@ -52,6 +52,7 @@ if __name__ == "__main__":
                     tgt_flac_dir = os.path.join(tmpdir_path, split, "audio", *utt_id.split("_")[:2])
                     os.makedirs(tgt_flac_dir, exist_ok=True)
                     shutil.copy(src_flac_path, os.path.join(tgt_flac_dir, utt_id + ".flac"))
+        os.makedirs(args.test_data_folder, exist_ok=True)
         with tarfile.open(os.path.join(args.test_data_folder, f"mls_{args.language}.tar.gz"), "w:gz") as tar:
             # has to be the same as what's before .tar.gz
             tar.add(tmpdir, arcname=f"mls_{args.language}")

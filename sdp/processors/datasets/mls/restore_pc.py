@@ -22,6 +22,7 @@ from glob import glob
 from pathlib import Path
 from typing import Optional
 
+import regex
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
@@ -287,13 +288,26 @@ def split_text_into_sentences(text: str):
     Returns list of sentences
     """
     # TODO: should this be filled up and exposed as a parameter?
-    lower_case_unicode = ''
-    upper_case_unicode = ''
+    lower_case_unicode = ""
+    upper_case_unicode = ""
+
+    # end of quoted speech - to be able to split sentences by full stop
+    text = re.sub(r"([\.\?\!])([\"\'])", r"\g<2>\g<1> ", text)
+
+    # remove extra space
+    text = re.sub(r" +", " ", text)
+
+    # remove space in the middle of the lower case abbreviation to avoid splitting into separate sentences
+    matches = re.findall(rf"[a-z{lower_case_unicode}]\.\s[a-z{lower_case_unicode}]\.", text)
+    for match in matches:
+        text = text.replace(match, match.replace(". ", "."))
 
     # Read and split transcript by utterance (roughly, sentences)
-    split_pattern = rf"(?<!\w\.\w.)(?<![A-Z{upper_case_unicode}][a-z{lower_case_unicode}]+\.)(?<![A-Z{upper_case_unicode}]\.)(?<=\.|\?|\!|\.”|\?”\!”)\s(?![0-9]+[a-z]*\.)"
-
-    sentences = re.split(split_pattern, text)
+    split_pattern = (
+        rf"(?<!\w\.\w.)(?<![A-Z{upper_case_unicode}][a-z{lower_case_unicode}]+\.)"
+        rf"(?<![A-Z{upper_case_unicode}]\.)(?<=\.|\?|\!|\.”|\?”\!”)\s(?![0-9]+[a-z]*\.)"
+    )
+    sentences = regex.split(split_pattern, text)
     return sentences
 
 
@@ -365,9 +379,6 @@ def process_book(book_manifest, texts_dir, submanifests_dir, output_dir, restore
             logger.info(f"Did not find {book_id_spk_id} in {output_dir} => will process this book")
             break
     else:
-        # logger.info(
-        #    f"All manifests {manifests} were also found in {output_dir} => skipping processing of this book"
-        # )
         return
 
     try:
