@@ -25,17 +25,35 @@ MLS_URL = "https://dl.fbaipublicfiles.com/mls/mls_{language}.tar.gz"
 
 
 class CreateInitialManifestMLS(BaseParallelProcessor):
-    """
-    Downloads and unzips raw MLS data for the specified language, and creates an initial manifest using
-    the transcripts provided in the raw data.
+    """Processor to create initial manifest for the Multilingual LibriSpeech (MLS) dataset.
+
+    Dataset link: https://www.openslr.org/94/
+
+    Downloads and unzips raw MLS data for the specified language,
+    and creates an initial manifest using the transcripts provided in the raw data.
 
     Args:
-        raw_data_dir: the directory where the downloaded data will be/is saved. This is also
-            where the extracted and processed data will be.
-        language: the language of the data you wish to be downloaded. This will be used to format the
-            URL from which we attempt to download the data.
-        data_split: the data split for which the initial manifest will be created.
-        resampled_audio_dir: the directory where the resampled (16kHz) wav files will be stored.
+        raw_data_dir (str): the directory where the downloaded data will be/is saved.
+            This is also where the extracted and processed data will be.
+        language (str): the language of the data you wish to be downloaded.
+            This will be used to format the URL from which we attempt to download the data.
+            E.g., "english", "italian", "spanish", etc.
+        data_split (str): "train", "dev" or "test".
+        resampled_audio_dir (str): the directory where the resampled
+            wav files will be stored.
+        target_samplerate (int): sample rate (Hz) to use for resampling.
+            Defaults to 16000.
+        target_nchannels (int): number of channels to create during resampling process.
+            Defaults to 1.
+
+    Returns:
+        This processor generates an initial manifest file with the following fields::
+
+            {
+                "audio_filepath": <path to the audio file>,
+                "duration": <duration of the audio in seconds>,
+                "text": <transcription>,
+            }
     """
 
     def __init__(
@@ -44,6 +62,8 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
         language: str,
         data_split: str,
         resampled_audio_dir: str,
+        target_samplerate: int = 16000,
+        target_nchannels: int = 1,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -51,6 +71,8 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
         self.language = language
         self.data_split = data_split
         self.resampled_audio_dir = Path(resampled_audio_dir)
+        self.target_samplerate = target_samplerate
+        self.target_nchannels = target_nchannels
 
         # will be initialized in self.prepare method
         self.audio_path_prefix = None
@@ -71,6 +93,7 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
         self.transcription_file = str(Path(data_folder) / self.data_split / "transcripts.txt")
 
     def read_manifest(self):
+        """Reading the initial data line-by-line."""
         if self.transcription_file is None:
             raise RuntimeError("self.process has to be called before processing the data.")
 
@@ -80,6 +103,11 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
         return dataset_entries
 
     def process_dataset_entry(self, data_entry: str):
+        """Processing the data entries.
+
+        Converts all audio into wav format and outputs filepath, duration and
+        transcription text.
+        """
         if len(data_entry.split("\t")) != 2:
             raise RuntimeError(f"have more than one tab in line {data_entry}")
 
@@ -92,7 +120,10 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
         if not os.path.exists(os.path.dirname(tgt_wav_path)):
             os.makedirs(os.path.dirname(tgt_wav_path), exist_ok=True)
         if not os.path.exists(tgt_wav_path):
-            Transformer().build(src_flac_path, tgt_wav_path)
+            tfm = Transformer()
+            tfm.rate(samplerate=self.target_samplerate)
+            tfm.channels(n_channels=self.target_nchannels)
+            tfm.build(input_filepath=src_flac_path, output_filepath=tgt_wav_path)
 
         data = {
             "audio_filepath": tgt_wav_path,

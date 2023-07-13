@@ -6,3 +6,5 @@ Before you create a PR, please double check the following:
 - Code style conforms to our guidelines. The easiest way to ensure this is to
   install a pre-commit hook by running `pip install pre-commit` and then
   `pre-commit install`.
+
+TODO: information on what docs to add for new features

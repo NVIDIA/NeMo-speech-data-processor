@@ -19,30 +19,37 @@ from typing import Dict, List, Optional
 from sdp.processors.base_processor import BaseParallelProcessor
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 
+# TODO: maybe remove additional spaces for simpler logic? Why is it necessary
+#       for regular expressions?
+
 
 class ModifyManifestTextProcessor(BaseParallelProcessor):
     """Base class useful for most "text-only" modifications of the manifest.
 
-    This adds the following functionality on top of BaseParallelProcessor
-        - Adds space in the beginning and end of text for easier regex-based
-          processing.
-        - Automatically handles common test cases by comparing input to output
-          values.
+    This adds the following functionality on top of the
+    :class:`sdp.processors.base_processor.BaseParallelProcessor`
+
+    * Adds space in the beginning and end of text for easier regex-based
+      processing.
+    * Automatically handles common test cases by comparing input to output
+      values.
 
     Args:
-        text_key: a string indicating which key of DataEntry.data should be used as the
-            "text" key. Default: "text".
-        pred_text_key: a string indicating which key of DataEntry.data should be used as the
-            "pred_text" key. Default: "pred_text".
-        test_cases: an optional list of dicts containing test cases for checking
-            that the processor makes the changes that we are expecting.
-            The dicts must have a key 'input', the value of which is a dictionary
-            containing data which is our test input manifest line, and a key
-            'output', the value of which is a dictionary containing data which is
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
+        pred_text_key (str): a string indicating which key of the data entries
+            should be used to access the ASR predictions. Defaults to "pred_text".
+        test_cases (list[dict]): an optional list of dicts containing test
+            cases for checking that the processor makes the changes that we
+            are expecting.
+            The dicts must have a key ``input``, the value of which is a dictionary
+            containing data which is our test's input manifest line, and a key
+            ``output``, the value of which is a dictionary containing data which is
             the expected output manifest line.
 
     .. note::
         This class only supports one-to-one or one-to-none mappings.
+        One-to-many is currently not supported.
     """
 
     def __init__(
@@ -61,6 +68,7 @@ class ModifyManifestTextProcessor(BaseParallelProcessor):
             self.test_cases = []
 
     def test(self):
+        """Applies processing to "test_cases" and raises an error in case of mismatch."""
         for test_case in self.test_cases:
             generated_outputs = self.process_dataset_entry(test_case["input"].copy())
             # can only return 1 or zero entries
@@ -78,17 +86,23 @@ class ModifyManifestTextProcessor(BaseParallelProcessor):
 
     @abstractmethod
     def _process_dataset_entry(self, data_entry):
+        """Main data processing should be implemented here.
+
+        Note that extra spaces will be added in the beginning and end
+        automatically. See the documentation of
+        :meth:`sdp.processors.base_processor.BaseParallelProcessor.process_dataset_entry`
+        for more details.
+        """
         pass
 
     def process_dataset_entry(self, data_entry):
-        """Wrapper for 'process_dataset_entry' abstract method.
+        """Wrapper for the new :meth:`_process_dataset_entry` abstract method.
 
-        Before 'process_dataset_entry' is called, the function
-        'add_start_end_spaces' is applied to the self.text_key
-        and self.pred_text_key in the input data.
-        After 'process_dataset_entry' is called, the function
-        'remove_extra_spaces' is applied to the "text" and "pred_text" to
-        the output 'data' variable of the 'process_dataset_entry' method.
+        Before :meth:`_process_dataset_entry` is called we will add a space
+        character to the beginning and end of the ``text`` and ``pred_text``
+        keys for each data entry. After the :meth:`_process_dataset_entry`,
+        the extra spaces are removed. This includes the spaces in the beginning
+        and end of the text, as well as any double spaces ``"  "``.
         """
         # handle spaces
         if self.text_key in data_entry:

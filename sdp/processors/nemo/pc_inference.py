@@ -29,17 +29,26 @@ def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
 
 
 class PCInference(BaseProcessor):
-    """
-    Processor which will run a text-based punctuation and capitalization (PC) model on
-    the text in the field input_text_field, and save it in the text field output_text_field.
+    """Adds predictions of a text-based punctuation and capitalization (P&C) model.
+
+    Operates on the text in the ``input_text_field``, and saves predictions in
+    the ``output_text_field``.
 
     Args:
-        input_text_field: the text field that will be the input to the PC model.
-        output_text_field: the text field where the output of the PC model will be saved.
-        batch_size: the batch sized used by the PC model.
-        device: the device used by the PC model.
-        pretrained_name: the pretrained_name of the PC model.
-        model_path: the model path to the PC model.
+        input_text_field (str): the text field that will be the input to the P&C model.
+        output_text_field (str): the text field where the output of the PC model
+            will be saved.
+        batch_size (int): the batch sized used by the P&C model.
+        device (str): the device used by the P&C model. Can be skipped to auto-select.
+        pretrained_name (str): the pretrained_name of the P&C model.
+        model_path (str): the model path to the P&C model.
+
+    .. note::
+        Either ``pretrained_name`` or ``model_path`` have to be specified.
+
+    Returns:
+         The same data as in the input manifest with an additional field
+         <output_text_field> containing P&C model's predictions.
     """
 
     def __init__(
@@ -65,7 +74,7 @@ class PCInference(BaseProcessor):
         if self.pretrained_name is None and self.model_path is None:
             raise ValueError("pretrained_name and model_path cannot both be None")
         if self.pretrained_name is not None and self.model_path is not None:
-            raise ValueError("pretrained_name and model_path cannot both be not None")
+            raise ValueError("pretrained_name and model_path cannot both be specified")
 
     def process(self):
         import torch  # importing after nemo to make sure users first install nemo, instead of torch, then nemo

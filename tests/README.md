@@ -1,5 +1,5 @@
 To run tests you will need to install additional packages from
-[tests/requirements.txt](requirements.txt).
+[requirements/tests.txt](/requirements/tests.txt).
 
 Command to run all tests from this directory: `python -m pytest tests/`.
 

@@ -55,7 +55,7 @@ def get_diff_with_subs_grouped(orig_words: str, pred_words: str) -> List[tuple]:
         an insertion.
 
     Args:
-        orig_words: a string containing the groud truth.
+        orig_words: a string containing the ground truth.
         pred_words: a string containing the text predicted by ASR.
 
     Returns:

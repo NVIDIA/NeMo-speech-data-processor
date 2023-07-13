@@ -87,6 +87,31 @@ class CreateInitialManifestSLR83(BaseParallelProcessor):
 
     This is a dataset introduced in `Open-source Multi-speaker Corpora of the
     English Accents in the British Isles <https://aclanthology.org/2020.lrec-1.804/>`_.
+
+    Args:
+        raw_data_dir (str): where to put raw downloaded data.
+        dialect (str): should be one of the
+
+            * ``irish_english_male``
+            * ``midlands_english_female``
+            * ``midlands_english_male``
+            * ``northern_english_female``
+            * ``northern_english_male``
+            * ``scottish_english_female``
+            * ``scottish_english_male``
+            * ``southern_english_female``
+            * ``southern_english_male``
+            * ``welsh_english_female``
+            * ``welsh_english_male``
+
+    Returns:
+        This processor generates an initial manifest file with the following fields::
+
+            {
+                "audio_filepath": <path to the audio file>,
+                "duration": <duration of the audio in seconds>,
+                "text": <transcription>,
+            }
     """
 
     def __init__(
@@ -139,19 +164,27 @@ class CreateInitialManifestSLR83(BaseParallelProcessor):
 
 
 class CustomDataSplitSLR83(BaseProcessor):
-    """Split data into train/dev/test.
+    """Splits SLR83 data into train, dev or test subset.
 
-    The original paper does not provide train/dev/test split, so we include a
+    The original paper does not provide train/dev/test splits, so we include a
     custom processing that can be used as a standardized split to compare
     results. For more details on this data split see `Damage Control During
     Domain Adaptation for Transducer Based Automatic Speech Recognition
     <https://arxiv.org/abs/2210.03255>`_.
 
-    ..note::
+    .. note::
         All data dropping has to be done before the split. We will check the
         total number of files to be what is expected in the reference split.
         But if you add any custom pre-processing that changes duration or
         number of files, your splits will likely be different.
+
+    Args:
+        dialect (str): same as in the :class:`sdp.processors.CreateInitialManifestSLR83`.
+        data_split (str): "train", "dev" or "test".
+
+    Returns:
+        All the same fields as in the input manifest, but only a subset of
+        the data is retained.
     """
 
     def __init__(self, dialect, data_split, **kwargs):

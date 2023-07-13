@@ -1,7 +1,45 @@
+documentation: |
+  MCV Italian
+  ###########
+
+  This config was originally designed for the
+  `Mozilla Common Voice (MCV) <https://commonvoice.mozilla.org/>`_ dataset
+  12.0 release, but should work for any subsequent releases as well.
+
+  It performs the following data processing.
+
+  1. Extracts and converts all data to the NeMo format.
+  2. Replaces certain non-supported characters and punctuation marks with equivalent supported versions.
+  3. Drops any data that contains symbols not in the supported alphabet.
+  4. Drops a few manually specified audio files that were found to contain transcription errors.
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+    You need to manually place the downloaded MCV Italian data inside
+    ``<workspace dir>/raw_data/`` subfolder.
+  * **data_split**: should be "train", "dev" or "test".
+
+  Note that you can customize any part of this config either directly or from command-line.
+  Here are some common customizations to consider:
+
+  * **remove_pc**: set to True if P&C is not needed. Defaults to False.
+
+  **Output format**.
+
+  This config dumps the final manifest at ``${workspace_dir}/${data_split}_manifest.json``.
+  The output manifest contains the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription, including punctuation ".,?" and capitalization.
+  * **duration (float)**: audio duration in seconds.
+
+
 processors_to_run: all
 data_split: ???
 workspace_dir: ???
 final_manifest: ${workspace_dir}/${data_split}_manifest.json
+remove_pc: False
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestMCV
@@ -44,6 +82,19 @@ processors:
           "common_voice_it_17553352.wav",
     ]
     text_key: audio_filepath
+
+  # ------------------------ if P&C is not needed ------------------------
+
+  - _target_: sdp.processors.SubMakeLowercase
+    should_run: ${remove_pc}
+
+  - _target_: sdp.processors.SubRegex
+    should_run: ${remove_pc}
+    regex_params_list:
+    - {"pattern": '[\?\.,]', "repl": ""}
+
+  # ----------------------------------------------------------------------
+
 
   - _target_: sdp.processors.ChangeToRelativePath
     base_dir: ${workspace_dir}

@@ -389,20 +389,35 @@ def process_book(book_manifest, texts_dir, submanifests_dir, output_dir, restore
 
 
 class RestorePCForMLS(BaseProcessor):
-    """
-    Recovers original text from MLS Librivox texts in "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz".
-        Saves recovered text in recovered_text_field. If text was not recovered, recovered_text_field will be equal
-        to the value of the `NA` variable.
+    """Recovers original text from the MLS Librivox texts.
+
+    This processor can be used to restore punctuation and capitalization for the
+    MLS data. Uses the original data in https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz.
+    Saves recovered text in ``restored_text_field`` field.
+    If text was not recovered, ``restored_text_field`` will be equal to ``n/a``.
+
     Args:
-        language_long: the full name of the language, used for choosing the folder of the contents of
+        language_long (str): the full name of the language, used for
+            choosing the folder of the contents of
             "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz".
-        language_short: the short name of the language, used for specifying the normalizer we want to use.
-        lv_text_dir: the directory where the contents of "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz" will be saved.
-        submanifests_dir: the directory where submanifests (one for each combo of speak + book) will be store.
-        restored_submanifests_dir: the directory where restored submanifests (one for each combo of speak + book) will be store.
-        restored_text_field: the field where the recovered text will be stored.
-        n_jobs: number of jobs to use for parallel processing.
-        show_conversion_breakdown: bool for whether to show how much of each submanifest was restored.
+            E.g., "english", "spanish", "italian", etc.
+        language_short (str): the short name of the language, used for
+            specifying the normalizer we want to use. E.g., "en", "es", "it", etc.
+        lv_text_dir (str): the directory where the contents of
+            https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz will be saved.
+        submanifests_dir (str): the directory where submanifests (one for each
+            combo of speaker + book) will be stored.
+        restored_submanifests_dir (str): the directory where restored
+            submanifests (one for each combo of speaker + book) will be stored.
+        restored_text_field (str): the field where the recovered text will be stored.
+        n_jobs (int): number of jobs to use for parallel processing. Defaults to -1.
+        show_conversion_breakdown (bool): whether to show how much of each
+            submanifest was restored. Defaults to True.
+
+    Returns:
+        All the same data as in the input manifest with an additional key::
+
+            <restored_text_field>: <restored text or n/a if match was not found>``
     """
 
     def __init__(
@@ -413,7 +428,7 @@ class RestorePCForMLS(BaseProcessor):
         submanifests_dir: str,
         restored_submanifests_dir: str,
         restored_text_field: str,
-        n_jobs: int,
+        n_jobs: int = -1,
         show_conversion_breakdown: bool = True,
         **kwargs,
     ):
@@ -428,11 +443,12 @@ class RestorePCForMLS(BaseProcessor):
         self.show_conversion_breakdown = show_conversion_breakdown
 
     def process(self):
-        """
-        Download & extract lv_text.
-        Create submanifests.
-        Restore P&C to submanifests.
-        Group back submanifests into 1 single manifest
+        """Main processing happens here.
+
+        * Download & extract lv_text.
+        * Create submanifests.
+        * Restore P&C to submanifests.
+        * Group back submanifests into a single manifest
         """
         from nemo_text_processing.text_normalization.normalize import Normalizer
 

@@ -19,6 +19,8 @@ from sdp.logging import logger
 from sdp.processors.base_processor import DataEntry
 from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
 
+# TODO: should be done with general sub-regex processor
+
 
 class MakeLettersUppercaseAfterPeriod(ModifyManifestTextProcessor):
     """Can be used to replace characters with upper-case version after punctuation.
@@ -26,6 +28,9 @@ class MakeLettersUppercaseAfterPeriod(ModifyManifestTextProcessor):
     Args:
         punctuation (str): string with all punctuation characters to consider.
             Defaults to ".!?".
+
+    Returns:
+         The same data as in the input manifest with ``<text_key>`` field changed.
     """
 
     def __init__(

@@ -30,19 +30,35 @@ from sdp.utils.common import extract_archive
 
 
 class CreateInitialManifestMCV(BaseParallelProcessor):
-    """
+    """Processor to create initial manifest for the Mozilla Common Voice (MCV) dataset.
+
+    Dataset link: https://commonvoice.mozilla.org/
+
     Extracts raw MCV data for the specified language and creates an initial manifest
     using the transcripts provided in the raw data.
 
     Args:
-        raw_data_dir: the path to the directory containing the raw data archive file
-        extract_archive_dir: directory where the extracted data will be saved
-        resampled_audio_dir: directory where the resampled audio will be saved
-        data_split: the data_split to create
-        language_id: the ID of the language of the data
-        already_extracted: bool (default False) - if True, we will not try to extract the raw data.
-        target_samplerate: sample rate (Hz) to use for resampling (default: 16000)
-        target_nchannels: number of channels to create during resampling process (default: 1)
+        raw_data_dir (str): the path to the directory containing the raw data archive file.
+            Needs to be manually downloaded from https://commonvoice.mozilla.org/.
+        extract_archive_dir (str): directory where the extracted data will be saved.
+        resampled_audio_dir (str): directory where the resampled audio will be saved.
+        data_split (str): "train", "dev" or "test".
+        language_id (str): the ID of the language of the data. E.g., "en", "es", "it", etc.
+        already_extracted (bool): if True, we will not try to extract the raw data.
+            Defaults to False.
+        target_samplerate (int): sample rate (Hz) to use for resampling.
+            Defaults to 16000.
+        target_nchannels (int): number of channels to create during resampling process.
+            Defaults to 1.
+
+    Returns:
+        This processor generates an initial manifest file with the following fields::
+
+            {
+                "audio_filepath": <path to the audio file>,
+                "duration": <duration of the audio in seconds>,
+                "text": <transcription (with capitalization and punctuation)>,
+            }
     """
 
     def __init__(

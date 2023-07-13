@@ -10,20 +10,98 @@ from sdp.processors.base_processor import (
     DataEntry,
 )
 
+# TODO: I think we should have a default test implementation for any BaseParallelProcessor
+#       that will compare input/output pairs
+
+
+class CombineSources(BaseParallelProcessor):
+    """Can be used to create a single field from two alternative sources.
+
+    E.g.::
+
+        _target_: sdp.processors.CombineSources
+        sources:
+            - field: text_pc
+              origin_label: original
+            - field: text_pc_pred
+              origin_label: synthetic
+            - field: text
+              origin_label: no_pc
+        target: text
+
+    will populate the ``text`` field with data from ``text_pc`` field if it's
+    present and not equal to ``n/a`` (can be customized). If ``text_pc`` is
+    not available, it  will populate ``text`` from ``text_pc_pred`` field,
+    following the same rules. If both are not available, it will fall back to
+    the ``text`` field itself. In all cases it will specify which source was
+    used in the ``text_origin`` field by using the label from the
+    ``origin_label`` field.. If non of the sources is available,
+    it will populate both the target and the origin fields with ``n/a``.
+
+    Args:
+        sources (list[dict]): list of the sources to use in order of preference.
+            Each element in the list should be in the following format::
+
+                {
+                    field: <which field to take the data from>
+                    origin_label: <what to write in the "<target>_origin"
+                }
+        target (str): target field that we are populating.
+        na_indicator (str): if any source field has text equal to the
+            ``na_indicator`` it will be considered as not available. If none
+            of the sources are present, this will also be used as the value
+            for the target and origin fields. Defaults to ``n/a``.
+
+    Returns:
+        The same data as in the input manifest enhanced with the following fields::
+
+            <target>: <populated with data from either <source1> or <source2> \
+                       or with <na_indicator> if none are available>
+            <target>_origin: <label that marks where the data came from>
+    """
+
+    def __init__(
+        self,
+        sources: List[Dict[str, str]],
+        target: str,
+        na_indicator: str = "n/a",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.sources = sources
+        self.target = target
+        self.na_indicator = na_indicator
+
+    def process_dataset_entry(self, data_entry: Dict):
+        for source_dict in self.sources:
+            if data_entry.get(source_dict['field'], self.na_indicator) != self.na_indicator:
+                data_entry[self.target] = data_entry[source_dict['field']]
+                data_entry[f"{self.target}_origin"] = source_dict['origin_label']
+                break  # breaking out on the first present label
+        else:  # going here if no break was triggered
+            data_entry[self.target] = self.na_indicator
+            data_entry[f"{self.target}_origin"] = self.na_indicator
+
+        return [DataEntry(data=data_entry)]
+
 
 class AddConstantFields(BaseParallelProcessor):
     """This processor adds constant fields to all manifest entries.
 
-    E.g., can be useful to add fixes "label: <language>" field for downstream
-    lang-id model training.
+    E.g., can be useful to add fixed ``label: <language>`` field for downstream
+    language identification model training.
 
     Args:
         fields: dictionary with any additional information to add. E.g.::
 
             fields = {
                 "label": "en",
-                "metadata": "mcv-11.0-2022-09-21"
+                "metadata": "mcv-11.0-2022-09-21",
             }
+
+    Returns:
+        The same data as in the input manifest with added fields
+        as specified in the ``fields`` input dictionary.
     """
 
     def __init__(
@@ -40,15 +118,20 @@ class AddConstantFields(BaseParallelProcessor):
 
 
 class DuplicateFields(BaseParallelProcessor):
-    """
-    This processor duplicates fields in all manifest entries.
-    It is useful for when you want to do downstream processing of a variant of the entry.
-    e.g. make a copy of "text" called "text_no_pc", and remove punctuation from "text_no_pc" in
-    downstream processors.
+    """This processor duplicates fields in all manifest entries.
+
+    It is useful for when you want to do downstream processing of a variant
+    of the entry. E.g. make a copy of "text" called "text_no_pc", and
+    remove punctuation from "text_no_pc" in downstream processors.
 
     Args:
-        duplicate_fields: dictionary where keys are the original fields to be copied and their values
-            are the new names of the duplicate fields.
+        duplicate_fields (dict): dictionary where keys are the original
+            fields to be copied and their values are the new names of
+            the duplicate fields.
+
+    Returns:
+        The same data as in the input manifest with duplicated fields
+        as specified in the ``duplicate_fields`` input dictionary.
     """
 
     def __init__(
@@ -70,12 +153,15 @@ class DuplicateFields(BaseParallelProcessor):
 
 
 class RenameFields(BaseParallelProcessor):
-    """
-    This processor renames the field in all manifest entries.
+    """This processor renames fields in all manifest entries.
 
     Args:
-        rename_fields: dictionary where keys are the fields to be renamed and their values
-            are the new names of the fields.
+        rename_fields: dictionary where keys are the fields to be
+            renamed and their values are the new names of the fields.
+
+    Returns:
+        The same data as in the input manifest with renamed fields
+        as specified in the ``rename_fields`` input dictionary.
     """
 
     def __init__(
@@ -101,15 +187,24 @@ class SplitOnFixedDuration(BaseParallelProcessor):
     """This processor splits audio into a fixed length segments.
 
     It does not actually create different audio files, but simply adds
-    corresponding "offset" and "duration" fields.
+    corresponding ``offset`` and ``duration`` fields. These fields can
+    be automatically processed by NeMo to split audio on the fly during
+    training.
 
     Args:
-        segment_duration: fixed desired duraiton of each segment.
-        drop_last: whether to drop the last segment if total duration is not
-            divisible by desired segment duration. If False, the last segment
-            will be of a different lenth which is ``< segment_duration``.
-        drop_text: whether to drop text from entries as it is most likely
-            inaccurate after the split on duration.
+        segment_duration (float): fixed desired duration of each segment.
+        drop_last (bool): whether to drop the last segment if total duration is
+            not divisible by desired segment duration. If False, the last
+            segment will be of a different length which is ``< segment_duration``.
+            Defaults to True.
+        drop_text (bool): whether to drop text from entries as it is most likely
+            inaccurate after the split on duration. Defaults to True.
+
+    Returns:
+        The same data as in the input manifest but all audio that's longer
+        than the ``segment_duration`` will be duplicated multiple times with
+        additional ``offset`` and ``duration`` fields. If ``drop_text=True``
+        will also drop ``text`` field from all entries.
     """
 
     def __init__(
@@ -154,6 +249,10 @@ class ChangeToRelativePath(BaseParallelProcessor):
     Args:
         base_dir: typically a folder where manifest file is going to be
             stored. All passes will be relative to that folder.
+
+    Returns:
+         The same data as in the input manifest with ``audio_filepath`` key
+         changed to contain relative path to the ``base_dir``.
     """
 
     def __init__(
@@ -171,24 +270,25 @@ class ChangeToRelativePath(BaseParallelProcessor):
 
 
 class SortManifest(BaseProcessor):
-    """
-    Processor which will sort the manifest by some specified attribute.
+    """Processor which will sort the manifest by some specified attribute.
 
     Args:
-        output_manifest: the path to the output manifest. It will be the same as the
-            input manifest, but resorted.
-        input_manifest_file: the path to the input manifest which will be resorted.
-        attribute_sort_by: the attribute by which the manifest will be sorted.
-        descending: if set to False (default), attribute will be in ascending order.
-            If True, attribute will be in descending order.
+        attribute_sort_by (str): the attribute by which the manifest will be sorted.
+        descending (bool): if set to False, attribute will be in ascending order.
+            If True, attribute will be in descending order. Defaults to True.
 
+    Returns:
+        The same entries as in the input manifest, but sorted based
+        on the provided parameters.
     """
 
     def __init__(
-        self, output_manifest_file: str, input_manifest_file: str, attribute_sort_by: str, descending: bool = True
+        self,
+        attribute_sort_by: str,
+        descending: bool = True,
+        **kwargs,
     ):
-        self.output_manifest_file = output_manifest_file
-        self.input_manifest_file = input_manifest_file
+        super().__init__(**kwargs)
         self.attribute_sort_by = attribute_sort_by
         self.descending = descending
 
@@ -204,19 +304,23 @@ class SortManifest(BaseProcessor):
 
 
 class WriteManifest(BaseProcessor):
-    """
-    Saves a copy of a manifest but only with the fields specified in fields_to_save.
+    """Saves a copy of a manifest but only with a subset of the fields.
+
+    Typically will be the final processor to save only relevant fields
+    in the desired location.
 
     Args:
-        output_manifest_file: path of where the output file will be saved.
-        input_manifest_file: path of where the input file that we will be copying is saved.
-        fields_to_save: list of the fields in the input manifest that we want to copy over.
-            The output file will only contain these fields.
+        fields_to_save (list[str]): list of the fields in the input manifest
+            that we want to retain. The output file will only contain these
+            fields.
+
+    Returns:
+        The same data as in input manifest, but re-saved in the new location
+        with only ``fields_to_save`` fields retained.
     """
 
-    def __init__(self, output_manifest_file: str, input_manifest_file: str, fields_to_save: List[str]):
-        self.output_manifest_file = output_manifest_file
-        self.input_manifest_file = input_manifest_file
+    def __init__(self, fields_to_save: List[str], **kwargs):
+        super().__init__(**kwargs)
         self.fields_to_save = fields_to_save
 
     def process(self):

@@ -1,3 +1,56 @@
+documentation: |
+  SLR83
+  #####
+
+  This config can be used to prepare
+  `UK and Ireland English Dialect (SLR83) <https://openslr.org/83/>`_
+  datasets in the NeMo format. The original data does not contain any
+  splits, so we provide a custom way to split the data.
+  See https://arxiv.org/abs/2210.03255 for details on the data splits.
+
+  Note that SLR83 consists of 11 different accents and dialects and we do not
+  combine them together. You will need to run this config 11 times with different
+  command-line parameters to get all the datasets and if you want to combine
+  them all together, this currently needs to be done manually.
+
+  This config performs the following data processing.
+
+  1. Downloads and extracts the data from the official website.
+  2. Lower-cases all text and removes ``-`` characters (that's the only
+     punctuation available in the transcription).
+  3. Drops all utterances with non-alphabet symbols.
+  4. Splits the data into train, dev or test, depending on the config parameters.
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+  * **data_split**: should be "train", "dev" or "test".
+  * **dialect**: should be on of the
+
+    * ``irish_english_male``
+    * ``midlands_english_female``
+    * ``midlands_english_male``
+    * ``northern_english_female``
+    * ``northern_english_male``
+    * ``scottish_english_female``
+    * ``scottish_english_male``
+    * ``southern_english_female``
+    * ``southern_english_male``
+    * ``welsh_english_female``
+    * ``welsh_english_male``
+
+  Note that you can customize any part of this config either directly or from command-line.
+
+  **Output format**.
+
+  This config dumps the final manifest at ``${workspace_dir}/${dialect}/${data_split}_manifest.json``.
+  The output manifest contains the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription (lower-case without punctuation).
+  * **duration (float)**: audio duration in seconds.
+
+
 processors_to_run: all
 data_split: ???
 workspace_dir: ???

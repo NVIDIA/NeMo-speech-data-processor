@@ -29,7 +29,7 @@ def get_coraal_url_list():
     """Returns url list for CORAAL dataset.
 
     There are a few mistakes in the official url list that are fixed here.
-    Can be overriden by tests to select a subset of urls.
+    Can be overridden by tests to select a subset of urls.
     """
     dataset_url = "http://lingtools.uoregon.edu/coraal/coraal_download_list.txt"
     urls = []
@@ -45,7 +45,9 @@ def get_coraal_url_list():
 
 
 class CreateInitialManifestCORAAL(BaseParallelProcessor):
-    """Processor to create initial manifest for CORAAL data.
+    """Processor to create initial manifest for the Corpus of Regional African American Language (CORAAL) dataset.
+
+    Dataset link: https://oraal.uoregon.edu/coraal/
 
     Will download all files, extract tars and split wav files based on the
     provided durations in the transcripts.
@@ -58,11 +60,27 @@ class CreateInitialManifestCORAAL(BaseParallelProcessor):
         drop_pauses (bool): if True, will drop all transcriptions that contain
             only silence (indicated by ``(pause X)`` in the transcript).
             Defaults to True.
-        group_duration_threshold (float): can be used to group consequtive
+        group_duration_threshold (float): can be used to group consecutive
             utterances from the same speaker to a longer duration. Set to 0
             to disable this grouping (but note that many utterances are
-            transcribe with only a few seconds, so grouping is generally
+            transcribed with only a few seconds, so grouping is generally
             advised). Defaults to 20.
+
+    Returns:
+        This processor generates an initial manifest file with the following fields::
+
+            {
+                "audio_filepath": <path to the audio file>,
+                "duration": <duration of the audio in seconds>,
+                "text": <transcription>,
+                "original_file": <name of the original file in the dataset this audio came from>,
+                "speaker": <speaker id>,
+                "is_interviewee": <whether this is an interviewee (accented speech)>,
+                "gender": <speaker gender>,
+                "age": <speaker age>,
+                "education": <speaker education>,
+                "occupation": <speaker occupation>,
+            }
     """
 
     def __init__(

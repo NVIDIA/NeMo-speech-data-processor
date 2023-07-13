@@ -24,18 +24,25 @@ from sdp.utils.get_diff import get_diff_with_subs_grouped
 
 
 class InsIfASRInsertion(ModifyManifestTextProcessor):
-    """
-    Class for processor that adds a substring to data[self.text_key] if it is
-    present at that location in data[self.pred_text_key].
+    """Processor that adds substrings to transcription if they are present in ASR predictions.
+
+    Will insert substrings into ``data[self.text_key]`` if it is
+    present at that location in ``data[self.pred_text_key]``.
     It is useful if words are systematically missing from ground truth
     transcriptions.
 
     Args:
-        insert_words: list of strings that will be inserted into data[self.text_key] if
-            there is an insertion (containing only that string) in data[self.pred_text_key].
-            Note: because data_to_data looks for an exact match in the insertion,
-            we recommend including variations with different spaces in 'insert_words',
-            e.g. [' nemo', 'nemo ', ' nemo '].
+        insert_words (list[str]): list of strings that will be inserted
+            into ``data[self.text_key]`` if there is an insertion (containing
+            only that string) in ``data[self.pred_text_key]``.
+
+            .. note::
+                Because this processor looks for an exact match in the insertion,
+                we recommend including variations with different spaces in
+                ``insert_words``, e.g. ``[' nemo', 'nemo ', ' nemo ']``.
+
+    Returns:
+         The same data as in the input manifest with ``<text_key>`` field changed.
     """
 
     def __init__(
@@ -91,25 +98,31 @@ class InsIfASRInsertion(ModifyManifestTextProcessor):
 
 
 class SubIfASRSubstitution(ModifyManifestTextProcessor):
-    """
-    Class for processor that converts a substring in data[self.text_key] to a
-    substring in data[self.pred_text_key] if both are located in the same place
-    (ie are part of a 'substitution' operation) and if the substrings
-    correspond to key-value pairs in 'sub_words'.
+    """Processor that substitutes substrings to transcription if they are present in ASR predictions.
+
+    Will convert a substring in ``data[self.text_key]`` to a
+    substring in ``data[self.pred_text_key]`` if both are located in the
+    same place (ie are part of a 'substitution' operation) and if the substrings
+    correspond to key-value pairs in ``sub_words``.
     This is useful if words are systematically incorrect in ground truth
     transcriptions.
 
     Args:
-        sub_words: dictionary where a key is a string that might be in data[self.text_key]
-            and the value is the string that might be in data[self.pred_text_key]. If both
-            are located in the same place (ie are part of a 'substitution' operation)
-            then the key string will be converted to the value string in data[self.text_key].
+        sub_words (dict): dictionary where a key is a string that might be in
+            ``data[self.text_key]`` and the value is the string that might
+            be in ``data[self.pred_text_key]``. If both are located in the same
+            place (i.e. are part of a 'substitution' operation)
+            then the key string will be converted to the value string
+            in ``data[self.text_key]``.
 
             .. note::
-                data_to_data looks for exact string matches of substitutions, so
-                you may need to be careful with spaces in 'sub_words', e.g.
-                recommended to do sub_words = {"nmo ": "nemo "} instead of
-                sub_words = {"nmo" : "nemo"}
+                This processor looks for exact string matches of substitutions,
+                so you may need to be careful with spaces in ``sub_words``. E.g.
+                it is recommended to do ``sub_words = {"nmo ": "nemo "}``
+                instead of ``sub_words = {"nmo" : "nemo"}``.
+
+    Returns:
+         The same data as in the input manifest with ``<text_key>`` field changed.
     """
 
     def __init__(
@@ -170,9 +183,14 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
         super().finalize(metrics)
 
 
+# TODO: replace with generic regex
+
+
 class SubMakeLowercase(ModifyManifestTextProcessor):
-    """
-    Class to convert data[self.text_key] to lowercase by calling '.lower()' on it.
+    """Processor to convert text to lowercase.
+
+    Returns:
+         The same data as in the input manifest with ``<text_key>`` field changed.
     """
 
     def __init__(
@@ -191,16 +209,18 @@ class SubMakeLowercase(ModifyManifestTextProcessor):
 
 
 class SubRegex(ModifyManifestTextProcessor):
-    """
-    Class for processor that converts a regex match to a string, as defined
-    by key-value pairs in regex_to_sub.
+    """Converts a regex match to a string, as defined by key-value pairs in ``regex_to_sub``.
 
     Args:
-        regex_params_list: list of dicts. Each dict must contain a 'pattern' and 'repl' key,
-            and optionally a 'count' key (by default, 'count' will be 0).
-            This processor will go through the list in order, and apply a re.sub operation on
-            the input text in data_entry[self.text_key], feeding in the specified 'pattern', 'repl'
-            and 'count' parameters to re.sub.
+        regex_params_list (list[dict]): list of dicts.
+            Each dict must contain a ``pattern`` and a ``repl`` key,
+            and optionally a ``count`` key (by default, ``count`` will be 0).
+            This processor will go through the list in order, and apply a ``re.sub`` operation on
+            the input text in ``data_entry[self.text_key]``, feeding in the specified ``pattern``, ``repl``
+            and ``count`` parameters to ``re.sub``.
+
+    Returns:
+         The same data as in the input manifest with ``<text_key>`` field changed.
     """
 
     def __init__(
@@ -223,6 +243,7 @@ class SubRegex(ModifyManifestTextProcessor):
                 )
 
     def _process_dataset_entry(self, data_entry) -> List:
+        """Replaces each found regex match with a given string."""
         replace_word_counter = collections.defaultdict(int)
 
         text_in = data_entry[self.text_key]
@@ -245,6 +266,7 @@ class SubRegex(ModifyManifestTextProcessor):
         return [DataEntry(data=data_entry, metrics=replace_word_counter)]
 
     def finalize(self, metrics):
+        """Reports how many substitutions were made for each pattern."""
         total_counter = collections.defaultdict(int)
         for counter in metrics:
             for word, count in counter.items():

@@ -1,7 +1,50 @@
+documentation: |
+  VoxPopuli Italian
+  #################
+
+  This config can be used to prepare `VoxPopuli <https://github.com/facebookresearch/voxpopuli>`_
+  Italian data in the NeMo format with restored punctuation and capitalization (P&C).
+
+  It performs the following data processing.
+
+  1. Installs requirements and runs the scripts from https://github.com/facebookresearch/voxpopuli
+     to get initial data.
+  2. Converts all audio files into the wav format and generates initial nemo manifest file.
+  3. Original VoxPopuli data has P&C, but in a non-normalized format.
+     We match the normalized and non-normalized versions to restore P&C in the normalized form.
+  4. Replaces certain non-supported characters and punctuation marks with equivalent supported versions.
+  5. Drops any data that contains symbols not in the supported alphabet.
+  6. For training subset, the following additional filtering is performed:
+
+     a. Runs ASR inference with an older model and drops all utterances which contain more than
+        5 consecutive word insertions or deletions. 5 was found to be a good threshold to filter
+        out incorrect transcriptions.
+     b. Drops all utterances with duration less than 1.5 seconds, as they are often incorrectly transcribed.
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+  * **data_split**: can be "train", "dev" or "test".
+
+  Note that you can customize any part of this config either directly or from command-line.
+  Here are some common customizations to consider:
+
+  * **remove_pc**: set to True if P&C is not needed. Defaults to False.
+
+  **Output format**.
+
+  This config dumps the final manifest at ``${workspace_dir}/${data_split}_manifest.json``.
+  The output manifest contains the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription, including punctuation ".,?" and capitalization.
+  * **duration (float)**: audio duration in seconds.
+
 processors_to_run: all
 data_split: ???
 workspace_dir: ???
 final_manifest: ${workspace_dir}/${data_split}_manifest.json
+remove_pc: False
 
 run_filtering:
   train: True
@@ -18,14 +61,17 @@ processors:
     data_split: ${data_split}
 
   - _target_: sdp.processors.DuplicateFields
+    should_run: ${not:${remove_pc}}
     duplicate_fields:
-      "raw_text": "text"
+      "text": "provided_norm_text"
 
   - _target_: sdp.processors.NormalizeFromNonPCTextVoxpopuli
+    should_run: ${not:${remove_pc}}
     test_cases:
-      - {input: {text: "¿So, it's ¿62.3 Abc Abc?",
+      - {input: {raw_text: "¿So, it's ¿62.3 Abc Abc?",
                  provided_norm_text: "so it's six two point three abc abc"},
-         output: {text: "¿So, it's ¿six two point three Abc Abc?",
+         output: {raw_text: "¿So, it's ¿62.3 Abc Abc?",
+                  text: "¿So, it's ¿six two point three Abc Abc?",
                   provided_norm_text: "so it's six two point three abc abc"}}
 
   - _target_: sdp.processors.SubRegex
@@ -71,7 +117,7 @@ processors:
   - _target_: sdp.processors.SubRegex
     text_key: "text_no_pc"
     regex_params_list:
-    - {"pattern": '[?.,]', "repl": ""}
+    - {"pattern": '[\?\.,]', "repl": ""}
     should_run: ${subfield:${run_filtering},${data_split}}
 
   - _target_: sdp.processors.DropASRError
@@ -83,6 +129,21 @@ processors:
     high_duration_threshold: 999
     low_duration_threshold: 1.5
     should_run: ${subfield:${run_filtering},${data_split}}
+
+  # ----------------------------------------------------------------------
+
+  # ------------------------ if P&C is not needed ------------------------
+
+  - _target_: sdp.processors.SubMakeLowercase
+    should_run: ${remove_pc}
+
+  - _target_: sdp.processors.SubRegex
+    should_run: ${remove_pc}
+    regex_params_list:
+      - {"pattern": '[\?\.,]', "repl": ""}
+    test_cases:
+      - {input: {text: "test."}, output: {text: "test"}}
+      - {input: {text: "t,e?st. ah."}, output: {text: "test ah"}}
 
   # ----------------------------------------------------------------------
 

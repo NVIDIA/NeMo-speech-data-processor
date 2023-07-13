@@ -1,14 +1,79 @@
+documentation: |
+  CORAAL
+  ######
+
+  This config can be used to prepare
+  `Corpus of Regional African American Language (CORAAL) <https://oraal.uoregon.edu/coraal>`_
+  dataset in the NeMo format.
+  It produces 3 manifests for train/dev/test splits as well as a single
+  manifest with all the data. The original data does not contain any
+  splits, so we provide a custom way to split the data based on the speaker
+  identity (so each split has a unique set of speakers).
+
+  CORAAL dataset is distributed as a number of long audio files alongside the transcriptions
+  with timestamps. Some of the transcriptions contain only pauses and in many cases the
+  transcription for a single speaker is split into multiple timestamps, which can be
+  grouped together. See below for the details of how this is done in this config.
+
+  This config performs the following data processing.
+
+  1. Downloads CORAAL data based on the
+     `official file list <http://lingtools.uoregon.edu/coraal/coraal_download_list.txt>`_.
+     There are a couple of errors in the links there, which are fixed in our code.
+  2. Drops all utterances which contain only pauses. Set ``drop_pauses=False`` to undo.
+  3. Groups all consecutive segments from the same speaker until 20 seconds duration
+     is reached. The duration can be controlled with the ``group_duration_threshold`` parameter.
+  4. Drops all utterances that are shorter than 2 seconds or longer than 30 seconds.
+     You can directly change the config file to control this.
+  5. Drops all utterances from interviewers (which speak standard American English).
+     Set ``drop_interviewers=False`` to undo.
+  6. Replaces common transcription errors as well as "non-linguistic",
+     "unintelligible" and "redacted" flags.
+  7. Lower-cases all text and drops everything with non-english characters.
+  8. Splits the data based on the speaker ids into custom train/dev/test sets.
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+
+  Note that you can customize any part of this config either directly or from command-line.
+  Here are some common customizations to consider:
+
+  * **drop_pauses**: set to False if you want to retain silence-only segments. Defaults to True.
+  * **group_duration_threshold**: controls the maximum duration to use for merging
+    consecutive segments from the same speaker. Defaults to 20.0.
+  * **drop_interviewers**: set to False if you want to retain interviewers speech
+    (standard American English). Defaults to True.
+
+  **Output format**.
+
+  This config generates multiple output manifest files:
+
+  * ``${workspace_dir}/full_manifest.json`` - full manifest with all the data.
+  * ``${workspace_dir}/train_manifest.json`` - training subset of the data.
+  * ``${workspace_dir}/dev_manifest.json`` - validation subset of the data.
+  * ``${workspace_dir}/test_manifest.json`` - test subset of the data.
+
+  All output manifests contain the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription (lower-case without punctuation).
+  * **duration (float)**: audio duration in seconds.
+
 processors_to_run: all
 workspace_dir: ???
 final_manifest: ${workspace_dir}/full_manifest.json
+drop_pauses: True
+group_duration_threshold: 20.0
+drop_interviewers: True
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestCORAAL
     output_manifest_file: ${workspace_dir}/manifest0.json
     resampled_audio_dir: ${workspace_dir}/audio/
     raw_data_dir: ${workspace_dir}/raw_data
-    drop_pauses: True
-    group_duration_threshold: 20.0
+    drop_pauses: ${drop_pauses}
+    group_duration_threshold: ${group_duration_threshold}
 
   - _target_: sdp.processors.DropHighLowDuration
     low_duration_threshold: 2
@@ -16,6 +81,7 @@ processors:
 
   # dropping non-interviewee to only keep accented utterances
   - _target_: sdp.processors.DropOnAttribute
+    should_run: ${drop_interviewers}
     key: "is_interviewee"
     drop_if_false: True
 
@@ -31,12 +97,13 @@ processors:
       - {"pattern": '/(?i)inaudible/', "repl": ""}
       - {"pattern": '/RD(.*?)/', "repl": ""}
       - {"pattern": '/(\?)\1*/', "repl": ""}
-      # # removing non-linguistic markers
+      # removing non-linguistic markers
       - {"pattern": ' ?<[^>]+>', "repl": ""}
       - {"pattern": ' ?\([^\)]+\)', "repl": ""}
       - {"pattern": ' ?{[^}]+}', "repl": ""}
-      # # removing characters not in vocabulary
+      # removing characters not in vocabulary
       - {"pattern": "’", "repl": "'"}
+      # can customize if you need to retain some punctuation characters
       - {"pattern": '[\[\],!\?\":\.\(\)“”;""]', "repl": ''}
       - {"pattern": "[-/]", "repl": " "}
       # double space to single space

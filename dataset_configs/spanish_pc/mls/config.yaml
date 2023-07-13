@@ -1,3 +1,9 @@
+documentation: |
+  MLS Spanish
+  ###########
+
+  TBD
+
 # user can specify which processors should be run
 # can be either "all" to run all processors,
 # or any Python "slice" object, e.g.,
@@ -67,7 +73,13 @@ processors:
     rename_fields:
       "text": "original_dataset_text"
 
-  - _target_: sdp.processors.ChangePCFields
+  - _target_: sdp.processors.CombineSources
+    sources:
+        - field: text_pc
+          origin_label: original
+        - field: text_pc_pred
+          origin_label: synthetic
+    target: text
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
 
@@ -425,4 +437,4 @@ processors:
       - "audio_filepath"
       - "text"
       - "duration"
-      - "text_pc_origin"
+      - "text_origin"

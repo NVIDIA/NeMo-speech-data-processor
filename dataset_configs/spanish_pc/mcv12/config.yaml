@@ -1,10 +1,9 @@
-# user can specify which processors should be run
-# can be either "all" to run all processors,
-# or any Python "slice" object, e.g.,
-# ":3" (to select first 3 objects),
-# ":-1" (to select all but last)
-# "2:5" (to select 3rd to 5th)
-# "0" (to select only the first processor)
+documentation: |
+  MCV Spanish
+  ###########
+
+  TBD
+
 processors_to_run: ???
 data_split: ???
 workspace_dir: ???
@@ -28,13 +27,13 @@ processors:
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_transcribed.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_subregex.json"
-    regex_params_list: 
+    regex_params_list:
       - {"pattern": "!", "repl": "."}
       - {"pattern": "…\\s$", "repl": "."} # '\\s' is to to account for the fact that SDP insert spaces at start and end
       - {"pattern": "\\.{2,20}\\s$", "repl": "."} # '\\s' is to to account for the fact that SDP insert spaces at start and end
-      
+
       # remove remaining repeated periods since most of the time they are unnecessary in this data
-      - {"pattern": "\\.{2,20}", "repl": " "} 
+      - {"pattern": "\\.{2,20}", "repl": " "}
 
       - {"pattern": "Ö", "repl": "O"}
       - {"pattern": "[öōòőôŏð]", "repl" : "o"}
@@ -75,7 +74,7 @@ processors:
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_subregex.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_subregex_punctuation.json"
-    regex_params_list: 
+    regex_params_list:
     - {"pattern": '[\-\‐\‑\–\—\―\"]', "repl": " "}
     - {"pattern": "'", "repl": " "}
     - {"pattern": '[\$\&\¡\(\)]', "repl": " "}
@@ -97,7 +96,7 @@ processors:
   - _target_: sdp.processors.DropHighLowCharrate
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_subregex_punctuation.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_charrate.json"
-    high_charrate_threshold: 21  
+    high_charrate_threshold: 21
     low_charrate_threshold: 1
     test_cases:
       - {input: {text: "buenos dias", duration: 0.1}, output: null}
@@ -118,7 +117,7 @@ processors:
   - _target_: sdp.processors.DropNonAlphabet
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_duration.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_fixed_text.json"
-    
+
     alphabet: " abcdefghijklmnopqrstuvwxyzáéíñóúüABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÑÓÚÜ,.?¿"
     test_cases:
       - {input: {text: "test тест 测试"}, output: null}
@@ -140,13 +139,13 @@ processors:
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
     text_key: "text_no_pc"
-    regex_params_list: 
+    regex_params_list:
     - {"pattern": '[¿?.,]', "repl": ""}
 
   - _target_: sdp.processors.DropHighCER
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_cer.json"
-    text_key: "text_no_pc" 
+    text_key: "text_no_pc"
     pred_text_key: "pred_text"
     cer_threshold: 65
     test_cases:
@@ -156,7 +155,7 @@ processors:
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_drop_cer.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_punc_spaces.json"
-    regex_params_list: 
+    regex_params_list:
     - {"pattern": '\.', "repl": ' . '}
     - {"pattern": ",", "repl": " , "}
     - {"pattern": '\?', "repl": " ? "}
@@ -165,7 +164,7 @@ processors:
     test_cases:
       - {input: {text: "¿abc? def."}, output: {text: "¿ abc ? def ."}}
 
-  - _target_: sdp.processors.AddConstantFields 
+  - _target_: sdp.processors.AddConstantFields
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_punc_spaces.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_cleaned.json"
     fields: {"text_pc_origin": "original"}
@@ -176,5 +175,5 @@ processors:
     fields_to_save:
       - "audio_filepath"
       - "text"
-      - "duration" 
+      - "duration"
       - "text_pc_origin"

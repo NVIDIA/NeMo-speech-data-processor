@@ -31,20 +31,22 @@ from sdp.utils.metrics_computation import (
 
 
 class DropHighLowCharrate(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if their character rate is
-    too low or too high. Character rate = (num of characters in self.text_key)/
-    (duration of audio).
+    """Drops utterances if their character rate is too low or too high.
+
+    Character rate = ``(num of characters in self.text_key) / (duration of audio)``.
     A too-low or too-high character rate often implies that the ground
-    truth text is inaccurate.
+    truth transcription might be inaccurate.
 
     Args:
-        high_charrate_threshold: a float for the upper character rate threshold.
+        high_charrate_threshold (float): upper character rate threshold.
             If the character rate of an utterance is higher than this number,
             the utterance will be dropped.
-        low_charrate_threshold: a float for the lower character rate threshold.
+        low_charrate_threshold (float): lower character rate threshold.
             If the character rate of an utterance is lower than this number,
             the utterance will be dropped.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
@@ -59,6 +61,7 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
         self.low_charrate_threshold = low_charrate_threshold
 
     def _process_dataset_entry(self, data_entry) -> List:
+        """Drops utterances based on the provided thresholds."""
         charrate = get_charrate(remove_extra_spaces(data_entry[self.text_key]), data_entry["duration"])
         if charrate > self.high_charrate_threshold:
             return [DataEntry(data=None, metrics=(0, 1))]
@@ -68,19 +71,20 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
         return [DataEntry(data=data_entry, metrics=(0, 0))]
 
     def finalize(self, metrics):
+        """Will report how many utterances were dropped for each threshold."""
         high_drop_counter = 0
         low_drop_counter = 0
         for dropped_low, dropped_high in metrics:
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
         logger.info(
-            "Num of utterances that were dropped due to char rate > %d: %d",
+            "Num of utterances that were dropped due to char rate > %f: %d",
             self.high_charrate_threshold,
             high_drop_counter,
         )
 
         logger.info(
-            "Num of utterances that were dropped due to char rate < %d: %d",
+            "Num of utterances that were dropped due to char rate < %f: %d",
             self.low_charrate_threshold,
             low_drop_counter,
         )
@@ -88,20 +92,22 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
 
 
 class DropHighLowWordrate(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if their word rate is
-    too low or too high. Word rate = (num of words in self.text_key)/
-    (duration of audio).
+    """Drops utterances if their word rate is too low or too high.
+
+    Word rate = ``(num of words in self.text_key) / (duration of audio)``.
     A too-low or too-high word rate often implies that the ground
-    truth text is inaccurate.
+    truth transcription might be inaccurate.
 
     Args:
-        high_wordrate_threshold: a float for the upper word rate threshold.
+        high_wordrate_threshold (float): upper word rate threshold.
             If the word rate of an utterance is higher than this number,
             the utterance will be dropped.
-        low_wordrate_threshold: a float for the lower word rate threshold.
+        low_wordrate_threshold (float): lower word rate threshold.
             If the word rate of an utterance is lower than this number,
             the utterance will be dropped.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
@@ -131,12 +137,12 @@ class DropHighLowWordrate(ModifyManifestTextProcessor):
             low_drop_counter += dropped_low
             high_drop_counter += dropped_high
         logger.info(
-            "Num of utterances that were dropped due to word rate > %d: %d",
+            "Num of utterances that were dropped due to word rate > %f: %d",
             self.high_wordrate_threshold,
             high_drop_counter,
         )
         logger.info(
-            "Num of utterances that were dropped due to word rate < %d: %d",
+            "Num of utterances that were dropped due to word rate < %f: %d",
             self.low_wordrate_threshold,
             low_drop_counter,
         )
@@ -144,17 +150,18 @@ class DropHighLowWordrate(ModifyManifestTextProcessor):
 
 
 class DropHighLowDuration(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if their audio duration
-    (in seconds) is too low or too high.
+    """Drops utterances if their duration is too low or too high.
 
     Args:
-        high_duration_threshold: a float for the upper duration threshold (in seconds).
+        high_duration_threshold (float): upper duration threshold (in seconds).
             If the duration of an utterance's audio is higher than this number,
             the utterance will be dropped.
-        low_duration_threshold: a float for the lower duration threshold (in seconds).
+        low_duration_threshold (float): lower duration threshold (in seconds).
             If the duration of an utterance's audio is lower than this number,
             the utterance will be dropped.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
@@ -198,12 +205,15 @@ class DropHighLowDuration(ModifyManifestTextProcessor):
 
 
 class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if data[self.text_attribute] does
-    not match any of regex_patterns.
+    """Drops utterances if ``data[self.text_key]`` does not match any of ``regex_patterns``.
+
     Args:
-        regex_patterns: a list of strings. If data_entry[self.attribute] does not match any
-            of the regex patterns in the list, that utterance will be dropped.
+        regex_patterns (list[str]): If ``data_entry[self.text_key]`` does not
+            match any of the regex patterns in the list, that utterance
+            will be dropped.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
@@ -235,16 +245,19 @@ class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
 
 
 class DropNonAlphabet(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if they contain characters that
-    are not in our "alphabet".
+    """Drops utterances if they contain characters that are not in the ``alphabet``.
 
     Args:
-        alphabet: a string containing all of the characters in our alphabet.
+        alphabet (str): a string containing all of the characters in our alphabet.
             If an utterance contains at least one character that is not in the
-            'alphabet', then that utterance will be dropped.
-            Note: don't forget to include spaces in your alphabet, unless you
-            want to make sure none of the utterances contain spaces.
+            ``alphabet``, then that utterance will be dropped.
+
+            .. note::
+                Don't forget to include spaces in your alphabet, unless you
+                want to make sure none of the utterances contain spaces.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
@@ -278,23 +291,25 @@ class DropNonAlphabet(ModifyManifestTextProcessor):
 
 
 class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if there is a sufficiently long
-    ASR mismatch at the beginning or end of the utterance.
+    """Drops utterances if there is a sufficiently long ASR mismatch
+    at the beginning or end of the utterance.
 
     Args:
-        beginning_error_char_threshold: if there is an insertion or deletion at
+        beginning_error_char_threshold (int): if there is an insertion or deletion at
             the beginning of the utterance that has more characters than this number,
             then the utterance will be dropped.
             If there is a substitution at the beginning of the utterance, then the
-            utterance will be dropped if abs(len(deletion) - len(insertion)) >
-            beginning_error_char_threshold.
-        end_error_char_threshold: if there is an insertion or deletion at
+            utterance will be dropped if
+            ``abs(len(deletion) - len(insertion)) > beginning_error_char_threshold``.
+        end_error_char_threshold (int): if there is an insertion or deletion at
             the end of the utterance that has more characters than this number,
             then the utterance will be dropped.
             If there is a substitution at the end of the utterance, then the
-            utterance will be dropped if abs(len(deletion) - len(insertion)) >
-            end_error_char_threshold.
+            utterance will be dropped if
+            ``abs(len(deletion) - len(insertion)) > end_error_char_threshold``.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
@@ -311,7 +326,7 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
         orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
 
         # remove spaces at start and end. Otherwise all utterances
-        # will have no errors at the begining (because both self.text_key
+        # will have no errors at the beginning (because both self.text_key
         # and self.pred_text_key will begin with " ")
         orig_words = remove_extra_spaces(orig_words)
         pred_words = remove_extra_spaces(pred_words)
@@ -360,13 +375,14 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
 
 # TODO: needs unification with above class in some way
 class DropASRError(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if there is a sufficiently long
-    ASR mismatch anywhere in the utterance.
+    """Drops utterances if there is a sufficiently long ASR mismatch anywhere in the utterance.
 
     Args:
         consecutive_words_threshold (int): will drop if there is a mismatch of
             at least this many words in a row.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
@@ -391,15 +407,20 @@ class DropASRError(ModifyManifestTextProcessor):
 
 
 class DropHighCER(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if there is a sufficiently
-    high CER between data[self.text_key] and data[self.pred_text_key].
-    Note: we only drop the utterance if CER > threshold (ie strictly greater
-    than) so that if we set the threshold to 0, we will not remove
-    utterances with CER == 0.
+    """Drops utterances if there is a sufficiently high character-error-rate (CER).
+
+    CER is measured between ``data[self.text_key]`` and ``data[self.pred_text_key]``.
+
+    .. note::
+        We only drop the utterance if ``CER > threshold`` (i.e. strictly greater
+        than) so that if we set the threshold to 0, we will not remove
+        utterances with ``CER == 0``.
 
     Args:
-        cer_thershold: CER threshold above which the utterance will be dropped.
+        cer_threshold (float): CER threshold above which the utterance will be dropped.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
@@ -433,15 +454,20 @@ class DropHighCER(ModifyManifestTextProcessor):
 
 
 class DropHighWER(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if there is a sufficiently
-    high WER between data[self.text_key] and data[self.pred_text_key].
-    Note: we only drop the utterance if CER > threshold (ie strictly greater
-    than) so that if we set the threshold to 0, we will not remove
-    utterances with WER == 0.
+    """Drops utterances if there is a sufficiently high word-error-rate (WER).
+
+    WER is measured between ``data[self.text_key]`` and ``data[self.pred_text_key]``.
+
+    .. note::
+        We only drop the utterance if ``WER > threshold`` (i.e. strictly greater
+        than) so that if we set the threshold to 0, we will not remove
+        utterances with ``WER == 0``.
 
     Args:
-        wer_thershold: WER threshold above which the utterance will be dropped.
+        wer_threshold (float): WER threshold above which the utterance will be dropped.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
@@ -472,15 +498,20 @@ class DropHighWER(ModifyManifestTextProcessor):
 
 
 class DropLowWordMatchRate(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if there is a sufficiently
-    low WMR between data[self.text_key] and data[self.pred_text_key].
-    Note: we only drop the utterance if WMR < threshold (ie strictly lower
-    than) so that if we set the threshold to 100, we will not remove
-    utterances with WMR == 100.
+    """Drops utterances if there is a sufficiently low word-match-rate (WMR).
+
+    WMR is measured between ``data[self.text_key]`` and ``data[self.pred_text_key]``.
+
+    .. note::
+        We only drop the utterance if ``WMR < threshold`` (i.e. strictly lower
+        than) so that if we set the threshold to 100, we will not remove
+        utterances with ``WMR == 100``.
 
     Args:
-        wmr_thershold: WMR threshold below which the utterance will be dropped.
+        wmr_threshold (float): WMR threshold below which the utterance will be dropped.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
@@ -514,13 +545,15 @@ class DropLowWordMatchRate(ModifyManifestTextProcessor):
 
 
 class DropIfRegexMatch(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if data[self.text_key] matches
-    a regex pattern.
+    """Drops utterances if text matches a regex pattern.
 
     Args:
-        regex_patterns: a list of strings. The list will be traversed in order.
-            If data_entry.data[self.text_key] matches the regex, the entry will be dropped.
+        regex_patterns (list[str]): a list of strings. The list will be
+            traversed in order. If ``data_entry.data[self.text_key]`` matches
+            the regex, the entry will be dropped.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
@@ -552,13 +585,15 @@ class DropIfRegexMatch(ModifyManifestTextProcessor):
 
 
 class DropOnAttribute(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if attribute is set to True/False.
+    """Drops utterances if attribute is set to True/False.
 
     Args:
         key (str): which key to use for dropping utterances.
         drop_if_false (bool): whether to drop if value is False. Defaults
             to dropping if True.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     # TODO: maybe need not to subclass from the base here, because text_key/pred_text_key are not used.
@@ -588,17 +623,23 @@ class DropOnAttribute(ModifyManifestTextProcessor):
 
 
 class DropIfSubstringInInsertion(ModifyManifestTextProcessor):
-    """
-    Class for processor that drops utterances if a substring matches an insertion
-    made between data[self.text_key] and data[self.pred_text_key].
-    Note: we check for exact matches, so you need to be mindful of spaces, e.g.
-    you may wish to do substrings_in_insertion = ["nemo ", ...] instead
-    of substrings_in_insertion = ["nemo", ...]
+    """Drops utterances if a substring matches an ASR insertion.
+
+    Insertions are checked between ``data[self.text_key]`` and
+    ``data[self.pred_text_key]``.
+
+    .. note::
+        We check for exact matches, so you need to be mindful of spaces, e.g.
+        you may wish to do ``substrings_in_insertion = ["nemo "]`` instead
+        of ``substrings_in_insertion = ["nemo"]``.
 
     Args:
-        substrings_in_insertion: a list of strings which might be inserted in predicted
-            ASR text. If the insertion matches a string exactly, the utterance will
-            be dropped.
+        substrings_in_insertion (list[str]): a list of strings which might be
+            inserted in predicted ASR text. If the insertion matches a
+            string exactly, the utterance will be dropped.
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(

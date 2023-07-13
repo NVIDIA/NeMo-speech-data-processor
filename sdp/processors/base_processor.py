@@ -35,23 +35,33 @@ class DataEntry:
 
 
 class BaseProcessor(ABC):
-    """
-    Abstract class for SDP processors.
+    """Abstract class for SDP processors.
 
-    Args
-    output_manifest_file: path of where the output manifest file will be located.
-    input_manifest_file: path of where the input manifest file is located. This arg
-        is optional - some processors may not take in an input manifest because they
-        need to create an initial manifest from scratch (ie from some transcript file
-        that is in a format different to the NeMo manifest format).
+    All processor classes inherit from the ``BaseProcessor`` class.
+    This is a simple abstract class which has 2 empty methods: :meth:`process`
+    and :meth:`test`.
+
+    These serve to remind us that SDP essentially just runs ``.test()`` on all
+    processors (to implement :ref:`run-time tests <sdp-runtime-tests>`),
+    and then ``.process()`` on all processors.
+
+    Args:
+        output_manifest_file (str): path of where the output manifest file will
+            be located.
+        input_manifest_file (str): path of where the input manifest file is
+            located. This arg is optional - some processors may not take in
+            an input manifest because they need to create an initial manifest
+            from scratch (ie from some transcript file that is in a format
+            different to the NeMo manifest format).
     """
 
-    def __init__(self, output_manifest_file, input_manifest_file=None):
+    def __init__(self, output_manifest_file: str, input_manifest_file: Optional[str] = None):
         self.output_manifest_file = output_manifest_file
         self.input_manifest_file = input_manifest_file
 
     @abstractmethod
     def process(self):
+        """Should be overriden by the child classes to implement some data processing."""
         pass
 
     def test(self):
@@ -66,13 +76,18 @@ class BaseProcessor(ABC):
 
 
 class BaseParallelProcessor(BaseProcessor):
-    """
-    Processor class which allows operations on each utterance to be parallelized. Parallelization
-    is done using tqdm.contrib.concurrent.process_map.
+    """Processor class which allows operations on each utterance to be parallelized.
+
+    Parallelization is done using ``tqdm.contrib.concurrent.process_map`` inside
+    the :meth:`process` method. Actual processing should be defined on a
+    per-examples bases inside the :meth:`process_dataset_entry` method.
+
+    See the documentation of all the methods for more details.
 
     Args:
-        max_workers: maximum number of workers that will be spawned during parallel processing.
-        chunksize: the size of the chunks that will be sent to worker processes.
+        max_workers (int): maximum number of workers that will be spawned
+            during the parallel processing.
+        chunksize (int): the size of the chunks that will be sent to worker processes.
     """
 
     def __init__(self, max_workers: int = -1, chunksize: int = 100, **kwargs):
@@ -84,34 +99,44 @@ class BaseParallelProcessor(BaseProcessor):
         self.number_of_entries = 0
         self.total_duration = 0
 
-    def read_manifest(self):
-        """
-        This function should be overridden in the "initial" class creating
-        manifest to read from the original source of data.
-        """
-        if self.input_manifest_file is None:
-            raise NotImplementedError("Override this method if the processor creates initial manifest")
-
-        # TODO: should we not assume that manifest can fully fit in memory?
-        with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
-            dataset_entries = [json.loads(line) for line in fin.readlines()]
-
-        return dataset_entries
-
-    def prepare(self):
-        """Can be used in derived classes to prepare processing in any way.
-
-        E.g., download data or compute some aggregates. Will be called before
-        starting processing the data.
-        """
-
     def process(self):
-        """
-        We always going to serialize output into a manifest file that contains
-        all information about the dataset.
+        """Parallelized implementation of the data processing.
 
-        This method should also create a new manifest in the end according to
-        the `self.output_manifest_file` argument.
+        The execution flow of this method is the following.
+
+        1. :meth:`prepare` is called. It's empty by default but can be used to
+           e.g. download the initial data files or compute some aggregates
+           required for subsequent processing.
+        2. A list of data entries is created by calling :meth:`read_manifest`.
+           Default implementation reads an input manifest file and returns a
+           list of dictionaries for each line (we assume a standard NeMo format
+           of one json per line).
+        3. :meth:`process_dataset_entry` is called **in parallel** on each element
+           of the list created in the previous step. Note that you cannot create
+           any new counters or modify the attributes of this class in any way
+           inside that function as this will lead to an undefined behavior.
+           Each call to the :meth:`process_dataset_entry` returns a list of
+           ``DataEntry`` objects that are then aggregated together. ``DataEntry``
+           simply defines a ``data`` and ``metrics`` keys.
+        4. We loop through all returned data entries and do the following
+
+           a) All ``metrics`` keys are collected in a separate list and passed
+              over to the :meth:`finalize` method for any desired metric
+              aggregation and reporting.
+           b) If ``data`` is set to None, the objects are ignored (metrics are
+              still collected).
+           c) All non-ignored objects are dumped to the output manifest file
+              with a call to ``json.dump``, one object per-line.
+
+        Here is a diagram outlining the execution flow of this method:
+
+        .. can only be viewed in the online documentation
+
+        .. raw:: html
+
+             <div align="center">
+               <img src="https://mermaid.ink/img/pako:eNplUl1r6zAM_SvCFy4pbL3vvaVwu-59sL0tl6LESmqIP7DkjWzsv89O0rVjzosiHR8dHetdtV6T2qg-YjjB0-Fv7SAfTs2cqdWjUGAwDrYiuz0yPWDEYaDhIfqWmH1chzmqVts_GQOW5OR1rWaqcv4916pcZxq6jKaAkRb0tok7IBtkXO5BM4KmDtMgUIotOmgIEpMG8VOK1v0atH91g0cNEV9BoyBgEm9RTJvljbX6D7e3O9hfVOyvVURCfbToTEcs11pKocwbksC5PnWFyhB00VvIE7wYnxiWwY3rgbNNqwlnOpATRQLD4B2dhdxdhNx9t2PiOJYRmORITuJYlb85XEydFGDDErGVL4tn6gNcuA-Zm_GFwCf5McJvwL6P1KNQoYim5SlfTY7-At9BEmHQ0YdAenVucH_hv7_W3hmHg3mj40JWXYudX8lwGHD86rb4d7YtN6hd-Qo1Oa1ulKVo0ei8k-8lXatsps0ubnK47EVZrY8MLQ_-OLpWbSQmulEpZNvoYDDvrlWbDgemj0-10vX9" height=100% />
+             </div>
         """
         self.prepare()
         dataset_entries = self.read_manifest()
@@ -139,30 +164,81 @@ class BaseParallelProcessor(BaseProcessor):
 
         self.finalize(metrics)
 
-    def finalize(self, metrics):
-        """Can be used to output statistics about processed data.
+    def prepare(self):
+        """Can be used in derived classes to prepare the processing in any way.
 
-        By default outputs new number of entries/hours.
+        E.g., download data or compute some aggregates. Will be called before
+        starting processing the data.
         """
-        logger.info("Total number of entries after processing: %d", self.number_of_entries)
-        if self.total_duration != 0:
-            logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
+
+    def read_manifest(self):
+        """Reading the input manifest file.
+
+        .. note::
+            This function should be overridden in the "initial" class creating
+            manifest to read from the original source of data.
+        """
+        if self.input_manifest_file is None:
+            raise NotImplementedError("Override this method if the processor creates initial manifest")
+
+        # TODO: should we not assume that manifest can fully fit in memory?
+        with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
+            dataset_entries = [json.loads(line) for line in fin.readlines()]
+
+        return dataset_entries
 
     @abstractmethod
     def process_dataset_entry(self, data_entry) -> List[DataEntry]:
         """Needs to be implemented in the derived classes.
 
-        Note that this method should always return a list of objects
-        to allow one-to-many mapping (many-to-one is not
-        supported in this design).
-
-        Each returned value should be a DataEntry object that will hold
+        Each returned value should be a ``DataEntry`` object that will hold
         a dictionary (or anything else that can be json-serialized) with
-        the actual data + any additional metrics required for statistcs
+        the actual data + any additional metrics required for statistics
         reporting. Those metrics can be used in :meth:`finalize` to
         prepare for final reporting.
 
-        TODO: it would be more strightforward to use a generator here, but
-            seems that it's not supported with multiprocessing. Is there a
-            way to make it work?
+        ``DataEntry`` is a simple dataclass defined in the following way::
+
+            @dataclass
+            class DataEntry:
+                # can be None to drop the entry
+                data: Optional[Dict]
+                # anything - you'd need to aggregate all
+                # values in the finalize method manually
+                metrics: Any = None
+
+        .. note::
+            This method should always return a list of objects to allow a
+            one-to-many mapping. E.g., if you want to cut an utterance into
+            multiple smaller parts, you can return a list of all the produced
+            utterances and they will be handled correctly.
+
+            The many-to-one mapping is not currently supported by design of
+            this method (but can still be done if you don't inherit from
+            this class and process the data sequentially).
+
+        Args:
+            data_entry: most often, ``data_entry`` will be a dictionary
+                containing items which represent the JSON manifest entry.
+                Sometimes, such as in :class:`sdp.processors.CreateInitialManifestMLS`,
+                it will be a string containing a line for that utterance
+                from the original raw MLS transcript. In general it is an element
+                of the list returned from the :meth:`read_manifest` method.
         """
+        # TODO: it would be more straightforward to use a generator here, but
+        #     seems that it's not supported with multiprocessing. Is there a
+        #     way to make it work?
+
+    def finalize(self, metrics: List):
+        """Can be used to output statistics about the processed data.
+
+        By default outputs new number of entries/hours.
+
+        Args:
+            metrics (list): a list containing all ``metrics`` keys from the
+                data entries returned from the :meth:`process_dataset_entry`
+                method.
+        """
+        logger.info("Total number of entries after processing: %d", self.number_of_entries)
+        if self.total_duration != 0:
+            logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)

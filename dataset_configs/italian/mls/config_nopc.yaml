@@ -1,0 +1,162 @@
+documentation: |
+  .. _mls_nopc_documentation:
+
+  MLS Italian (no P&C)
+  ####################
+
+  This config can be used to prepare `Multilingual LibriSpeech <https://www.openslr.org/94/>`_
+  Italian data in the NeMo format without punctuation or capitalization (P&C).
+
+  It performs the following data processing.
+
+  1. Downloads and extract the data from the original website.
+  2. Converts all audio files into the wav format and generates initial nemo manifest file.
+  3. Lower-cases text and removes all punctuation markers.
+  4. Drops any data that contains symbols not in the supported alphabet.
+  5. For training subset, the following additional filtering is performed:
+
+     a. Runs ASR inference with an older model and drops all utterances which contain more than
+        5 consecutive word insertions or deletions. 5 was found to be a good threshold to filter
+        out incorrect transcriptions.
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+  * **data_split**: can be "train", "dev" or "test".
+
+  Note that you can customize any part of this config either directly or from command-line.
+
+  **Output format**.
+
+  This config dumps the final manifest at ``${workspace_dir}/${data_split}_manifest.json``.
+  The output manifest contains the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription, including punctuation ".,?" and capitalization.
+  * **duration (float)**: audio duration in seconds.
+
+
+processors_to_run: all
+data_split: ???
+workspace_dir: ???
+final_manifest: "${workspace_dir}/${data_split}_manifest.json"
+language: "italian"
+language_id: "it"
+
+run_filtering:
+  train: True
+  # disabling dropping data for dev/test
+  dev: False
+  test: False
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestMLS
+    output_manifest_file: "${workspace_dir}/${data_split}_manifest0.json"
+    language: ${language}
+    raw_data_dir: ${workspace_dir}/raw_data
+    resampled_audio_dir: "${workspace_dir}/${data_split}/audio/"
+    data_split: "${data_split}"
+
+  - _target_: sdp.processors.SubMakeLowercase
+    should_run: ${remove_pc}
+
+  # bunch of strings we map to spaces
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+    - {"pattern": '[\-\‐\‑\–\—\―\"]', "repl": " "}
+    - {"pattern": '[\$\&\¡\(\)]', "repl": " "}
+    - {"pattern": '[\:\=\_\`]', "repl": " "}
+    - {"pattern": '[\{\|\}\~\¨\ª]', "repl": " "}
+    - {"pattern": '[\«\°\´\·\»]', "repl": " "}
+    - {"pattern": '[\‘\’\“\”\„]', "repl": " "}
+    - {"pattern": '[\‧\‹\›\≪\≫]', "repl": " "}
+    - {"pattern": '[\:\;\`\ʻ]', "repl": " "}  # TODO: maybe semicolon should be fullstop and next letter capitalized
+    - {"pattern": '[\ː\‘\’\“\→]', "repl": " "}
+    - {"pattern": '[\%\‘\”\�\ʽ\\ʿ]', "repl": " "}
+    - {"pattern": '́' , "repl": " "} # used for putting stress on Russian letters
+    - {"pattern": 'content from google book search google book search generated at ', "repl": " "}
+    - {"pattern": 'content from google book search generated at ', "repl": " "}
+    - {"pattern": 'content from ', "repl": " "}
+    - {"pattern": 'google book search generated at ', "repl": " "}
+    - {"pattern": 'search generated at ', "repl": " "}
+    - {"pattern": 'content from google ', "repl": " "}
+    - {"pattern": 'content from google book search ', "repl": " "}
+    - {"pattern": 'content from google book search generated at content from google book search generated at ', "repl": " "}
+    - {"pattern": 'book search generated at ', "repl": " "}
+    - {"pattern": 'content from google book ', "repl": " "}
+    - {"pattern": 'generated at ', "repl": " "}
+    - {"pattern": 'generated at content from google book search generated at ', "repl": " "}
+    - {"pattern": 'at content from google book search generated at ', "repl": " "}
+    - {"pattern": 'from google book search generated at ', "repl": " "}
+    - {"pattern": 'content from google book search content from google book search generated at ', "repl": " "}
+    - {"pattern": 'content from google book search generated at content from google book search generated at content from google book search generated at ', "repl": " "}
+
+    test_cases:
+      - {input: {text: '"abc"'}, output: {text: "abc"}}
+
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+    - {"pattern": '[\?\.,!…\":\(\)“”;]', "repl": ""}
+    - {"pattern": "’", "repl": "'"}
+    - {"pattern": '[\":\(\)“”;]', "repl": ''}
+    - {"pattern": "[-/]", "repl": " "}
+    # note that we exclude î and ó - according to wikipedia they are very
+    # rarely used in modern italian. So it's safer to replace them, as they
+    # often represent other languages (e.g., french or spanish, most often
+    # in names), rather than actual italian
+    - {"pattern": "î", "repl": "i"}
+    - {"pattern": "ó", "repl": "o"}
+    test_cases:
+      - {input: {text: "wow!"}, output: {text: "wow"}}
+      - {input: {text: "test."}, output: {text: "test"}}
+      - {input: {text: "t,e?st. ah."}, output: {text: "test ah"}}
+
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: ".,? 'abcdefghijklmnopqrstuvwxyzàèéìíòùú"
+    test_cases:
+      - {input: {text: "test тест 测试"}, output: null}
+      - {input: {text: "test"}, output: {text: "test"}}
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    regex_patterns: [
+        # transcription errors
+        "1595/5616/1595_5616_000923.wav",
+    ]
+    text_key: audio_filepath
+    test_cases:
+      - {input: {audio_filepath: "/path/1595/5616/1595_5616_000923.wav"}, output: null}
+      - {input: {audio_filepath: "/path/1/1/abc.wav"}, output: {audio_filepath: "/path/1/1/abc.wav"}}
+
+  # --------------------- only runs in training --------------------------
+
+  # drop spaced out regex
+  - _target_: sdp.processors.DropIfRegexMatch
+    regex_patterns:
+    - '(\D ){5,20}'
+    should_run: ${subfield:${run_filtering},${data_split}}
+    test_cases:
+      - {input: {text: "some s p a c e d out letters"}, output: null}
+      - {input: {text: "normal words only"}, output: {text: "normal words only"}}
+      - {input: {text: "three a b c spaced out letters"}, output: {text: "three a b c spaced out letters"}}
+      - {input: {text: "four a b c d spaced out letters"}, output: null}
+
+  - _target_: sdp.processors.ASRInference
+    pretrained_model: "stt_it_quartznet15x5"
+    output_manifest_file: "${workspace_dir}/${data_split}_manifest_with_preds.json"
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  - _target_: sdp.processors.DropASRError
+    consecutive_words_threshold: 5
+    should_run: ${subfield:${run_filtering},${data_split}}
+
+  # ----------------------------------------------------------------------
+
+  - _target_: sdp.processors.ChangeToRelativePath
+    base_dir: ${workspace_dir}
+
+  - _target_: sdp.processors.WriteManifest
+    output_manifest_file: ${final_manifest}
+    fields_to_save:
+      - audio_filepath
+      - text
+      - duration

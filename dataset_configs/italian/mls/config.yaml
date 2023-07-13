@@ -1,3 +1,47 @@
+documentation: |
+  MLS Italian (with P&C)
+  ######################
+
+  This config is the same as :ref:`MLS Italian (no P&C) <mls_nopc_documentation>`
+  except it adds punctuation and capitalization (P&C). MLS dataset does not
+  contain any P&C so it needs to be restored from the original source or synthetically
+  generated. We will run matching with the original source books and try to restore P&C
+  for as much data as possible. When this restoration process fails, there are
+  3 options that we support (controlled with the ``pc_mode`` parameter):
+
+  * **full_drop**: we can fully drop the utterances for which P&C was not restored.
+    This is currently the recommended (and default) option as it results in the
+    best overall performance.
+  * **synthetic**: we can generate synthetic P&C by using a pretrained NeMo
+    model. Make sure to specify which model to use with the ``pc_model_path``
+    parameter. Recommended model for this config is
+    `punctuationcapitalization_it_it_bert_base <https://catalog.ngc.nvidia.com/orgs/nvidia/teams/riva/models/punctuationcapitalization_it_it_bert_base>`_
+    (subject to the Riva license listed on the website).
+  * **ignore**: we can just ignore missing P&C and still use the original audio
+    and text. Note that this results in a mismatch, because some data will contain
+    P&C and some will not. Still it was found experimentally to yield good
+    performance.
+
+  .. note::
+    We ran experiments with all 3 options for the ``pc_mode`` parameter and found
+    that ``full_drop`` results in best performance. Yet the gap between all 3 is
+    not that big, so if you change the data pre-processing or want to refactor
+    this config for other languages, it is recommended to try all 3 options and
+    compare which one works best for your use-case.
+
+  In addition to the arguments of the :ref:`MLS Italian (no P&C) <mls_nopc_documentation>`
+  config, the following new arguments are supported:
+
+  * **pc_mode (str)**: can be "full_drop", "synthetic" or "ignore".
+    See above for the description of each option. Defaults to "full_drop".
+  * **pc_model_path (str)**: path to the P&C NeMo model to use for synthetic
+    P&C generation. Only applicable if ``pc_mode=synthetic``.
+
+  Output manifest is the same, except ``text`` field contains P&C and there
+  is a new field ``text_origin`` containing the source of the P&C for a given
+  utterance (can be "original", "synthetic" or "no_pc").
+
+
 processors_to_run: all
 data_split: ???
 workspace_dir: ???
@@ -7,6 +51,11 @@ language_id: "it"
 # https://catalog.ngc.nvidia.com/orgs/nvidia/teams/riva/models/punctuationcapitalization_it_it_bert_base can be used
 # subject to the Riva license listed on that page
 pc_model_path: ???
+
+# can be "full_drop" (drop both audio and text if not restored)
+#     or "ignore" (using audio with original text - just ignoring the fact that p&c is not there)
+#     or "synthetic" (using pre-trained model to restore the missing P&C)
+pc_mode: full_drop
 
 run_filtering:
   train: True
@@ -31,8 +80,6 @@ processors:
     submanifests_dir: ${workspace_dir}/submanifests/${data_split}
     restored_submanifests_dir: ${workspace_dir}/restored_submanifests/${data_split}
     restored_text_field: "text_pc"
-    n_jobs: -1
-    show_conversion_breakdown: true
 
   - _target_: sdp.processors.PCInference
     input_manifest_file: "${workspace_dir}/${data_split}_manifest1.json"
@@ -41,6 +88,7 @@ processors:
     input_text_field: "text"
     output_text_field: "text_pc_pred"
     batch_size: 32
+    should_run: ${equal:${pc_mode},"synthetic"}
 
   - _target_: sdp.processors.MakeLettersUppercaseAfterPeriod
     input_manifest_file: "${workspace_dir}/${data_split}_manifest2.json"
@@ -51,13 +99,25 @@ processors:
       - {input: {text_pc_pred: "asdf"}, output: {text_pc_pred: "asdf"}}
       - {input: {text_pc_pred: "wow, hey!"}, output: {text_pc_pred: "wow, hey!"}}
       - {input: {text_pc_pred: "wow, hey! How is life? great."}, output: {text_pc_pred: "wow, hey! How is life? Great."}}
+    should_run: ${equal:${pc_mode},"synthetic"}
 
-  - _target_: sdp.processors.RenameFields
-    input_manifest_file: "${workspace_dir}/${data_split}_manifest3.json"
-    rename_fields:
-      "text": "original_dataset_text"
+  # if using synthetic data, we take text to be either original or synthetic P&C
+  # in other cases, synthetic will not be available, so will be original or text without P&C
+  - _target_: sdp.processors.CombineSources
+    sources:
+        - field: text_pc
+          origin_label: original
+        - field: text_pc_pred
+          origin_label: synthetic
+        - field: text
+          origin_label: no_pc
+    target: text
 
-  - _target_: sdp.processors.ChangePCFields
+  # if we want to drop all audio without P&C, doing it here
+  - _target_: sdp.processors.DropIfRegexMatch
+    should_run: ${equal:${pc_mode},"full_drop"}
+    regex_patterns: ["no_pc"]
+    text_key: text_origin
 
   # bunch of strings we map to spaces
   - _target_: sdp.processors.SubRegex
@@ -167,7 +227,7 @@ processors:
   - _target_: sdp.processors.SubRegex
     text_key: "text_no_pc"
     regex_params_list:
-    - {"pattern": '[?.,]', "repl": ""}
+    - {"pattern": '[\?\.,]', "repl": ""}
     should_run: ${subfield:${run_filtering},${data_split}}
 
   - _target_: sdp.processors.DropASRError
@@ -186,4 +246,4 @@ processors:
       - audio_filepath
       - text
       - duration
-      - text_pc_origin
+      - text_origin
