@@ -58,7 +58,6 @@ processors:
     data_split: "${data_split}"
 
   - _target_: sdp.processors.SubMakeLowercase
-    should_run: ${remove_pc}
 
   # bunch of strings we map to spaces
   - _target_: sdp.processors.SubRegex
