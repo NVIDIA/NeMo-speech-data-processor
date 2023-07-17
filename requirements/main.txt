@@ -2,6 +2,7 @@ diff_match_patch
 editdistance
 hydra-core
 joblib
+librosa>=0.10.0 # specify >=0.10.0 so that librosa.get_duration(path=...) will work
 numpy
 omegaconf
 pandas
