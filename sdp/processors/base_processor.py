@@ -157,7 +157,7 @@ class BaseParallelProcessor(BaseProcessor):
                 metrics.append(data_entry.metrics)
                 if data_entry.data is None:
                     continue
-                json.dump(data_entry.data, fout)
+                json.dump(data_entry.data, fout, ensure_ascii=False)
                 self.number_of_entries += 1
                 self.total_duration += data_entry.data.get("duration", 0)
                 fout.write("\n")
