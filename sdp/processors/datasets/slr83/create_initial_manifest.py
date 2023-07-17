@@ -231,7 +231,7 @@ class CustomDataSplitSLR83(BaseProcessor):
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for data_entry in tqdm(split_data[self.data_split][0]):
-                json.dump(data_entry, fout)
+                json.dump(data_entry, fout, ensure_ascii=False)
                 number_of_entries += 1
                 total_duration += data_entry["duration"]
                 fout.write("\n")

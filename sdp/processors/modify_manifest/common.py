@@ -300,7 +300,7 @@ class SortManifest(BaseProcessor):
 
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for line in dataset_entries:
-                fout.write(json.dumps(line) + "\n")
+                fout.write(json.dumps(line, ensure_ascii=False) + "\n")
 
 
 class WriteManifest(BaseProcessor):
@@ -330,4 +330,4 @@ class WriteManifest(BaseProcessor):
             for line in tqdm(fin):
                 line = json.loads(line)
                 new_line = {field: line[field] for field in self.fields_to_save}
-                fout.write(json.dumps(new_line) + "\n")
+                fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")

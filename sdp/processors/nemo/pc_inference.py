@@ -107,4 +107,4 @@ class PCInference(BaseProcessor):
         with Path(self.output_manifest_file).open('w') as f:
             for item, t in zip(manifest, processed_texts):
                 item[self.output_text_field] = t
-                f.write(json.dumps(item) + '\n')
+                f.write(json.dumps(item, ensure_ascii=False) + '\n')
