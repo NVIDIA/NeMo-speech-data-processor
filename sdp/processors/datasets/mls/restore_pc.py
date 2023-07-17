@@ -424,6 +424,8 @@ class RestorePCForMLS(BaseProcessor):
         n_jobs (int): number of jobs to use for parallel processing. Defaults to -1.
         show_conversion_breakdown (bool): whether to show how much of each
             submanifest was restored. Defaults to True.
+        dont_try_nemo_tn (bool): whether to skip trying to apply NeMo TN to the LibroVox
+            text. Defaults to False.
 
     Returns:
         All the same data as in the input manifest with an additional key::
@@ -441,6 +443,7 @@ class RestorePCForMLS(BaseProcessor):
         restored_text_field: str,
         n_jobs: int = -1,
         show_conversion_breakdown: bool = True,
+        dont_try_nemo_tn: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -452,6 +455,7 @@ class RestorePCForMLS(BaseProcessor):
         self.restored_text_field = restored_text_field
         self.n_jobs = n_jobs
         self.show_conversion_breakdown = show_conversion_breakdown
+        self.dont_try_nemo_tn = dont_try_nemo_tn
 
     def process(self):
         """Main processing happens here.
@@ -478,7 +482,7 @@ class RestorePCForMLS(BaseProcessor):
         with open(self.input_manifest_file, "r") as f:
             for line in tqdm(f):
                 item = json.loads(line)
-                name = item["audio_filepath"].split("/")[-1].replace(".wav", "")
+                name = Path(item["audio_filepath"]).stem
                 reader_id, lv_book_id, sample_id = name.split("_")
                 key = f"{lv_book_id}_{reader_id}"
                 if key not in data:
@@ -494,16 +498,19 @@ class RestorePCForMLS(BaseProcessor):
         # Restore P&C to submanifests.
         os.makedirs(str(self.restored_submanifests_dir), exist_ok=True)
 
-        try:
-            normalizer = Normalizer(
-                input_case="cased",
-                lang=self.language_short,
-                cache_dir="CACHE_DIR",
-                overwrite_cache=False,
-                post_process=True,
-            )
-        except NotImplementedError:  # some languages don't support text normalization
+        if self.dont_try_nemo_tn:
             normalizer = None
+        else:
+            try:
+                normalizer = Normalizer(
+                    input_case="cased",
+                    lang=self.language_short,
+                    cache_dir="CACHE_DIR",
+                    overwrite_cache=False,
+                    post_process=True,
+                )
+            except NotImplementedError:  # some languages don't support text normalization
+                normalizer = None
 
         # TODO: rename to maybe books_ids_in_datasplit
         books_ids_in_submanifests = set([x.split("_")[0] for x in data.keys()])
@@ -526,7 +533,7 @@ class RestorePCForMLS(BaseProcessor):
         with open(self.input_manifest_file, "r") as f:
             for line in f:
                 line = json.loads(line)
-                book_id, spk_id = os.path.basename(line["audio_filepath"]).strip('.wav').split("_")[:2]
+                book_id, spk_id = Path(line["audio_filepath"]).stem.split("_")[:2]
                 book_id_spk_ids_in_datasplit.add((book_id, spk_id))
                 original_manifest_duration += line["duration"]
         logger.info(
