@@ -412,8 +412,9 @@ class RestorePCForMLS(BaseProcessor):
             choosing the folder of the contents of
             "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz".
             E.g., "english", "spanish", "italian", etc.
-        language_short (str): the short name of the language, used for
+        language_short (str or None): the short name of the language, used for
             specifying the normalizer we want to use. E.g., "en", "es", "it", etc.
+            If set to None, we will not try to normalize the provided Librivox text.
         lv_text_dir (str): the directory where the contents of
             https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz will be saved.
         submanifests_dir (str): the directory where submanifests (one for each
@@ -424,8 +425,6 @@ class RestorePCForMLS(BaseProcessor):
         n_jobs (int): number of jobs to use for parallel processing. Defaults to -1.
         show_conversion_breakdown (bool): whether to show how much of each
             submanifest was restored. Defaults to True.
-        dont_try_nemo_tn (bool): whether to skip trying to apply NeMo TN to the LibroVox
-            text. Defaults to False.
 
     Returns:
         All the same data as in the input manifest with an additional key::
@@ -436,14 +435,13 @@ class RestorePCForMLS(BaseProcessor):
     def __init__(
         self,
         language_long: str,
-        language_short: str,
+        language_short: Optional[str],
         lv_text_dir: str,
         submanifests_dir: str,
         restored_submanifests_dir: str,
         restored_text_field: str,
         n_jobs: int = -1,
         show_conversion_breakdown: bool = True,
-        dont_try_nemo_tn: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -455,7 +453,6 @@ class RestorePCForMLS(BaseProcessor):
         self.restored_text_field = restored_text_field
         self.n_jobs = n_jobs
         self.show_conversion_breakdown = show_conversion_breakdown
-        self.dont_try_nemo_tn = dont_try_nemo_tn
 
     def process(self):
         """Main processing happens here.
@@ -498,9 +495,7 @@ class RestorePCForMLS(BaseProcessor):
         # Restore P&C to submanifests.
         os.makedirs(str(self.restored_submanifests_dir), exist_ok=True)
 
-        if self.dont_try_nemo_tn:
-            normalizer = None
-        else:
+        if self.language_short:
             try:
                 normalizer = Normalizer(
                     input_case="cased",
@@ -510,7 +505,18 @@ class RestorePCForMLS(BaseProcessor):
                     post_process=True,
                 )
             except NotImplementedError:  # some languages don't support text normalization
+                logger.info(
+                    f"Could not find NeMo Normalizer for language {self.language_short}, so"
+                    " will not normalize the Librivox text before attempting to restore punctuation"
+                    " and capitalization."
+                )
                 normalizer = None
+        else:
+            logger.info(
+                f"`language_short` was not specified, so will not normalize the Librivox"
+                " text before attempting to restore punctuation and capitalization."
+            )
+            normalizer = None
 
         # TODO: rename to maybe books_ids_in_datasplit
         books_ids_in_submanifests = set([x.split("_")[0] for x in data.keys()])
