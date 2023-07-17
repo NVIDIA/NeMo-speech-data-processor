@@ -21,29 +21,39 @@ import wget
 
 from sdp.logging import logger
 
-# TODO: seems like this download code is saving initial file
-#     in the local directory!
 
+def download_file(source_url: str, target_directory: str, verbose = True):
+    # make sure target_directory is an absolute path to avoid bugs when we change directories to download data later
+    target_directory = os.path.abspath(target_directory)
 
-def download_file(source_url: str, target_directory: str):
-    logger.info(f"Trying to download data from {source_url} and save it in this directory: {target_directory}")
+    if verbose:
+        logger.info(f"Trying to download data from {source_url} and save it in this directory: {target_directory}")
     filename = os.path.basename(urllib.parse.urlparse(source_url).path)
     target_filepath = os.path.join(target_directory, filename)
 
     if os.path.exists(target_filepath):
-        logger.info(f"Found file {target_filepath} => will not be attempting download from {source_url}")
+        if verbose:
+            logger.info(f"Found file {target_filepath} => will not be attempting download from {source_url}")
     else:
-        wget.download(source_url, target_directory)
-        logger.info("Download completed")
+        original_dir = os.getcwd() # record current working directory so can cd back to it
+        os.chdir(target_directory) # cd to target dir so that temporary download file will be saved in target dir
 
+        wget.download(source_url, target_directory)
+
+        # change back to original directory as the rest of the code may assume that we are in that directory
+        os.chdir(original_dir)
+        if verbose:
+            logger.info("Download completed")
+
+    return target_filepath
 
 def extract_archive(archive_path: str, extract_path: str, force_extract: bool = False) -> str:
     logger.info(f"Attempting to extract all contents from tar file {archive_path} and save in {extract_path}")
     if not force_extract:
-        if archive_path.endswith(".tar") or archive_path.endswith(".tar.gz"):
+        if tarfile.is_tarfile(archive_path):
             with tarfile.open(archive_path, "r") as archive:
                 archive_extracted_dir = archive.getnames()[0]
-        elif archive_path.endswith(".zip"):
+        elif zipfile.is_zipfile(archive_path):
             with zipfile.ZipFile(archive_path, "r") as archive:
                 archive_extracted_dir = archive.namelist()[0]
         else:
@@ -54,10 +64,10 @@ def extract_archive(archive_path: str, extract_path: str, force_extract: bool = 
     if not force_extract and os.path.exists(archive_contents_dir):
         logger.info(f"Directory {archive_contents_dir} already exists => will not attempt to extract file")
     else:
-        if archive_path.endswith(".tar") or archive_path.endswith(".tar.gz"):
+        if tarfile.is_tarfile(archive_path):
             with tarfile.open(archive_path, "r") as archive:
                 archive.extractall(path=extract_path)
-        elif archive_path.endswith(".zip"):
+        elif zipfile.is_zipfile(archive_path):
             with zipfile.ZipFile(archive_path, "r") as archive:
                 archive.extractall(extract_path)
         logger.info("Finished extracting")
