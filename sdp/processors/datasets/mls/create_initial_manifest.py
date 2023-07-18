@@ -52,7 +52,9 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
             parameter will be ignored if ``resampled_audio_dir`` is ``None``.
             Defaults to 1.
         use_opus_archive (bool): if ``True``, will use the version of the archive file which
-            contains audio files saved in the opus format, instead of flac. If this parameter
+            contains audio files saved in the OPUS format, instead of FLAC. The OPUS files take up
+            less memory than the FLAC files, at the cost of the OPUS files being lower quality than
+            the FLAC files.
             is ``True``, the parameter ``resampled_audio_dir`` must be ``None``, as resampling OPUS
             audio files is currently not supported.
             Defaults to False.
