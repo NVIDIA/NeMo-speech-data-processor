@@ -412,8 +412,9 @@ class RestorePCForMLS(BaseProcessor):
             choosing the folder of the contents of
             "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz".
             E.g., "english", "spanish", "italian", etc.
-        language_short (str): the short name of the language, used for
+        language_short (str or None): the short name of the language, used for
             specifying the normalizer we want to use. E.g., "en", "es", "it", etc.
+            If set to None, we will not try to normalize the provided Librivox text.
         lv_text_dir (str): the directory where the contents of
             https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz will be saved.
         submanifests_dir (str): the directory where submanifests (one for each
@@ -434,7 +435,7 @@ class RestorePCForMLS(BaseProcessor):
     def __init__(
         self,
         language_long: str,
-        language_short: str,
+        language_short: Optional[str],
         lv_text_dir: str,
         submanifests_dir: str,
         restored_submanifests_dir: str,
@@ -478,7 +479,7 @@ class RestorePCForMLS(BaseProcessor):
         with open(self.input_manifest_file, "r") as f:
             for line in tqdm(f):
                 item = json.loads(line)
-                name = item["audio_filepath"].split("/")[-1].replace(".wav", "")
+                name = Path(item["audio_filepath"]).stem
                 reader_id, lv_book_id, sample_id = name.split("_")
                 key = f"{lv_book_id}_{reader_id}"
                 if key not in data:
@@ -494,15 +495,27 @@ class RestorePCForMLS(BaseProcessor):
         # Restore P&C to submanifests.
         os.makedirs(str(self.restored_submanifests_dir), exist_ok=True)
 
-        try:
-            normalizer = Normalizer(
-                input_case="cased",
-                lang=self.language_short,
-                cache_dir="CACHE_DIR",
-                overwrite_cache=False,
-                post_process=True,
+        if self.language_short:
+            try:
+                normalizer = Normalizer(
+                    input_case="cased",
+                    lang=self.language_short,
+                    cache_dir="CACHE_DIR",
+                    overwrite_cache=False,
+                    post_process=True,
+                )
+            except NotImplementedError:  # some languages don't support text normalization
+                logger.info(
+                    f"Could not find NeMo Normalizer for language {self.language_short}, so"
+                    " will not normalize the Librivox text before attempting to restore punctuation"
+                    " and capitalization."
+                )
+                normalizer = None
+        else:
+            logger.info(
+                f"`language_short` was not specified, so will not normalize the Librivox"
+                " text before attempting to restore punctuation and capitalization."
             )
-        except NotImplementedError:  # some languages don't support text normalization
             normalizer = None
 
         # TODO: rename to maybe books_ids_in_datasplit
@@ -526,7 +539,7 @@ class RestorePCForMLS(BaseProcessor):
         with open(self.input_manifest_file, "r") as f:
             for line in f:
                 line = json.loads(line)
-                book_id, spk_id = os.path.basename(line["audio_filepath"]).strip('.wav').split("_")[:2]
+                book_id, spk_id = Path(line["audio_filepath"]).stem.split("_")[:2]
                 book_id_spk_ids_in_datasplit.add((book_id, spk_id))
                 original_manifest_duration += line["duration"]
         logger.info(
