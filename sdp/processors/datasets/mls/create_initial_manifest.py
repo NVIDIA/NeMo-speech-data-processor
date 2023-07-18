@@ -55,7 +55,7 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
             contains audio files saved in the OPUS format, instead of FLAC. The OPUS files take up
             less memory than the FLAC files, at the cost of the OPUS files being lower quality than
             the FLAC files.
-           If ``True``, the parameter ``resampled_audio_dir`` must be ``None``, as resampling OPUS
+            If ``True``, the parameter ``resampled_audio_dir`` must be ``None``, as resampling OPUS
             audio files is currently not supported.
             Defaults to False.
 
