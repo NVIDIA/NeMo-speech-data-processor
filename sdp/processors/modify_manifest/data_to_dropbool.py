@@ -19,7 +19,7 @@ from typing import List
 from sdp.logging import logger
 from sdp.processors.base_processor import DataEntry
 from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
-from sdp.utils.edit_spaces import remove_extra_spaces
+from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff, get_diff_with_subs_grouped
 from sdp.utils.metrics_computation import (
     get_cer,
@@ -62,7 +62,7 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
 
     def _process_dataset_entry(self, data_entry) -> List:
         """Drops utterances based on the provided thresholds."""
-        charrate = get_charrate(remove_extra_spaces(data_entry[self.text_key]), data_entry["duration"])
+        charrate = get_charrate(data_entry[self.text_key], data_entry["duration"])
         if charrate > self.high_charrate_threshold:
             return [DataEntry(data=None, metrics=(0, 1))]
         elif charrate < self.low_charrate_threshold:
@@ -207,6 +207,12 @@ class DropHighLowDuration(ModifyManifestTextProcessor):
 class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
     """Drops utterances if ``data[self.text_key]`` does not match any of ``regex_patterns``.
 
+    Before applying regex checks, we will add a space
+    character to the beginning and end of the ``text`` and ``pred_text``
+    keys for each data entry. After the the regex checks, assuming the utterance isn't dropped,
+    the extra spaces are removed. This includes the spaces in the beginning
+    and end of the text, as well as any double spaces ``"  "``.
+
     Args:
         regex_patterns (list[str]): If ``data_entry[self.text_key]`` does not
             match any of the regex patterns in the list, that utterance
@@ -225,6 +231,7 @@ class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
         self.regex_patterns = regex_patterns
 
     def _process_dataset_entry(self, data_entry) -> List:
+        data_entry[self.text_key] = add_start_end_spaces(data_entry[self.text_key])
         for regex_pattern in self.regex_patterns:
             if re.search(regex_pattern, data_entry[self.text_key]):
                 break
@@ -232,6 +239,7 @@ class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
             return [DataEntry(data=None, metrics=1)]
 
         # will reach this part of code if at least one of the regexes matches
+        data_entry[self.text_key] = remove_extra_spaces(data_entry[self.text_key])
         return [DataEntry(data=data_entry, metrics=0)]
 
     def finalize(self, metrics):
@@ -324,12 +332,6 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
 
     def _process_dataset_entry(self, data_entry) -> List:
         orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
-
-        # remove spaces at start and end. Otherwise all utterances
-        # will have no errors at the beginning (because both self.text_key
-        # and self.pred_text_key will begin with " ")
-        orig_words = remove_extra_spaces(orig_words)
-        pred_words = remove_extra_spaces(pred_words)
 
         diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
@@ -432,10 +434,7 @@ class DropHighCER(ModifyManifestTextProcessor):
         self.cer_threshold = cer_threshold
 
     def _process_dataset_entry(self, data_entry) -> List:
-        cer = get_cer(
-            remove_extra_spaces(data_entry[self.text_key]),
-            remove_extra_spaces(data_entry[self.pred_text_key]),
-        )
+        cer = get_cer(data_entry[self.text_key], data_entry[self.pred_text_key])
         if cer > self.cer_threshold:
             return [DataEntry(data=None, metrics=1)]
         else:
@@ -524,8 +523,6 @@ class DropLowWordMatchRate(ModifyManifestTextProcessor):
 
     def _process_dataset_entry(self, data_entry) -> List:
         orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
-        orig_words = remove_extra_spaces(orig_words)
-        pred_words = remove_extra_spaces(pred_words)
         wmr = get_wmr(orig_words, pred_words)
         if wmr < self.wmr_threshold:
             return [DataEntry(data=None, metrics=1)]
@@ -547,6 +544,12 @@ class DropLowWordMatchRate(ModifyManifestTextProcessor):
 class DropIfRegexMatch(ModifyManifestTextProcessor):
     """Drops utterances if text matches a regex pattern.
 
+    Before applying regex checks, we will add a space
+    character to the beginning and end of the ``text`` and ``pred_text``
+    keys for each data entry. After the the regex checks, assuming the utterance isn't dropped,
+    the extra spaces are removed. This includes the spaces in the beginning
+    and end of the text, as well as any double spaces ``"  "``.
+
     Args:
         regex_patterns (list[str]): a list of strings. The list will be
             traversed in order. If ``data_entry.data[self.text_key]`` matches
@@ -566,11 +569,13 @@ class DropIfRegexMatch(ModifyManifestTextProcessor):
 
     def _process_dataset_entry(self, data_entry) -> List:
         drop_counter = collections.defaultdict(int)
+        data_entry[self.text_key] = add_start_end_spaces(data_entry[self.text_key])
         for regex_pattern in self.regex_patterns:
             if re.search(regex_pattern, data_entry[self.text_key]):
                 for match in re.finditer(regex_pattern, data_entry[self.text_key]):
                     drop_counter[regex_pattern] += 1
                 return [DataEntry(data=None, metrics=drop_counter)]
+        data_entry[self.text_key] = remove_extra_spaces(data_entry[self.text_key])
         return [DataEntry(data=data_entry, metrics=drop_counter)]
 
     def finalize(self, metrics):

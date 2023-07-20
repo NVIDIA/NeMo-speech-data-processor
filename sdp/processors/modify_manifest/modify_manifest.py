@@ -87,40 +87,13 @@ class ModifyManifestTextProcessor(BaseParallelProcessor):
     @abstractmethod
     def _process_dataset_entry(self, data_entry):
         """Main data processing should be implemented here.
-
-        Note that extra spaces will be added in the beginning and end
-        automatically. See the documentation of
-        :meth:`sdp.processors.base_processor.BaseParallelProcessor.process_dataset_entry`
-        for more details.
         """
         pass
 
     def process_dataset_entry(self, data_entry):
         """Wrapper for the new :meth:`_process_dataset_entry` abstract method.
-
-        Before :meth:`_process_dataset_entry` is called we will add a space
-        character to the beginning and end of the ``text`` and ``pred_text``
-        keys for each data entry. After the :meth:`_process_dataset_entry`,
-        the extra spaces are removed. This includes the spaces in the beginning
-        and end of the text, as well as any double spaces ``"  "``.
         """
-        # handle spaces
-        if self.text_key in data_entry:
-            data_entry[self.text_key] = add_start_end_spaces(data_entry[self.text_key])
-        if self.pred_text_key in data_entry:
-            data_entry[self.pred_text_key] = add_start_end_spaces(data_entry[self.pred_text_key])
 
         data_entries = self._process_dataset_entry(data_entry)
-        if len(data_entries) > 1:
-            raise RuntimeError("Cannot handle one-to-many relation")
-
-        if len(data_entries) == 1 and data_entries[0].data is not None:
-            # handle spaces
-            if self.text_key in data_entries[0].data:
-                data_entries[0].data[self.text_key] = remove_extra_spaces(data_entries[0].data[self.text_key])
-            if self.pred_text_key in data_entries[0].data:
-                data_entries[0].data[self.pred_text_key] = remove_extra_spaces(
-                    data_entries[0].data[self.pred_text_key]
-                )
 
         return data_entries

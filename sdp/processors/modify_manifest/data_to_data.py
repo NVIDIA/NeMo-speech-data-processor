@@ -19,7 +19,7 @@ from typing import Dict, List
 from sdp.logging import logger
 from sdp.processors.base_processor import DataEntry
 from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
-from sdp.utils.edit_spaces import add_start_end_spaces
+from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
 
 
@@ -107,6 +107,11 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
     This is useful if words are systematically incorrect in ground truth
     transcriptions.
 
+    Before starting to look for substitution, this processor adds spaces at the beginning and end of
+    ``data[self.text_key]`` and ``data[self.pred_text_key]``, to ensure that an argument like
+    ``sub_words = {"nmo ": "nemo "}`` would cause a substitution to be made even if the original
+    ``data[self.text_key]`` ends with ``"nmo"`` and ``data[self.pred_text_key]`` ends with ``"nemo"``.
+
     Args:
         sub_words (dict): dictionary where a key is a string that might be in
             ``data[self.text_key]`` and the value is the string that might
@@ -135,6 +140,8 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
 
     def _process_dataset_entry(self, data_entry) -> List:
         sub_word_counter = collections.defaultdict(int)
+        data_entry[self.text_key] = add_start_end_spaces(data_entry[self.text_key])
+        data_entry[self.pred_text_key] = add_start_end_spaces(data_entry[self.pred_text_key])
         for original_word, new_word in self.sub_words.items():
             if not original_word in data_entry[self.text_key]:
                 break
@@ -169,6 +176,9 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
 
                 new_sent = add_start_end_spaces(new_sent)
                 data_entry[self.text_key] = new_sent
+
+        data_entry[self.text_key] = remove_extra_spaces(data_entry[self.text_key])
+        data_entry[self.pred_text_key] = remove_extra_spaces(data_entry[self.pred_text_key])
 
         return [DataEntry(data=data_entry, metrics=sub_word_counter)]
 
@@ -211,6 +221,12 @@ class SubMakeLowercase(ModifyManifestTextProcessor):
 class SubRegex(ModifyManifestTextProcessor):
     """Converts a regex match to a string, as defined by key-value pairs in ``regex_to_sub``.
 
+    Before applying regex changes, we will add a space
+    character to the beginning and end of the ``text`` and ``pred_text``
+    keys for each data entry. After the the regex changes,
+    the extra spaces are removed. This includes the spaces in the beginning
+    and end of the text, as well as any double spaces ``"  "``.
+
     Args:
         regex_params_list (list[dict]): list of dicts.
             Each dict must contain a ``pattern`` and a ``repl`` key,
@@ -248,6 +264,7 @@ class SubRegex(ModifyManifestTextProcessor):
 
         text_in = data_entry[self.text_key]
 
+        text_in = add_start_end_spaces(text_in)
         for regex_params in self.regex_params_list:
             text_out = re.sub(
                 pattern=regex_params["pattern"],
@@ -260,6 +277,8 @@ class SubRegex(ModifyManifestTextProcessor):
             if text_in != text_out:
                 replace_word_counter[regex_params["pattern"]] += 1
             text_in = text_out
+
+        text_out = remove_extra_spaces(text_out)
 
         data_entry[self.text_key] = text_out
 
