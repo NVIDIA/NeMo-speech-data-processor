@@ -88,9 +88,22 @@ class BaseParallelProcessor(BaseProcessor):
         max_workers (int): maximum number of workers that will be spawned
             during the parallel processing.
         chunksize (int): the size of the chunks that will be sent to worker processes.
+        test_cases (list[dict]): an optional list of dicts containing test
+            cases for checking that the processor makes the changes that we
+            are expecting.
+            The dicts must have a key ``input``, the value of which is a dictionary
+            containing data which is our test's input manifest line, and a key
+            ``output``, the value of which is a dictionary containing data which is
+            the expected output manifest line.
     """
 
-    def __init__(self, max_workers: int = -1, chunksize: int = 100, **kwargs):
+    def __init__(
+        self,
+        max_workers: int = -1,
+        chunksize: int = 100,
+        test_cases: Optional[List[Dict]] = None,
+        **kwargs
+    ):
         super().__init__(**kwargs)
         if max_workers == -1:
             max_workers = multiprocessing.cpu_count()
@@ -98,6 +111,11 @@ class BaseParallelProcessor(BaseProcessor):
         self.chunksize = chunksize
         self.number_of_entries = 0
         self.total_duration = 0
+
+        self.test_cases = test_cases
+        # need to convert to list to avoid errors in iteration over None
+        if self.test_cases is None:
+            self.test_cases = []
 
     def process(self):
         """Parallelized implementation of the data processing.
@@ -242,3 +260,21 @@ class BaseParallelProcessor(BaseProcessor):
         logger.info("Total number of entries after processing: %d", self.number_of_entries)
         if self.total_duration != 0:
             logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
+
+
+    def test(self):
+        """Applies processing to "test_cases" and raises an error in case of mismatch."""
+        for test_case in self.test_cases:
+            generated_outputs = self.process_dataset_entry(test_case["input"].copy())
+            # can only return 1 or zero entries
+            if len(generated_outputs) == 1:
+                generated_output = generated_outputs[0].data
+            else:
+                generated_output = None
+            if generated_output != test_case["output"]:
+                raise RuntimeError(
+                    "Runtime test failed.\n"
+                    f"Test input: {test_case['input']}\n"
+                    f"Generated output: {generated_output}\n"
+                    f"Expected output: {test_case['output']}"
+                )
