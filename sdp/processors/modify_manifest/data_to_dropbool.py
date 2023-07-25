@@ -17,8 +17,7 @@ import re
 from typing import List
 
 from sdp.logging import logger
-from sdp.processors.base_processor import DataEntry
-from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff, get_diff_with_subs_grouped
 from sdp.utils.metrics_computation import (
@@ -30,7 +29,7 @@ from sdp.utils.metrics_computation import (
 )
 
 
-class DropHighLowCharrate(ModifyManifestTextProcessor):
+class DropHighLowCharrate(BaseParallelProcessor):
     """Drops utterances if their character rate is too low or too high.
 
     Character rate = ``(num of characters in self.text_key) / (duration of audio)``.
@@ -44,23 +43,23 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
         low_charrate_threshold (float): lower character rate threshold.
             If the character rate of an utterance is lower than this number,
             the utterance will be dropped.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
-        self,
-        high_charrate_threshold: float,
-        low_charrate_threshold: float,
-        **kwargs,
+        self, high_charrate_threshold: float, low_charrate_threshold: float, text_key: str = "text", **kwargs,
     ):
         super().__init__(**kwargs)
 
         self.high_charrate_threshold = high_charrate_threshold
         self.low_charrate_threshold = low_charrate_threshold
+        self.text_key = text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         """Drops utterances based on the provided thresholds."""
         charrate = get_charrate(data_entry[self.text_key], data_entry["duration"])
         if charrate > self.high_charrate_threshold:
@@ -91,7 +90,7 @@ class DropHighLowCharrate(ModifyManifestTextProcessor):
         super().finalize(metrics)
 
 
-class DropHighLowWordrate(ModifyManifestTextProcessor):
+class DropHighLowWordrate(BaseParallelProcessor):
     """Drops utterances if their word rate is too low or too high.
 
     Word rate = ``(num of words in self.text_key) / (duration of audio)``.
@@ -105,23 +104,23 @@ class DropHighLowWordrate(ModifyManifestTextProcessor):
         low_wordrate_threshold (float): lower word rate threshold.
             If the word rate of an utterance is lower than this number,
             the utterance will be dropped.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
-        self,
-        high_wordrate_threshold: float,
-        low_wordrate_threshold: float,
-        **kwargs,
+        self, high_wordrate_threshold: float, low_wordrate_threshold: float, text_key: str = "text", **kwargs,
     ):
         super().__init__(**kwargs)
 
         self.high_wordrate_threshold = high_wordrate_threshold
         self.low_wordrate_threshold = low_wordrate_threshold
+        self.text_key = text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         wordrate = get_wordrate(data_entry[self.text_key], data_entry["duration"])
         if wordrate > self.high_wordrate_threshold:
             return [DataEntry(data=None, metrics=(0, 1))]
@@ -149,7 +148,7 @@ class DropHighLowWordrate(ModifyManifestTextProcessor):
         super().finalize(metrics)
 
 
-class DropHighLowDuration(ModifyManifestTextProcessor):
+class DropHighLowDuration(BaseParallelProcessor):
     """Drops utterances if their duration is too low or too high.
 
     Args:
@@ -159,24 +158,24 @@ class DropHighLowDuration(ModifyManifestTextProcessor):
         low_duration_threshold (float): lower duration threshold (in seconds).
             If the duration of an utterance's audio is lower than this number,
             the utterance will be dropped.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
-        self,
-        high_duration_threshold: float,
-        low_duration_threshold: float,
-        **kwargs,
+        self, high_duration_threshold: float, low_duration_threshold: float, text_key: str = "text", **kwargs,
     ):
         super().__init__(**kwargs)
         self.high_duration_threshold = high_duration_threshold
         self.low_duration_threshold = low_duration_threshold
         self.high_drop_counter = 0
         self.low_drop_counter = 0
+        self.text_key = text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         duration = data_entry["duration"]
         if duration > self.high_duration_threshold:
             return [DataEntry(data=None, metrics=(0, 1))]
@@ -204,7 +203,7 @@ class DropHighLowDuration(ModifyManifestTextProcessor):
         super().finalize(metrics)
 
 
-class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
+class DropIfNoneOfRegexMatch(BaseParallelProcessor):
     """Drops utterances if ``data[self.text_key]`` does not match any of ``regex_patterns``.
 
     Before applying regex checks, we will add a space
@@ -217,20 +216,21 @@ class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
         regex_patterns (list[str]): If ``data_entry[self.text_key]`` does not
             match any of the regex patterns in the list, that utterance
             will be dropped.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
-        self,
-        regex_patterns: List[str],
-        **kwargs,
+        self, regex_patterns: List[str], text_key: str = "text", **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_patterns = regex_patterns
+        self.text_key = text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         data_entry[self.text_key] = add_start_end_spaces(data_entry[self.text_key])
         for regex_pattern in self.regex_patterns:
             if re.search(regex_pattern, data_entry[self.text_key]):
@@ -252,13 +252,15 @@ class DropIfNoneOfRegexMatch(ModifyManifestTextProcessor):
         super().finalize(metrics)
 
 
-class DropNonAlphabet(ModifyManifestTextProcessor):
+class DropNonAlphabet(BaseParallelProcessor):
     """Drops utterances if they contain characters that are not in the ``alphabet``.
 
     Args:
         alphabet (str): a string containing all of the characters in our alphabet.
             If an utterance contains at least one character that is not in the
             ``alphabet``, then that utterance will be dropped.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
 
             .. note::
                 Don't forget to include spaces in your alphabet, unless you
@@ -269,14 +271,13 @@ class DropNonAlphabet(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self,
-        alphabet: str,
-        **kwargs,
+        self, alphabet: str, text_key: str = "text", **kwargs,
     ):
         super().__init__(**kwargs)
         self.alphabet = alphabet
+        self.text_key = text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         drop_this_utt = False
         non_alphabet_counter = collections.defaultdict(int)
         for char in data_entry[self.text_key]:
@@ -298,7 +299,7 @@ class DropNonAlphabet(ModifyManifestTextProcessor):
         super().finalize(metrics)
 
 
-class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
+class DropASRErrorBeginningEnd(BaseParallelProcessor):
     """Drops utterances if there is a sufficiently long ASR mismatch
     at the beginning or end of the utterance.
 
@@ -315,6 +316,10 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
             If there is a substitution at the end of the utterance, then the
             utterance will be dropped if
             ``abs(len(deletion) - len(insertion)) > end_error_char_threshold``.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
+        pred_text_key (str): a string indicating which key of the data entries
+            should be used to access the ASR predictions. Defaults to "pred_text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
@@ -324,13 +329,17 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
         self,
         beginning_error_char_threshold: int,
         end_error_char_threshold: int,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.beginning_error_char_threshold = beginning_error_char_threshold
         self.end_error_char_threshold = end_error_char_threshold
+        self.text_key = text_key
+        self.pred_text_key = pred_text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
 
         diff = get_diff_with_subs_grouped(orig_words, pred_words)
@@ -365,37 +374,40 @@ class DropASRErrorBeginningEnd(ModifyManifestTextProcessor):
             beginning_drop_counter += dropped_beginning
             end_drop_counter += dropped_end
         logger.info(
-            "Num of utterances that were dropped due to asr " "insertions/deletions at the beginning: %d",
+            "Num of utterances that were dropped due to asr insertions/deletions at the beginning: %d",
             beginning_drop_counter,
         )
         logger.info(
-            "Num of utterances that were dropped due to asr insertions/deletions at the end: %d",
-            end_drop_counter,
+            "Num of utterances that were dropped due to asr insertions/deletions at the end: %d", end_drop_counter,
         )
         super().finalize(metrics)
 
 
 # TODO: needs unification with above class in some way
-class DropASRError(ModifyManifestTextProcessor):
+class DropASRError(BaseParallelProcessor):
     """Drops utterances if there is a sufficiently long ASR mismatch anywhere in the utterance.
 
     Args:
         consecutive_words_threshold (int): will drop if there is a mismatch of
             at least this many words in a row.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
+        pred_text_key (str): a string indicating which key of the data entries
+            should be used to access the ASR predictions. Defaults to "pred_text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
-        self,
-        consecutive_words_threshold: int,
-        **kwargs,
+        self, consecutive_words_threshold: int, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
     ):
         super().__init__(**kwargs)
         self.consecutive_words_threshold = consecutive_words_threshold
+        self.text_key = text_key
+        self.pred_text_key = pred_text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
         diffs = get_diff(orig_words, pred_words)
 
@@ -408,7 +420,7 @@ class DropASRError(ModifyManifestTextProcessor):
         return [DataEntry(data=data_entry)]
 
 
-class DropHighCER(ModifyManifestTextProcessor):
+class DropHighCER(BaseParallelProcessor):
     """Drops utterances if there is a sufficiently high character-error-rate (CER).
 
     CER is measured between ``data[self.text_key]`` and ``data[self.pred_text_key]``.
@@ -420,20 +432,24 @@ class DropHighCER(ModifyManifestTextProcessor):
 
     Args:
         cer_threshold (float): CER threshold above which the utterance will be dropped.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
+        pred_text_key (str): a string indicating which key of the data entries
+            should be used to access the ASR predictions. Defaults to "pred_text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
-        self,
-        cer_threshold: float,
-        **kwargs,
+        self, cer_threshold: float, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
     ):
         super().__init__(**kwargs)
         self.cer_threshold = cer_threshold
+        self.text_key = text_key
+        self.pred_text_key = pred_text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         cer = get_cer(data_entry[self.text_key], data_entry[self.pred_text_key])
         if cer > self.cer_threshold:
             return [DataEntry(data=None, metrics=1)]
@@ -445,14 +461,12 @@ class DropHighCER(ModifyManifestTextProcessor):
         for dropped in metrics:
             drop_counter += dropped
         logger.info(
-            "Num of utterances that were dropped due to CER > %d: %d",
-            self.cer_threshold,
-            drop_counter,
+            "Num of utterances that were dropped due to CER > %d: %d", self.cer_threshold, drop_counter,
         )
         super().finalize(metrics)
 
 
-class DropHighWER(ModifyManifestTextProcessor):
+class DropHighWER(BaseParallelProcessor):
     """Drops utterances if there is a sufficiently high word-error-rate (WER).
 
     WER is measured between ``data[self.text_key]`` and ``data[self.pred_text_key]``.
@@ -464,20 +478,24 @@ class DropHighWER(ModifyManifestTextProcessor):
 
     Args:
         wer_threshold (float): WER threshold above which the utterance will be dropped.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
+        pred_text_key (str): a string indicating which key of the data entries
+            should be used to access the ASR predictions. Defaults to "pred_text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
-        self,
-        wer_threshold: float,
-        **kwargs,
+        self, wer_threshold: float, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
     ):
         super().__init__(**kwargs)
         self.wer_threshold = wer_threshold
+        self.text_key = text_key
+        self.pred_text_key = pred_text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         wer = get_wer(data_entry[self.text_key], data_entry[self.pred_text_key])
         if wer > self.wer_threshold:
             return [DataEntry(data=None, metrics=1)]
@@ -489,14 +507,12 @@ class DropHighWER(ModifyManifestTextProcessor):
         for dropped in metrics:
             drop_counter += dropped
         logger.info(
-            "Num of utterances that were dropped due to WER > %d: %d",
-            self.wer_threshold,
-            drop_counter,
+            "Num of utterances that were dropped due to WER > %d: %d", self.wer_threshold, drop_counter,
         )
         super().finalize(metrics)
 
 
-class DropLowWordMatchRate(ModifyManifestTextProcessor):
+class DropLowWordMatchRate(BaseParallelProcessor):
     """Drops utterances if there is a sufficiently low word-match-rate (WMR).
 
     WMR is measured between ``data[self.text_key]`` and ``data[self.pred_text_key]``.
@@ -508,20 +524,24 @@ class DropLowWordMatchRate(ModifyManifestTextProcessor):
 
     Args:
         wmr_threshold (float): WMR threshold below which the utterance will be dropped.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
+        pred_text_key (str): a string indicating which key of the data entries
+            should be used to access the ASR predictions. Defaults to "pred_text".
 
     Returns:
-         The same data as in the input manifest with some entries dropped.
+        The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
-        self,
-        wmr_threshold: float,
-        **kwargs,
+        self, wmr_threshold: float, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
     ):
         super().__init__(**kwargs)
         self.wmr_threshold = wmr_threshold
+        self.text_key = text_key
+        self.pred_text_key = pred_text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
         wmr = get_wmr(orig_words, pred_words)
         if wmr < self.wmr_threshold:
@@ -534,14 +554,12 @@ class DropLowWordMatchRate(ModifyManifestTextProcessor):
         for dropped in metrics:
             drop_counter += dropped
         logger.info(
-            "Num of utterances that were dropped due to WMR < %d: %d",
-            self.wmr_threshold,
-            drop_counter,
+            "Num of utterances that were dropped due to WMR < %d: %d", self.wmr_threshold, drop_counter,
         )
         super().finalize(metrics)
 
 
-class DropIfRegexMatch(ModifyManifestTextProcessor):
+class DropIfRegexMatch(BaseParallelProcessor):
     """Drops utterances if text matches a regex pattern.
 
     Before applying regex checks, we will add a space
@@ -554,20 +572,21 @@ class DropIfRegexMatch(ModifyManifestTextProcessor):
         regex_patterns (list[str]): a list of strings. The list will be
             traversed in order. If ``data_entry.data[self.text_key]`` matches
             the regex, the entry will be dropped.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
-        self,
-        regex_patterns: List[str],
-        **kwargs,
+        self, regex_patterns: List[str], text_key: str = "text", **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_patterns = regex_patterns
+        self.text_key = text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         drop_counter = collections.defaultdict(int)
         data_entry[self.text_key] = add_start_end_spaces(data_entry[self.text_key])
         for regex_pattern in self.regex_patterns:
@@ -589,7 +608,7 @@ class DropIfRegexMatch(ModifyManifestTextProcessor):
         super().finalize(metrics)
 
 
-class DropOnAttribute(ModifyManifestTextProcessor):
+class DropOnAttribute(BaseParallelProcessor):
     """Drops utterances if attribute is set to True/False.
 
     Args:
@@ -601,20 +620,14 @@ class DropOnAttribute(ModifyManifestTextProcessor):
          The same data as in the input manifest with some entries dropped.
     """
 
-    # TODO: maybe need not to subclass from the base here, because text_key/pred_text_key are not used.
-    #    But still want to leverage test-cases functionality. Probably need some redesign of API here.
-
     def __init__(
-        self,
-        key: str,
-        drop_if_false: bool = False,
-        **kwargs,
+        self, key: str, drop_if_false: bool = False, **kwargs,
     ):
         super().__init__(**kwargs)
         self.key = key
         self.drop_if_false = drop_if_false
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         if data_entry[self.key] is not self.drop_if_false:
             return [DataEntry(data=None, metrics=1)]
         return [DataEntry(data=data_entry, metrics=0)]
@@ -627,7 +640,7 @@ class DropOnAttribute(ModifyManifestTextProcessor):
         super().finalize(metrics)
 
 
-class DropIfSubstringInInsertion(ModifyManifestTextProcessor):
+class DropIfSubstringInInsertion(BaseParallelProcessor):
     """Drops utterances if a substring matches an ASR insertion.
 
     Insertions are checked between ``data[self.text_key]`` and
@@ -642,20 +655,24 @@ class DropIfSubstringInInsertion(ModifyManifestTextProcessor):
         substrings_in_insertion (list[str]): a list of strings which might be
             inserted in predicted ASR text. If the insertion matches a
             string exactly, the utterance will be dropped.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
+        pred_text_key (str): a string indicating which key of the data entries
+            should be used to access the ASR predictions. Defaults to "pred_text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
-        self,
-        substrings_in_insertion: List[str],
-        **kwargs,
+        self, substrings_in_insertion: List[str], text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
     ):
         super().__init__(**kwargs)
         self.substrings_in_insertion = substrings_in_insertion
+        self.text_key = text_key
+        self.pred_text_key = pred_text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         for substring_in_insertion in self.substrings_in_insertion:
             if substring_in_insertion in data_entry[self.pred_text_key]:
                 orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]

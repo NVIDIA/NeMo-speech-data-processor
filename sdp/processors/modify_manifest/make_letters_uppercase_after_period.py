@@ -16,32 +16,32 @@ import collections
 from typing import List
 
 from sdp.logging import logger
-from sdp.processors.base_processor import DataEntry
-from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 # TODO: should be done with general sub-regex processor
 
 
-class MakeLettersUppercaseAfterPeriod(ModifyManifestTextProcessor):
+class MakeLettersUppercaseAfterPeriod(BaseParallelProcessor):
     """Can be used to replace characters with upper-case version after punctuation.
 
     Args:
         punctuation (str): string with all punctuation characters to consider.
             Defaults to ".!?".
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with ``<text_key>`` field changed.
     """
 
     def __init__(
-        self,
-        punctuation=".!?",
-        **kwargs,
+        self, punctuation=".!?", text_key: str = "text", **kwargs,
     ):
-        self.punctuation = punctuation
         super().__init__(**kwargs)
+        self.punctuation = punctuation
+        self.text_key = text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         replace_word_counter = collections.defaultdict(int)
 
         # keeping in a list, since strings are immutable

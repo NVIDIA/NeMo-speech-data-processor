@@ -20,12 +20,11 @@ from typing import List
 import pandas as pd
 
 from sdp.logging import logger
-from sdp.processors.base_processor import DataEntry
-from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 
 
-class CleanRomanNumerals(ModifyManifestTextProcessor):
+class CleanRomanNumerals(BaseParallelProcessor):
     def __init__(
         self,
         king_triggers,
@@ -34,6 +33,7 @@ class CleanRomanNumerals(ModifyManifestTextProcessor):
         ordinal_fem_triggers,
         cardinal_triggers,
         numerals_data_path=None,
+        text_key: str = "text",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -43,6 +43,7 @@ class CleanRomanNumerals(ModifyManifestTextProcessor):
         self.ordinal_masc_triggers = ordinal_masc_triggers
         self.ordinal_fem_triggers = ordinal_fem_triggers
         self.cardinal_triggers = cardinal_triggers
+        self.text_key = text_key
 
         # read csv
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -71,7 +72,7 @@ class CleanRomanNumerals(ModifyManifestTextProcessor):
 
         self.clean_roman_numerals_count = collections.defaultdict(int)
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         data_entry[self.text_key] = add_start_end_spaces(data_entry[self.text_key])
         data_entry = self.clean_operation(data_entry, self.ordinal_masc_triggers, self.roman_numeral_to_ordinal_masc)
         data_entry = self.clean_operation(data_entry, self.ordinal_fem_triggers, self.roman_numeral_to_ordinal_fem)

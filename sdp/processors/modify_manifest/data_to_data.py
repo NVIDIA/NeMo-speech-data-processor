@@ -17,13 +17,12 @@ import re
 from typing import Dict, List
 
 from sdp.logging import logger
-from sdp.processors.base_processor import DataEntry
-from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
 
 
-class InsIfASRInsertion(ModifyManifestTextProcessor):
+class InsIfASRInsertion(BaseParallelProcessor):
     """Processor that adds substrings to transcription if they are present in ASR predictions.
 
     Will insert substrings into ``data[self.text_key]`` if it is
@@ -35,6 +34,10 @@ class InsIfASRInsertion(ModifyManifestTextProcessor):
         insert_words (list[str]): list of strings that will be inserted
             into ``data[self.text_key]`` if there is an insertion (containing
             only that string) in ``data[self.pred_text_key]``.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
+        pred_text_key (str): a string indicating which key of the data entries
+            should be used to access the ASR predictions. Defaults to "pred_text".
 
             .. note::
                 Because this processor looks for an exact match in the insertion,
@@ -46,14 +49,14 @@ class InsIfASRInsertion(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self,
-        insert_words: List[str],
-        **kwargs,
+        self, insert_words: List[str], text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
     ):
         super().__init__(**kwargs)
         self.insert_words = insert_words
+        self.text_key = text_key
+        self.pred_text_key = pred_text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         insert_word_counter = collections.defaultdict(int)
         for insert_word in self.insert_words:
             if not insert_word in data_entry[self.pred_text_key]:
@@ -97,7 +100,7 @@ class InsIfASRInsertion(ModifyManifestTextProcessor):
         super().finalize(metrics)
 
 
-class SubIfASRSubstitution(ModifyManifestTextProcessor):
+class SubIfASRSubstitution(BaseParallelProcessor):
     """Processor that substitutes substrings to transcription if they are present in ASR predictions.
 
     Will convert a substring in ``data[self.text_key]`` to a
@@ -119,6 +122,10 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
             place (i.e. are part of a 'substitution' operation)
             then the key string will be converted to the value string
             in ``data[self.text_key]``.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
+        pred_text_key (str): a string indicating which key of the data entries
+            should be used to access the ASR predictions. Defaults to "pred_text".
 
             .. note::
                 This processor looks for exact string matches of substitutions,
@@ -131,14 +138,14 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
     """
 
     def __init__(
-        self,
-        sub_words: Dict,
-        **kwargs,
+        self, sub_words: Dict, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
     ):
         super().__init__(**kwargs)
         self.sub_words = sub_words
+        self.text_key = text_key
+        self.pred_text_key = pred_text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         sub_word_counter = collections.defaultdict(int)
         data_entry[self.text_key] = add_start_end_spaces(data_entry[self.text_key])
         data_entry[self.pred_text_key] = add_start_end_spaces(data_entry[self.pred_text_key])
@@ -196,20 +203,23 @@ class SubIfASRSubstitution(ModifyManifestTextProcessor):
 # TODO: replace with generic regex
 
 
-class SubMakeLowercase(ModifyManifestTextProcessor):
+class SubMakeLowercase(BaseParallelProcessor):
     """Processor to convert text to lowercase.
 
+    text_key (str): a string indicating which key of the data entries
+        should be used to find an utterance transcript. Defaults to "text".
+
     Returns:
-         The same data as in the input manifest with ``<text_key>`` field changed.
+        The same data as in the input manifest with ``<text_key>`` field changed.
     """
 
     def __init__(
-        self,
-        **kwargs,
+        self, text_key: str = "text", **kwargs,
     ):
         super().__init__(**kwargs)
+        self.text_key = text_key
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         data_entry[self.text_key] = data_entry[self.text_key].lower()
         return [DataEntry(data=data_entry)]
 
@@ -218,7 +228,7 @@ class SubMakeLowercase(ModifyManifestTextProcessor):
         super().finalize(metrics)
 
 
-class SubRegex(ModifyManifestTextProcessor):
+class SubRegex(BaseParallelProcessor):
     """Converts a regex match to a string, as defined by key-value pairs in ``regex_to_sub``.
 
     Before applying regex changes, we will add a space
@@ -234,18 +244,19 @@ class SubRegex(ModifyManifestTextProcessor):
             This processor will go through the list in order, and apply a ``re.sub`` operation on
             the input text in ``data_entry[self.text_key]``, feeding in the specified ``pattern``, ``repl``
             and ``count`` parameters to ``re.sub``.
+        text_key (str): a string indicating which key of the data entries
+            should be used to find an utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with ``<text_key>`` field changed.
     """
 
     def __init__(
-        self,
-        regex_params_list: List[Dict],
-        **kwargs,
+        self, regex_params_list: List[Dict], text_key: str = "text", **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_params_list = regex_params_list
+        self.text_key = text_key
 
         # verify all dicts in regex_params_list have "pattern" and "repl" keys
         for regex_params_dict in self.regex_params_list:
@@ -258,7 +269,7 @@ class SubRegex(ModifyManifestTextProcessor):
                     f"Need to have key 'repl' in all entries of `regex_params_list`: {self.regex_params_list}"
                 )
 
-    def _process_dataset_entry(self, data_entry) -> List:
+    def process_dataset_entry(self, data_entry) -> List:
         """Replaces each found regex match with a given string."""
         replace_word_counter = collections.defaultdict(int)
 
