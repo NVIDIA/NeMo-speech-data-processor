@@ -85,15 +85,10 @@ in the manifest have been processed.
 
 Class diagram
 ~~~~~~~~~~~~~
-TODO: update this diagram
 A diagram of the classes mentioned above is included here. Arrows represent inheritance.
-
-We omit the details of the :class:`sdp.processors.CreateInitialManifestMLS`
-class in the diagram in order to save space.
-
 
 .. raw:: html
 
     <div align="center">
-      <img src="https://mermaid.ink/img/pako:eNqlVMFu2zAM_ZVApw1o8wHBLl17WIEGGOYCuxgQWImOhcqSQdFtM6__PjmSvbhzsgI1fKDI98gnklAvlNcoNkJZCOHGwI6gKd1XCPidvMIQPK2-_L68XB1cQGAt2im0iLwqfty6CgmdwkXATzKMW3CmwsCly5i3uRP2mhAYb51hA3bkbO-Ks6St16baj-h7fOEjxaU7E078onuIf2AybnfvixaGi_yXdUO-_WZ29Z1_vq6BKOoeqh06u5q1oS_dKn6-47Zj2eSUsjIWU8S4E4E2pfj0OR05Rgf7dVbmbVP6RW5L2ALheIx91lPFv5gDRWrgmJglOqb9GKyMA2t-4UzA8fCnusgExmHMH5fNJu8DsKpliPx_1E3JZovSj1XR6iDZywBPZ7inFienWa_Xk7GeEc_MuR-7_sLyEffT9bScu4axSBU7FuZjOt3S4ZTMDJPvwE2SF_Y1Sw2jO7w_7Wy2TZydUeG42sKe52p19EqVfZJrwlB7q1PQ-ueTsQ_IisLEhWiQGjA6PmQHKaXgGhssxSaaGivoLJciQaFjX-ydEpsKbMAL0bWxDua3L3tf_wDMstkP" height=100% />
+      <img src="https://mermaid.ink/img/pako:eNqtVEtvm0AQ_itoT45kLLW9kV5a55BKrRSFKxKawOBdZdlFu0Ntl_q_d3iYYgesSC0X5v3NfDPaRmQ2RxGJTIP3Dwp2DsrEfAWPT85m6L11weffYRh0JnCgNerRNRv5JX7-Zgp0aDKcDXjaTvxDxHXlPjKuX55xh4ebQQ_OVo9qJ7_b_VaCc0B4M74Ec7Qk0VXO_lQ55t3s6NteEtMpwUXXTWIC_mxNVU0pp6sCPaWF0th7lFlwVH2J1V2vEntb-XQBc91lM5tbOazA4Vl1CPmI-DemS0lzIC5MKRpyx1Wr9eIQVigDWv3CVYnkVOaXupsucmyKU0AZZHA-HN1bX4AymXou-ab1sdhk6c2UNcJDyxjq_ILla_ME2EA54Gw2m2XA8-00Z8JYTplCKH2qlad_pWwEmrm_AVOyNc0GW0rSoZf2PJG2-0Xff-hq6cqbeepuQZ3EWpToSlA5vxRdgURwaV6DiFjMsYBaUyLWXcnBt43j3r0xfCmRIRnaIqRjhasPd7yOjIKGJ9A6CvZSEd4Hnpx9xXCvcpLRp-oQnO7f5n58b24iOjYSw91DTTY-mkxEBWiPa1FXPCEO791oxVyRdT-GF7H9nf4AezbWWg" height=100% />
     </div>
