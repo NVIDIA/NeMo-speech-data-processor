@@ -49,7 +49,7 @@ These keys will be used to apply regex substitutions using these parameters fed 
 (i.e. ``data_entry.data[self.text_key]``). By default, ``text_key="text"``, i.e. the substitutions
 will be applied to the ``"text"`` attribute of the manifest.
 
-In its :meth:`sdp.processors.SubRegex._process_dataset_entry` method, the
+In its :meth:`sdp.processors.SubRegex.process_dataset_entry` method, the
 processor does the string to string conversion upon the ``data_entry`` that is input.
 Its output is a ``data_entry`` with the changes applied to ``data``, and the the metrics of
 which regex patterns caused a substitution to be made.
@@ -74,7 +74,7 @@ At initialization, it takes in ``high_charrate_threshold`` and ``low_charrate_th
 for which the utterance will be dropped if it is above or below each value respectively.
 This is helpful for automatically filtering out incorrectly transcribed utterances.
 
-In its :meth:`sdp.processors.DropHighLowCharrate._process_dataset_entry` method it evaluates the character rate of
+In its :meth:`sdp.processors.DropHighLowCharrate.process_dataset_entry` method it evaluates the character rate of
 the utterance(by dividing the length of ``data_entry.data[self.text_key]`` by the value of
 ``data_entry.data["duration"]``). If the character rate is within bounds, it will return the
 same ``data_entry`` that was input. If the character rate is out of bounds, it will return
@@ -85,6 +85,7 @@ in the manifest have been processed.
 
 Class diagram
 ~~~~~~~~~~~~~
+TODO: update this diagram
 A diagram of the classes mentioned above is included here. Arrows represent inheritance.
 
 We omit the details of the :class:`sdp.processors.CreateInitialManifestMLS`
