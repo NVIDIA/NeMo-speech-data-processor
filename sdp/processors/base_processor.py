@@ -266,15 +266,17 @@ class BaseParallelProcessor(BaseProcessor):
         """Applies processing to "test_cases" and raises an error in case of mismatch."""
         for test_case in self.test_cases:
             generated_outputs = self.process_dataset_entry(test_case["input"].copy())
-            # can only return 1 or zero entries
-            if len(generated_outputs) == 1:
-                generated_output = generated_outputs[0].data
-            else:
-                generated_output = None
-            if generated_output != test_case["output"]:
-                raise RuntimeError(
-                    "Runtime test failed.\n"
-                    f"Test input: {test_case['input']}\n"
-                    f"Generated output: {generated_output}\n"
-                    f"Expected output: {test_case['output']}"
-                )
+            expected_outputs = (
+                [test_case["output"]] if not isinstance(test_case["output"], list) else test_case["output"]
+            )
+
+            for generated_output, expected_output in zip(generated_outputs, expected_outputs):
+                generated_output = generated_output.data
+
+                if generated_output != expected_output:
+                    raise RuntimeError(
+                        "Runtime test failed.\n"
+                        f"Test input: {test_case['input']}\n"
+                        f"Generated output: {generated_output}\n"
+                        f"Expected output: {expected_output}"
+                    )
