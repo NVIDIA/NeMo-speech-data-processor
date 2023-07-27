@@ -17,6 +17,7 @@ import os
 import tarfile
 from functools import partial
 from pathlib import Path
+import shutil
 from typing import Callable
 from unittest import mock
 
@@ -179,4 +180,4 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
 
     # if CLEAN_UP_TMP_PATH is set to non-0 value, we will delete tmp_path
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
-        os.system(f"rm -r {tmp_path}")
+        shutil.rmtree(tmp_path)
