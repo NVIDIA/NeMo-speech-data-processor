@@ -35,7 +35,7 @@ class InsIfASRInsertion(BaseParallelProcessor):
             into ``data[self.text_key]`` if there is an insertion (containing
             only that string) in ``data[self.pred_text_key]``.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
         pred_text_key (str): a string indicating which key of the data entries
             should be used to access the ASR predictions. Defaults to "pred_text".
 
@@ -123,7 +123,7 @@ class SubIfASRSubstitution(BaseParallelProcessor):
             then the key string will be converted to the value string
             in ``data[self.text_key]``.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
         pred_text_key (str): a string indicating which key of the data entries
             should be used to access the ASR predictions. Defaults to "pred_text".
 
@@ -207,7 +207,7 @@ class SubMakeLowercase(BaseParallelProcessor):
     """Processor to convert text to lowercase.
 
     text_key (str): a string indicating which key of the data entries
-        should be used to find an utterance transcript. Defaults to "text".
+        should be used to find the utterance transcript. Defaults to "text".
 
     Returns:
         The same data as in the input manifest with ``<text_key>`` field changed.
@@ -245,7 +245,7 @@ class SubRegex(BaseParallelProcessor):
             the input text in ``data_entry[self.text_key]``, feeding in the specified ``pattern``, ``repl``
             and ``count`` parameters to ``re.sub``.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with ``<text_key>`` field changed.

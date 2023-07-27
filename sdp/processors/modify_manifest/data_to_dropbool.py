@@ -44,7 +44,7 @@ class DropHighLowCharrate(BaseParallelProcessor):
             If the character rate of an utterance is lower than this number,
             the utterance will be dropped.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
@@ -105,7 +105,7 @@ class DropHighLowWordrate(BaseParallelProcessor):
             If the word rate of an utterance is lower than this number,
             the utterance will be dropped.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
@@ -159,7 +159,7 @@ class DropHighLowDuration(BaseParallelProcessor):
             If the duration of an utterance's audio is lower than this number,
             the utterance will be dropped.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
@@ -217,7 +217,7 @@ class DropIfNoneOfRegexMatch(BaseParallelProcessor):
             match any of the regex patterns in the list, that utterance
             will be dropped.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
@@ -260,7 +260,7 @@ class DropNonAlphabet(BaseParallelProcessor):
             If an utterance contains at least one character that is not in the
             ``alphabet``, then that utterance will be dropped.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
 
             .. note::
                 Don't forget to include spaces in your alphabet, unless you
@@ -317,7 +317,7 @@ class DropASRErrorBeginningEnd(BaseParallelProcessor):
             utterance will be dropped if
             ``abs(len(deletion) - len(insertion)) > end_error_char_threshold``.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
         pred_text_key (str): a string indicating which key of the data entries
             should be used to access the ASR predictions. Defaults to "pred_text".
 
@@ -391,7 +391,7 @@ class DropASRError(BaseParallelProcessor):
         consecutive_words_threshold (int): will drop if there is a mismatch of
             at least this many words in a row.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
         pred_text_key (str): a string indicating which key of the data entries
             should be used to access the ASR predictions. Defaults to "pred_text".
 
@@ -433,7 +433,7 @@ class DropHighCER(BaseParallelProcessor):
     Args:
         cer_threshold (float): CER threshold above which the utterance will be dropped.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
         pred_text_key (str): a string indicating which key of the data entries
             should be used to access the ASR predictions. Defaults to "pred_text".
 
@@ -479,7 +479,7 @@ class DropHighWER(BaseParallelProcessor):
     Args:
         wer_threshold (float): WER threshold above which the utterance will be dropped.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
         pred_text_key (str): a string indicating which key of the data entries
             should be used to access the ASR predictions. Defaults to "pred_text".
 
@@ -525,7 +525,7 @@ class DropLowWordMatchRate(BaseParallelProcessor):
     Args:
         wmr_threshold (float): WMR threshold below which the utterance will be dropped.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
         pred_text_key (str): a string indicating which key of the data entries
             should be used to access the ASR predictions. Defaults to "pred_text".
 
@@ -573,7 +573,7 @@ class DropIfRegexMatch(BaseParallelProcessor):
             traversed in order. If ``data_entry.data[self.text_key]`` matches
             the regex, the entry will be dropped.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
@@ -656,7 +656,7 @@ class DropIfSubstringInInsertion(BaseParallelProcessor):
             inserted in predicted ASR text. If the insertion matches a
             string exactly, the utterance will be dropped.
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
         pred_text_key (str): a string indicating which key of the data entries
             should be used to access the ASR predictions. Defaults to "pred_text".
 

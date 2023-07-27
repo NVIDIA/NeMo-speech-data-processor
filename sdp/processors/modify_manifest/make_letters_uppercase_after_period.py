@@ -28,7 +28,7 @@ class MakeLettersUppercaseAfterPeriod(BaseParallelProcessor):
         punctuation (str): string with all punctuation characters to consider.
             Defaults to ".!?".
         text_key (str): a string indicating which key of the data entries
-            should be used to find an utterance transcript. Defaults to "text".
+            should be used to find the utterance transcript. Defaults to "text".
 
     Returns:
          The same data as in the input manifest with ``<text_key>`` field changed.
