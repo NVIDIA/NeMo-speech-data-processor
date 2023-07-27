@@ -206,28 +206,28 @@ processors:
       - {input: {audio_filepath: "/path/20051120_210347_566_fsp_rest_of_path"}, output: {audio_filepath: "/path/20051120_210347_566_fsp_rest_of_path"}}
       - {input: {audio_filepath: "/path/000000_fsp_rest_of_path"}, output: null}
 
-  - _target_: sdp.processors.WriteManifest
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
     input_manifest_file: "${processed_manifest_dir}/train_cleaned.json"
     output_manifest_file: "${processed_manifest_dir}/train_final.json"
-    fields_to_save:
+    fields_to_keep:
       - "audio_filepath"
       - "text"
       - "duration"
       - "text_pc_origin"
 
-  - _target_: sdp.processors.WriteManifest
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
     input_manifest_file: "${processed_manifest_dir}/dev_cleaned.json"
     output_manifest_file: "${processed_manifest_dir}/dev_final.json"
-    fields_to_save:
+    fields_to_keep:
       - "audio_filepath"
       - "text"
       - "duration"
       - "text_pc_origin"
 
-  - _target_: sdp.processors.WriteManifest
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
     input_manifest_file: "${processed_manifest_dir}/test_cleaned.json"
     output_manifest_file: "${processed_manifest_dir}/test_final.json"
-    fields_to_save:
+    fields_to_keep:
       - "audio_filepath"
       - "text"
       - "duration"

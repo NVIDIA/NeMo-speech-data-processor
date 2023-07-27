@@ -237,9 +237,9 @@ processors:
   - _target_: sdp.processors.ChangeToRelativePath
     base_dir: ${workspace_dir}
 
-  - _target_: sdp.processors.WriteManifest
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
     output_manifest_file: ${final_manifest}
-    fields_to_save:
+    fields_to_keep:
       - audio_filepath
       - text
       - duration

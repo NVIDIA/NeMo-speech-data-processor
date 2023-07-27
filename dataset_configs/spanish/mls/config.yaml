@@ -282,10 +282,10 @@ processors:
       - {input: {text: "sí hola", pred_text: "abcdefgh abcdefgh"}, output: null}
       - {input: {text: "sí hola", pred_text: "sí hola"}, output: {text: "sí hola", pred_text: "sí hola"}}
 
-  - _target_: sdp.processors.WriteManifest
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
     input_manifest_file: "${workspace_dir}/processed_manifests/processed_${data_split}.json"
     output_manifest_file: ${final_manifest}
-    fields_to_save:
+    fields_to_keep:
       - "audio_filepath"
       - "text"
       - "duration"
