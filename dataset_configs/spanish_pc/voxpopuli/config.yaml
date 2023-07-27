@@ -199,11 +199,11 @@ processors:
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_cleaned.json"
     fields: {"text_pc_origin": "original"}
 
-  - _target_: sdp.processors.WriteManifest
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_cleaned.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_final.json"
 
-    fields_to_save:
+    fields_to_keep:
       - "audio_filepath"
       - "text"
       - "duration"

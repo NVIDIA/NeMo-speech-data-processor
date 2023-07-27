@@ -39,7 +39,7 @@ from sdp.processors.modify_manifest.common import (
     RenameFields,
     SortManifest,
     SplitOnFixedDuration,
-    WriteManifest,
+    KeepOnlySpecifiedFields,
 )
 from sdp.processors.modify_manifest.data_to_data import (
     InsIfASRInsertion,

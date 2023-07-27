@@ -300,25 +300,25 @@ class SortManifest(BaseProcessor):
                 fout.write(json.dumps(line, ensure_ascii=False) + "\n")
 
 
-class WriteManifest(BaseProcessor):
+class KeepOnlySpecifiedFields(BaseProcessor):
     """Saves a copy of a manifest but only with a subset of the fields.
 
     Typically will be the final processor to save only relevant fields
     in the desired location.
 
     Args:
-        fields_to_save (list[str]): list of the fields in the input manifest
+        fields_to_keep (list[str]): list of the fields in the input manifest
             that we want to retain. The output file will only contain these
             fields.
 
     Returns:
         The same data as in input manifest, but re-saved in the new location
-        with only ``fields_to_save`` fields retained.
+        with only ``fields_to_keep`` fields retained.
     """
 
-    def __init__(self, fields_to_save: List[str], **kwargs):
+    def __init__(self, fields_to_keep: List[str], **kwargs):
         super().__init__(**kwargs)
-        self.fields_to_save = fields_to_save
+        self.fields_to_keep = fields_to_keep
 
     def process(self):
         with open(self.input_manifest_file, "rt", encoding="utf8") as fin, open(
@@ -326,5 +326,5 @@ class WriteManifest(BaseProcessor):
         ) as fout:
             for line in tqdm(fin):
                 line = json.loads(line)
-                new_line = {field: line[field] for field in self.fields_to_save}
+                new_line = {field: line[field] for field in self.fields_to_keep}
                 fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")

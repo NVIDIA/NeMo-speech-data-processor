@@ -197,7 +197,7 @@ Miscellaneous
 .. autodata:: sdp.processors.SortManifest
    :annotation:
 
-.. autodata:: sdp.processors.WriteManifest
+.. autodata:: sdp.processors.KeepOnlySpecifiedFields
    :annotation:
 
 
