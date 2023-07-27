@@ -69,6 +69,7 @@ jobs:
       env:
         AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
         AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+        CLEAN_UP_TMP_PATH: 1
       run: |
         set -o pipefail # this will make sure next line returns non-0 exit code if tests fail
         python -m pytest tests/ --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=sdp --durations=30 -rs | tee pytest-coverage.txt
