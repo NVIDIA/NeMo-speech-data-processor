@@ -49,7 +49,7 @@ These keys will be used to apply regex substitutions using these parameters fed 
 (i.e. ``data_entry.data[self.text_key]``). By default, ``text_key="text"``, i.e. the substitutions
 will be applied to the ``"text"`` attribute of the manifest.
 
-In its :meth:`sdp.processors.SubRegex._process_dataset_entry` method, the
+In its :meth:`sdp.processors.SubRegex.process_dataset_entry` method, the
 processor does the string to string conversion upon the ``data_entry`` that is input.
 Its output is a ``data_entry`` with the changes applied to ``data``, and the the metrics of
 which regex patterns caused a substitution to be made.
@@ -74,7 +74,7 @@ At initialization, it takes in ``high_charrate_threshold`` and ``low_charrate_th
 for which the utterance will be dropped if it is above or below each value respectively.
 This is helpful for automatically filtering out incorrectly transcribed utterances.
 
-In its :meth:`sdp.processors.DropHighLowCharrate._process_dataset_entry` method it evaluates the character rate of
+In its :meth:`sdp.processors.DropHighLowCharrate.process_dataset_entry` method it evaluates the character rate of
 the utterance(by dividing the length of ``data_entry.data[self.text_key]`` by the value of
 ``data_entry.data["duration"]``). If the character rate is within bounds, it will return the
 same ``data_entry`` that was input. If the character rate is out of bounds, it will return
@@ -87,12 +87,8 @@ Class diagram
 ~~~~~~~~~~~~~
 A diagram of the classes mentioned above is included here. Arrows represent inheritance.
 
-We omit the details of the :class:`sdp.processors.CreateInitialManifestMLS`
-class in the diagram in order to save space.
-
-
 .. raw:: html
 
     <div align="center">
-      <img src="https://mermaid.ink/img/pako:eNqlVMFu2zAM_ZVApw1o8wHBLl17WIEGGOYCuxgQWImOhcqSQdFtM6__PjmSvbhzsgI1fKDI98gnklAvlNcoNkJZCOHGwI6gKd1XCPidvMIQPK2-_L68XB1cQGAt2im0iLwqfty6CgmdwkXATzKMW3CmwsCly5i3uRP2mhAYb51hA3bkbO-Ks6St16baj-h7fOEjxaU7E078onuIf2AybnfvixaGi_yXdUO-_WZ29Z1_vq6BKOoeqh06u5q1oS_dKn6-47Zj2eSUsjIWU8S4E4E2pfj0OR05Rgf7dVbmbVP6RW5L2ALheIx91lPFv5gDRWrgmJglOqb9GKyMA2t-4UzA8fCnusgExmHMH5fNJu8DsKpliPx_1E3JZovSj1XR6iDZywBPZ7inFienWa_Xk7GeEc_MuR-7_sLyEffT9bScu4axSBU7FuZjOt3S4ZTMDJPvwE2SF_Y1Sw2jO7w_7Wy2TZydUeG42sKe52p19EqVfZJrwlB7q1PQ-ueTsQ_IisLEhWiQGjA6PmQHKaXgGhssxSaaGivoLJciQaFjX-ydEpsKbMAL0bWxDua3L3tf_wDMstkP" height=100% />
+      <img src="https://mermaid.ink/img/pako:eNqtVEtvm0AQ_itoT45kLLW9kV5a55BKrRSFKxKawOBdZdlFu0Ntl_q_d3iYYgesSC0X5v3NfDPaRmQ2RxGJTIP3Dwp2DsrEfAWPT85m6L11weffYRh0JnCgNerRNRv5JX7-Zgp0aDKcDXjaTvxDxHXlPjKuX55xh4ebQQ_OVo9qJ7_b_VaCc0B4M74Ec7Qk0VXO_lQ55t3s6NteEtMpwUXXTWIC_mxNVU0pp6sCPaWF0th7lFlwVH2J1V2vEntb-XQBc91lM5tbOazA4Vl1CPmI-DemS0lzIC5MKRpyx1Wr9eIQVigDWv3CVYnkVOaXupsucmyKU0AZZHA-HN1bX4AymXou-ab1sdhk6c2UNcJDyxjq_ILla_ME2EA54Gw2m2XA8-00Z8JYTplCKH2qlad_pWwEmrm_AVOyNc0GW0rSoZf2PJG2-0Xff-hq6cqbeepuQZ3EWpToSlA5vxRdgURwaV6DiFjMsYBaUyLWXcnBt43j3r0xfCmRIRnaIqRjhasPd7yOjIKGJ9A6CvZSEd4Hnpx9xXCvcpLRp-oQnO7f5n58b24iOjYSw91DTTY-mkxEBWiPa1FXPCEO791oxVyRdT-GF7H9nf4AezbWWg" height=100% />
     </div>

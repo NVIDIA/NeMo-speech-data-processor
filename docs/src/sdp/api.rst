@@ -227,27 +227,21 @@ BaseParallelProcessor
    :member-order: bysource
    :exclude-members: _abc_impl
 
-ModifyManifestTextProcessor
-###########################
-
-.. autoclass:: sdp.processors.modify_manifest.modify_manifest.ModifyManifestTextProcessor
-   :show-inheritance:
-   :private-members:
-   :member-order: bysource
-   :no-inherited-members:
-   :exclude-members: _abc_impl
-
 .. _sdp-runtime-tests:
 
 Runtime tests
 #############
 
 Before running the specified processors, SDP runs ``processor.test()`` on all specified processors.
-Currently, the only provided processor classes with a test method are subclasses of
-:class:`sdp.processors.modify_manifest.modify_manifest.ModifyManifestTextProcessor`.
+A test method is provided in :meth:`sdp.processors.base_processor.BaseParallelProcessor.test`, which
+checks that for a given input data entry, the output data entry/entries produced by the processor
+will match the expected output data entry/entries. Note that this essentially only checks that the
+impact on the data manifest will be as expected. If you want to do some other checks, you will need
+to override this `test` method.
 
-:meth:`sdp.processors.modify_manifest.modify_manifest.ModifyManifestTextProcessor.test`
-runs any ``test_cases`` that were provided in the object constructor.
+The input data entry and the expected output data entry/entries for
+:meth:`sdp.processors.base_processor.BaseParallelProcessor.test` are specified inside the optional list
+of ``test_cases`` that were provided in the object constructor.
 This means you can provided test cases in the YAML config file, and the
 dataset will only be processed if the test cases pass.
 

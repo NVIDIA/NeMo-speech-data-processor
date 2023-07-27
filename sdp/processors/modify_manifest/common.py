@@ -10,9 +10,6 @@ from sdp.processors.base_processor import (
     DataEntry,
 )
 
-# TODO: I think we should have a default test implementation for any BaseParallelProcessor
-#       that will compare input/output pairs
-
 
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.

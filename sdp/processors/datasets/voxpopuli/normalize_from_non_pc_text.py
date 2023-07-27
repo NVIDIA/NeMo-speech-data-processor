@@ -17,8 +17,7 @@ import string
 from typing import Dict
 
 from sdp.logging import logger
-from sdp.processors.base_processor import DataEntry
-from sdp.processors.modify_manifest.modify_manifest import ModifyManifestTextProcessor
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
 def is_same(orig_word, norm_word):
@@ -116,7 +115,7 @@ def restore_pc(orig_words, norm_words):
     return norm_text
 
 
-class NormalizeFromNonPCTextVoxpopuli(ModifyManifestTextProcessor):
+class NormalizeFromNonPCTextVoxpopuli(BaseParallelProcessor):
     """Tries to restore punctuation and capitalization from the un-normalized text version.
 
     VoxPopuli contains two versions of the transcription - original (non-normalized,
@@ -157,7 +156,7 @@ class NormalizeFromNonPCTextVoxpopuli(ModifyManifestTextProcessor):
         self.raw_text_key = raw_text_key
         self.norm_text_key = norm_text_key
 
-    def _process_dataset_entry(self, data_entry: Dict):
+    def process_dataset_entry(self, data_entry: Dict):
         try:
             restored_norm_text = restore_pc(data_entry[self.raw_text_key], data_entry[self.norm_text_key])
         except:
