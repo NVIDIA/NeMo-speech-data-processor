@@ -17,52 +17,16 @@ processors:
     output_manifest_file: ${workspace_dir}/manifest2.json
     pretrained_model: nvidia/stt_de_fastconformer_hybrid_large_pc
     batch_size: 64
-
-  - _target_: sdp.processors.DropIfRegexMatch
-    output_manifest_file: ${workspace_dir}/manifest3.json
-    max_workers: 20
-    regex_patterns:
-      # - '://'
-      # - '\\x'
-      - 'é'
-      - 'ô'
-      - '×'
-      - 'š'
-      - '\u202a'
-      - 'č'
-      - 'ć'
-      - 'á'
-      - 'ã'
-      - 'â'
-      - 'ï'
-      - '\u2060'
-      - 'ñ'
-      - 'ŵ'
-      - 'à'
-      - 'ù'
-      - 'ò'
-      - 'ó'
-      - 'ő'
-      - 'ê'
-      - 'ă'
-      - 'ú'
-      - 'µ'
-      - '¿'
-      - 'ë'
-      - "è"
-      - "é"
-      - "È"
-      - "É"
-      - "%"
-      - "¡"
   
   - _target_: sdp.processors.DuplicateFields
-    output_manifest_file: ${workspace_dir}/manifest4.json
+    input_manifest_file: ${workspace_dir}/manifest2.json
+    output_manifest_file: ${workspace_dir}/manifest3.json
     duplicate_fields: {"text":"orig_text"}
 
   - _target_: sdp.processors.SubRegex
-    output_manifest_file: ${workspace_dir}/manifest5.json
+    output_manifest_file: ${workspace_dir}/manifest4.json
     regex_params_list:
+      - {"pattern": '\[(.*?)\]', "repl": ' '}
       - {"pattern": 'î', "repl": "i"}
       - {"pattern": 'ì', "repl": "i"}
       - {"pattern": 'í', "repl": "i"}
@@ -88,12 +52,12 @@ processors:
       - {"pattern": "  ", "repl": " "}
 
   - _target_: sdp.processors.DropHighLowWordrate
-    output_manifest_file: ${workspace_dir}/manifest6.json
+    output_manifest_file: ${workspace_dir}/manifest5.json
     high_wordrate_threshold: 100
     low_wordrate_threshold: 0.01
 
   - _target_: sdp.processors.datasets.commoncrawl.Subprocess
-    output_manifest_file: ${workspace_dir}/manifest7.json
+    output_manifest_file: ${workspace_dir}/manifest6.json
     input_manifest_arg: "--manifest"
     output_manifest_arg: "--output_filename"
     arg_separator: "="
@@ -102,11 +66,11 @@ processors:
         --whitelist=/home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/de/data/whitelist.tsv"
 
   - _target_: sdp.processors.RenameFields
-    output_manifest_file: ${workspace_dir}/manifest8.json
+    output_manifest_file: ${workspace_dir}/manifest7.json
     rename_fields: {"normalized":"text"}
 
   - _target_: sdp.processors.SubRegex
-    output_manifest_file: ${workspace_dir}/manifest9.json
+    output_manifest_file: ${workspace_dir}/manifest8.json
     text_key: text
     regex_params_list:
       - {"pattern": '\\.{3}', "repl": '.'}  
@@ -116,20 +80,20 @@ processors:
       - {"pattern": '  ', "repl": " "}
 
   - _target_: sdp.processors.DropHighLowWordrate
-    output_manifest_file: ${workspace_dir}/manifest10.json
+    output_manifest_file: ${workspace_dir}/manifest9.json
     high_wordrate_threshold: 100
     low_wordrate_threshold: 0.01
 
   - _target_: sdp.processors.DuplicateFields
-    output_manifest_file: ${workspace_dir}/manifest11.json
+    output_manifest_file: ${workspace_dir}/manifest10.json
     duplicate_fields: {"text":"text_pc"}
 
   - _target_: sdp.processors.SubMakeLowercase
-    output_manifest_file: ${workspace_dir}/manifest12.json
+    output_manifest_file: ${workspace_dir}/manifest11.json
     text_key: text
 
   - _target_: sdp.processors.SubRegex
-    output_manifest_file: ${workspace_dir}/manifest13.json
+    output_manifest_file: ${workspace_dir}/manifest12.json
     text_key: text
     regex_params_list:
       - {"pattern": "[\\?\\.\\!]", "repl": " "}
@@ -137,15 +101,15 @@ processors:
       - {"pattern": "  ", "repl": " "}
 
   - _target_: sdp.processors.DuplicateFields
-    output_manifest_file: ${workspace_dir}/manifest14.json
+    output_manifest_file: ${workspace_dir}/manifest13.json
     duplicate_fields: {"pred_text":"pred_text_pc"}
 
   - _target_: sdp.processors.SubMakeLowercase
-    output_manifest_file: ${workspace_dir}/manifest15.json
+    output_manifest_file: ${workspace_dir}/manifest14.json
     text_key: pred_text
 
   - _target_: sdp.processors.SubRegex
-    output_manifest_file: ${workspace_dir}/manifest16.json
+    output_manifest_file: ${workspace_dir}/manifest15.json
     text_key: pred_text
     regex_params_list:
       - {"pattern": "[\\?\\.\\!]", "repl": " "}
@@ -153,19 +117,19 @@ processors:
       - {"pattern": "  ", "repl": " "}
 
   - _target_: sdp.processors.DropIfRegexMatch
-    output_manifest_file: ${workspace_dir}/manifest17.json
+    output_manifest_file: ${workspace_dir}/manifest16.json
     text_key: text
     regex_patterns:
       - "^\\s*$"
 
   - _target_: sdp.processors.DropHighWER
-    output_manifest_file: ${workspace_dir}/manifest18.json
+    output_manifest_file: ${workspace_dir}/manifest17.json
     text_key: text
     pred_text_key: pred_text
     wer_threshold: 75
 
   - _target_: sdp.processors.DropHighCER
-    output_manifest_file: ${workspace_dir}/manifest19.json
+    output_manifest_file: ${workspace_dir}/manifest18.json
     text_key: text
     pred_text_key: pred_text
     cer_threshold: 30

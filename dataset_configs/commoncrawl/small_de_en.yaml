@@ -1,6 +1,5 @@
-processors_to_run: "13"
+processors_to_run: "0:"
 workspace_dir: /mnt/ssd8/cc_sdp/de_en
-NEMO_GIT_FOLDER: /home/nkarpov/workspace/NeMo
 
 processors:
   - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
@@ -43,47 +42,10 @@ processors:
     cmd: "python /home/nkarpov/workspace/NeMo/examples/nlp/machine_translation/nmt_transformer_infer.py \
         --model=${workspace_dir}/nmt_de_en_transformer12x2.nemo --target_lang=en --source_lang=de"
 
-  - _target_: sdp.processors.DropIfRegexMatch
-    output_manifest_file: ${workspace_dir}/manifest7.json
-    text_key: text
-    regex_patterns:
-      # - '://'
-      - '\\x'
-      - 'é'
-      - 'ô'
-      - '×'
-      - 'š'
-      - '\u202a'
-      - 'č'
-      - 'ć'
-      - 'á'
-      - 'ã'
-      - 'â'
-      - 'ï'
-      - '\u2060'
-      - '°'
-      - 'ñ'
-      - 'ŵ'
-      - 'à'
-      - 'ù'
-      - 'ò'
-      - 'ó'
-      - 'ő'
-      - 'ê'
-      - 'ă'
-      - 'ú'
-      - 'µ'
-      - '¿'
-      - "è"
-      - "é"
-      - "È"
-      - "É"
-      - "¡"
-
   - _target_: sdp.processors.SubRegex
-    output_manifest_file: ${workspace_dir}/manifest8.json
+    output_manifest_file: ${workspace_dir}/manifest7.json
     regex_params_list:
-      - {"pattern": '\[(.*?)\]', "repl": ' '}
+      - {"pattern": '+', "repl": ' '}
       - {"pattern": 'î', "repl": "i"}
       - {"pattern": 'ì', "repl": "i"}
       - {"pattern": 'í', "repl": "i"}
@@ -109,26 +71,25 @@ processors:
       - {"pattern": "  ", "repl": " "}
 
   - _target_: sdp.processors.DropHighLowWordrate
-    output_manifest_file: ${workspace_dir}/manifest9.json
+    output_manifest_file: ${workspace_dir}/manifest8.json
     high_wordrate_threshold: 100
     low_wordrate_threshold: 0.01
 
   - _target_: sdp.processors.datasets.commoncrawl.Subprocess
-    output_manifest_file: ${workspace_dir}/manifest10.json
+    output_manifest_file: ${workspace_dir}/manifest9.json
     input_manifest_arg: "--manifest"
     output_manifest_arg: "--output_filename"
     arg_separator: "="
     cmd: "python /home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
         --language=en --n_jobs=-1 --batch_size=600 --manifest_text_field=text --cache_dir=${workspace_dir}/cache \
-        --whitelist=/home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/en/data/whitelist/asr_with_pc.tsv"
-  # --overwrite_cache
+        --whitelist=/home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/en/data/whitelist/asr_with_pc.tsv" # --overwrite_cache
 
   - _target_: sdp.processors.RenameFields
-    output_manifest_file: ${workspace_dir}/manifest11.json
+    output_manifest_file: ${workspace_dir}/manifest10.json
     rename_fields: {"normalized":"text"}
 
   - _target_: sdp.processors.SubRegex
-    output_manifest_file: ${workspace_dir}/manifest12.json
+    output_manifest_file: ${workspace_dir}/manifest11.json
     text_key: text
     regex_params_list:
       - {"pattern": "^\\s*'+\\s(.*?)\\s*'+\\s*$", "repl": "\\1"}
@@ -144,16 +105,23 @@ processors:
       - {input: {text: "''cause it''s an adult novel versus ya"}, output: {text: "cause it's an adult novel versus ya"}}
   
   - _target_: sdp.processors.datasets.commoncrawl.BLEUScore
-    output_manifest_file: ${workspace_dir}/manifest13.json
+    output_manifest_file: ${workspace_dir}/manifest12.json
     ref_field: text
     hyp_field: pred_text
     output_field: bleu
 
   - _target_: sdp.processors.datasets.commoncrawl.UseSonar
-    output_manifest_file: ${workspace_dir}/manifest14.json
+    output_manifest_file: ${workspace_dir}/manifest13.json
     input_text_field: text
     input_audio_field: audio_filepath
     output_field: sonar_dist
     device: cuda
+    batch_size: 256
     speech_encoder_model: sonar_speech_encoder_deu
     text_encoder_model: text_sonar_basic_encoder
+
+  - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest14.json
+    input_field: bleu
+    target_value: 10
+    operator: ge

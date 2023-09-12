@@ -3,7 +3,7 @@ workspace_dir: /mnt/ssd8/cc_sdp/fr
 
 processors:
   - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
-    input_manifest_file: /mnt/ssd8/cc_sdp/manifest7.json
+    input_manifest_file: /mnt/ssd8/cc_sdp/manifest8ps.json
     output_manifest_file: ${workspace_dir}/manifest0.json
     input_field: audio_lang
     preserve_value: fr
@@ -14,58 +14,19 @@ processors:
     preserve_value: fr
     
   - _target_: sdp.processors.ASRInference
-    input_manifest_file: ${workspace_dir}/manifest1.json
     output_manifest_file: ${workspace_dir}/manifest2.json
     pretrained_model: nvidia/stt_fr_conformer_transducer_large # nvidia/stt_fr_fastconformer_hybrid_large_pc
     batch_size: 64
 
   - _target_: sdp.processors.DuplicateFields
+    output_manifest_file: ${workspace_dir}/manifest3.json
     duplicate_fields: {"text":"orig_text"}
 
-  - _target_: sdp.processors.DropIfRegexMatch
-    input_manifest_file: ${workspace_dir}/manifest2.json
-    output_manifest_file: ${workspace_dir}/manifest3.json
-    regex_patterns:
-    # â à    ê è È é É ë  î ì ï  ô    û ù ü  ÿ   ç œ  æ 
-      # - '://'
-      - '\\x'
-      - '×'
-      - '½'
-      - 'š'
-      - '⁶'
-      - 'ö'
-      - 'ß'
-      - 'ä'
-      - 'ü'
-      - '\u202a'
-      - 'č'
-      - 'ć'
-      - 'á'
-      - 'ã'
-      - 'ï'
-      - '²'
-      - '\u2060'
-      - '°'
-      - 'ñ'
-      - 'ŵ'
-      - 'ù'
-      - 'ò'
-      - 'ó'
-      - 'ő'
-      - 'ă'
-      - 'ú'
-      - 'µ'
-      - '¿'
-      - 'ë'
-      - "%"
-  
-
   - _target_: sdp.processors.SubRegex
-    # input_manifest_file: ${workspace_dir}/manifest3.json
     output_manifest_file: ${workspace_dir}/manifest4.json
-    max_workers: 20
     regex_params_list:
-      - {"pattern": '¡', "repl": "i"}
+      - {"pattern": '\[(.*?)\]', "repl": ' '}
+      - {"pattern": '¡', "repl": " "}
       - {"pattern": '‚', "repl": ","}
       - {"pattern": "’", "repl": "'"}
       - {"pattern": "[-–—]", "repl": " "}
@@ -89,39 +50,29 @@ processors:
       - {"pattern": "  ", "repl": " "}
 
   - _target_: sdp.processors.DropHighLowWordrate
-    # input_manifest_file: ${workspace_dir}/manifest4.json
     output_manifest_file: ${workspace_dir}/manifest5.json
-    high_wordrate_threshold: 1000
-    low_wordrate_threshold: 0.001
+    high_wordrate_threshold: 100
+    low_wordrate_threshold: 0.01
 
 
   - _target_: sdp.processors.SubRegex
-    # input_manifest_file: ${workspace_dir}/manifest5.json
     output_manifest_file: ${workspace_dir}/manifest6.json
+    text_key: normalized
     regex_params_list:
-      # - {"pattern": "'", "repl": " "}
-      # - {"pattern": '\-', "repl": " "}
-      # - {"pattern": '[\[\]\":\(\);\\\+\*]', "repl": ' '}
-      - {"pattern": '=', "repl": " "}
-      - {"pattern": '$', "repl": " "}
-      - {"pattern": '#', "repl": " "}
-      - {"pattern": '/', "repl": " "}
-      - {"pattern": '>', "repl": " "}
-      - {"pattern": '<', "repl": " "}
-      - {"pattern": '&', "repl": " "}
-      - {"pattern": '@', "repl": " "}
+      - {"pattern": "^\\s*'+\\s(.*?)\\s*'+\\s*$", "repl": "\\1"}
+      - {"pattern": "^\\s*'*\\s*", "repl": ""}
+      - {"pattern": "'{2,}", "repl": "'"}
       - {"pattern": '\\.{3}', "repl": '.'}
+      - {"pattern": '\$', "repl": ""}
+      - {"pattern": "[^a-zA-ZàâçéèêëîïôûùüÿñæœÀÂÇÉÈÊËÎÏÔÛÙÜŸÑÆŒ.,?'-]", "repl": " "}
       - {"pattern": '  ', "repl": " "}
 
-
   - _target_: sdp.processors.DropHighLowWordrate
-    # input_manifest_file: ${workspace_dir}/manifest6.json
     output_manifest_file: ${workspace_dir}/manifest7.json
     high_wordrate_threshold: 100
     low_wordrate_threshold: 0.01
 
   - _target_: sdp.processors.DuplicateFields
-    # input_manifest_file: ${workspace_dir}/manifest7.json
     output_manifest_file: ${workspace_dir}/manifest8.json
     duplicate_fields: {"text":"text_pc"}
 
@@ -154,14 +105,12 @@ processors:
       - {"pattern": "  ", "repl": " "}
 
   - _target_: sdp.processors.DropHighWER
-    input_manifest_file: ${workspace_dir}/manifest13.json
     output_manifest_file: ${workspace_dir}/manifest14.json
     text_key: text
     pred_text_key: pred_text
     wer_threshold: 75
 
   - _target_: sdp.processors.DropHighCER
-    input_manifest_file: ${workspace_dir}/manifest14.json
     output_manifest_file: ${workspace_dir}/manifest15.json
     text_key: text
     pred_text_key: pred_text
