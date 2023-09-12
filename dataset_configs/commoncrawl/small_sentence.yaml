@@ -1,0 +1,72 @@
+processors_to_run: "0:"
+workspace_dir: /mnt/ssd8/cc_sdp
+
+processors:
+  - _target_: sdp.processors.datasets.commoncrawl.CreateInitialManifestCC
+    raw_data_dir: /mnt/ssd8/cc_download/videos_and_transcripts_large_16_cores_output/video_output2
+    output_manifest_file: ${workspace_dir}/manifest0.json
+    resampled_audio_dir: ${workspace_dir}/audio/
+    target_samplerate: 16000
+    target_nchannels: 1
+    audio_field: "audios"
+    video_field: "videos"
+    key_field: "key"
+    text_field: "texts"
+
+  - _target_: sdp.processors.datasets.commoncrawl.TxtToVtt
+    input_manifest_file: ${workspace_dir}/manifest0.json
+    output_manifest_file: ${workspace_dir}/manifest1.json
+    vtt_files_dir: ${workspace_dir}/vtts/
+    key_field: "key"
+    text_field: "texts"
+    vtt_field: "vtt_filepath"
+
+  - _target_: sdp.processors.datasets.commoncrawl.AllVttText 
+    input_manifest_file: ${workspace_dir}/manifest1.json
+    output_manifest_file: ${workspace_dir}/manifest2.json
+    input_filepath_field: vtt_filepath
+    output_text_field: vtt_text
+
+  - _target_: sdp.processors.datasets.commoncrawl.TextLid
+    input_manifest_file: ${workspace_dir}/manifest2.json
+    output_manifest_file: ${workspace_dir}/manifest3.json
+    input_text_field: vtt_text
+    output_lang_field: text_lang
+    device: cuda
+    pretrained_model: "jb2k/bert-base-multilingual-cased-language-detection"
+
+  - _target_: sdp.processors.datasets.commoncrawl.Lang2Iso
+    output_manifest_file: ${workspace_dir}/manifest4.json
+    input_lang_field: text_lang
+    output_lang_field: text_lang
+
+  - _target_: sdp.processors.datasets.commoncrawl.AudioLid
+    output_manifest_file: ${workspace_dir}/manifest5.json
+    input_audio_field: audios
+    output_lang_field: audio_lang
+    device: cuda
+    pretrained_model: "langid_ambernet"
+
+  - _target_: sdp.processors.datasets.commoncrawl.ReadParquet
+    raw_data_dir: /mnt/ssd8/cc_download/videos_and_transcripts_large_16_cores_output/video_output2
+    output_manifest_file: ${workspace_dir}/manifest6ps.json
+    output_text_field: url
+    key_field: key
+
+  - _target_: sdp.processors.datasets.commoncrawl.SplitByVttSentence
+    output_manifest_file: ${workspace_dir}/manifest7ps.json
+    splited_audio_dir: ${workspace_dir}/splited_s/
+    source_audio_field: audios
+    audio_lang_field: audio_lang
+    text_lang_field: text_lang
+    key_field: "key"
+    target_audio_field: "audio_filepath"
+    duration_field: "duration"
+    text_field: "text"
+    vtt_field: "vtt_filepath"
+    # audio duration splited 532.25
+
+  - _target_: sdp.processors.DropHighLowDuration
+    output_manifest_file: ${workspace_dir}/manifest8ps.json
+    high_duration_threshold: 40
+    low_duration_threshold: 0.02
