@@ -11,7 +11,7 @@ from sacrebleu import BLEU
 
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
 from sdp.logging import logger
-from sdp.processors.datasets.commoncrawl import ffmpeg_convert, txt2vtt, make_trans_list, get_vtt_text, text2lid, load_manifest, read_jsonl, write_jsonl, split_by_vtt_new
+from sdp.processors.datasets.commoncrawl.harv_utils import ffmpeg_convert, txt2vtt, make_trans_list, get_vtt_text, text2lid, load_manifest, read_jsonl, write_jsonl, split_by_vtt_new
 
 class UseSonar(BaseProcessor):
     """
@@ -25,6 +25,7 @@ class UseSonar(BaseProcessor):
         output_field: str,
         speech_encoder_model: str,
         text_encoder_model: str,
+        batch_size: int = 64,
         device: str = "cuda",
         **kwargs,
     ):
@@ -41,6 +42,7 @@ class UseSonar(BaseProcessor):
         self.output_field = output_field
         self.input_text_field = input_text_field
         self.input_audio_field = input_audio_field
+        self.batch_size = batch_size
         self.device = device
         self.text_encoder_model = load_sonar_text_encoder_model(text_encoder_model, device=self.device).eval()
         self.text_tokenizer = load_sonar_tokenizer(text_encoder_model)
@@ -56,19 +58,16 @@ class UseSonar(BaseProcessor):
         manifest, dir_list = load_manifest(Path(self.input_manifest_file), keys = [self.input_audio_field, self.input_text_field])
 
         text_emb = text_embedding_pipeline.predict(input = dir_list[self.input_text_field],
-                                            batch_size = 64,
+                                            batch_size = self.batch_size,
                                             source_lang="eng_Latn")
-        print("text_emb", type(text_emb), text_emb)
 
         audio_emb = s2vec_model.predict(input = dir_list[self.input_audio_field],
-                                            batch_size = 64,
+                                            batch_size = self.batch_size,
                                             n_parallel = 20,
                                             pad_idx = 0,
                                             n_prefetched_batches = 2,)
-        print("audio_emb", type(audio_emb), audio_emb)
 
         pdist = self.pdist(text_emb, audio_emb).numpy().astype(float)
-        print("pdist", pdist)
 
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
         assert(len(manifest)==len(pdist))
