@@ -286,37 +286,28 @@ class SplitByVttSentence(BaseParallelProcessor):
         self,
         splited_audio_dir: str,
         source_audio_field: str,
-        text_lang_field: str,
-        audio_lang_field: str,
-        key_field: str,
         target_audio_field: str,
         duration_field: str,
         text_field: str,
         vtt_field: str,
-        url_video_field: str,
-        url_vtt_field: str,
+        proxy_fields: List[str] = [],
         duration_threshold: float = 10.0,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.splited_audio_dir = splited_audio_dir
         self.source_audio_field = source_audio_field
-        self.text_lang_field = text_lang_field
-        self.audio_lang_field = audio_lang_field
-        self.key_field = key_field
         self.target_audio_field = target_audio_field
         self.duration_field = duration_field
         self.text_field = text_field
         self.vtt_field = vtt_field
         self.duration_threshold = duration_threshold
-        self.url_video_field = url_video_field
-        self.url_vtt_field = url_vtt_field
+        self.proxy_fields = proxy_fields
 
     def prepare(self):
         os.makedirs(self.splited_audio_dir, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        key = data_entry[self.key_field]
         vtt_file = data_entry[self.vtt_field]
         source_audio = data_entry[self.source_audio_field]
         res_list = []
@@ -335,30 +326,29 @@ class SplitByVttSentence(BaseParallelProcessor):
                         pass
                     end_c = end_sr
                     if len(text_c)>0 and (end_c - start_c > self.duration_threshold * samplerate or text_c[-1] == "." or text_c[-1] == "?"):
-                        res_list.append(self.makeDataEntry(data_entry, data, vtt_file, samplerate, text_c, key, start_c, end_c))
+                        res_list.append(self.makeDataEntry(data_entry, data, vtt_file, samplerate, text_c, start_c, end_c))
                         text_c = ''
                         start_c, end_c = 0, 0
                     else:
                         pass
                 if len(text_c)>0 and start_c!=0:
-                    res_list.append(self.makeDataEntry(data_entry, data, vtt_file, samplerate, text_c, key, start_c, end_c))
+                    res_list.append(self.makeDataEntry(data_entry, data, vtt_file, samplerate, text_c, start_c, end_c))
                 
         return res_list
 
-    def makeDataEntry(self, data_entry, data, vtt_file, samplerate, text_c, key, start_c, end_c):
+    def makeDataEntry(self, data_entry, data, vtt_file, samplerate, text_c, start_c, end_c):
         data_sample = data[start_c:end_c]
         wav_save_file = os.path.join(self.splited_audio_dir, '/'.join(os.path.splitext(vtt_file)[0].split('/')[-2:]), str(int(start_c/(samplerate/1000)))+"-"+str(int(end_c/(samplerate/1000)))+".wav")
         os.makedirs(os.path.split(wav_save_file)[0], exist_ok=True)
         sf.write(wav_save_file, data_sample, samplerate)
-        return DataEntry(data = {self.target_audio_field: wav_save_file,
-                            self.duration_field: data_sample.shape[0]/samplerate,
-                            self.text_field: text_c.strip(),
-                            self.audio_lang_field: data_entry[self.audio_lang_field],
-                            self.text_lang_field: data_entry[self.text_lang_field],
-                            self.url_video_field: data_entry[self.url_video_field],
-                            self.url_vtt_field: data_entry[self.url_vtt_field],
-                            self.key_field: key,
-                            })
+        
+        data = {self.target_audio_field: wav_save_file,
+                    self.duration_field: data_sample.shape[0]/samplerate,
+                    self.text_field: text_c.strip(),
+                    }
+        for proxy_field in self.proxy_fields:
+            data[proxy_field] = data_entry[proxy_field]
+        return DataEntry(data = data)
 
 
 class SplitByVtt(BaseParallelProcessor):
