@@ -49,24 +49,27 @@ processors:
 
   - _target_: sdp.processors.datasets.commoncrawl.ReadParquet
     raw_data_dir: /mnt/ssd8/cc_download/videos_and_transcripts_large_16_cores_output/video_output2
-    output_manifest_file: ${workspace_dir}/manifest6ps.json
-    output_text_field: url
+    output_manifest_file: ${workspace_dir}/manifest6.json
+    output_video_field: video
+    output_vtt_field: caption
     key_field: key
 
   - _target_: sdp.processors.datasets.commoncrawl.SplitByVttSentence
-    output_manifest_file: ${workspace_dir}/manifest7ps.json
+    output_manifest_file: ${workspace_dir}/manifest7.json
     splited_audio_dir: ${workspace_dir}/splited_s/
     source_audio_field: audios
     audio_lang_field: audio_lang
     text_lang_field: text_lang
-    key_field: "key"
+    url_video_field: video
+    url_vtt_field: caption
+    key_field: key
     target_audio_field: "audio_filepath"
     duration_field: "duration"
     text_field: "text"
-    vtt_field: "vtt_filepath"
+    vtt_field: "vtt_filepath"    
     # audio duration splited 532.25
 
   - _target_: sdp.processors.DropHighLowDuration
-    output_manifest_file: ${workspace_dir}/manifest8ps.json
+    output_manifest_file: ${workspace_dir}/manifest8.json
     high_duration_threshold: 40
     low_duration_threshold: 0.02

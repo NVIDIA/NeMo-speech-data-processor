@@ -12,6 +12,7 @@ from sacrebleu import BLEU
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
 from sdp.logging import logger
 from sdp.processors.datasets.commoncrawl.harv_utils import ffmpeg_convert, txt2vtt, make_trans_list, get_vtt_text, text2lid, load_manifest, read_jsonl, write_jsonl, split_by_vtt_new
+from scipy.spatial import distance
 
 class UseSonar(BaseProcessor):
     """
@@ -24,6 +25,7 @@ class UseSonar(BaseProcessor):
         input_audio_field: str,
         output_field: str,
         speech_encoder_model: str,
+        text_encoder_lang: str,
         text_encoder_model: str,
         batch_size: int = 64,
         device: str = "cuda",
@@ -32,6 +34,8 @@ class UseSonar(BaseProcessor):
         super().__init__(**kwargs)
         import torch  # importing after nemo to make sure users first install nemo, instead of torch, then nemo
         from torch.nn import PairwiseDistance
+        from sonar.inference_pipelines.text import TextToEmbeddingModelPipeline
+        from sonar.inference_pipelines.speech import SpeechToEmbeddingModelPipeline
         
         from sonar.models.sonar_speech.loader import load_sonar_speech_model
         from sonar.models.sonar_text import (
@@ -44,37 +48,55 @@ class UseSonar(BaseProcessor):
         self.input_audio_field = input_audio_field
         self.batch_size = batch_size
         self.device = device
+        self.text_encoder_lang = text_encoder_lang
         self.text_encoder_model = load_sonar_text_encoder_model(text_encoder_model, device=self.device).eval()
         self.text_tokenizer = load_sonar_tokenizer(text_encoder_model)
         self.speech_encoder_model = load_sonar_speech_model(speech_encoder_model, device=self.device).eval()
         self.pdist = PairwiseDistance(p=2)
+        self.s2vec_model = SpeechToEmbeddingModelPipeline(encoder=self.speech_encoder_model)
+        self.text_embedding_pipeline = TextToEmbeddingModelPipeline(self.text_encoder_model, self.text_tokenizer)
     
     def process(self):
-        from sonar.inference_pipelines.text import TextToEmbeddingModelPipeline
-        from sonar.inference_pipelines.speech import SpeechToEmbeddingModelPipeline
-        s2vec_model = SpeechToEmbeddingModelPipeline(encoder=self.speech_encoder_model)
-        text_embedding_pipeline = TextToEmbeddingModelPipeline(self.text_encoder_model, self.text_tokenizer)
-
-        manifest, dir_list = load_manifest(Path(self.input_manifest_file), keys = [self.input_audio_field, self.input_text_field])
-
-        text_emb = text_embedding_pipeline.predict(input = dir_list[self.input_text_field],
-                                            batch_size = self.batch_size,
-                                            source_lang="eng_Latn")
-
-        audio_emb = s2vec_model.predict(input = dir_list[self.input_audio_field],
-                                            batch_size = self.batch_size,
-                                            n_parallel = 20,
-                                            pad_idx = 0,
-                                            n_prefetched_batches = 2,)
-
-        pdist = self.pdist(text_emb, audio_emb).numpy().astype(float)
+        manifest = load_manifest(Path(self.input_manifest_file))
 
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
-        assert(len(manifest)==len(pdist))
         with Path(self.output_manifest_file).open('w') as f:
-            for item, dist in tqdm(zip(manifest,pdist)):
+            for item in tqdm(manifest):
+                input_texts = [item[self.input_text_field]]
+                input_audios = [item[self.input_audio_field]]
+                dist = self.get_pdist(input_texts, input_audios)
                 item[self.output_field] = dist
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
+
+    def get_pdist(self, input_texts, input_audios):
+        text_emb = self.text_embedding_pipeline.predict(input = input_texts,
+                                            batch_size = 1,
+                                            source_lang=self.text_encoder_lang)
+
+        audio_emb = self.s2vec_model.predict(input = input_audios,
+                                            batch_size = 1,
+                                            n_parallel = 1,
+                                            pad_idx = 0,
+                                            n_prefetched_batches = 1,)
+        # pdist = self.pdist(text_emb, audio_emb).numpy().squeeze().astype(float).tolist()
+        pdist = distance.cdist(text_emb.numpy().astype(float), audio_emb.numpy().astype(float), 'sqeuclidean').squeeze().tolist()
+        return pdist
+    
+    def process_batch(self):
+        manifest, dict_list = load_manifest(Path(self.input_manifest_file), keys = [self.input_audio_field, self.input_text_field])
+        manifest_len = len(manifest)
+        Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
+        with Path(self.output_manifest_file).open('w') as f:
+            for start in tqdm(range(0, manifest_len, self.batch_size)):
+                stop = start + self.batch_size
+                input_texts = dict_list[self.input_text_field][start:stop]
+                input_audios = dict_list[self.input_audio_field][start:stop]
+                manifest_batch = manifest[start:stop]
+
+                dists = self.get_pdist(input_texts, input_audios)
+                for item, dist in zip(manifest_batch, dists):
+                    item[self.output_field] = dist
+                    f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
 class BLEUScore(BaseParallelProcessor):
     """
@@ -271,6 +293,8 @@ class SplitByVttSentence(BaseParallelProcessor):
         duration_field: str,
         text_field: str,
         vtt_field: str,
+        url_video_field: str,
+        url_vtt_field: str,
         duration_threshold: float = 10.0,
         **kwargs,
     ):
@@ -285,6 +309,8 @@ class SplitByVttSentence(BaseParallelProcessor):
         self.text_field = text_field
         self.vtt_field = vtt_field
         self.duration_threshold = duration_threshold
+        self.url_video_field = url_video_field
+        self.url_vtt_field = url_vtt_field
 
     def prepare(self):
         os.makedirs(self.splited_audio_dir, exist_ok=True)
@@ -308,7 +334,7 @@ class SplitByVttSentence(BaseParallelProcessor):
                     else:
                         pass
                     end_c = end_sr
-                    if len(text_c)>0 and (end_c - start_c > self.duration_threshold * 16000 or text_c[-1] == "." or text_c[-1] == "?"):
+                    if len(text_c)>0 and (end_c - start_c > self.duration_threshold * samplerate or text_c[-1] == "." or text_c[-1] == "?"):
                         res_list.append(self.makeDataEntry(data_entry, data, vtt_file, samplerate, text_c, key, start_c, end_c))
                         text_c = ''
                         start_c, end_c = 0, 0
@@ -321,15 +347,19 @@ class SplitByVttSentence(BaseParallelProcessor):
 
     def makeDataEntry(self, data_entry, data, vtt_file, samplerate, text_c, key, start_c, end_c):
         data_sample = data[start_c:end_c]
-        wav_save_file = os.path.join(self.splited_audio_dir, '/'.join(os.path.splitext(vtt_file)[0].split('/')[-2:]), str(int(start_c/16))+"-"+str(int(end_c/16))+".wav")
+        wav_save_file = os.path.join(self.splited_audio_dir, '/'.join(os.path.splitext(vtt_file)[0].split('/')[-2:]), str(int(start_c/(samplerate/1000)))+"-"+str(int(end_c/(samplerate/1000)))+".wav")
         os.makedirs(os.path.split(wav_save_file)[0], exist_ok=True)
         sf.write(wav_save_file, data_sample, samplerate)
         return DataEntry(data = {self.target_audio_field: wav_save_file,
                             self.duration_field: data_sample.shape[0]/samplerate,
-                            self.text_field: text_c,
+                            self.text_field: text_c.strip(),
                             self.audio_lang_field: data_entry[self.audio_lang_field],
                             self.text_lang_field: data_entry[self.text_lang_field],
-                            self.key_field: key})
+                            self.url_video_field: data_entry[self.url_video_field],
+                            self.url_vtt_field: data_entry[self.url_vtt_field],
+                            self.key_field: key,
+                            })
+
 
 class SplitByVtt(BaseParallelProcessor):
     """
@@ -556,34 +586,41 @@ class ReadParquet(BaseParallelProcessor):
     """
     def __init__(
         self,
-        output_text_field: str,
+        output_video_field: str,
+        output_vtt_field: str,
         key_field: str,
         raw_data_dir: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.output_text_field = output_text_field
+        self.output_video_field = output_video_field
+        self.output_vtt_field = output_vtt_field
         self.key_field = key_field
         self.raw_data_dir = Path(raw_data_dir)
 
     def prepare(self):
         parquets = [str(self.raw_data_dir / p) for p in self.raw_data_dir.rglob('*.parquet')]
         self.urls = None
-        for parquet in parquets:
-            df1 = pd.read_parquet(parquet).sort_values("key").set_index("key")
-            if self.urls is None:
-                self.urls = df1
-            else:
-                self.urls = pd.concat([self.urls, df1])
-
+        for parquet in tqdm(parquets):
+            try:
+                df1 = pd.read_parquet(parquet, engine='fastparquet').sort_values("key").set_index("key")
+                if self.urls is None:
+                    self.urls = df1
+                else:
+                    self.urls = pd.concat([self.urls, df1])
+            except Exception as e:
+                logger.warning(str(e) + ", file: " + parquet)
+            
     def process_dataset_entry(self, data_entry):
         key = data_entry[self.key_field]
         key = key.split("/")[1]
         try:
-            data_entry[self.output_text_field] = self.urls.loc[key]['url']
+            data_entry[self.output_video_field] = self.urls.loc[key]['url']
+            data_entry[self.output_vtt_field] = self.urls.loc[key]['caption']
         except:
-            data_entry[self.output_text_field] = "NN"
-            logger.warning("Key: " + key)
+            data_entry[self.output_video_field] = "NN"
+            data_entry[self.output_vtt_field] = "NN"
+            logger.warning("Key without URL or caption: " + key)
         return [DataEntry(data=data_entry)]
 
 class CreateInitialManifestCC(BaseParallelProcessor):

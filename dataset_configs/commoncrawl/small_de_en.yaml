@@ -1,4 +1,4 @@
-processors_to_run: "0:"
+processors_to_run: "9"
 workspace_dir: /mnt/ssd8/cc_sdp/de_en
 
 processors:
@@ -116,9 +116,10 @@ processors:
     input_audio_field: audio_filepath
     output_field: sonar_dist
     device: cuda
-    batch_size: 256
+    batch_size: 64
     speech_encoder_model: sonar_speech_encoder_deu
     text_encoder_model: text_sonar_basic_encoder
+    text_encoder_lang: eng_Latn
 
   - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest14.json
