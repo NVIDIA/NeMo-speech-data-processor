@@ -22,7 +22,10 @@ sm = difflib.SequenceMatcher()
 def get_cer(text, pred_text):
     char_dist = editdistance.eval(text, pred_text)
     num_chars = len(text)
-    cer = round(char_dist / num_chars * 100.0, 2)
+    if num_chars > 0:
+        cer = round(char_dist / num_chars * 100.0, 2)
+    else:
+        cer = float('inf')
 
     return cer
 
@@ -33,21 +36,30 @@ def get_wer(text, pred_text):
     word_dist = editdistance.eval(text_words, pred_text_words)
 
     num_words = len(text_words)
-    wer = round(word_dist / num_words * 100.0, 2)
+    if num_words > 0:
+        wer = round(word_dist / num_words * 100.0, 2)
+    else:
+        wer = float('inf')
 
     return wer
 
 
 def get_charrate(text, duration):
     num_chars = len(text)
-    charrate = round(num_chars / duration, 2)
+    if duration > 0:
+        charrate = round(num_chars / duration, 2)
+    else:
+        charrate = float('inf')
 
     return charrate
 
 
 def get_wordrate(text, duration):
     num_words = len(text.split())
-    wordrate = round(num_words / duration, 2)
+    if duration > 0:
+        wordrate = round(num_words / duration, 2)
+    else:
+        wordrate = float('inf')
 
     return wordrate
 
