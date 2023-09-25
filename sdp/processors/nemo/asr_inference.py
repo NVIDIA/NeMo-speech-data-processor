@@ -18,19 +18,26 @@ from pathlib import Path
 
 from sdp.processors.base_processor import BaseProcessor
 
+# Note that we do not re-use base parallel implementation, since the ASR
+# inference is already run in batches.
+
+# TODO: actually, it might still be beneficial to have another level of
+#       parallelization, but that needs to be tested.
+
 
 class ASRInference(BaseProcessor):
-    """This processor performs ASR inference on the input manifest.
+    """This processor performs ASR inference on each utterance of the input manifest.
+
+    ASR predictions will be saved in the ``pred_text`` key.
 
     Args:
-        pretrained_model: the name of the pretrained NeMo ASR model which will be used to do inference.
-        batch_size: the batch size to use for ASR inference.
+        pretrained_model (str): the name of the pretrained NeMo ASR model
+            which will be used to do inference.
+        batch_size (int): the batch size to use for ASR inference. Defaults to 32.
 
-    Note that it does not re-use base parallel implementation, since the ASR
-    inference is already run in batches.
-
-    TODO: actually, it might still be beneficial to have another level of
-        parallelization, but that needs to be tested.
+    Returns:
+         The same data as in the input manifest with an additional field
+         ``pred_text`` containing ASR model's predictions.
     """
 
     def __init__(

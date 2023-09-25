@@ -17,6 +17,7 @@ import os
 import tarfile
 from functools import partial
 from pathlib import Path
+import shutil
 from typing import Callable
 from unittest import mock
 
@@ -75,6 +76,8 @@ def get_test_cases():
 
     return [
         (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
+        # above one is without p&c, but it's also important to check p&c version as it's substantially different
+        (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
         (
             f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml",
             partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es"),
@@ -174,3 +177,7 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
             reference_data.pop("audio_filepath")
             generated_data.pop("audio_filepath")
             assert reference_data == generated_data
+
+    # if CLEAN_UP_TMP_PATH is set to non-0 value, we will delete tmp_path
+    if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
+        shutil.rmtree(tmp_path)

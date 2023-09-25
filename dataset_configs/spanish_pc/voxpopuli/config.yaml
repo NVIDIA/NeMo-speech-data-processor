@@ -1,3 +1,9 @@
+documentation: |
+  VoxPopuli Spanish
+  #################
+
+  TBD
+
 # user can specify which processors should be run
 # can be either "all" to run all processors,
 # or any Python "slice" object, e.g.,
@@ -28,13 +34,13 @@ processors:
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_initial_manifest.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_initial_manifest_raw_text.json"
     duplicate_fields:
-      "raw_text": "text"
+      "text": "provided_norm_text"
 
   - _target_: sdp.processors.SortManifest
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_initial_manifest_raw_text.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_sorted_manifest.json"
     attribute_sort_by: "duration"
-    descending: false
+    descending: False
 
   - _target_: sdp.processors.ASRInference
     pretrained_model: "stt_es_quartznet15x5"
@@ -193,11 +199,11 @@ processors:
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_cleaned.json"
     fields: {"text_pc_origin": "original"}
 
-  - _target_: sdp.processors.WriteManifest
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_cleaned.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_final.json"
 
-    fields_to_save:
+    fields_to_keep:
       - "audio_filepath"
       - "text"
       - "duration"

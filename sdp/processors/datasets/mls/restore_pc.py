@@ -22,6 +22,7 @@ from glob import glob
 from pathlib import Path
 from typing import Optional
 
+import regex
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
@@ -287,13 +288,26 @@ def split_text_into_sentences(text: str):
     Returns list of sentences
     """
     # TODO: should this be filled up and exposed as a parameter?
-    lower_case_unicode = ''
-    upper_case_unicode = ''
+    lower_case_unicode = ""
+    upper_case_unicode = ""
+
+    # end of quoted speech - to be able to split sentences by full stop
+    text = re.sub(r"([\.\?\!])([\"\'])", r"\g<2>\g<1> ", text)
+
+    # remove extra space
+    text = re.sub(r" +", " ", text)
+
+    # remove space in the middle of the lower case abbreviation to avoid splitting into separate sentences
+    matches = re.findall(rf"[a-z{lower_case_unicode}]\.\s[a-z{lower_case_unicode}]\.", text)
+    for match in matches:
+        text = text.replace(match, match.replace(". ", "."))
 
     # Read and split transcript by utterance (roughly, sentences)
-    split_pattern = rf"(?<!\w\.\w.)(?<![A-Z{upper_case_unicode}][a-z{lower_case_unicode}]+\.)(?<![A-Z{upper_case_unicode}]\.)(?<=\.|\?|\!|\.”|\?”\!”)\s(?![0-9]+[a-z]*\.)"
-
-    sentences = re.split(split_pattern, text)
+    split_pattern = (
+        rf"(?<!\w\.\w.)(?<![A-Z{upper_case_unicode}][a-z{lower_case_unicode}]+\.)"
+        rf"(?<![A-Z{upper_case_unicode}]\.)(?<=\.|\?|\!|\.”|\?”\!”)\s(?![0-9]+[a-z]*\.)"
+    )
+    sentences = regex.split(split_pattern, text)
     return sentences
 
 
@@ -365,9 +379,6 @@ def process_book(book_manifest, texts_dir, submanifests_dir, output_dir, restore
             logger.info(f"Did not find {book_id_spk_id} in {output_dir} => will process this book")
             break
     else:
-        # logger.info(
-        #    f"All manifests {manifests} were also found in {output_dir} => skipping processing of this book"
-        # )
         return
 
     try:
@@ -389,31 +400,47 @@ def process_book(book_manifest, texts_dir, submanifests_dir, output_dir, restore
 
 
 class RestorePCForMLS(BaseProcessor):
-    """
-    Recovers original text from MLS Librivox texts in "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz".
-        Saves recovered text in recovered_text_field. If text was not recovered, recovered_text_field will be equal
-        to the value of the `NA` variable.
+    """Recovers original text from the MLS Librivox texts.
+
+    This processor can be used to restore punctuation and capitalization for the
+    MLS data. Uses the original data in https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz.
+    Saves recovered text in ``restored_text_field`` field.
+    If text was not recovered, ``restored_text_field`` will be equal to ``n/a``.
+
     Args:
-        language_long: the full name of the language, used for choosing the folder of the contents of
+        language_long (str): the full name of the language, used for
+            choosing the folder of the contents of
             "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz".
-        language_short: the short name of the language, used for specifying the normalizer we want to use.
-        lv_text_dir: the directory where the contents of "https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz" will be saved.
-        submanifests_dir: the directory where submanifests (one for each combo of speak + book) will be store.
-        restored_submanifests_dir: the directory where restored submanifests (one for each combo of speak + book) will be store.
-        restored_text_field: the field where the recovered text will be stored.
-        n_jobs: number of jobs to use for parallel processing.
-        show_conversion_breakdown: bool for whether to show how much of each submanifest was restored.
+            E.g., "english", "spanish", "italian", etc.
+        language_short (str or None): the short name of the language, used for
+            specifying the normalizer we want to use. E.g., "en", "es", "it", etc.
+            If set to None, we will not try to normalize the provided Librivox text.
+        lv_text_dir (str): the directory where the contents of
+            https://dl.fbaipublicfiles.com/mls/lv_text.tar.gz will be saved.
+        submanifests_dir (str): the directory where submanifests (one for each
+            combo of speaker + book) will be stored.
+        restored_submanifests_dir (str): the directory where restored
+            submanifests (one for each combo of speaker + book) will be stored.
+        restored_text_field (str): the field where the recovered text will be stored.
+        n_jobs (int): number of jobs to use for parallel processing. Defaults to -1.
+        show_conversion_breakdown (bool): whether to show how much of each
+            submanifest was restored. Defaults to True.
+
+    Returns:
+        All the same data as in the input manifest with an additional key::
+
+            <restored_text_field>: <restored text or n/a if match was not found>``
     """
 
     def __init__(
         self,
         language_long: str,
-        language_short: str,
+        language_short: Optional[str],
         lv_text_dir: str,
         submanifests_dir: str,
         restored_submanifests_dir: str,
         restored_text_field: str,
-        n_jobs: int,
+        n_jobs: int = -1,
         show_conversion_breakdown: bool = True,
         **kwargs,
     ):
@@ -428,11 +455,12 @@ class RestorePCForMLS(BaseProcessor):
         self.show_conversion_breakdown = show_conversion_breakdown
 
     def process(self):
-        """
-        Download & extract lv_text.
-        Create submanifests.
-        Restore P&C to submanifests.
-        Group back submanifests into 1 single manifest
+        """Main processing happens here.
+
+        * Download & extract lv_text.
+        * Create submanifests.
+        * Restore P&C to submanifests.
+        * Group back submanifests into a single manifest
         """
         from nemo_text_processing.text_normalization.normalize import Normalizer
 
@@ -451,7 +479,7 @@ class RestorePCForMLS(BaseProcessor):
         with open(self.input_manifest_file, "r") as f:
             for line in tqdm(f):
                 item = json.loads(line)
-                name = item["audio_filepath"].split("/")[-1].replace(".wav", "")
+                name = Path(item["audio_filepath"]).stem
                 reader_id, lv_book_id, sample_id = name.split("_")
                 key = f"{lv_book_id}_{reader_id}"
                 if key not in data:
@@ -467,15 +495,27 @@ class RestorePCForMLS(BaseProcessor):
         # Restore P&C to submanifests.
         os.makedirs(str(self.restored_submanifests_dir), exist_ok=True)
 
-        try:
-            normalizer = Normalizer(
-                input_case="cased",
-                lang=self.language_short,
-                cache_dir="CACHE_DIR",
-                overwrite_cache=False,
-                post_process=True,
+        if self.language_short:
+            try:
+                normalizer = Normalizer(
+                    input_case="cased",
+                    lang=self.language_short,
+                    cache_dir="CACHE_DIR",
+                    overwrite_cache=False,
+                    post_process=True,
+                )
+            except NotImplementedError:  # some languages don't support text normalization
+                logger.info(
+                    f"Could not find NeMo Normalizer for language {self.language_short}, so"
+                    " will not normalize the Librivox text before attempting to restore punctuation"
+                    " and capitalization."
+                )
+                normalizer = None
+        else:
+            logger.info(
+                f"`language_short` was not specified, so will not normalize the Librivox"
+                " text before attempting to restore punctuation and capitalization."
             )
-        except NotImplementedError:  # some languages don't support text normalization
             normalizer = None
 
         # TODO: rename to maybe books_ids_in_datasplit
@@ -499,7 +539,7 @@ class RestorePCForMLS(BaseProcessor):
         with open(self.input_manifest_file, "r") as f:
             for line in f:
                 line = json.loads(line)
-                book_id, spk_id = os.path.basename(line["audio_filepath"]).strip('.wav').split("_")[:2]
+                book_id, spk_id = Path(line["audio_filepath"]).stem.split("_")[:2]
                 book_id_spk_ids_in_datasplit.add((book_id, spk_id))
                 original_manifest_duration += line["duration"]
         logger.info(

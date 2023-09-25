@@ -1,0 +1,136 @@
+processors_to_run: "3:"
+workspace_dir: /mnt/ssd8/cc_sdp/de  # ü ä ö ß Ä Ö Ü
+
+processors:
+  - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
+    input_manifest_file: /mnt/ssd8/cc_sdp/manifest8ps.json
+    output_manifest_file: ${workspace_dir}/manifest0.json
+    input_field: audio_lang
+    target_value: de
+
+  - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest1.json
+    input_field: text_lang
+    target_value: de
+    
+  - _target_: sdp.processors.ASRInference
+    output_manifest_file: ${workspace_dir}/manifest2.json
+    pretrained_model: nvidia/stt_de_fastconformer_hybrid_large_pc
+    batch_size: 64
+  
+  - _target_: sdp.processors.DuplicateFields
+    input_manifest_file: ${workspace_dir}/manifest2.json
+    output_manifest_file: ${workspace_dir}/manifest3.json
+    duplicate_fields: {"text":"orig_text"}
+
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest4.json
+    regex_params_list:
+      - {"pattern": '\[(.*?)\]', "repl": ' '}
+      - {"pattern": 'î', "repl": "i"}
+      - {"pattern": 'ì', "repl": "i"}
+      - {"pattern": 'í', "repl": "i"}
+      - {"pattern": '‚', "repl": ","}
+      - {"pattern": "’", "repl": "'"}
+      - {"pattern": "[-–—]", "repl": " "}
+      - {"pattern": '―', "repl": "-"}
+      - {"pattern": '—', "repl": "-"}
+      - {"pattern": '⁺', "repl": "+"}
+      - {"pattern": '“', "repl": '"'}
+      - {"pattern": '”', "repl": '"'}
+      - {"pattern": '…', "repl": '.'}
+      - {"pattern": '‘', "repl": "'"}
+      - {"pattern": '′', "repl": "'"}
+      - {"pattern": '`', "repl": "'"}
+      - {"pattern": '⁻', "repl": "-"}
+      - {"pattern": '‑', "repl": "-"}
+      - {"pattern": '¶', "repl": ' '}
+      - {"pattern": '«', "repl": '"'}
+      - {"pattern": '»', "repl": '"'}
+      - {"pattern": '„', "repl": '"'}
+      - {"pattern": '®', "repl": ' '}
+      - {"pattern": "  ", "repl": " "}
+
+  - _target_: sdp.processors.DropHighLowWordrate
+    output_manifest_file: ${workspace_dir}/manifest5.json
+    high_wordrate_threshold: 100
+    low_wordrate_threshold: 0.01
+
+  - _target_: sdp.processors.datasets.commoncrawl.Subprocess
+    output_manifest_file: ${workspace_dir}/manifest6.json
+    input_manifest_arg: "--manifest"
+    output_manifest_arg: "--output_filename"
+    arg_separator: "="
+    cmd: "python /home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
+        --language=de --n_jobs=-1 --batch_size=600 --manifest_text_field=text --cache_dir=${workspace_dir}/cache \
+        --whitelist=/home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/de/data/whitelist.tsv"
+
+  - _target_: sdp.processors.RenameFields
+    output_manifest_file: ${workspace_dir}/manifest7.json
+    rename_fields: {"normalized":"text"}
+
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest8.json
+    text_key: text
+    regex_params_list:
+      - {"pattern": '\\.{3}', "repl": '.'}  
+      - {"pattern": '\$', "repl": ""}
+      - {"pattern": "'", "repl": " "}
+      - {"pattern": "[^a-zA-ZäöüÄÖÜß.,?]", "repl": " "}
+      - {"pattern": '  ', "repl": " "}
+
+  - _target_: sdp.processors.DropHighLowWordrate
+    output_manifest_file: ${workspace_dir}/manifest9.json
+    high_wordrate_threshold: 100
+    low_wordrate_threshold: 0.01
+
+  - _target_: sdp.processors.DuplicateFields
+    output_manifest_file: ${workspace_dir}/manifest10.json
+    duplicate_fields: {"text":"text_pc"}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/manifest11.json
+    text_key: text
+
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest12.json
+    text_key: text
+    regex_params_list:
+      - {"pattern": "[\\?\\.\\!]", "repl": " "}
+      - {"pattern": ",", "repl": " "}
+      - {"pattern": "  ", "repl": " "}
+
+  - _target_: sdp.processors.DuplicateFields
+    output_manifest_file: ${workspace_dir}/manifest13.json
+    duplicate_fields: {"pred_text":"pred_text_pc"}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/manifest14.json
+    text_key: pred_text
+
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest15.json
+    text_key: pred_text
+    regex_params_list:
+      - {"pattern": "[\\?\\.\\!]", "repl": " "}
+      - {"pattern": ",", "repl": " "}
+      - {"pattern": "  ", "repl": " "}
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    output_manifest_file: ${workspace_dir}/manifest16.json
+    text_key: text
+    regex_patterns:
+      - "^\\s*$"
+
+  - _target_: sdp.processors.DropHighWER
+    output_manifest_file: ${workspace_dir}/manifest17.json
+    text_key: text
+    pred_text_key: pred_text
+    wer_threshold: 75
+
+  - _target_: sdp.processors.DropHighCER
+    output_manifest_file: ${workspace_dir}/manifest18.json
+    text_key: text
+    pred_text_key: pred_text
+    cer_threshold: 30
+    

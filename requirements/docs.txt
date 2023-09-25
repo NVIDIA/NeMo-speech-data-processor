@@ -1,0 +1,6 @@
+pydata-sphinx-theme
+pyyaml
+Sphinx
+sphinx-book-theme
+sphinx-copybutton
+sphinxext-opengraph

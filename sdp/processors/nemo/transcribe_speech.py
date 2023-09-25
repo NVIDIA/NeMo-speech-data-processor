@@ -50,7 +50,7 @@ Transcribe audio file on a single CPU/GPU. Useful for transcription of moderate 
   amp: Bool to decide if Automatic Mixed Precision should be used during inference
   audio_type: Str filetype of the audio. Supported = wav, flac, mp3
 
-  overwrite_transcripts: Bool which when set allowes repeated transcriptions to overwrite previous results.
+  overwrite_transcripts: Bool which when set allows repeated transcriptions to overwrite previous results.
 
   rnnt_decoding: Decoding sub-config for RNNT. Refer to documentation for specific values.
 
@@ -288,7 +288,7 @@ def main(cfg: TranscriptionConfig) -> TranscriptionConfig:
                 if compute_langs:
                     item['pred_lang'] = transcription.langs
                     item['pred_lang_chars'] = transcription.langs_chars
-                f.write(json.dumps(item) + "\n")
+                f.write(json.dumps(item, ensure_ascii=False) + "\n")
         else:
             with open(cfg.dataset_manifest, 'r') as fr:
                 for idx, line in enumerate(fr):
@@ -298,7 +298,7 @@ def main(cfg: TranscriptionConfig) -> TranscriptionConfig:
                     if compute_langs:
                         item['pred_lang'] = transcriptions[idx].langs
                         item['pred_lang_chars'] = transcriptions[idx].langs_chars
-                    f.write(json.dumps(item) + "\n")
+                    f.write(json.dumps(item, ensure_ascii=False) + "\n")
 
     logging.info("Finished writing predictions !")
     return cfg

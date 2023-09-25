@@ -268,9 +268,22 @@ class BaseParallelProcessor(BaseProcessor):
                 data entries returned from the :meth:`process_dataset_entry`
                 method.
         """
-        logger.info("Total number of entries after processing: %d", self.number_of_entries)
-        if self.total_duration != 0:
-            logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
+
+    def read_manifest(self):
+        """Reading the input manifest file.
+
+        .. note::
+            This function should be overridden in the "initial" class creating
+            manifest to read from the original source of data.
+        """
+        if self.input_manifest_file is None:
+            raise NotImplementedError("Override this method if the processor creates initial manifest")
+
+        # TODO: should we not assume that manifest can fully fit in memory?
+        with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
+            dataset_entries = [json.loads(line) for line in fin.readlines()]
+
+        return dataset_entries
 
 
     def test(self):

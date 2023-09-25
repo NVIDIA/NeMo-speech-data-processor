@@ -29,7 +29,7 @@ def get_coraal_url_list():
     """Returns url list for CORAAL dataset.
 
     There are a few mistakes in the official url list that are fixed here.
-    Can be overriden by tests to select a subset of urls.
+    Can be overridden by tests to select a subset of urls.
     """
     dataset_url = "http://lingtools.uoregon.edu/coraal/coraal_download_list.txt"
     urls = []
@@ -45,7 +45,9 @@ def get_coraal_url_list():
 
 
 class CreateInitialManifestCORAAL(BaseParallelProcessor):
-    """Processor to create initial manifest for CORAAL data.
+    """Processor to create initial manifest for the Corpus of Regional African American Language (CORAAL) dataset.
+
+    Dataset link: https://oraal.uoregon.edu/coraal/
 
     Will download all files, extract tars and split wav files based on the
     provided durations in the transcripts.
@@ -58,11 +60,27 @@ class CreateInitialManifestCORAAL(BaseParallelProcessor):
         drop_pauses (bool): if True, will drop all transcriptions that contain
             only silence (indicated by ``(pause X)`` in the transcript).
             Defaults to True.
-        group_duration_threshold (float): can be used to group consequtive
+        group_duration_threshold (float): can be used to group consecutive
             utterances from the same speaker to a longer duration. Set to 0
             to disable this grouping (but note that many utterances are
-            transcribe with only a few seconds, so grouping is generally
+            transcribed with only a few seconds, so grouping is generally
             advised). Defaults to 20.
+
+    Returns:
+        This processor generates an initial manifest file with the following fields::
+
+            {
+                "audio_filepath": <path to the audio file>,
+                "duration": <duration of the audio in seconds>,
+                "text": <transcription>,
+                "original_file": <name of the original file in the dataset this audio came from>,
+                "speaker": <speaker id>,
+                "is_interviewee": <whether this is an interviewee (accented speech)>,
+                "gender": <speaker gender>,
+                "age": <speaker age>,
+                "education": <speaker education>,
+                "occupation": <speaker occupation>,
+            }
     """
 
     def __init__(
@@ -107,52 +125,53 @@ class CreateInitialManifestCORAAL(BaseParallelProcessor):
         for data_file in glob.glob(f'{self.raw_data_dir}/transcripts/*.txt'):
             df = pd.read_csv(data_file, delimiter='\t')
             df['Basefile'] = os.path.basename(data_file)[:-4]  # dropping .wav in the end
+
+            if self.drop_pauses:
+                df = df[~df['Content'].str.contains(r'\(pause \d+(?:\.\d+)?\)')]
+
+            # grouping consecutive segments from the same speaker
+            if self.group_duration_threshold > 0:
+                df['Duration'] = df['EnTime'] - df['StTime']
+                # puts each sequence of same speaker utts in a "bin"
+                speaker_bins = (~df['Spkr'].eq(df['Spkr'].shift())).cumsum()
+                # within each bin, computes cumulative duration and then int-divides by the threshold
+                df['ThresholdMult'] = df.groupby(speaker_bins)['Duration'].transform(
+                    lambda x: pd.Series.cumsum(x) // self.group_duration_threshold
+                )
+                # finally, we take all positions where the int-division changes,
+                # which indicates that cumsum exceded the threshold. And combine those
+                # with speaker-change positions to get the final groups for utterance merging
+                final_bins = (
+                    (~df['Spkr'].eq(df['Spkr'].shift())) | (~df['ThresholdMult'].eq(df['ThresholdMult'].shift()))
+                ).cumsum()
+                df = df.groupby(final_bins).agg(
+                    {
+                        'StTime': 'min',
+                        'EnTime': 'max',
+                        'Content': ' '.join,
+                        # will be the same in the group
+                        'Spkr': lambda x: x.iloc[0],
+                        'Basefile': lambda x: x.iloc[0],
+                    }
+                )
+            # assigning label for interviewee vs interviewer (can be used to select a subset later)
+            df['is_interviewee'] = df.apply(lambda x: x['Spkr'] in x['Basefile'], axis=1)
+
+            # matching with metadata (age, gender, etc.)
+            metadata_dfs = []
+            for data_file in glob.glob(f'{self.raw_data_dir}/*_metadata_*.txt'):
+                metadata_dfs.append(pd.read_csv(data_file, delimiter='\t'))
+            metadata_df = pd.concat(metadata_dfs)
+            # only selecting a subset of columns - can be changed if more are needed
+            # dropping duplicates since there are multiple rows per speaker because of
+            # bit-rate, tar name and other file-specific information
+            metadata_df = metadata_df[['CORAAL.Spkr', 'Gender', 'Age', 'Education', 'Occupation']].drop_duplicates()
+            df = df.merge(metadata_df, left_on='Spkr', right_on='CORAAL.Spkr', how='left')
+            df = df.drop('CORAAL.Spkr', axis=1)
+
             dfs.append(df)
+
         df = pd.concat(dfs)
-
-        if self.drop_pauses:
-            df = df[~df['Content'].str.contains(r'\(pause \d+(?:\.\d+)?\)')]
-
-        # grouping consecutive segments from the same speaker
-        if self.group_duration_threshold > 0:
-            df['Duration'] = df['EnTime'] - df['StTime']
-            # puts each sequence of same speaker utts in a "bin"
-            speaker_bins = (~df['Spkr'].eq(df['Spkr'].shift())).cumsum()
-            # within each bin, computes cumulative duration and then int-divides by the threshold
-            df['ThresholdMult'] = df.groupby(speaker_bins)['Duration'].transform(
-                lambda x: pd.Series.cumsum(x) // self.group_duration_threshold
-            )
-            # finally, we take all positions where the int-division changes,
-            # which indicates that cumsum exceded the threshold. And combine those
-            # with speaker-change positions to get the final groups for utterance merging
-            final_bins = (
-                (~df['Spkr'].eq(df['Spkr'].shift())) | (~df['ThresholdMult'].eq(df['ThresholdMult'].shift()))
-            ).cumsum()
-            df = df.groupby(final_bins).agg(
-                {
-                    'StTime': 'min',
-                    'EnTime': 'max',
-                    'Content': ' '.join,
-                    # will be the same in the group
-                    'Spkr': lambda x: x.iloc[0],
-                    'Basefile': lambda x: x.iloc[0],
-                }
-            )
-        # assigning label for interviewee vs interviewer (can be used to select a subset later)
-        df['is_interviewee'] = df.apply(lambda x: x['Spkr'] in x['Basefile'], axis=1)
-
-        # matching with metadata (age, gender, etc.)
-        metadata_dfs = []
-        for data_file in glob.glob(f'{self.raw_data_dir}/*_metadata_*.txt'):
-            metadata_dfs.append(pd.read_csv(data_file, delimiter='\t'))
-        metadata_df = pd.concat(metadata_dfs)
-        # only selecting a subset of columns - can be changed if more are needed
-        # dropping duplicates since there are multiple rows per speaker because of
-        # bit-rate, tar name and other file-specific information
-        metadata_df = metadata_df[['CORAAL.Spkr', 'Gender', 'Age', 'Education', 'Occupation']].drop_duplicates()
-        df = df.merge(metadata_df, left_on='Spkr', right_on='CORAAL.Spkr', how='left')
-        df = df.drop('CORAAL.Spkr', axis=1)
-
         # would be better to keep it as df, but .values is way faster than .iterrows
         return df.values
 

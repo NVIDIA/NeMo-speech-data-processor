@@ -24,6 +24,10 @@ class TrainDevTestSplitCORAAL(BaseParallelProcessor):
 
     Args:
         data_split (str): train, dev or test.
+
+    Returns:
+        All the same fields as in the input manifest, but only a subset of
+        the data is retained.
     """
 
     def __init__(

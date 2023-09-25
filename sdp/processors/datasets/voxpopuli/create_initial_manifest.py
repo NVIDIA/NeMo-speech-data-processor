@@ -26,18 +26,45 @@ VOXPOPULI_URL = "https://github.com/facebookresearch/voxpopuli"
 
 
 class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
-    """
+    """Processor to create initial manifest for the VoxPopuli dataset.
+
+    Dataset link: https://github.com/facebookresearch/voxpopuli/
+
     Downloads and unzips raw VoxPopuli data for the specified language,
     and creates an initial manifest using the transcripts provided in the
     raw data.
 
+    .. note::
+        This processor will install a couple of Python packages, including
+        PyTorch, so it might be a good idea to run it in an isolated Python
+        environment.
+
     Args:
-        raw_data_dir: the directory where the downloaded data will be/is saved.
-        language_id: the language of the data you wish to be downloaded.
-        data_split: the data split for which the initial manifest will
-            be created.
-        resampled_audio_dir: the directory where the resampled (16kHz) wav
+        raw_data_dir (str): the directory where the downloaded data will be/is saved.
+        language_id (str): the language of the data you wish to be downloaded.
+            E.g., "en", "es", "it", etc.
+        data_split (str): "train", "dev" or "test".
+        resampled_audio_dir (str): the directory where the resampled wav
             files will be stored.
+        target_samplerate (int): sample rate (Hz) to use for resampling.
+            Defaults to 16000.
+        target_nchannels (int): number of channels to create during resampling process.
+            Defaults to 1.
+
+    Returns:
+        This processor generates an initial manifest file with the following fields::
+
+            {
+                "audio_filepath": <path to the audio file>,
+                "duration": <duration of the audio in seconds>,
+                "text": <transcription (with provided normalization)>,
+                "raw_text": <original transcription (without normalization)>,
+                "speaker_id": <speaker id>,
+                "gender": <speaker gender>,
+                "age": <speaker age>,
+                "is_gold_transcript": <whether the transcript has been verified>,
+                "accent": <speaker accent, if known>,
+            }
     """
 
     def __init__(
@@ -46,6 +73,8 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
         language_id: str,
         data_split: str,
         resampled_audio_dir: str,
+        target_samplerate: int = 16000,
+        target_nchannels: int = 1,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -53,6 +82,8 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
         self.language_id = language_id
         self.data_split = data_split
         self.resampled_audio_dir = resampled_audio_dir
+        self.target_samplerate = target_samplerate
+        self.target_nchannels = target_nchannels
 
     def prepare(self):
         """Downloading data (unless already done)"""
@@ -106,15 +137,17 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
         if not os.path.exists(os.path.dirname(tgt_wav_path)):
             os.makedirs(os.path.dirname(tgt_wav_path), exist_ok=True)
         if not os.path.exists(tgt_wav_path):
-            Transformer().build(src_audio_path, tgt_wav_path)
+            tfm = Transformer()
+            tfm.rate(samplerate=self.target_samplerate)
+            tfm.channels(n_channels=self.target_nchannels)
+            tfm.build(input_filepath=src_audio_path, output_filepath=tgt_wav_path)
 
         data = {
             "audio_filepath": tgt_wav_path,
             "duration": float(sox.file_info.duration(tgt_wav_path)),
             "text": norm_text,
-            "provided_norm_text": norm_text,
             "raw_text": raw_text,
-            "spk_id": spk_id,
+            "speaker_id": spk_id,
             "gender": gender,
             "is_gold_transcript": is_gold_transcript,
             "accent": accent,
