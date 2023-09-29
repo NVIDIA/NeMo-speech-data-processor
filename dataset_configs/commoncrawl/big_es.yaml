@@ -29,12 +29,12 @@ processors:
       - {"pattern": '\[(.*?)\]', "repl": ' '}
       - {"pattern": "^[\\s]*\\*(.*?)\\*[\\s]*$", "repl": "\\1"}
       - {"pattern": 'î', "repl": "i"}
-      - {"pattern": 'ì', "repl": "í"}
-      - {"pattern": 'è', "repl": "é"}
-      - {"pattern": 'È', "repl": "É"}
-      - {"pattern": 'ù', "repl": "ú"}
-      - {"pattern": 'ò', "repl": "ó"}
-      - {"pattern": 'à', "repl": "á"}
+      - {"pattern": 'ì', "repl": "i"}
+      - {"pattern": 'è', "repl": "e"}
+      - {"pattern": 'È', "repl": "E"}
+      - {"pattern": 'ù', "repl": "u"}
+      - {"pattern": 'ò', "repl": "o"}
+      - {"pattern": 'à', "repl": "a"}
       - {"pattern": '‚', "repl": ","}
       - {"pattern": "’", "repl": "'"}
       - {"pattern": "[-–—]", "repl": " "}
@@ -95,7 +95,7 @@ processors:
       - {"pattern": '!', "repl": '.'}
       - {"pattern": '\\.{3}', "repl": '.'}
       - {"pattern": '\$', "repl": ""}
-      - {"pattern": "[^a-zA-ZóÓáéÉíÍñÑúÚ'.,?¿]", "repl": " "}
+      - {"pattern": "[^a-zA-ZóÓáéÉíÍñÑúÚüÜ'.,?¿]", "repl": " "}
       - {"pattern": '  ', "repl": " "}
     test_cases:
       - {input: {text: "' jupiter and venus both shining in the golden rosy sky"}, output: {text: "jupiter and venus both shining in the golden rosy sky"}}

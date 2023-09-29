@@ -90,7 +90,7 @@ processors:
       - {"pattern": "'{2,}", "repl": "'"}
       - {"pattern": '\\.{3}', "repl": '.'}
       - {"pattern": '\$', "repl": ""}
-      - {"pattern": "[^a-zA-ZàâçéèêëîïôûùüÿñæœÀÂÇÉÈÊËÎÏÔÛÙÜŸÑÆŒ.,?'-]", "repl": " "}
+      - {"pattern": "[^a-zA-ZàâçéèêëîïôûùüÿæœÀÂÇÉÈÊËÎÏÔÛÙÜŸÆŒ.,?'-]", "repl": " "}
       - {"pattern": '  ', "repl": " "}
 
   - _target_: sdp.processors.DuplicateFields

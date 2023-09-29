@@ -3,7 +3,7 @@ workspace_dir: /mnt/md1/common_crawl/cc_sdp
 workspace_dir_s: /mnt/md0/common_crawl/cc_sdp
 
 processors:
-  - _target_: sdp.processors.datasets.cc.cc.CreateInitialManifestCC
+  - _target_: sdp.processors.datasets.commoncrawl.CreateInitialManifestCC
     raw_data_dir: /mnt/md0/common_crawl/output/video_output2
     output_manifest_file: ${workspace_dir}/manifest0.json
     resampled_audio_dir: ${workspace_dir}/audio/
@@ -14,7 +14,7 @@ processors:
     key_field: "key"
     text_field: "texts"
 
-  - _target_: sdp.processors.datasets.cc.cc.TxtToVtt
+  - _target_: sdp.processors.datasets.commoncrawl.TxtToVtt
     input_manifest_file: ${workspace_dir}/manifest0.json
     output_manifest_file: ${workspace_dir}/manifest1.json
     vtt_files_dir: ${workspace_dir}/vtts/
@@ -22,38 +22,38 @@ processors:
     text_field: "texts"
     vtt_field: "vtt_filepath"
 
-  - _target_: sdp.processors.datasets.cc.cc.AllVttText 
+  - _target_: sdp.processors.datasets.commoncrawl.AllVttText 
     output_manifest_file: ${workspace_dir}/manifest2.json
     input_filepath_field: vtt_filepath
     output_text_field: vtt_text
 
-  - _target_: sdp.processors.datasets.cc.cc.TextLid
+  - _target_: sdp.processors.datasets.commoncrawl.TextLid
     output_manifest_file: ${workspace_dir}/manifest3.json
     input_text_field: vtt_text
     output_lang_field: text_lang
     device: cuda
     pretrained_model: "jb2k/bert-base-multilingual-cased-language-detection"
 
-  - _target_: sdp.processors.datasets.cc.cc.Lang2Iso
+  - _target_: sdp.processors.datasets.commoncrawl.Lang2Iso
     output_manifest_file: ${workspace_dir}/manifest4.json
     input_lang_field: text_lang
     output_lang_field: text_lang
 
-  - _target_: sdp.processors.datasets.cc.cc.AudioLid
+  - _target_: sdp.processors.datasets.commoncrawl.AudioLid
     output_manifest_file: ${workspace_dir}/manifest5.json
     input_audio_field: audios
     output_lang_field: audio_lang
     device: cuda
     pretrained_model: "langid_ambernet"
 
-  - _target_: sdp.processors.datasets.cc.cc.ReadParquet
+  - _target_: sdp.processors.datasets.commoncrawl.ReadParquet
     raw_data_dir: /mnt/md0/common_crawl/output/video_output2
     output_manifest_file: ${workspace_dir_s}/manifest6.json
     output_video_field: video
     output_vtt_field: caption
     key_field: key
 
-  - _target_: sdp.processors.datasets.cc.cc.SplitByVttSentence
+  - _target_: sdp.processors.datasets.commoncrawl.SplitByVttSentence
     output_manifest_file: ${workspace_dir_s}/manifest7.json
     splited_audio_dir: ${workspace_dir_s}/splited/
     source_audio_field: audios

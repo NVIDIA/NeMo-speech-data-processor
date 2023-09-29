@@ -1,14 +1,14 @@
-processors_to_run: "15:"
+processors_to_run: "0:"
 workspace_dir: /mnt/md0/common_crawl/cc_sdp/en_de
 
 processors:
-  - _target_: sdp.processors.datasets.cc.cc.PreserveByValue
+  - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
     input_manifest_file: /mnt/md0/common_crawl/cc_sdp/manifest8ps.json
     output_manifest_file: ${workspace_dir}/manifest0.json
     input_field: audio_lang
     target_value: en
 
-  - _target_: sdp.processors.datasets.cc.cc.PreserveByValue
+  - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest1.json
     input_field: text_lang
     target_value: de
@@ -32,7 +32,7 @@ processors:
     regex_patterns:
       - "^\\s*$"
 
-  - _target_: sdp.processors.datasets.cc.cc.NmtSubprocess
+  - _target_: sdp.processors.datasets.commoncrawl.NmtSubprocess
     output_manifest_file: ${workspace_dir}/manifest6.json
     arg_separator: "="
     srctext_file: ${workspace_dir}/srctext.txt # --srctext=${workspace_dir}/srctext.txt
@@ -78,7 +78,7 @@ processors:
     high_wordrate_threshold: 100
     low_wordrate_threshold: 0.01
 
-  - _target_: sdp.processors.datasets.cc.cc.Subprocess
+  - _target_: sdp.processors.datasets.commoncrawl.Subprocess
     output_manifest_file: ${workspace_dir}/manifest9.json
     input_manifest_arg: "--manifest"
     output_manifest_arg: "--output_filename"
@@ -107,13 +107,13 @@ processors:
     regex_patterns:
       - "^\\s*$"
   
-  - _target_: sdp.processors.datasets.cc.cc.BLEUScore
+  - _target_: sdp.processors.datasets.commoncrawl.BLEUScore
     output_manifest_file: ${workspace_dir}/manifest13.json
     ref_field: text
     hyp_field: pred_text
     output_field: bleu
 
-  - _target_: sdp.processors.datasets.cc.cc.UseSonar
+  - _target_: sdp.processors.datasets.commoncrawl.UseSonar
     output_manifest_file: ${workspace_dir}/manifest14.json
     input_text_field: text
     input_audio_field: audio_filepath
@@ -124,7 +124,7 @@ processors:
     text_encoder_lang: deu_Latn
     batch_size: 64
 
-  - _target_: sdp.processors.datasets.cc.cc.PreserveByValue
+  - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest15.json
     input_field: bleu
     target_value: 30
