@@ -339,8 +339,9 @@ class SplitByVttSentence(BaseParallelProcessor):
     def makeDataEntry(self, data_entry, data, vtt_file, samplerate, text_c, start_c, end_c):
         data_sample = data[start_c:end_c]
         wav_save_file = os.path.join(self.splited_audio_dir, '/'.join(os.path.splitext(vtt_file)[0].split('/')[-2:]), str(int(start_c/(samplerate/1000)))+"-"+str(int(end_c/(samplerate/1000)))+".wav")
-        os.makedirs(os.path.split(wav_save_file)[0], exist_ok=True)
-        sf.write(wav_save_file, data_sample, samplerate)
+        if not os.path.isfile(wav_save_file):
+            os.makedirs(os.path.split(wav_save_file)[0], exist_ok=True)
+            sf.write(wav_save_file, data_sample, samplerate)
         
         data = {self.target_audio_field: wav_save_file,
                     self.duration_field: data_sample.shape[0]/samplerate,
@@ -663,9 +664,52 @@ class CreateInitialManifestCC(BaseParallelProcessor):
         (video,	key, text) = data_entry
         os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
         audio = os.path.join(self.resampled_audio_dir, key) + ".wav"
-        ffmpeg_convert(video, audio, self.target_samplerate, self.target_nchannels)
+        if not os.path.isfile(audio):
+            ffmpeg_convert(video, audio, self.target_samplerate, self.target_nchannels)
 
         data = {self.audio_field: audio,
+                self.video_field: video,
                 self.key_field: key,
                 self.text_field: text}
         return [DataEntry(data=data)]
+
+class FfmpegConvert(BaseParallelProcessor):
+    """
+        Args:
+        video_field (str): field with path to video file in the input manifest
+        audio_field (str): field with path to audio file in the output manifest
+        key_field (str): field with key value
+        resampled_audio_dir (str): where to put re-sampled and trimmed wav files.
+        target_samplerate (int): sample rate to resample to. Defaults to 16000.
+        target_nchannels (int): target number of channels. Defaults to 1.
+    """
+    def __init__(
+        self,
+        resampled_audio_dir: str,
+        video_field: str,
+        audio_field: str,
+        key_field: str,
+        target_samplerate: int = 16000,
+        target_nchannels: int = 1,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.audio_field = audio_field
+        self.video_field = video_field
+        self.key_field = key_field
+        self.resampled_audio_dir = resampled_audio_dir
+        self.target_samplerate = target_samplerate
+        self.target_nchannels = target_nchannels
+
+    def process_dataset_entry(self, data_entry):
+        video = data_entry[self.video_field]
+        key = os.path.splitext(data_entry[self.video_field])[0][-13:]
+        os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
+        audio = os.path.join(self.resampled_audio_dir, key) + ".wav"
+
+        if not os.path.isfile(audio):
+            ffmpeg_convert(video, audio, self.target_samplerate, self.target_nchannels)
+
+        data_entry[self.audio_field]= audio
+        data_entry[self.key_field] = key
+        return [DataEntry(data=data_entry)]
