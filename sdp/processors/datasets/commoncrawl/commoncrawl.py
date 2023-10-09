@@ -724,7 +724,9 @@ class CreateInitialManifestCC(BaseParallelProcessor):
 class FfmpegConvert(BaseParallelProcessor):
     """
         Args:
-        raw_data_dir (str): where to put raw downloaded data.
+        video_field (str): field with path to video file in the input manifest
+        audio_field (str): field with path to audio file in the output manifest
+        key_field (str): field with key value
         resampled_audio_dir (str): where to put re-sampled and trimmed wav files.
         target_samplerate (int): sample rate to resample to. Defaults to 16000.
         target_nchannels (int): target number of channels. Defaults to 1.
