@@ -93,7 +93,9 @@ processors:
     output_manifest_file: ${workspace_dir}/manifest9.json
     text_key: text
     regex_params_list:
-      - {"pattern": '\\.{3}', "repl": '.'}
+      - {"pattern": '\s(\\x[a-h][0-9]){1,}\s', "repl": ' '}
+      - {"pattern": '(\\x[a-h][0-9]){1,}', "repl": ''}
+      - {"pattern": '\.{3}', "repl": '.'}
       - {"pattern": '\$', "repl": ""}
       - {"pattern": "'", "repl": " "}
       - {"pattern": "[^a-zA-ZäöüÄÖÜßẞ.,?]", "repl": " "}

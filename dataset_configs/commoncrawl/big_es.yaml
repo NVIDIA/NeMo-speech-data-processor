@@ -93,9 +93,11 @@ processors:
       - {"pattern": "^\\s*'*\\s*", "repl": ""}
       - {"pattern": "'{2,}", "repl": "'"}
       - {"pattern": '!', "repl": '.'}
-      - {"pattern": '\\.{3}', "repl": '.'}
+      - {"pattern": '\s(\\x[a-h][0-9]){1,}\s', "repl": ' '}
+      - {"pattern": '(\\x[a-h][0-9]){1,}', "repl": ''}
+      - {"pattern": '\.{3}', "repl": '.'}
       - {"pattern": '\$', "repl": ""}
-      - {"pattern": "[^a-zA-ZóÓáéÉíÍñÑúÚüÜ'.,?¿]", "repl": " "}
+      - {"pattern": "[^a-zA-ZóÓáÁéÉíÍñÑúÚüÜ'.,?¿]", "repl": " "}
       - {"pattern": '  ', "repl": " "}
     test_cases:
       - {input: {text: "' jupiter and venus both shining in the golden rosy sky"}, output: {text: "jupiter and venus both shining in the golden rosy sky"}}
