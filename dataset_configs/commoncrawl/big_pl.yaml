@@ -68,7 +68,9 @@ processors:
       - {"pattern": "^\\s*'+\\s(.*?)\\s*'+\\s*$", "repl": "\\1"}
       - {"pattern": "^\\s*'*\\s*", "repl": ""}
       - {"pattern": "'{2,}", "repl": "'"}
-      - {"pattern": '\\.{3}', "repl": '.'}
+      - {"pattern": '\s(\\x[a-h][0-9]){1,}\s', "repl": ' '}
+      - {"pattern": '(\\x[a-h][0-9]){1,}', "repl": ''}
+      - {"pattern": '\.{3}', "repl": '.'}
       - {"pattern": '\$', "repl": ""}
       - {"pattern": "[^a-pr-uwy-zA-PR-UWY-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ.,?]", "repl": " "}
       - {"pattern": '  ', "repl": " "}

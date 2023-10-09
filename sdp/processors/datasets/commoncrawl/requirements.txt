@@ -5,3 +5,5 @@ fastparquet
 pysndfile # conda install -c conda-forge libsndfile==1.0.31
 sonar-space
 fairseq2
+huggingsound
+pyarrow==12.0.1
