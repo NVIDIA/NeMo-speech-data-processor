@@ -1,4 +1,6 @@
 import os
+import re
+import math
 import json
 import subprocess
 from tqdm import tqdm
@@ -14,6 +16,70 @@ from sdp.logging import logger
 from sdp.processors.datasets.commoncrawl.harv_utils import ffmpeg_convert, txt2vtt, make_trans_list, get_vtt_text, text2lid, load_manifest, read_jsonl, write_jsonl, split_by_vtt_new
 from scipy.spatial import distance
 
+class SplitByAligner(BaseParallelProcessor):
+    """
+        Args:
+        resampled_audio_dir (str): where to put re-sampled and trimmed wav files.
+    """
+    def __init__(
+        self,
+        input_field: str,
+        output_field: str,
+        splited_audio_dir: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = input_field
+        self.output_field = output_field
+        self.splited_audio_dir = splited_audio_dir
+    
+    def prepare(self):
+        os.makedirs(self.splited_audio_dir, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        audio_filepath = data_entry[self.input_field]
+
+        # print(data_entry)
+        data, samplerate = sf.read(audio_filepath)
+        nfa_start = data_entry["nfa_start"]
+        nfa_duration = data_entry["nfa_duration"]
+        
+        if math.isnan(nfa_start) or math.isnan(nfa_duration) or math.isnan(samplerate):
+            print(audio_filepath, nfa_start, nfa_duration)
+            data_entry[self.output_field] = data_entry['audio_filepath']
+        else:
+            start = int(nfa_start*samplerate)
+            duration = int(nfa_duration*samplerate)
+            
+            data_sample = data[start : start+duration]
+
+            wav_save_file = os.path.join(self.splited_audio_dir, '/'.join(os.path.splitext(audio_filepath)[0].split('/')[-2:]), str(int(start*1000/samplerate))+"-"+str(int((start+duration)*1000/samplerate))+".wav")
+            if not os.path.isfile(wav_save_file):
+                os.makedirs(os.path.split(wav_save_file)[0], exist_ok=True)
+                sf.write(wav_save_file, data_sample, samplerate)
+            data_entry[self.output_field]=wav_save_file
+        return [DataEntry(data=data_entry)]
+
+class GetOffsetDuration(BaseParallelProcessor):
+    """
+        Args:
+        resampled_audio_dir (str): where to put re-sampled and trimmed wav files.
+    """
+    def __init__(
+        self,
+        input_field: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = input_field
+
+    def process_dataset_entry(self, data_entry):
+        input_value = data_entry[self.input_field]
+        offset, duration = os.path.splitext(os.path.split(input_value)[1])[0].split("-")
+        data_entry["offset"] = int(offset)/1000
+        # data_entry["duration"] = duration
+        return [DataEntry(data=data_entry)]
+        
 class ASR_HF(BaseProcessor):
     """
         Args:
@@ -264,6 +330,68 @@ class NmtSubprocess(Subprocess):
         df1[self.output_field] = tgtout
         write_jsonl(df1, self.output_manifest_file)
 
+class AlignerSubprocess(Subprocess):
+    """This processor performs ASR inference on each utterance of the input manifest.
+
+    ASR predictions will be saved in the ``pred_text`` key.
+
+    Args:
+        pretrained_model (str): the name of the pretrained NeMo ASR model
+            which will be used to do inference.
+        batch_size (int): the batch size to use for ASR inference. Defaults to 32.
+
+    Returns:
+         The same data as in the input manifest with an additional field
+         ``pred_text`` containing ASR model's predictions.
+    """
+
+    def __init__(
+        self,
+        output_field: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.output_field = output_field
+
+    def process(self):
+        df1 = read_jsonl(self.input_manifest_file)
+        pattern = re.compile("\s{2,}")
+        df1["text"] = df1["text"].apply(lambda x: pattern.sub(" ", x).strip())
+        df1["source"] = df1["audio_filepath"].apply(lambda x: x.split("/")[-2])
+        
+        df2 = pd.DataFrame(df1.groupby("source_audio").apply(lambda in_df: "|".join(in_df["text"].tolist())), columns=["text"]).reset_index()
+        df2['audio_filepath'] = df2['source_audio']
+        df2['text_len'] = df2['text'].apply(len)
+        df2 = df2[df2['text_len']<100000]
+
+        self.input_manifest_file = os.path.join(os.path.split(self.input_manifest_file)[0], 'tmp.json')
+        write_jsonl(df2[['audio_filepath', 'text']], self.input_manifest_file)
+
+        super().process()
+        manifest_path, manifest_name = os.path.split(self.input_manifest_file)
+        manifest_name = os.path.splitext(manifest_name)[0]
+        aligner_path = os.path.join(manifest_path,manifest_name+"_with_output_file_paths.json")
+        df3 = read_jsonl(aligner_path)
+        pattern = re.compile("<space>")
+        df4 = pd.DataFrame()
+        
+        for ctm_filepath in tqdm(df3["segments_level_ctm_filepath"]):
+            source = os.path.splitext(ctm_filepath)[0].split('/')[-1]
+            df6 = df1[df1["source"] == source].reset_index()
+            df5 = pd.read_csv(ctm_filepath, sep=' ', header=None, dtype={0:str})
+            df5["text"] = df5[4].apply(lambda x: pattern.sub(" ", x))
+            df5["nfa_start"] = df5[2]
+            df5["nfa_duration"] = df5[3]
+            if df5.shape[0] == df6.shape[0]:
+                df7 = df5[["nfa_start", "nfa_duration", "text"]].merge(df6,  how="right")
+            else:
+                raise ValueError(ctm_filepath)
+
+            df4 = pd.concat([df4, df7])
+
+        write_jsonl(df4, self.output_manifest_file)
+
+    
 class PreserveByValue(BaseParallelProcessor):
     """
         Args:

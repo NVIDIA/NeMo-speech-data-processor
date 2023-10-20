@@ -51,7 +51,7 @@ processors:
     target_audio_field: "audio_filepath"
     duration_field: "duration"
     text_field: "text"
-    proxy_fields: [audio_lang, text_lang]
+    proxy_fields: [audio_lang, text_lang, audios]
     duration_threshold: 10.0
     
   - _target_: sdp.processors.DropHighLowDuration
@@ -59,6 +59,10 @@ processors:
     high_duration_threshold: 40
     low_duration_threshold: 0.02
 
-  - _target_: sdp.processors.KeepOnlySpecifiedFields
+  - _target_: sdp.processors.DuplicateFields
     output_manifest_file: ${workspace_dir}/manifest8a.json
-    fields_to_keep: ["audio_filepath", "duration", "text", "audio_lang", "text_lang"]
+    duplicate_fields: {"audios": "source_audio"}
+
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${workspace_dir}/manifest9a.json
+    fields_to_keep: ["audio_filepath", "duration", "text", "audio_lang", "text_lang", "source_audio"]
