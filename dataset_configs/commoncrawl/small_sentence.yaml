@@ -66,3 +66,8 @@ processors:
   - _target_: sdp.processors.KeepOnlySpecifiedFields
     output_manifest_file: ${workspace_dir}/manifest9a.json
     fields_to_keep: ["audio_filepath", "duration", "text", "audio_lang", "text_lang", "source_audio"]
+
+  - _target_: sdp.processors.datasets.commoncrawl.EvalBandwidth
+    output_manifest_file: ${workspace_dir}/manifest10a.json
+    input_field: audio_filepath
+    output_field: bandwidth

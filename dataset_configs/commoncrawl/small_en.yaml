@@ -205,3 +205,42 @@ processors:
     text_key: text
     pred_text_key: pred_text
     cer_threshold: 30
+
+
+  - _target_: sdp.processors.datasets.commoncrawl.JoinBy
+    input_manifest_file: ${workspace_dir}/manifest16.json
+    output_manifest_file: ${workspace_dir}/manifest30.json
+    input_field: source_audio
+
+
+  - _target_: sdp.processors.datasets.commoncrawl.Subprocess
+    output_manifest_file: ${workspace_dir}/manifest31.json
+    input_manifest_arg: "--data_manifest"
+    output_manifest_arg: "--out_manifest"
+    arg_separator: "="
+    cmd: "python /home/nkarpov/workspace/NvLLMOps/nvllmops/stages/asr/data_segmentation/ds_align/ds_align.py \
+    --splits_dir=/mnt/ssd8/cc_sdp/en/dsa \
+    --stt-model-path=/home/nkarpov/ckpts/en/stt_en_conformer_ctc_large_1.1/stt_en_conformer_ctc_large.nemo \
+    --stt-model-type=CTC \
+    --min-audio-duration=2 \
+    --max-audio-duration=40 \
+    --asr-batch-size=32"
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    output_manifest_file: ${workspace_dir}/manifest32.json
+    text_key: text
+    regex_patterns:
+      - "^\\s*$"
+
+  - _target_: sdp.processors.DropHighWER
+    output_manifest_file: ${workspace_dir}/manifest33.json
+    text_key: text
+    pred_text_key: text_asr_pred
+    wer_threshold: 75
+
+  - _target_: sdp.processors.DropHighCER
+    output_manifest_file: ${workspace_dir}/manifest34.json
+    text_key: text
+    pred_text_key: text_asr_pred
+    cer_threshold: 30
+    

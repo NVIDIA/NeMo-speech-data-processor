@@ -3,8 +3,10 @@ import re
 import math
 import json
 import subprocess
+import librosa
 from tqdm import tqdm
 import pandas as pd
+import numpy as np
 from typing import Dict, List, Union
 from pathlib import Path
 from operator import lt, le, eq, ne, ge, gt
@@ -15,6 +17,70 @@ from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, 
 from sdp.logging import logger
 from sdp.processors.datasets.commoncrawl.harv_utils import ffmpeg_convert, txt2vtt, make_trans_list, get_vtt_text, text2lid, load_manifest, read_jsonl, write_jsonl, split_by_vtt_new
 from scipy.spatial import distance
+
+class JoinBy(BaseProcessor):
+    """This processor performs ASR inference on each utterance of the input manifest.
+
+    """
+
+    def __init__(
+        self,
+        input_field: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = input_field
+
+    def process(self):
+        df1 = read_jsonl(self.input_manifest_file)
+        pattern = re.compile("\s{2,}")
+        df1["text"] = df1["text"].apply(lambda x: pattern.sub(" ", x).strip())
+        # df1["source"] = df1["audio_filepath"].apply(lambda x: x.split("/")[-2])
+        
+        df2 = pd.DataFrame(df1.groupby(self.input_field).apply(lambda in_df: " ".join(in_df["text"].tolist())), columns=["text"]).reset_index()
+        df2['audio_filepath'] = df2[self.input_field]
+        write_jsonl(df2[['audio_filepath', 'text']], self.output_manifest_file)
+
+class EvalBandwidth(BaseParallelProcessor):
+    """
+        Args:
+        input_field (str): where to get path to wav file.
+        input_field (str): where to put to frequency bandwidth.
+        threshold (str): threshold to count frequency bandwidth.
+    """
+    def __init__(
+        self,
+        input_field: str,
+        output_field: str,
+        threshold: int = -50,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = input_field
+        self.output_field = output_field
+        self.threshold = threshold
+    
+    def process_dataset_entry(self, data_entry):
+        audio_filepath = data_entry[self.input_field]
+        data, samplerate = sf.read(audio_filepath)
+        freqband = self.eval_bandwidth(data, samplerate, threshold=self.threshold)
+        data_entry[self.output_field]=freqband
+        return [DataEntry(data=data_entry)]
+    
+    def eval_bandwidth(self, signal, sr, threshold=-50):
+        time_stride = 0.01
+        hop_length = int(sr * time_stride)
+        n_fft = 512
+        spectrogram = np.mean(
+            np.abs(librosa.stft(y=signal, n_fft=n_fft, hop_length=hop_length, window='blackmanharris')) ** 2, axis=1
+        )
+        power_spectrum = librosa.power_to_db(S=spectrogram, ref=np.max, top_db=100)
+        freqband = 0
+        for idx in range(len(power_spectrum) - 1, -1, -1):
+            if power_spectrum[idx] > threshold:
+                freqband = idx / n_fft * sr
+                break
+        return freqband
 
 class SplitByAligner(BaseParallelProcessor):
     """
