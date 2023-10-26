@@ -9,8 +9,8 @@ processors:
     resampled_audio_dir: ${workspace_dir}/audio/
     target_samplerate: 16000
     target_nchannels: 1
-    video_field: "videos"
-    audio_field: "audios"
+    input_field: "videos"
+    output_field: "audios"
     key_field: "key"
 
   - _target_: sdp.processors.datasets.commoncrawl.TxtToVtt

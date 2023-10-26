@@ -15,11 +15,13 @@ from sacrebleu import BLEU
 
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
 from sdp.logging import logger
-from sdp.processors.datasets.commoncrawl.harv_utils import ffmpeg_convert, txt2vtt, make_trans_list, get_vtt_text, text2lid, load_manifest, read_jsonl, write_jsonl, split_by_vtt_new
+from sdp.processors.datasets.commoncrawl.harv_utils import ffmpeg_convert, txt2vtt, make_trans_list, get_vtt_text, text2lid, load_manifest, read_jsonl, write_jsonl, split_by_vtt_new, audio_duration
 from scipy.spatial import distance
 
 class JoinBy(BaseProcessor):
-    """This processor performs ASR inference on each utterance of the input manifest.
+    """
+    This processor join several lines into one
+    input_field (str): where to get path to wav file.
 
     """
 
@@ -41,12 +43,33 @@ class JoinBy(BaseProcessor):
         df2['audio_filepath'] = df2[self.input_field]
         write_jsonl(df2[['audio_filepath', 'text']], self.output_manifest_file)
 
+class AudioDuration(BaseParallelProcessor):
+    """
+        Args:
+        input_field (str): where to get path to wav file.
+        output_field (str): where to put to frequency bandwidth.
+    """
+    def __init__(
+        self,
+        input_field: str,
+        output_field: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = input_field
+        self.output_field = output_field
+    
+    def process_dataset_entry(self, data_entry):
+        audio_filepath = data_entry[self.input_field]
+        data_entry[self.output_field]=audio_duration(audio_filepath)
+        return [DataEntry(data=data_entry)]
+
 class EvalBandwidth(BaseParallelProcessor):
     """
         Args:
         input_field (str): where to get path to wav file.
-        input_field (str): where to put to frequency bandwidth.
-        threshold (str): threshold to count frequency bandwidth.
+        output_field (str): where to put to frequency bandwidth.
+        threshold (str): power threshold (in dB relative to peak power in spectrum bin) to estimate frequency bandwidth.
     """
     def __init__(
         self,
@@ -84,8 +107,12 @@ class EvalBandwidth(BaseParallelProcessor):
 
 class SplitByAligner(BaseParallelProcessor):
     """
+        split wav file using NFA aligner fields: nfa_start, nfa_duration
+        
         Args:
-        resampled_audio_dir (str): where to put re-sampled and trimmed wav files.
+        input_field (str): field to get source wav file names.
+        output_field: (str): field to put splited wav file names.
+        splited_audio_dir (str): where to save splited wav files.
     """
     def __init__(
         self,
@@ -126,30 +153,14 @@ class SplitByAligner(BaseParallelProcessor):
             data_entry[self.output_field]=wav_save_file
         return [DataEntry(data=data_entry)]
 
-class GetOffsetDuration(BaseParallelProcessor):
-    """
-        Args:
-        resampled_audio_dir (str): where to put re-sampled and trimmed wav files.
-    """
-    def __init__(
-        self,
-        input_field: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.input_field = input_field
-
-    def process_dataset_entry(self, data_entry):
-        input_value = data_entry[self.input_field]
-        offset, duration = os.path.splitext(os.path.split(input_value)[1])[0].split("-")
-        data_entry["offset"] = int(offset)/1000
-        # data_entry["duration"] = duration
-        return [DataEntry(data=data_entry)]
-        
 class ASR_HF(BaseProcessor):
     """
+        Transcribe usinf ASR model from HuggingFace.
         Args:
-        resampled_audio_dir (str): where to put re-sampled and trimmed wav files.
+        pretrained_model (str): name of pretrained model on HuggingFace.
+        output_text_field (str): field to save transcription result.
+        device (str): Inference device.
+        batch_size (str): Inference batch size.
     """
     def __init__(
         self,
@@ -195,8 +206,16 @@ class ASR_HF(BaseProcessor):
 
 class UseSonar(BaseProcessor):
     """
+        Count vector distance using Sonar library.
         Args:
-        resampled_audio_dir (str): where to put re-sampled and trimmed wav files.
+        input_text_field (str): field with text to process.
+        input_audio_field (str): field with audio file path to process.
+        output_field (str): field to save distance.
+        speech_encoder_model (str): name of pretrained speech encoder model.
+        text_encoder_lang (str): language of text.
+        text_encoder_model (str): name of pretrained text encoder model.
+        batch_size (int): batch size for inference.
+        device (str): device to inference on it.
     """
     def __init__(
         self,
@@ -279,8 +298,11 @@ class UseSonar(BaseProcessor):
 
 class BLEUScore(BaseParallelProcessor):
     """
+        Count BLEU Score 
         Args:
-        resampled_audio_dir (str): where to put re-sampled and trimmed wav files.
+            ref_field (str): field with reference texts
+            hyp_field (str): field with hypotheses
+            output_field (str): field to save BLEU Score
     """
     def __init__(
         self,
@@ -305,7 +327,7 @@ class BLEUScore(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 class Subprocess(BaseProcessor):
-    """This processor performs ASR inference on each utterance of the input manifest.
+    """This processor performs subprocess.
 
     ASR predictions will be saved in the ``pred_text`` key.
 
@@ -397,9 +419,9 @@ class NmtSubprocess(Subprocess):
         write_jsonl(df1, self.output_manifest_file)
 
 class AlignerSubprocess(Subprocess):
-    """This processor performs ASR inference on each utterance of the input manifest.
+    """This processor performs alignment of text on each audio file in the input manifest.
 
-    ASR predictions will be saved in the ``pred_text`` key.
+    Predictions will be saved in the ``output_field`` key.
 
     Args:
         pretrained_model (str): the name of the pretrained NeMo ASR model
@@ -414,10 +436,12 @@ class AlignerSubprocess(Subprocess):
     def __init__(
         self,
         output_field: str,
+        duration_threshold: int = 5000,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.output_field = output_field
+        self.duration_threshold = duration_threshold
 
     def process(self):
         df1 = read_jsonl(self.input_manifest_file)
@@ -427,8 +451,8 @@ class AlignerSubprocess(Subprocess):
         
         df2 = pd.DataFrame(df1.groupby("source_audio").apply(lambda in_df: "|".join(in_df["text"].tolist())), columns=["text"]).reset_index()
         df2['audio_filepath'] = df2['source_audio']
-        df2['text_len'] = df2['text'].apply(len)
-        df2 = df2[df2['text_len']<100000]
+        df2['duration'] = df2['audio_filepath'].apply(audio_duration)
+        df2 = df2[df2['duration'] < self.duration_threshold]
 
         self.input_manifest_file = os.path.join(os.path.split(self.input_manifest_file)[0], 'tmp.json')
         write_jsonl(df2[['audio_filepath', 'text']], self.input_manifest_file)
@@ -918,8 +942,8 @@ class CreateInitialManifestCC(BaseParallelProcessor):
 class FfmpegConvert(BaseParallelProcessor):
     """
         Args:
-        video_field (str): field with path to video file in the input manifest
-        audio_field (str): field with path to audio file in the output manifest
+        input_field (str): field with path to video file in the input manifest
+        output_field (str): field with path to audio file in the output manifest
         key_field (str): field with key value
         resampled_audio_dir (str): where to put re-sampled and trimmed wav files.
         target_samplerate (int): sample rate to resample to. Defaults to 16000.
@@ -928,16 +952,16 @@ class FfmpegConvert(BaseParallelProcessor):
     def __init__(
         self,
         resampled_audio_dir: str,
-        audio_field: str,
-        video_field: str,
+        input_field: str,
+        output_field: str,
         key_field: str,
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.audio_field = audio_field
-        self.video_field = video_field
+        self.audio_field = input_field
+        self.video_field = output_field
         self.key_field = key_field
         self.resampled_audio_dir = resampled_audio_dir
         self.target_samplerate = target_samplerate
@@ -955,3 +979,38 @@ class FfmpegConvert(BaseParallelProcessor):
         data_entry[self.audio_field]= audio
         data_entry[self.key_field] = key
         return [DataEntry(data=data_entry)]
+
+
+class CreateInitialManifestExt(BaseParallelProcessor):
+    """
+        Args:
+        raw_data_dir (str): where to put raw downloaded data.
+        resampled_audio_dir (str): where to put re-sampled and trimmed wav files.
+        target_samplerate (int): sample rate to resample to. Defaults to 16000.
+        target_nchannels (int): target number of channels. Defaults to 1.
+    """
+    def __init__(
+        self,
+        raw_data_dir: str,
+        output_field: str = "audio_filepath",
+        extention: str = "mp3",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.raw_data_dir = Path(raw_data_dir)
+        self.output_field = output_field
+        self.extention = extention
+
+    def prepare(self):
+        os.makedirs(self.raw_data_dir, exist_ok=True)
+
+    def read_manifest(self):
+        input_files = [str(self.raw_data_dir / video) for video in self.raw_data_dir.rglob('*.' + self.extention)]
+        v_df = pd.DataFrame({self.output_field: input_files})
+        return v_df.values
+    
+    def process_dataset_entry(self, data_entry):
+        (inputf) = data_entry
+        
+        data = {self.output_field: inputf[0]}
+        return [DataEntry(data=data)]
