@@ -13,8 +13,6 @@
 # limitations under the License.
 import json
 
-# To convert mp3 files to wav using sox, you must have installed sox with mp3 support
-# For example sudo apt-get install libsox-fmt-mp3
 from sdp.processors.base_processor import BaseProcessor
 
 
@@ -24,8 +22,10 @@ class LhotseImport(BaseProcessor):
     Lhotse is a library for speech data processing and loading; see:
     - https://github.com/lhotse-speech/lhotse
     - https://lhotse.readthedocs.io
+    It can be installed using ``pip install lhotse``.
 
-    TODO: list limitations
+    .. caution:: Currently we only support the importing of cut sets that represent
+        single-channel, single-audio-file-per-utterance datasets.
 
     Returns:
         This processor generates an initial manifest file with the following fields::
@@ -36,7 +36,6 @@ class LhotseImport(BaseProcessor):
                 "text": <transcription (with capitalization and punctuation)>,
             }
     """
-
     def process(self):
         from lhotse import CutSet
 
@@ -47,10 +46,13 @@ class LhotseImport(BaseProcessor):
                 data = {
                     "audio_filepath": cut.recording.sources[0].source,
                     "duration": cut.duration,
+                    "lhotse_cut_id": cut.id,
                 }
                 for meta in ("text", "speaker", "gender", "language"):
                     if (item := getattr(cut.supervisions[0], meta)) is not None:
                         data[meta] = item
+                if (custom := cut.supervisions[0].custom) is not None:
+                    data.update(custom)
                 print(json.dumps(data), file=f)
 
     def check_entry(self, cut) -> None:
