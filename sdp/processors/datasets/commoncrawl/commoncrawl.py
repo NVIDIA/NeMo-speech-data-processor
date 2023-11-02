@@ -18,6 +18,7 @@ from sdp.logging import logger
 from sdp.processors.datasets.commoncrawl.harv_utils import ffmpeg_convert, txt2vtt, make_trans_list, get_vtt_text, text2lid, load_manifest, read_jsonl, write_jsonl, split_by_vtt_new, audio_duration
 from scipy.spatial import distance
 
+
 class JoinBy(BaseProcessor):
     """
     This processor join several lines into one
@@ -883,6 +884,10 @@ class ReadParquet(BaseParallelProcessor):
             logger.warning("Key without URL or caption: " + key)
         return [DataEntry(data=data_entry)]
 
+def get_key(x):
+    key = "/".join(os.path.splitext(x)[0].split("/")[-2:])
+    return key
+
 class CreateInitialManifestCC(BaseParallelProcessor):
     """
         Args:
@@ -922,8 +927,8 @@ class CreateInitialManifestCC(BaseParallelProcessor):
         texts = [str(self.raw_data_dir / text) for text in self.raw_data_dir.rglob('*.txt')]
         v_df = pd.DataFrame({self.video_field: videos})
         t_df = pd.DataFrame({self.text_field: texts })
-        v_df[self.key_field] = v_df[self.video_field].apply(lambda x: os.path.splitext(x)[0][-13:])
-        t_df[self.key_field] = t_df[self.text_field].apply(lambda x: os.path.splitext(x)[0][-13:])
+        v_df[self.key_field] = v_df[self.video_field].apply(get_key)
+        t_df[self.key_field] = t_df[self.text_field].apply(get_key)
         v_df = v_df.drop_duplicates(self.key_field)
         t_df = t_df.drop_duplicates(self.key_field)
         vt_df = v_df.merge(t_df, on=self.key_field, how="left")
@@ -964,23 +969,23 @@ class FfmpegConvert(BaseParallelProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.audio_field = input_field
-        self.video_field = output_field
+        self.input_field = input_field
+        self.output_field = output_field
         self.key_field = key_field
         self.resampled_audio_dir = resampled_audio_dir
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
 
     def process_dataset_entry(self, data_entry):
-        video = data_entry[self.video_field]
-        key = os.path.splitext(data_entry[self.video_field])[0][-13:]
+        video = data_entry[self.input_field]
+        key = data_entry[self.key_field]
         os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
         audio = os.path.join(self.resampled_audio_dir, key) + ".wav"
 
         if not os.path.isfile(audio):
             ffmpeg_convert(video, audio, self.target_samplerate, self.target_nchannels)
 
-        data_entry[self.audio_field]= audio
+        data_entry[self.output_field]= audio
         data_entry[self.key_field] = key
         return [DataEntry(data=data_entry)]
 

@@ -2,15 +2,36 @@ processors_to_run: "0:"
 workspace_dir: /mnt/ssd8/cc_sdp
 
 processors:
+  - _target_: sdp.processors.datasets.commoncrawl.CreateInitialManifestCC
+    raw_data_dir: /mnt/ssd8/cc_download/videos_and_transcripts_large_16_cores_output/video_output2
+    video_field: "source_video"
+    text_field: "texts"
+    key_field: "key"
+
+  - _target_: sdp.processors.datasets.commoncrawl.ReadParquet
+    raw_data_dir: /mnt/ssd8/cc_download/videos_and_transcripts_large_16_cores_output/video_output2
+    output_video_field: video_url
+    output_caption_field: caption_url
+    key_field: key
+
   - _target_: sdp.processors.datasets.commoncrawl.FfmpegConvert
-    input_manifest_file: ${workspace_dir}/manifest_urls.json
-    output_manifest_file: ${workspace_dir}/manifest0.json
-    resampled_audio_dir: ${workspace_dir}/audio/
+    # input_manifest_file:${workspace_dir}/manifest_urls.json
+    resampled_audio_dir: ${workspace_dir}/audio 
     target_samplerate: 16000
     target_nchannels: 1
-    input_field: "videos"
-    output_field: "audios"
+    input_field: "source_video"
+    output_field: "source_audio"
     key_field: "key"
+
+  - _target_: sdp.processors.datasets.commoncrawl.AudioDuration
+    input_field: source_audio
+    output_field: duration
+
+  - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest0.json
+    input_field: duration
+    target_value: 0
+    operator: gt
 
   - _target_: sdp.processors.datasets.commoncrawl.TxtToVtt
     output_manifest_file: ${workspace_dir}/manifest1.json
