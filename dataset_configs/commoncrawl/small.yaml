@@ -77,5 +77,5 @@ processors:
     raw_data_dir: /mnt/ssd8/cc_download/videos_and_transcripts_large_16_cores_output/video_output2
     output_manifest_file: ${workspace_dir}/manifest8.json
     output_video_field: video
-    output_vtt_field: caption
+    output_caption_field: caption
     key_field: key

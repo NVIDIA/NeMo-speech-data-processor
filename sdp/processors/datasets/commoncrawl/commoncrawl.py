@@ -61,7 +61,11 @@ class AudioDuration(BaseParallelProcessor):
     
     def process_dataset_entry(self, data_entry):
         audio_filepath = data_entry[self.input_field]
-        data_entry[self.output_field]=audio_duration(audio_filepath)
+        try:
+            data_entry[self.output_field]=audio_duration(audio_filepath)
+        except Exception as e:
+            logger.warning(str(e) + " file: " + audio_filepath)
+            data_entry[self.output_field] = -1.0
         return [DataEntry(data=data_entry)]
 
 class EvalBandwidth(BaseParallelProcessor):
@@ -843,14 +847,14 @@ class ReadParquet(BaseParallelProcessor):
     def __init__(
         self,
         output_video_field: str,
-        output_vtt_field: str,
+        output_caption_field: str,
         key_field: str,
         raw_data_dir: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.output_video_field = output_video_field
-        self.output_vtt_field = output_vtt_field
+        self.output_caption_field = output_caption_field
         self.key_field = key_field
         self.raw_data_dir = Path(raw_data_dir)
 
@@ -872,10 +876,10 @@ class ReadParquet(BaseParallelProcessor):
         key = key.split("/")[1]
         try:
             data_entry[self.output_video_field] = self.urls.loc[key]['url']
-            data_entry[self.output_vtt_field] = self.urls.loc[key]['caption']
+            data_entry[self.output_caption_field] = self.urls.loc[key]['caption']
         except:
             data_entry[self.output_video_field] = "NN"
-            data_entry[self.output_vtt_field] = "NN"
+            data_entry[self.output_caption_field] = "NN"
             logger.warning("Key without URL or caption: " + key)
         return [DataEntry(data=data_entry)]
 
