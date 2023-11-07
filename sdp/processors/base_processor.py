@@ -101,6 +101,7 @@ class BaseParallelProcessor(BaseProcessor):
         self,
         max_workers: int = -1,
         chunksize: int = 100,
+        in_memory_chunksize: int = 1000000,  # TODO: docs
         test_cases: Optional[List[Dict]] = None,
         **kwargs
     ):
@@ -109,6 +110,7 @@ class BaseParallelProcessor(BaseProcessor):
             max_workers = multiprocessing.cpu_count()
         self.max_workers = max_workers
         self.chunksize = chunksize
+        self.in_memory_chunksize = in_memory_chunksize
         self.number_of_entries = 0
         self.total_duration = 0
 
@@ -157,28 +159,28 @@ class BaseParallelProcessor(BaseProcessor):
              </div>
         """
         self.prepare()
-        dataset_entries = self.read_manifest()
-
-        # this will unroll all inner lists
-        data = itertools.chain(
-            *process_map(
-                self.process_dataset_entry,
-                dataset_entries,
-                max_workers=self.max_workers,
-                chunksize=self.chunksize,
-            )
-        )
-        metrics = []
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
+        metrics = []
+
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
-            for data_entry in tqdm(data):
-                metrics.append(data_entry.metrics)
-                if data_entry.data is None:
-                    continue
-                json.dump(data_entry.data, fout, ensure_ascii=False)
-                self.number_of_entries += 1
-                self.total_duration += data_entry.data.get("duration", 0)
-                fout.write("\n")
+            for manifest_chunk in self._chunk_manifest():
+                # this will unroll all inner lists
+                data = itertools.chain(
+                    *process_map(
+                        self.process_dataset_entry,
+                        manifest_chunk,
+                        max_workers=self.max_workers,
+                        chunksize=self.chunksize,
+                    )
+                )
+                for data_entry in tqdm(data):
+                    metrics.append(data_entry.metrics)
+                    if data_entry.data is None:
+                        continue
+                    json.dump(data_entry.data, fout, ensure_ascii=False)
+                    self.number_of_entries += 1
+                    self.total_duration += data_entry.data.get("duration", 0)
+                    fout.write("\n")
 
         self.finalize(metrics)
 
@@ -188,6 +190,17 @@ class BaseParallelProcessor(BaseProcessor):
         E.g., download data or compute some aggregates. Will be called before
         starting processing the data.
         """
+
+    def _chunk_manifest(self):
+        """TODO"""
+        manifest_chunk = []
+        for idx, data_entry in enumerate(self.read_manifest(), 1):
+            manifest_chunk.append(data_entry)
+            if idx % self.in_memory_chunksize == 0:
+                yield manifest_chunk
+                manifest_chunk = []
+        if len(manifest_chunk) > 0:
+            yield manifest_chunk
 
     def read_manifest(self):
         """Reading the input manifest file.
@@ -199,11 +212,9 @@ class BaseParallelProcessor(BaseProcessor):
         if self.input_manifest_file is None:
             raise NotImplementedError("Override this method if the processor creates initial manifest")
 
-        # TODO: should we not assume that manifest can fully fit in memory?
         with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
-            dataset_entries = [json.loads(line) for line in fin.readlines()]
-
-        return dataset_entries
+            for line in fin:
+                yield json.loads(line)
 
     @abstractmethod
     def process_dataset_entry(self, data_entry) -> List[DataEntry]:
