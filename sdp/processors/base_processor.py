@@ -87,7 +87,10 @@ class BaseParallelProcessor(BaseProcessor):
     Args:
         max_workers (int): maximum number of workers that will be spawned
             during the parallel processing.
-        chunksize (int): the size of the chunks that will be sent to worker processes.
+        chunksize (int): the size of the chunks that will be sent to worker processes
+            during the parallel processing.
+        in_memory_chunksize (int): the maximum number of input data entries that will
+            be read, processed and saved at a time.
         test_cases (list[dict]): an optional list of dicts containing test
             cases for checking that the processor makes the changes that we
             are expecting.
@@ -101,7 +104,7 @@ class BaseParallelProcessor(BaseProcessor):
         self,
         max_workers: int = -1,
         chunksize: int = 100,
-        in_memory_chunksize: int = 1000000,  # TODO: docs
+        in_memory_chunksize: int = 1000000,
         test_cases: Optional[List[Dict]] = None,
         **kwargs
     ):
@@ -127,26 +130,34 @@ class BaseParallelProcessor(BaseProcessor):
         1. :meth:`prepare` is called. It's empty by default but can be used to
            e.g. download the initial data files or compute some aggregates
            required for subsequent processing.
-        2. A list of data entries is created by calling :meth:`read_manifest`.
-           Default implementation reads an input manifest file and returns a
-           list of dictionaries for each line (we assume a standard NeMo format
-           of one json per line).
-        3. :meth:`process_dataset_entry` is called **in parallel** on each element
-           of the list created in the previous step. Note that you cannot create
-           any new counters or modify the attributes of this class in any way
-           inside that function as this will lead to an undefined behavior.
-           Each call to the :meth:`process_dataset_entry` returns a list of
-           ``DataEntry`` objects that are then aggregated together. ``DataEntry``
-           simply defines a ``data`` and ``metrics`` keys.
-        4. We loop through all returned data entries and do the following
+        2. A for-loop begins that loops over all ``manifest_chunk`` lists yielded
+           by the :meth:`_chunk_manifest` method. :meth:`_chunk_manifest` reads data
+           entries yielded by :meth:`read_manifest` and yields lists containing
+           ``in_memory_chunksize`` data entries.
 
-           a) All ``metrics`` keys are collected in a separate list and passed
-              over to the :meth:`finalize` method for any desired metric
-              aggregation and reporting.
-           b) If ``data`` is set to None, the objects are ignored (metrics are
-              still collected).
-           c) All non-ignored objects are dumped to the output manifest file
-              with a call to ``json.dump``, one object per-line.
+           Inside the for-loop:
+
+           a) :meth:`process_dataset_entry` is called **in parallel** on each element
+              of the ``manifest_chunk`` list.
+           b) All metrics are aggregated.
+           c) All output data-entries are added to the contents of ``output_manifest_file``.
+
+           Note:
+
+           * The default implementation of :meth:`read_manifest` reads an input manifest file
+             and returns a list of dictionaries for each line (we assume a standard NeMo format
+             of one json per line).
+           * :meth:`process_dataset_entry` is called **in parallel** on each element
+             of the list created in the previous step. Note that you cannot create
+             any new counters or modify the attributes of this class in any way
+             inside that function as this will lead to an undefined behavior.
+             Each call to the :meth:`process_dataset_entry` returns a list of
+             ``DataEntry`` objects that are then aggregated together. ``DataEntry``
+             simply defines a ``data`` and ``metrics`` keys.
+           * If ``data`` is set to None, the objects are ignored (metrics are still collected).
+
+        3. All ``metrics`` keys that were collected in the for-loop above are passed over to
+           :meth:`finalize` for any desired metric aggregation and reporting.
 
         Here is a diagram outlining the execution flow of this method:
 
@@ -155,7 +166,7 @@ class BaseParallelProcessor(BaseProcessor):
         .. raw:: html
 
              <div align="center">
-               <img src="https://mermaid.ink/img/pako:eNplUl1r6zAM_SvCFy4pbL3vvaVwu-59sL0tl6LESmqIP7DkjWzsv89O0rVjzosiHR8dHetdtV6T2qg-YjjB0-Fv7SAfTs2cqdWjUGAwDrYiuz0yPWDEYaDhIfqWmH1chzmqVts_GQOW5OR1rWaqcv4916pcZxq6jKaAkRb0tok7IBtkXO5BM4KmDtMgUIotOmgIEpMG8VOK1v0atH91g0cNEV9BoyBgEm9RTJvljbX6D7e3O9hfVOyvVURCfbToTEcs11pKocwbksC5PnWFyhB00VvIE7wYnxiWwY3rgbNNqwlnOpATRQLD4B2dhdxdhNx9t2PiOJYRmORITuJYlb85XEydFGDDErGVL4tn6gNcuA-Zm_GFwCf5McJvwL6P1KNQoYim5SlfTY7-At9BEmHQ0YdAenVucH_hv7_W3hmHg3mj40JWXYudX8lwGHD86rb4d7YtN6hd-Qo1Oa1ulKVo0ei8k-8lXatsps0ubnK47EVZrY8MLQ_-OLpWbSQmulEpZNvoYDDvrlWbDgemj0-10vX9" height=100% />
+               <img src="https://mermaid.ink/img/pako:eNqFU99r2zAQ_lcOFUYCbfbuhcCS9HFQ6N7mYS7WyRaTJSOdF7zS_32SrDYuDOYn-e6777779SJaJ0lUovM49vD9_KW2EL8wXRZLLZ6ZxgDawp75cMRAT-jRGDJP3rUUgvO7cXlttvvPEQMDce9kLRaq9H39UYsUHsioiKYRPRX0_uIPQMPIc4mDywySFE6GITlbtHAhmAJJYJdNtOt2IN3VGocSPF5BIiPgxG5A1m2UN9fiJzw8HOB8U3Fcq_CEshnQakWB11qKimuv2x5mTUaGnBPjb05Dlv07_elGf1rTN20_2V__T1CakVPkkABOQdB_KFne6bRtBhqcnxfe7E-E_6jyHGUo5yELTgRvGpbQHFYl8g-gVFmTK7sBUh_hg4wy6CahA_ESsLnFlgXIZW7i3PAS2GPLpebt4vkEAX8TuInHKbqKvGjGrvPUIVPCe92GjN_kcd-lvkzMAaR340hy-1b74632x_UIlLZoYqOaQrZZq1tWSIfR4PyeTXk3QKlR2y4mqG25B54NwRGUNqa6U0qtzae1eXGQlbUV92IgP6CW8cBekqMW3NNAtajisyx5upPXCE3b-zzbVlTsJ7oX0xj7SmeN8RAHUSk0IVpJanb-23K0-XZf_wKzfkSg" height=100% />
              </div>
         """
         self.prepare()
@@ -192,7 +203,8 @@ class BaseParallelProcessor(BaseProcessor):
         """
 
     def _chunk_manifest(self):
-        """TODO"""
+        """Splits the manifest into smaller chunks defined by ``in_memory_chunksize``.
+        """
         manifest_chunk = []
         for idx, data_entry in enumerate(self.read_manifest(), 1):
             manifest_chunk.append(data_entry)
