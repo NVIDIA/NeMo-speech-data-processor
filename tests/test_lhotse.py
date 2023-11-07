@@ -24,6 +24,7 @@ def cuts_path(tmp_path):
 
     def drop_custom(c):
         c.custom = None
+        c.supervisions[0].custom = None
         return c
 
     (
@@ -46,6 +47,7 @@ def test_lhotse_import(tmp_path, cuts_path):
 
     EXPECTED_KEYS = {
         "audio_filepath",
+        "lhotse_cut_id",
         "text",
         "duration",
         "speaker",
