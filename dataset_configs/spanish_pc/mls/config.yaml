@@ -52,7 +52,7 @@ processors:
   # fix up text_pc_pred outputs by putting upside down question mark at the start of the word (not at the end, as it currently is)
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_just_added_pred.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_a.json"
     text_key: "text_pc_pred"
     regex_params_list:
     - {"pattern": ' (\w+)¿ ', "repl": ' ¿\1 '}
@@ -61,15 +61,15 @@ processors:
       - {input: {text_pc_pred: "cómo¿ estás? def."}, output: {text_pc_pred: "¿cómo estás? def."}}
 
   - _target_: sdp.processors.MakeLettersUppercaseAfterPeriod
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_a.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_b.json"
     text_key: "text_pc_pred"
     test_cases:
       - {input: {text_pc_pred: "¿cómo estás? def."}, output: {text_pc_pred: "¿cómo estás? Def."}}
 
   - _target_: sdp.processors.RenameFields
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_b.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_c.json"
     rename_fields:
       "text": "original_dataset_text"
 
@@ -80,7 +80,7 @@ processors:
         - field: text_pc_pred
           origin_label: synthetic
     target: text
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_c.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
 
   - _target_: sdp.processors.ASRInference
@@ -90,7 +90,7 @@ processors:
 
   - _target_: sdp.processors.SubRegex
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_inference.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex_a.json"
     regex_params_list:
       - {"pattern": "!", "repl": "."}
       - {"pattern": "…", "repl": "."}
@@ -185,7 +185,7 @@ processors:
 
   # bunch of strings we map to spaces
   - _target_: sdp.processors.SubRegex
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex.json"
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex_a.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex.json"
     regex_params_list:
     - {"pattern": '[\-\‐\‑\–\—\―\"]', "repl": " "}
@@ -343,17 +343,17 @@ processors:
 
   - _target_: sdp.processors.DuplicateFields
     input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_librivox.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc_a.json"
     duplicate_fields:
       "text": "text_no_pc"
 
   - _target_: sdp.processors.SubMakeLowercase
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc_a.json"
+    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc_b.json"
     text_key: "text_no_pc"
 
   - _target_: sdp.processors.SubRegex
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
+    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc_b.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
     text_key: "text_no_pc"
     regex_params_list:

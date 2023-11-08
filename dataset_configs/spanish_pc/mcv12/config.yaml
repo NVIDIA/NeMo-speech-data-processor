@@ -126,17 +126,17 @@ processors:
 
   - _target_: sdp.processors.DuplicateFields
     input_manifest_file: "${workspace_dir}/manifests/${data_split}_fixed_text.json"
-    output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc_a.json"
     duplicate_fields:
       "text": "text_no_pc"
 
   - _target_: sdp.processors.SubMakeLowercase
-    input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
-    output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc_a.json"
+    output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc_b.json"
     text_key: "text_no_pc"
 
   - _target_: sdp.processors.SubRegex
-    input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
+    input_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc_b.json"
     output_manifest_file: "${workspace_dir}/manifests/${data_split}_with_text_no_pc.json"
     text_key: "text_no_pc"
     regex_params_list:

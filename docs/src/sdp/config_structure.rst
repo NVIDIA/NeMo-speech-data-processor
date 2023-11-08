@@ -32,7 +32,8 @@ the processors you're using.
   those arguments for any processors and SDP will automatically "stitch" consecutive processors together by creating
   temporary files. So most often you only need to specify those arguments for the final processors or any other processors
   that you need to retain an output for (either for caching of the costly computation or to inspect the output for
-  debugging purposes).
+  debugging purposes). If specified, the ``input_manifest_file`` and ``output_manifest_file`` for a particular processor
+  cannot be the same.
 * **should_run (bool)**: this boolean field allows to skip any processors in the config. It can be useful to either
   temporarily skip the optional processors or to add certain conditions on when the processors should run, using the
   :ref:`custom resolvers <custom_resolvers>`.
