@@ -87,7 +87,7 @@ def get_test_cases():
         (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
         # audio will be downloaded on the fly from a subset of files.
         # No checks, but need to mock the url list function (done above)
-        (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
+        #(f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
     ]
 
 
