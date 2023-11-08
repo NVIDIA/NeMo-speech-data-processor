@@ -47,17 +47,25 @@ class BaseProcessor(ABC):
 
     Args:
         output_manifest_file (str): path of where the output manifest file will
-            be located.
+            be located. Cannot have the same value as ``input_manifest_file``.
         input_manifest_file (str): path of where the input manifest file is
             located. This arg is optional - some processors may not take in
             an input manifest because they need to create an initial manifest
             from scratch (ie from some transcript file that is in a format
-            different to the NeMo manifest format).
+            different to the NeMo manifest format). Cannot have the same value
+            as ``input_manifest_file``.
     """
 
     def __init__(self, output_manifest_file: str, input_manifest_file: Optional[str] = None):
+
+        if output_manifest_file == input_manifest_file:
+            # we cannot have the same input and output manifest file because we need to be able to
+            # read from the input_manifest_file and write to the output_manifest_file at the same time
+            raise ValueError("A processor's input_manifest_file and output_manifest_file cannot be the same")
+
         self.output_manifest_file = output_manifest_file
         self.input_manifest_file = input_manifest_file
+
 
     @abstractmethod
     def process(self):
