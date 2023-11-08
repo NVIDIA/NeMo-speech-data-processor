@@ -58,10 +58,12 @@ class BaseProcessor(ABC):
 
     def __init__(self, output_manifest_file: str, input_manifest_file: Optional[str] = None):
 
-        if output_manifest_file == input_manifest_file:
-            # we cannot have the same input and output manifest file because we need to be able to
+        if output_manifest_file and input_manifest_file and (output_manifest_file == input_manifest_file):
+            # we cannot have the same input and output manifest file specified because we need to be able to
             # read from the input_manifest_file and write to the output_manifest_file at the same time
-            raise ValueError("A processor's input_manifest_file and output_manifest_file cannot be the same")
+            raise ValueError(
+                "A processor's specified input_manifest_file and output_manifest_file cannot be the same"
+            )
 
         self.output_manifest_file = output_manifest_file
         self.input_manifest_file = input_manifest_file
