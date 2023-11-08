@@ -1,0 +1,59 @@
+processors_to_run: "0:"
+workspace_dir: /mnt/ssd8/arm
+
+processors:
+  - _target_: sdp.processors.datasets.arm.CreateInitialManifestByExt
+    raw_data_dir: /mnt/ssd8/arm/mp3
+    extention: mp3
+    output_field: source_filepath
+    output_manifest_file: ${workspace_dir}/manifest0.json
+
+  - _target_: sdp.processors.datasets.arm.FfmpegConvert
+    output_manifest_file: ${workspace_dir}/manifest1.json
+    resampled_audio_dir: ${workspace_dir}/audio
+    target_samplerate: 16000
+    target_nchannels: 1
+    input_field: "source_filepath"
+    output_field: "audio_filepath"
+    key_field: null
+
+  - _target_: sdp.processors.datasets.arm.AudioDuration
+    input_field: audio_filepath
+    output_field: duration
+    output_manifest_file: ${workspace_dir}/manifest2.json
+    
+  - _target_: sdp.processors.datasets.arm.ASR_Whisper
+    output_manifest_file: ${workspace_dir}/manifest3.json
+    pretrained_model: "large-v2"
+    output_text_field: text
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/manifest4.json
+    text_key: "text"
+
+  - _target_: sdp.processors.DropNonAlphabet
+    output_manifest_file: ${workspace_dir}/manifest5.json
+    alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև.,!?"
+    test_cases:
+      - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
+      - {input: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
+
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest6.json
+    regex_params_list:
+      - {"pattern": '\[(.*?)\]', "repl": ' '}
+      - {"pattern": 'a', "repl": "ա"}
+      
+      - {"pattern": 'անտար', "repl": "անտառ"}
+      - {"pattern": 'թնակ', "repl": "տնակ"}
+      - {"pattern": 'Ռուսերենիս', "repl": "Ռուսերենից"}
+      - {"pattern": 'ամալիահ', "repl": "Ամալիյա"}
+
+      - {"pattern": 'Էտկարպո', "repl": "Էդգար Պո"}
+      - {"pattern": 'թարգմանություն', "repl": "թարգմանությունը"}
+      - {"pattern": 'արտաշ է սեմինի', "repl": "Արտաշես Էմինի"}
+      # double space to single space
+      - {"pattern": "  ", "repl": " "}
+    test_cases:
+      - {input: {text: "Գրիմ եղբայրներ, անտարի թնակը, Ռուսերենիս թարգմանեց, ամալիահ Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
+      - {input: {text: "Էտկարպո, Մատնիչ սիրտը, թարգմանություն արտաշ է սեմինի."}, output: {text: "Էդգար Պո, Մատնիչ սիրտը, թարգմանությունը Արտաշես Էմինի."}}
