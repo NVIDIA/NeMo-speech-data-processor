@@ -127,11 +127,14 @@ def run_processors(cfg):
             # we assume that each processor defines "output_manifest_file"
             # and "input_manifest_file" keys, which can be optional. In case they
             # are missing, we create tmp files here for them
+            # (1) first use a temporary file for the "output_manifest_file" if it is unspecified
             if "output_manifest_file" not in processor_cfg:
                 tmp_file_path = os.path.join(tmp_dir, str(uuid.uuid4()))
                 with open_dict(processor_cfg):
                     processor_cfg["output_manifest_file"] = tmp_file_path
 
+            # (2) then link the current processor's output_manifest_file to the next processor's input_manifest_file
+            # if it hasn't been specified (and if you are not on the last processor)
             if idx != len(processors_cfgs) - 1 and "input_manifest_file" not in processors_cfgs[idx + 1]:
                 with open_dict(processors_cfgs[idx + 1]):
                     processors_cfgs[idx + 1]["input_manifest_file"] = processor_cfg["output_manifest_file"]

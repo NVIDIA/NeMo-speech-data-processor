@@ -30,7 +30,6 @@ processors:
     data_split: "${data_split}"
 
   - _target_: sdp.processors.RestorePCForMLS
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_initial.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc.json"
     language_long: ${language_long}
     language_short: ${language_short}
@@ -42,7 +41,6 @@ processors:
     show_conversion_breakdown: true
 
   - _target_: sdp.processors.PCInference
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_just_added_pred.json"
     model_path: "${pc_model_path}"
     input_text_field: "text"
@@ -51,8 +49,6 @@ processors:
 
   # fix up text_pc_pred outputs by putting upside down question mark at the start of the word (not at the end, as it currently is)
   - _target_: sdp.processors.SubRegex
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_just_added_pred.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_a.json"
     text_key: "text_pc_pred"
     regex_params_list:
     - {"pattern": ' (\w+)¿ ', "repl": ' ¿\1 '}
@@ -61,15 +57,11 @@ processors:
       - {input: {text_pc_pred: "cómo¿ estás? def."}, output: {text_pc_pred: "¿cómo estás? def."}}
 
   - _target_: sdp.processors.MakeLettersUppercaseAfterPeriod
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_a.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_b.json"
     text_key: "text_pc_pred"
     test_cases:
       - {input: {text_pc_pred: "¿cómo estás? def."}, output: {text_pc_pred: "¿cómo estás? Def."}}
 
   - _target_: sdp.processors.RenameFields
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_b.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_c.json"
     rename_fields:
       "text": "original_dataset_text"
 
@@ -80,17 +72,12 @@ processors:
         - field: text_pc_pred
           origin_label: synthetic
     target: text
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_c.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
 
   - _target_: sdp.processors.ASRInference
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_inference.json"
     pretrained_model: "stt_es_quartznet15x5"
 
   - _target_: sdp.processors.SubRegex
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_with_pred_inference.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex_a.json"
     regex_params_list:
       - {"pattern": "!", "repl": "."}
       - {"pattern": "…", "repl": "."}
@@ -185,8 +172,6 @@ processors:
 
   # bunch of strings we map to spaces
   - _target_: sdp.processors.SubRegex
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex_a.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex.json"
     regex_params_list:
     - {"pattern": '[\-\‐\‑\–\—\―\"]', "repl": " "}
     - {"pattern": "'", "repl": " "}
@@ -223,8 +208,6 @@ processors:
       - {input: {text: '"abc"'}, output: {text: "abc"}}
 
   - _target_: sdp.processors.DropNonAlphabet
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_pc_sub_regex.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_only_alphabet.json"
     alphabet: " abcdefghijklmnopqrstuvwxyzáéíñóúüABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÑÓÚÜ,.?¿"
     test_cases:
       - {input: {text: "test тест 测试"}, output: null}
@@ -233,8 +216,6 @@ processors:
 
   # run manual normalization of roman numerals
   - _target_: dataset_configs.spanish.mls.unique_processors.clean_roman_numerals.CleanRomanNumerals
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_only_alphabet.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_normalized.json"
     king_triggers: [
       "alfonso",
       "benedicto",
@@ -276,8 +257,6 @@ processors:
 
   # drop spaced out regex
   - _target_: sdp.processors.DropIfRegexMatch
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_normalized.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_spaced_out.json"
     regex_patterns:
     - '(\D ){5,20}'
 
@@ -289,8 +268,6 @@ processors:
 
   # drop bad books
   - _target_: sdp.processors.DropIfRegexMatch
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_spaced_out.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_bad_books.json"
     text_key: "audio_filepath"
     regex_patterns:  [
             # books with lots of OCR errors etc.
@@ -329,8 +306,6 @@ processors:
 
 
   - _target_: sdp.processors.DropIfRegexMatch
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_bad_books.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_librivox.json"
     text_key: "pred_text"
     regex_patterns:  [
         'librewox', 'librevox', 'librivox', 'libribox', 'libriebox', 'libriboux',
@@ -342,19 +317,13 @@ processors:
 
 
   - _target_: sdp.processors.DuplicateFields
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_librivox.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc_a.json"
     duplicate_fields:
       "text": "text_no_pc"
 
   - _target_: sdp.processors.SubMakeLowercase
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc_a.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc_b.json"
     text_key: "text_no_pc"
 
   - _target_: sdp.processors.SubRegex
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc_b.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_make_text_no_pc.json"
     text_key: "text_no_pc"
     regex_params_list:
     - {"pattern": '[¿?.,]', "repl": ""}
@@ -377,8 +346,6 @@ processors:
 
 
   - _target_: sdp.processors.DropASRErrorBeginningEnd
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_insertion.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_asr_error.json"
     text_key: "text_no_pc"
     beginning_error_char_threshold: 10
     end_error_char_threshold: 10
@@ -390,8 +357,6 @@ processors:
 
   - _target_: sdp.processors.DropHighWER
     text_key: "text_no_pc"
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_asr_error.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_wer.json"
     wer_threshold: 90
     test_cases:
       - {input: {text_no_pc: "sí hola", pred_text: "abcdefgh abcdefgh"}, output: null}
@@ -399,8 +364,6 @@ processors:
 
   - _target_: sdp.processors.DropHighCER
     text_key: "text_no_pc"
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_wer.json"
-    output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_cer.json"
     cer_threshold: 90
     test_cases:
       - {input: {text_no_pc: "sí hola", pred_text: "abcdefgh abcdefgh"}, output: null}
@@ -419,7 +382,6 @@ processors:
       - {input: {text: "buenos dias", duration: 1}, output: {text: "buenos dias", duration: 1}}
 
   - _target_: sdp.processors.SubRegex
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_manifest_drop_charrate.json"
     output_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_cleaned.json"
     regex_params_list:
     - {"pattern": '\.', "repl": ' . '}
@@ -431,7 +393,6 @@ processors:
       - {input: {text: "¿abc? def."}, output: {text: "¿ abc ? def ."}}
 
   - _target_: sdp.processors.KeepOnlySpecifiedFields
-    input_manifest_file: "${workspace_dir}/mls_spanish_processed/${data_split}_cleaned.json"
     output_manifest_file: "${final_manifest}"
     fields_to_keep:
       - "audio_filepath"
