@@ -1,16 +1,18 @@
-from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
-from sdp.logging import logger
-import numpy as np
+import torch
+import whisper # pip install -U openai-whisper
 import os
+import json
 import pandas as pd
 from tqdm import tqdm
-import json
 from pathlib import Path
 import soundfile as sf
 import subprocess
 from typing import Dict, List, Union
+from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
+from sdp.logging import logger
 
 
+    
 def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
     result = []
     with manifest.open() as f:
@@ -40,7 +42,8 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         self.extention = extention
 
     def read_manifest(self):
-        input_files = [str(self.raw_data_dir / video) for video in self.raw_data_dir.rglob('*.' + self.extention)]
+        input_files = [str(self.raw_data_dir / video) for video in \
+                       self.raw_data_dir.rglob('*.' + self.extention)]
         v_df = pd.DataFrame({self.output_field: input_files})
         return v_df.values
     
@@ -157,44 +160,36 @@ class ASR_Whisper(BaseProcessor):
         self.output_text_field = output_text_field
         self.device = device
         self.batch_size = batch_size
-    
-    def process(self):
-        import torch
-        import whisper # pip install -U openai-whisper
-        self.whisper = whisper
-
         if self.device is None:
             if torch.cuda.is_available():
                 self.device = "cuda"
             else:
                 self.device = "cpu"
-
-        self.model = self.whisper.load_model(self.pretrained_model)
-
-        manifest = load_manifest(Path(self.input_manifest_file))
+        self.model = whisper.load_model(self.pretrained_model)
+    
+    def process(self):
+        json_list = load_manifest(Path(self.input_manifest_file))
         
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
         
         with Path(self.output_manifest_file).open('w') as f:
-            for item in tqdm(manifest):
-                text_hyp, lang = self.whisper_infer(item["audio_filepath"])
-                # print(f"Detected language: {lang}")
-                item[self.output_text_field] = text_hyp
+            for item in tqdm(json_list):
+                pred_text, pred_lang = self.whisper_infer(item["audio_filepath"])
+
+                item[self.output_text_field] = pred_text
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
     def whisper_infer(self, audio_path):
-        audio = self.whisper.load_audio(audio_path)
+        audio = whisper.load_audio(audio_path)
 
-        audio = self.whisper.pad_or_trim(audio)
-        mel = self.whisper.log_mel_spectrogram(audio)
+        audio = whisper.pad_or_trim(audio)
+        mel = whisper.log_mel_spectrogram(audio)
         mel = mel.to(self.device)
 
         _, probs = self.model.detect_language(mel)
         lang = max(probs, key=probs.get)
         
-        options = self.whisper.DecodingOptions()
-        result = self.whisper.decode(self.model, mel, options)
+        options = whisper.DecodingOptions()
+        result = whisper.decode(self.model, mel, options)
         return result.text, lang
-    
-
     
