@@ -1,9 +1,9 @@
 processors_to_run: "0:" # ü ä ö ß Ä Ö Ü
-workspace_dir: /mnt/md0/common_crawl/cc_sdp/de
+workspace_dir: /mnt/md1/out/de # /mnt/md0/common_crawl/cc_sdp/de
 
 processors:
   - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
-    input_manifest_file: /mnt/md0/common_crawl/cc_sdp/manifest8.json
+    input_manifest_file: /mnt/md1/out/manifest11.json
     output_manifest_file: ${workspace_dir}/manifest0.json
     input_field: audio_lang
     target_value: de
@@ -27,6 +27,7 @@ processors:
     text_key: text
     regex_params_list:
       - {"pattern": '\[(.*?)\]', "repl": ' '}
+      - {"pattern": '\((.*?)\)', "repl": ' '}
       - {"pattern": "^[\\s]*\\*(.*?)\\*[\\s]*$", "repl": "\\1"}
       - {"pattern": 'î', "repl": "i"}
       - {"pattern": 'ì', "repl": "i"}
@@ -73,17 +74,6 @@ processors:
         --language=de --n_jobs=-1 --batch_size=600 --manifest_text_field=text  --cache_dir=${workspace_dir}/cache \
         --whitelist=/home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/de/data/whitelist.tsv"
     #  --overwrite_cache
-    
-  # - _target_: sdp.processors.datasets.commoncrawl.Subprocess
-  #   input_manifest_file: ${workspace_dir}/manifest6.json
-  #   output_manifest_file: ${workspace_dir}/manifest7.json
-  #   input_manifest_arg: "--input_file"
-  #   output_manifest_arg: "--output_file"
-  #   arg_separator: "="
-  #   cmd: "python /home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/normalize.py \
-  #       --language=de --n_jobs=-1 --batch_size=600 --manifest_text_field=text --cache_dir=${workspace_dir}/cache --overwrite_cache \
-  #       --whitelist=/home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/de/data/whitelist.tsv"
-
 
   - _target_: sdp.processors.RenameFields
     output_manifest_file: ${workspace_dir}/manifest8.json

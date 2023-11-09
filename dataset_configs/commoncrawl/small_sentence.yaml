@@ -4,12 +4,14 @@ workspace_dir_diar: /mnt/ssd8/cc_sdp/diarize
 
 processors:
   - _target_: sdp.processors.datasets.commoncrawl.CreateInitialManifestCC
+    output_manifest_file: ${workspace_dir}/manifest0s.json
     raw_data_dir: /mnt/ssd8/cc_download/videos_and_transcripts_large_16_cores_output/video_output2
     video_field: "source_video"
     text_field: "texts"
     key_field: "key"
 
   - _target_: sdp.processors.datasets.commoncrawl.ReadParquet
+    output_manifest_file: ${workspace_dir}/manifest1s.json
     raw_data_dir: /mnt/ssd8/cc_download/videos_and_transcripts_large_16_cores_output/video_output2
     output_video_field: video_url
     output_caption_field: caption_url
@@ -17,6 +19,7 @@ processors:
 
   - _target_: sdp.processors.datasets.commoncrawl.FfmpegConvert
     # input_manifest_file:${workspace_dir}/manifest_urls.json
+    output_manifest_file: ${workspace_dir}/manifest2s.json
     resampled_audio_dir: ${workspace_dir}/audio 
     target_samplerate: 16000
     target_nchannels: 1
@@ -25,29 +28,30 @@ processors:
     key_field: "key"
 
   - _target_: sdp.processors.datasets.commoncrawl.AudioDuration
+    output_manifest_file: ${workspace_dir}/manifest3s.json
     input_field: source_audio
     output_field: duration
 
   - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
-    output_manifest_file: ${workspace_dir}/manifest0.json
+    output_manifest_file: ${workspace_dir}/manifest4s.json
     input_field: duration
     target_value: 0
     operator: gt
 
   - _target_: sdp.processors.datasets.commoncrawl.TxtToVtt
-    output_manifest_file: ${workspace_dir}/manifest1.json
+    output_manifest_file: ${workspace_dir}/manifest5s.json
     vtt_files_dir: ${workspace_dir}/vtts/
     key_field: "key"
     text_field: "texts"
     vtt_field: "vtt_filepath"
 
   - _target_: sdp.processors.datasets.commoncrawl.AllVttText
-    output_manifest_file: ${workspace_dir}/manifest2.json
+    output_manifest_file: ${workspace_dir}/manifest6s.json
     input_filepath_field: vtt_filepath
     output_text_field: vtt_text
 
   - _target_: sdp.processors.datasets.commoncrawl.TextLid
-    output_manifest_file: ${workspace_dir}/manifest3.json
+    output_manifest_file: ${workspace_dir}/manifest7s.json
     input_text_field: vtt_text
     output_lang_field: text_lang
     device: cuda

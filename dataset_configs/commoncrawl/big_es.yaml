@@ -27,6 +27,7 @@ processors:
     text_key: text
     regex_params_list:
       - {"pattern": '\[(.*?)\]', "repl": ' '}
+      - {"pattern": '\((.*?)\)', "repl": ' '}
       - {"pattern": "^[\\s]*\\*(.*?)\\*[\\s]*$", "repl": "\\1"}
       - {"pattern": 'î', "repl": "i"}
       - {"pattern": 'ì', "repl": "i"}

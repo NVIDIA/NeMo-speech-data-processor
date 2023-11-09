@@ -19,7 +19,7 @@ processors:
 
   - _target_: sdp.processors.datasets.commoncrawl.FfmpegConvert
     output_manifest_file: ${workspace_dir_s}/manifest2.json #${workspace_dir_s}/manifest_urls.json
-    resampled_audio_dir: ${workspace_dir_s}/audio
+    resampled_audio_dir: ${workspace_dir}/audio
     target_samplerate: 16000
     target_nchannels: 1
     input_field: "source_video"
@@ -39,7 +39,7 @@ processors:
 
   - _target_: sdp.processors.datasets.commoncrawl.TxtToVtt
     output_manifest_file: ${workspace_dir_s}/manifest5.json
-    vtt_files_dir: ${workspace_dir_s}/vtts/
+    vtt_files_dir: ${workspace_dir_s}/vtts
     key_field: "key"
     text_field: "texts"
     vtt_field: "vtt_filepath"

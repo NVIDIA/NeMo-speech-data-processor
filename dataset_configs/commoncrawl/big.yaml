@@ -1,5 +1,5 @@
 processors_to_run: "0:"
-workspace_dir: /mnt/md1/out 
+workspace_dir: /mnt/md1/out # /mnt/md1/common_crawl/cc_sdp
 workspace_dir_s: /mnt/md0/out
 
 processors:
@@ -18,7 +18,7 @@ processors:
     key_field: key
 
   - _target_: sdp.processors.datasets.commoncrawl.FfmpegConvert
-    output_manifest_file: ${workspace_dir}/manifest2.json
+    output_manifest_file: ${workspace_dir}/manifest2.json #${workspace_dir_s}/manifest_urls.json
     resampled_audio_dir: ${workspace_dir_s}/audio
     target_samplerate: 16000
     target_nchannels: 1
@@ -30,7 +30,6 @@ processors:
     output_manifest_file: ${workspace_dir}/manifest3.json
     input_field: audios
     output_field: duration
-    
 
   - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest4.json
