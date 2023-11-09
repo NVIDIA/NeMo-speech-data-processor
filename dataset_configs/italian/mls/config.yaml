@@ -47,7 +47,9 @@ data_split: ???
 workspace_dir: ???
 final_manifest: "${workspace_dir}/${data_split}_manifest.json"
 language: "italian"
-language_id: "it"
+# set language_id to 'null' so that NeMo TN will not be used so that end-to-end test will pass.
+# however, you can set language_id: "it" if you wish to use NeMo TN
+language_id: null
 # https://catalog.ngc.nvidia.com/orgs/nvidia/teams/riva/models/punctuationcapitalization_it_it_bert_base can be used
 # subject to the Riva license listed on that page
 pc_model_path: ???
