@@ -42,9 +42,11 @@ the processors you're using.
   if that is unspecified.
 
 .. _should_run:
+
 * **should_run (bool)**: this boolean field allows to skip any processors in the config. It can be useful to either
   temporarily skip the optional processors or to add certain conditions on when the processors should run, using the
   :ref:`custom resolvers <custom_resolvers>`.
+
 * **test_cases (list[dict])**: most of the processors support a special ``test_cases`` argument.
   It does not change the processor behavior in any way, but is a useful feature to make sure
   the processors are going to work as you expect. The format of this argument is to provide a list
