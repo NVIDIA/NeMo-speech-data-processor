@@ -55,6 +55,7 @@ processors:
     output_lang_field: text_lang
     device: cuda
     pretrained_model: "jb2k/bert-base-multilingual-cased-language-detection"
+    drop_text_duplicates: True
 
   - _target_: sdp.processors.datasets.commoncrawl.Lang2Iso
     output_manifest_file: ${workspace_dir_s}/manifest8.json

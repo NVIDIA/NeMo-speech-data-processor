@@ -734,6 +734,7 @@ class TextLid(BaseProcessor):
         pretrained_model: str,
         output_lang_field: str,
         device: str,
+        drop_text_duplicates: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -741,6 +742,7 @@ class TextLid(BaseProcessor):
         self.pretrained_model = pretrained_model
         self.output_lang_field = output_lang_field
         self.device = device
+        self.drop_duplicates = drop_text_duplicates
     
     def process(self):
         import torch  # importing after nemo to make sure users first install nemo, instead of torch, then nemo
@@ -764,7 +766,7 @@ class TextLid(BaseProcessor):
         with Path(self.output_manifest_file).open('w') as f:
             for item in tqdm(manifest):
                 text = item[self.input_text_field]
-                if text not in text_set:
+                if self.drop_duplicates and text not in text_set:
                     text_set.add(text)
                     if text:
                         lid = text2lid(text_model, tokenizer, text)
