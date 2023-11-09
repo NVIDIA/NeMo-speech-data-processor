@@ -34,6 +34,14 @@ the processors you're using.
   that you need to retain an output for (either for caching of the costly computation or to inspect the output for
   debugging purposes). If specified, the ``input_manifest_file`` and ``output_manifest_file`` for a particular processor
   cannot be the same.
+
+.. note::
+  SDP fills in any unspecified ``input_manifest_file`` and ``output_manifest_file`` arguments by looping over all
+  processors that :ref:`should run <should_run>`, and, for each processor, creating a temporary file for the
+  ``output_manifest_file`` if it is unspecified, and linking it to the next processor as the ``input_manifest_file``
+  if that is unspecified.
+
+.. _should_run:
 * **should_run (bool)**: this boolean field allows to skip any processors in the config. It can be useful to either
   temporarily skip the optional processors or to add certain conditions on when the processors should run, using the
   :ref:`custom resolvers <custom_resolvers>`.
