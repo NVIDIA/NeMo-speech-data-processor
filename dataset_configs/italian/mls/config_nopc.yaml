@@ -41,7 +41,10 @@ data_split: ???
 workspace_dir: ???
 final_manifest: "${workspace_dir}/${data_split}_manifest.json"
 language: "italian"
-language_id: "it"
+# Set language_id to 'null' so that NeMo TN will not be used even though Italian TN is now available.
+# This is because when the config was originally created, NeMo Italian TN was not available, and therefore not
+# used. However, you can set language_id: "it" if you wish to use NeMo TN
+language_id: null
 
 run_filtering:
   train: True
