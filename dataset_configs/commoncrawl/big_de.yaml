@@ -1,17 +1,18 @@
 processors_to_run: "0:" # ü ä ö ß Ä Ö Ü
-workspace_dir: /mnt/md1/out/de # /mnt/md0/common_crawl/cc_sdp/de
+lang: de
+workspace_dir: /mnt/md1/out/${lang} # /mnt/md0/common_crawl/cc_sdp/de
 
 processors:
   - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
     input_manifest_file: /mnt/md1/out/manifest11.json
     output_manifest_file: ${workspace_dir}/manifest0.json
     input_field: audio_lang
-    target_value: de
+    target_value: ${lang}
 
   - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest1.json
     input_field: text_lang
-    target_value: de
+    target_value: ${lang}
 
   - _target_: sdp.processors.ASRInference
     output_manifest_file: ${workspace_dir}/manifest2.json
@@ -141,3 +142,19 @@ processors:
     pred_text_key: pred_text
     cer_threshold: 30
     
+  - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
+    output_manifest_file: ${workspace_dir}/manifest19.json
+    lang: ${lang}
+    data_split: train
+
+  - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
+    input_manifest_file: ${workspace_dir}/manifest18.json
+    output_manifest_file: ${workspace_dir}/manifest19_dev.json
+    lang: ${lang}
+    data_split: dev
+
+  - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
+    input_manifest_file: ${workspace_dir}/manifest18.json
+    output_manifest_file: ${workspace_dir}/manifest19_test.json
+    lang: ${lang}
+    data_split: test
