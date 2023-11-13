@@ -18,6 +18,47 @@ from sdp.logging import logger
 from sdp.processors.datasets.commoncrawl.harv_utils import ffmpeg_convert, txt2vtt, make_trans_list, get_vtt_text, text2lid, load_manifest, read_jsonl, write_jsonl, split_by_vtt_new, audio_duration
 from scipy.spatial import distance
 
+class TrainDevTestSplitCC(BaseParallelProcessor):
+    """Custom train-dev-test split for CORAAL dataset.
+
+    Split is done speaker-wise, so the same speakers don't appear in different
+    splits.
+
+    Args:
+        data_split (str): train, dev or test.
+
+    Returns:
+        All the same fields as in the input manifest, but only a subset of
+        the data is retained.
+    """
+
+    def __init__(
+        self,
+        data_split: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        if data_split not in ["train", "dev", "test"]:
+            raise ValueError("data_split has to be either train, dev or test")
+        self.data_split = data_split
+        self.split_map = {}
+        self.split_map["dev"] = set(
+            ['0383522', '0327835', '0327898', '0619871', '0387103', '0854766', '0738911', '0739038', '0854558', '0505561', '0735963', '0086041', '0967593', '0114210', '0098270', '0387140', '0917035', '0327745', '0914212', '0739071']
+        )
+        self.split_map["test"] = set(
+            ['0076939', '0589098', '0916988', '0268959', '0085896', '0327813', '0085897', '0739103', '0502188', '0034822', '0327729', '0572412', '0327680', '0027277', '0324720', '0209876', '0027226', '0268926', '0209776', '0738970']
+        )
+
+    def process_dataset_entry(self, data_entry):
+        file_id = os.path.splitext(data_entry["audio_filepath"])[0].split("/")[-2]
+        if self.data_split == "train":
+            if file_id not in self.split_map["dev"] and file_id not in self.split_map["test"]:
+                return [DataEntry(data=data_entry)]
+        else:
+            if file_id in self.split_map[self.data_split]:
+                return [DataEntry(data=data_entry)]
+        return []
+    
 
 class JoinBy(BaseProcessor):
     """
