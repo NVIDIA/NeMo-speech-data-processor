@@ -296,3 +296,19 @@ processors:
     pred_text_key: text_asr_pred
     cer_threshold: 30
     
+  - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
+    output_manifest_file: ${workspace_dir}/manifest20_train.json
+    lang: ${lang}
+    data_split: train
+
+  - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
+    input_manifest_file: ${workspace_dir}/manifest19.json
+    output_manifest_file: ${workspace_dir}/manifest20_dev.json
+    lang: ${lang}
+    data_split: dev
+
+  - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
+    input_manifest_file: ${workspace_dir}/manifest19.json
+    output_manifest_file: ${workspace_dir}/manifest20_test.json
+    lang: ${lang}
+    data_split: test
