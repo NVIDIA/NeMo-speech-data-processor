@@ -24,19 +24,14 @@ processors:
     path_to_sph2pipe: ${path_to_sph2pipe}
 
   - _target_: sdp.processors.SortManifest
-    input_manifest_file: "${processed_manifest_dir}/all_initial_manifest.json"
-    output_manifest_file: "${processed_manifest_dir}/all_sorted_manifest.json"
     attribute_sort_by: "duration"
     descending: false
 
   - _target_: sdp.processors.ASRInference
-    input_manifest_file: "${processed_manifest_dir}/all_sorted_manifest.json"
     output_manifest_file: "${processed_manifest_dir}/all_transcribed.json"
     pretrained_model: "stt_es_citrinet_512"
 
   - _target_: sdp.processors.SubRegex
-    input_manifest_file: "${processed_manifest_dir}/all_transcribed.json"
-    output_manifest_file: "${processed_manifest_dir}/all_sub_hesitations.json"
     regex_params_list:
       - {"pattern": "\\s(\\S+-\\s)+", "repl": " "}
 
@@ -48,8 +43,6 @@ processors:
       - {input: {text: "abc y yes"}, output: {text: "abc y yes"} }
 
   - _target_: sdp.processors.SubRegex
-    input_manifest_file: "${processed_manifest_dir}/all_sub_hesitations.json"
-    output_manifest_file: "${processed_manifest_dir}/all_sub_to_spaces.json"
 
     regex_params_list:
       - {"pattern": "!", "repl": "."}
@@ -73,8 +66,6 @@ processors:
       - {input: {text: "abc- def."}, output: {text: "abc def."}}
 
   - _target_: sdp.processors.DropIfRegexMatch
-    input_manifest_file: "${processed_manifest_dir}/all_sub_to_spaces.json"
-    output_manifest_file: "${processed_manifest_dir}/all_drop_brackets.json"
     regex_patterns: [
         "\\(\\)", "\\(\\(", "\\)\\)", "<foreign", "</foreign", "< foreign" ,
         "<lname",
@@ -84,8 +75,6 @@ processors:
       - {input: {text: "abcdef"}, output: {text: "abcdef"}}
 
   - _target_: sdp.processors.SubRegex
-    input_manifest_file: "${processed_manifest_dir}/all_drop_brackets.json"
-    output_manifest_file: "${processed_manifest_dir}/all_sub_typos.json"
     regex_params_list:
       - {"pattern": "à", "repl" : "pa"} # typo, infrequent
       - {"pattern": "è", "repl" : "pe"} # typo, infrequent
@@ -95,8 +84,6 @@ processors:
       - {input: {text: "@ abc"}, output: {text: "arroba abc"}}
 
   - _target_: sdp.processors.DropIfRegexMatch
-    input_manifest_file: "${processed_manifest_dir}/all_sub_typos.json"
-    output_manifest_file: "${processed_manifest_dir}/all_drop_empty.json"
     regex_patterns: ["^\\s*$"]
     test_cases:
       - {input: {text: ""}, output: null}
@@ -104,17 +91,12 @@ processors:
       - {input: {text: "abcdef"}, output: {text: "abcdef"}}
 
   - _target_: sdp.processors.DropNonAlphabet
-    input_manifest_file: "${processed_manifest_dir}/all_drop_empty.json"
-    output_manifest_file: "${processed_manifest_dir}/all_only_alphabet.json"
-
     alphabet: " abcdefghijklmnopqrstuvwxyzáéíñóúüABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÑÓÚÜ,.?¿"
     test_cases:
       - {input: {text: "test тест 测试"}, output: null}
       - {input: {text: "test"}, output: {text: "test"}}
 
   - _target_: sdp.processors.DropHighLowDuration
-    input_manifest_file: "${processed_manifest_dir}/all_only_alphabet.json"
-    output_manifest_file: "${processed_manifest_dir}/all_drop_duration.json"
     high_duration_threshold: 20
     low_duration_threshold: 1 # there are about 6 hours of utterances less than 1 second (short phrases like "mhm", "claro", "y tu"...)
     test_cases:
@@ -123,8 +105,6 @@ processors:
       - {input: {duration: 5}, output: {duration: 5}}
 
   - _target_: sdp.processors.SubRegex
-    input_manifest_file: "${processed_manifest_dir}/all_drop_duration.json"
-    output_manifest_file: "${processed_manifest_dir}/all_punc_spaces.json"
     regex_params_list:
     - {"pattern": '\.', "repl": ' . '}
     - {"pattern": ",", "repl": " , "}
@@ -135,7 +115,6 @@ processors:
       - {input: {text: "¿abc? def."}, output: {text: "¿ abc ? def ."}}
 
   - _target_: sdp.processors.AddConstantFields
-    input_manifest_file: "${workspace_dir}/manifests/all_punc_spaces.json"
     output_manifest_file: "${workspace_dir}/manifests/all_cleaned.json"
     fields: {"text_pc_origin": "original"}
 
