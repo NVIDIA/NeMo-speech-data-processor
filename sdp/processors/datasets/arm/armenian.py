@@ -44,13 +44,10 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
     def read_manifest(self):
         input_files = [str(self.raw_data_dir / video) for video in \
                        self.raw_data_dir.rglob('*.' + self.extention)]
-        v_df = pd.DataFrame({self.output_field: input_files})
-        return v_df.values
+        return input_files
     
     def process_dataset_entry(self, data_entry):
-        (inputf) = data_entry
-        
-        data = {self.output_field: inputf[0]}
+        data = {self.output_field: data_entry}
         return [DataEntry(data=data)]
 
 
