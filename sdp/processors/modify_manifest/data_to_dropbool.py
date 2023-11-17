@@ -166,17 +166,17 @@ class DropHighLowDuration(BaseParallelProcessor):
     """
 
     def __init__(
-        self, high_duration_threshold: float, low_duration_threshold: float, text_key: str = "text", **kwargs,
+        self, high_duration_threshold: float, low_duration_threshold: float, duration_key: str = "duration", **kwargs,
     ):
         super().__init__(**kwargs)
         self.high_duration_threshold = high_duration_threshold
         self.low_duration_threshold = low_duration_threshold
         self.high_drop_counter = 0
         self.low_drop_counter = 0
-        self.text_key = text_key
+        self.duration_key = duration_key
 
     def process_dataset_entry(self, data_entry) -> List:
-        duration = data_entry["duration"]
+        duration = data_entry[self.duration_key]
         if duration > self.high_duration_threshold:
             return [DataEntry(data=None, metrics=(0, 1))]
         elif duration < self.low_duration_threshold:
