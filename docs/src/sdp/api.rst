@@ -65,6 +65,19 @@ SLR83
 ..       Probably need some policy on shat lives in main folder vs configs.
 ..       To control the number of processors we support.
 
+Lhotse processors
+#################
+
+The following processors leverage `lhotse`_, a speech data handling library that contains
+data preparation recipes for 80+ publicly available datasets.
+Lhotse has its own data manifest format that can be largely mapped into NeMo's format.
+
+.. autodata:: sdp.processors.LhotseImport
+    :annotation:
+
+
+.. _lhotse: https://github.com/lhotse-speech/lhotse
+
 Data enrichment
 ###############
 
