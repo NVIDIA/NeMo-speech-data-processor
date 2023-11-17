@@ -17,11 +17,15 @@ from sdp.processors.base_processor import BaseProcessor
 
 
 class LhotseImport(BaseProcessor):
-    """Processor to create an initial manifest import from a Lhotse CutSet.
+    """Processor to create an initial manifest imported from a Lhotse CutSet.
+    The ``input_manifest_file`` is expected to point to a Lhotse CutSet manifest,
+    which usually has ``cuts`` in its name and a ``.jsonl`` or ``.jsonl.gz`` extension.
 
     Lhotse is a library for speech data processing and loading; see:
-    - https://github.com/lhotse-speech/lhotse
-    - https://lhotse.readthedocs.io
+
+    * https://github.com/lhotse-speech/lhotse
+    * https://lhotse.readthedocs.io
+
     It can be installed using ``pip install lhotse``.
 
     .. caution:: Currently we only support the importing of cut sets that represent
@@ -36,6 +40,7 @@ class LhotseImport(BaseProcessor):
                 "text": <transcription (with capitalization and punctuation)>,
             }
     """
+
     def process(self):
         from lhotse import CutSet
 

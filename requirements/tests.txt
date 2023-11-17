@@ -2,3 +2,4 @@ boto3
 # additional packages required to run tests
 pytest
 pytest-cov
+lhotse

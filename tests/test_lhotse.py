@@ -1,11 +1,6 @@
 import json
-from pathlib import Path
 
 import pytest
-
-lhotse = pytest.importorskip(
-    "lhotse", reason="Lhotse import tests require lhotse to be installed."
-)
 
 import torchaudio
 from lhotse.testing.dummies import DummyManifest
