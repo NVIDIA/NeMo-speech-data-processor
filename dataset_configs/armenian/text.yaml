@@ -1,0 +1,92 @@
+processors_to_run: "0:"
+workspace_dir: /mnt/ssd8/arm/txt
+
+processors:
+  - _target_: sdp.processors.datasets.arm.CreateInitialManifestByExt
+    raw_data_dir: /home/nkarpov/workspace/NeMo-speech-data-processor/dataset_configs/armenian/docs
+    extention: txt
+    output_field: source_filepath
+    output_manifest_file: ${workspace_dir}/manifest0.json
+
+  - _target_: sdp.processors.datasets.arm.ReadTxt
+    input_field: source_filepath
+    output_field: text_line
+    output_manifest_file: ${workspace_dir}/manifest1.json
+
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest2.json
+    text_key: text_line
+    regex_params_list:
+      - {"pattern": '։', "repl": ':'}
+      - {"pattern": '․', "repl": "."}
+      - {"pattern": '—', "repl": "-"}
+      - {"pattern": '–', "repl": "-"}
+      - {"pattern": '―', "repl": "-"}
+      - {"pattern": '\.\.\.', "repl": "…"}
+      - {"pattern": "  ", "repl": " "}
+
+  - _target_: sdp.processors.datasets.arm.SplitBySentence
+    input_field: text_line
+    output_field: text
+    pattern: ':|\.|…'
+    output_manifest_file: ${workspace_dir}/manifest3.json
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    output_manifest_file: ${workspace_dir}/manifest4.json
+    regex_patterns:
+      - '[0-9]'
+      - '\('
+      - '\)'
+      - '\['
+      - '\]'
+      - '\*'
+      - '"'
+      - '«'
+      - '»'
+      - '[А-Яа-я]'
+      - '[A-Za-z]'
+      - '\+'
+      - '='
+      - '¬'
+      - '&'
+
+  - _target_: sdp.processors.DropNonAlphabet
+    output_manifest_file: ${workspace_dir}/manifest5.json
+    alphabet: "՝՞՜՛`֊´’'՚-ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև,:\\.…;"
+    test_cases:
+      - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
+      - {input: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
+
+  - _target_: sdp.processors.datasets.arm.NumWords
+    output_manifest_file: ${workspace_dir}/manifest6.json
+    alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև"
+    input_field: text
+    output_field: num_words
+
+  - _target_: sdp.processors.datasets.arm.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest7.json
+    input_field: num_words
+    target_value: 15
+    operator: le
+
+  - _target_: sdp.processors.datasets.arm.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest8.json
+    input_field: num_words
+    target_value: 3
+    operator: ge
+
+  - _target_: sdp.processors.datasets.arm.GetSource
+    output_manifest_file: ${workspace_dir}/manifest9.json
+    input_field: source_filepath
+    output_field: Source
+
+  - _target_: sdp.processors.RenameFields
+    output_manifest_file: ${workspace_dir}/manifest10.json
+    rename_fields: {"text": "Sentence"}
+    
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${workspace_dir}/manifest11.json
+    fields_to_keep: ["Sentence", "Source"]
+
+  - _target_: sdp.processors.datasets.arm.MakeTsv
+    output_manifest_file: ${workspace_dir}/manifest11.tsv
