@@ -3,7 +3,7 @@ workspace_dir: /mnt/ssd8/arm/txt
 
 processors:
   - _target_: sdp.processors.datasets.arm.CreateInitialManifestByExt
-    raw_data_dir: /home/nkarpov/workspace/NeMo-speech-data-processor/dataset_configs/armenian/docs
+    raw_data_dir: /home/nkarpov/data/arm_docs
     extention: txt
     output_field: source_filepath
     output_manifest_file: ${workspace_dir}/manifest0.json
