@@ -34,6 +34,7 @@ processors:
   - _target_: sdp.processors.DropIfRegexMatch
     output_manifest_file: ${workspace_dir}/manifest4.json
     regex_patterns:
+      -  'տիկ\. $'
       - '[0-9]'
       - '\('
       - '\)'
@@ -89,4 +90,8 @@ processors:
     fields_to_keep: ["Sentence", "Source"]
 
   - _target_: sdp.processors.datasets.arm.MakeTsv
-    output_manifest_file: ${workspace_dir}/manifest11.tsv
+    output_manifest_file: ${workspace_dir}/manifest12.tsv
+
+  - _target_: sdp.processors.datasets.arm.RandomPart
+    output_manifest_file: ${workspace_dir}/manifest13.tsv
+    part: 0.05

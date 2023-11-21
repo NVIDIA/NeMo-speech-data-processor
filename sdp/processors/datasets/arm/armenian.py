@@ -279,8 +279,8 @@ class NumWords(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry):
         text = data_entry[self.input_field]
-        cleaned_string = self.pattern.sub(' ', text)
-        cleaned_string = re.sub('  ', ' ', cleaned_string).strip()
+        cleaned_string = self.pattern.sub('', text).strip()
+        cleaned_string = re.sub('\s+', ' ', cleaned_string).strip()
         words = cleaned_string.split()
         num_words = len(words)
         data_entry[self.output_field] = num_words
@@ -369,3 +369,18 @@ class MakeTsv(BaseProcessor):
     def process(self):
         df1 = read_jsonl(self.input_manifest_file)
         df1.to_csv(self.output_manifest_file, index=None)
+
+class RandomPart(BaseProcessor):
+    """
+    """
+    def __init__(
+        self,
+        part: float,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.part = part
+
+    def process(self):
+        df1 = pd.read_csv(self.input_manifest_file)
+        df1.sample(frac=self.part).to_csv(self.output_manifest_file, index=None)
