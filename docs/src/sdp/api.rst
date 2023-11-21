@@ -68,7 +68,7 @@ SLR83
 Lhotse processors
 #################
 
-The following processors leverage `lhotse`_, a speech data handling library that contains
+The following processors leverage `Lhotse`_, a speech data handling library that contains
 data preparation recipes for 80+ publicly available datasets.
 Lhotse has its own data manifest format that can be largely mapped into NeMo's format.
 
@@ -76,7 +76,7 @@ Lhotse has its own data manifest format that can be largely mapped into NeMo's f
     :annotation:
 
 
-.. _lhotse: https://github.com/lhotse-speech/lhotse
+.. _Lhotse: https://github.com/lhotse-speech/lhotse
 
 Data enrichment
 ###############

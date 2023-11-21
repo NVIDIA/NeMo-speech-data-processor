@@ -1,8 +1,8 @@
 import json
 
 import pytest
+import soundfile
 
-import torchaudio
 from lhotse.testing.dummies import DummyManifest
 from lhotse import CutSet
 
@@ -56,7 +56,7 @@ def test_lhotse_import(tmp_path, cuts_path):
     for item in data:
         assert set(item.keys()) == EXPECTED_KEYS
         assert item["duration"] == 1.0
-        audio, sr = torchaudio.load(item["audio_filepath"])
-        assert audio.shape == (1, 16000)
+        audio, sr = soundfile.read(item["audio_filepath"])
+        assert audio.shape == (16000,)
         for key in ("text", "speaker", "gender", "language"):
             assert item[key] == "irrelevant"
