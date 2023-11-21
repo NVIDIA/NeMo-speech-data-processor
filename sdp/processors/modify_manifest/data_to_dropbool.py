@@ -158,25 +158,25 @@ class DropHighLowDuration(BaseParallelProcessor):
         low_duration_threshold (float): lower duration threshold (in seconds).
             If the duration of an utterance's audio is lower than this number,
             the utterance will be dropped.
-        text_key (str): a string indicating which key of the data entries
-            should be used to find the utterance transcript. Defaults to "text".
+        duration_key (str): a string indicating which key of the data entries
+            should be used to find the utterance duration. Defaults to "duration".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
     """
 
     def __init__(
-        self, high_duration_threshold: float, low_duration_threshold: float, text_key: str = "text", **kwargs,
+        self, high_duration_threshold: float, low_duration_threshold: float, duration_key: str = "duration", **kwargs,
     ):
         super().__init__(**kwargs)
         self.high_duration_threshold = high_duration_threshold
         self.low_duration_threshold = low_duration_threshold
         self.high_drop_counter = 0
         self.low_drop_counter = 0
-        self.text_key = text_key
+        self.duration_key = duration_key
 
     def process_dataset_entry(self, data_entry) -> List:
-        duration = data_entry["duration"]
+        duration = data_entry[self.duration_key]
         if duration > self.high_duration_threshold:
             return [DataEntry(data=None, metrics=(0, 1))]
         elif duration < self.low_duration_threshold:
