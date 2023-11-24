@@ -253,6 +253,8 @@ class SplitBySentence(BaseParallelProcessor):
                 data[self.output_field] = sent
                 data_list.append(DataEntry(data=data))
                 start = end+1
+            if start<len(line):
+                pass
         else:
             data = data_entry.copy()
             data[self.output_field] = line.strip()
@@ -343,11 +345,11 @@ class GetSource(BaseParallelProcessor):
     def process_dataset_entry(self, data_entry):
         input_values = os.path.splitext(data_entry[self.input_field])[0].split("/")
         
-        data_entry[self.output_field] = input_values[-1] + ", " +input_values[-2]
-        if input_values[-2] == "Նար-Դոս":
-            data_entry[self.output_field] += " (1867 - 1933), " + "https://hy.wikisource.org/wiki/%D5%80%D5%A5%D5%B2%D5%AB%D5%B6%D5%A1%D5%AF:%D5%86%D5%A1%D6%80-%D4%B4%D5%B8%D5%BD"
-        elif input_values[-2] == "Ակսել Բակունց":
-            data_entry[self.output_field] += " (1899 - 1937), " + "https://aybuben.com/axel-bakunts"
+        data_entry[self.output_field] = input_values[-1]# + ", " +input_values[-2]
+        # if input_values[-2] == "Նար-Դոս":
+        #     data_entry[self.output_field] += " (1867 - 1933), " + "https://hy.wikisource.org/wiki/%D5%80%D5%A5%D5%B2%D5%AB%D5%B6%D5%A1%D5%AF:%D5%86%D5%A1%D6%80-%D4%B4%D5%B8%D5%BD"
+        # elif input_values[-2] == "Ակսել Բակունց":
+        #     data_entry[self.output_field] += " (1899 - 1937), " + "https://aybuben.com/axel-bakunts"
         return [DataEntry(data=data_entry)]
 
 def read_jsonl(manifest_file):
@@ -368,7 +370,7 @@ class MakeTsv(BaseProcessor):
 
     def process(self):
         df1 = read_jsonl(self.input_manifest_file)
-        df1.to_csv(self.output_manifest_file, index=None)
+        df1.to_csv(self.output_manifest_file, index=None, sep='\t')
 
 class RandomPart(BaseProcessor):
     """
@@ -376,11 +378,13 @@ class RandomPart(BaseProcessor):
     def __init__(
         self,
         part: float,
+        random_state: int = 100,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.part = part
+        self.random_state = random_state
 
     def process(self):
-        df1 = pd.read_csv(self.input_manifest_file)
-        df1.sample(frac=self.part).to_csv(self.output_manifest_file, index=None)
+        df1 = pd.read_csv(self.input_manifest_file, sep='\t')
+        df1.sample(frac=self.part, random_state = self.random_state).to_csv(self.output_manifest_file, index=None, sep='\t')

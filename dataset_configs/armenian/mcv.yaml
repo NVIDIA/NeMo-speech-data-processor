@@ -2,7 +2,7 @@ processors_to_run: "0:"
 workspace_dir: /mnt/ssd8/arm/mcv
 
 processors:
-  - _target_: sdp.processors.CreateInitialManifestMCV
+  - _target_: sdp.processors.CreateInitialManifestMCV # conda install -c conda-forge -y sox libvorbis
     raw_data_dir: /home/nkarpov/data/hy
     extract_archive_dir: /mnt/ssd8/arm/mcv/row
     resampled_audio_dir: /mnt/ssd8/arm/mcv/16k

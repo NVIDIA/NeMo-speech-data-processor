@@ -3,7 +3,7 @@ workspace_dir: /mnt/ssd8/arm/txt
 
 processors:
   - _target_: sdp.processors.datasets.arm.CreateInitialManifestByExt
-    raw_data_dir: /home/nkarpov/data/arm_docs
+    raw_data_dir: /home/nkarpov/workspace/arm_docs_old/arm_docs #/home/nkarpov/workspace/arm_docs
     extention: txt
     output_field: source_filepath
     output_manifest_file: ${workspace_dir}/manifest0.json
@@ -23,7 +23,7 @@ processors:
       - {"pattern": '–', "repl": "-"}
       - {"pattern": '―', "repl": "-"}
       - {"pattern": '\.\.\.', "repl": "…"}
-      - {"pattern": "  ", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
 
   - _target_: sdp.processors.datasets.arm.SplitBySentence
     input_field: text_line
@@ -34,7 +34,8 @@ processors:
   - _target_: sdp.processors.DropIfRegexMatch
     output_manifest_file: ${workspace_dir}/manifest4.json
     regex_patterns:
-      -  'տիկ\. $'
+      - 'տիկ\. $'
+      - 'Գ\. $'
       - '[0-9]'
       - '\('
       - '\)'
@@ -94,4 +95,12 @@ processors:
 
   - _target_: sdp.processors.datasets.arm.RandomPart
     output_manifest_file: ${workspace_dir}/manifest13.tsv
-    part: 0.05
+    random_state: 100
+    part: 0.01
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    input_manifest_file: ${workspace_dir}/manifest11.json
+    output_manifest_file: ${workspace_dir}/manifest14.json
+    text_key: Sentence
+    regex_patterns:
+      - '^…'
