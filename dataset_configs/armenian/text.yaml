@@ -25,7 +25,7 @@ processors:
       - {"pattern": '\.\.\.', "repl": "…"}
       - {"pattern": "\\s+", "repl": " "}
 
-  - _target_: sdp.processors.datasets.arm.SplitBySentence
+  - _target_: sdp.processors.langs.armenian.SplitBySentence
     input_field: text_line
     output_field: text
     pattern: ':|\.|…'
@@ -59,7 +59,7 @@ processors:
       - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
       - {input: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
 
-  - _target_: sdp.processors.datasets.arm.NumWords
+  - _target_: sdp.processors.langs.armenian.NumWords
     output_manifest_file: ${workspace_dir}/manifest6.json
     alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև"
     input_field: text
@@ -77,7 +77,7 @@ processors:
     target_value: 3
     operator: ge
 
-  - _target_: sdp.processors.datasets.arm.GetSource
+  - _target_: sdp.processors.langs.armenian.GetSource
     output_manifest_file: ${workspace_dir}/manifest9.json
     input_field: source_filepath
     output_field: Source
@@ -90,10 +90,10 @@ processors:
     output_manifest_file: ${workspace_dir}/manifest11.json
     fields_to_keep: ["Sentence", "Source"]
 
-  - _target_: sdp.processors.datasets.arm.MakeTsv
+  - _target_: sdp.processors.langs.armenian.MakeTsv
     output_manifest_file: ${workspace_dir}/manifest12.tsv
 
-  - _target_: sdp.processors.datasets.arm.RandomTsvPart
+  - _target_: sdp.processors.langs.armenian.RandomTsvPart
     output_manifest_file: ${workspace_dir}/manifest13.tsv
     random_state: 100
     part: 0.01
