@@ -2,13 +2,13 @@ processors_to_run: "0:"
 workspace_dir: /mnt/ssd8/arm/txt
 
 processors:
-  - _target_: sdp.processors.datasets.arm.CreateInitialManifestByExt
+  - _target_: sdp.processors.CreateInitialManifestByExt
     raw_data_dir: /home/nkarpov/workspace/arm_docs_old/arm_docs #/home/nkarpov/workspace/arm_docs
     extention: txt
     output_field: source_filepath
     output_manifest_file: ${workspace_dir}/manifest0.json
 
-  - _target_: sdp.processors.datasets.arm.ReadTxt
+  - _target_: sdp.processors.ReadTxt
     input_field: source_filepath
     output_field: text_line
     output_manifest_file: ${workspace_dir}/manifest1.json
@@ -65,13 +65,13 @@ processors:
     input_field: text
     output_field: num_words
 
-  - _target_: sdp.processors.datasets.arm.PreserveByValue
+  - _target_: sdp.processors.PreserveByThreshold
     output_manifest_file: ${workspace_dir}/manifest7.json
     input_field: num_words
     target_value: 15
     operator: le
 
-  - _target_: sdp.processors.datasets.arm.PreserveByValue
+  - _target_: sdp.processors.PreserveByThreshold
     output_manifest_file: ${workspace_dir}/manifest8.json
     input_field: num_words
     target_value: 3
@@ -93,7 +93,7 @@ processors:
   - _target_: sdp.processors.datasets.arm.MakeTsv
     output_manifest_file: ${workspace_dir}/manifest12.tsv
 
-  - _target_: sdp.processors.datasets.arm.RandomPart
+  - _target_: sdp.processors.datasets.arm.RandomTsvPart
     output_manifest_file: ${workspace_dir}/manifest13.tsv
     random_state: 100
     part: 0.01

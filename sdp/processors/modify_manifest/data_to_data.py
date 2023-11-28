@@ -14,12 +14,136 @@
 
 import collections
 import re
+import os
 from typing import Dict, List
+import soundfile as sf
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
+
+
+class AudioDuration(BaseParallelProcessor):
+    """
+    Count audio duration using audio file path from input_field
+
+    Args:
+        input_field (str): where to get path to wav file.
+        output_field (str): where to put to audio duration.
+    Returns:
+        All the same fields as in the input manifest plus output_field
+    """
+    def __init__(
+        self,
+        input_field: str,
+        output_field: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = input_field
+        self.output_field = output_field
+    
+    def process_dataset_entry(self, data_entry):
+        audio_filepath = data_entry[self.input_field]
+        try:
+            data, samplerate = sf.read(audio_filepath)
+            data_entry[self.output_field]=data.shape[0]/samplerate
+        except Exception as e:
+            logger.warning(str(e) + " file: " + audio_filepath)
+            data_entry[self.output_field] = -1.0
+        return [DataEntry(data=data_entry)]
+    
+
+class FfmpegConvert(BaseParallelProcessor):
+    """
+    A class for converting video files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
+
+    Args:
+    - resampled_audio_dir (str): The directory to store the resampled audio files.
+    - input_field (str): The field in the dataset representing the path to the input video files.
+    - output_field (str): The field to store the path to the resampled audio files in the dataset.
+    - key_field (str): The field in the dataset representing the unique key or identifier for each entry.
+    - target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
+    - target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
+    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    Methods:
+    - process_dataset_entry(data_entry): Processes a single dataset entry, converts the input video to resampled audio, and updates the dataset.
+
+    Note:
+    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to convert video files to resampled audio using FFmpeg.
+    """
+    def __init__(
+        self,
+        resampled_audio_dir: str,
+        input_field: str,
+        output_field: str,
+        key_field: str = None,
+        target_samplerate: int = 16000,
+        target_nchannels: int = 1,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = input_field
+        self.output_field = output_field
+        self.key_field = key_field
+        self.resampled_audio_dir = resampled_audio_dir
+        self.target_samplerate = target_samplerate
+        self.target_nchannels = target_nchannels
+
+    def prepare(self):
+        os.makedirs(os.path.split(self.output_manifest_file)[0], exist_ok=True)
+        os.makedirs(self.resampled_audio_dir, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        video = data_entry[self.input_field]
+        if self.key_field:
+            key = data_entry[self.key_field]
+            os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
+        else:
+            key = os.path.splitext(video)[0].split("/")[-1]
+        audio = os.path.join(self.resampled_audio_dir, key) + ".wav"
+
+        if not os.path.isfile(audio):
+            ffmpeg_convert(video, audio, self.target_samplerate, self.target_nchannels)
+
+        data_entry[self.output_field]= audio
+        if self.key_field:
+            data_entry[self.key_field] = key
+        return [DataEntry(data=data_entry)]
+
+
+class ReadTxt(BaseParallelProcessor):
+    """
+    Read contentn from txt file to manifest
+    
+    Args:
+        input_field (str): where to get path to txt file.
+        output_field (str): where to put content of txt file.
+    """
+    def __init__(
+        self,
+        input_field: str,
+        output_field: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = input_field
+        self.output_field = output_field
+
+    def process_dataset_entry(self, data_entry):
+        fname = data_entry[self.input_field]
+        data_list = []
+        with open(fname, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    data = data_entry.copy()
+                    data[self.output_field] = line
+                    data_list.append(DataEntry(data=data))
+        return data_list
 
 
 class InsIfASRInsertion(BaseParallelProcessor):
