@@ -8,7 +8,7 @@ processors:
     output_field: source_filepath
     output_manifest_file: ${workspace_dir}/manifest0.json
 
-  - _target_: sdp.processors.ReadTxt
+  - _target_: sdp.processors.ReadTxtLines
     input_field: source_filepath
     output_field: text_line
     output_manifest_file: ${workspace_dir}/manifest1.json
@@ -25,10 +25,10 @@ processors:
       - {"pattern": '\.\.\.', "repl": "…"}
       - {"pattern": "\\s+", "repl": " "}
 
-  - _target_: sdp.processors.langs.armenian.SplitBySentence
+  - _target_: sdp.processors.SplitLineBySentence
     input_field: text_line
     output_field: text
-    pattern: ':|\.|…'
+    end_pattern: ':|\.|…'
     output_manifest_file: ${workspace_dir}/manifest3.json
 
   - _target_: sdp.processors.DropIfRegexMatch
@@ -59,7 +59,7 @@ processors:
       - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
       - {input: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
 
-  - _target_: sdp.processors.langs.armenian.NumWords
+  - _target_: sdp.processors.NumWords
     output_manifest_file: ${workspace_dir}/manifest6.json
     alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև"
     input_field: text

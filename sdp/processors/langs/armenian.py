@@ -1,91 +1,23 @@
-import torch
-import whisper # pip install -U openai-whisper
 import os
-import json
-import re
 import pandas as pd
-from tqdm import tqdm
-from pathlib import Path
-from typing import Dict, List, Union
-from operator import lt, le, eq, ne, ge, gt
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
 from sdp.processors.modify_manifest.common import load_manifest
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-
-
-
-class SplitBySentence(BaseParallelProcessor):
-    """
-        Args:
-        input_field (str): where to get path to wav file.
-        output_field (str): where to put to frequency bandwidth.
-    """
-    def __init__(
-        self,
-        input_field: str,
-        output_field: str,
-        pattern: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.input_field = input_field
-        self.output_field = output_field
-        self.pattern = re.compile(pattern)
-
-    def process_dataset_entry(self, data_entry):
-        line = data_entry[self.input_field]
-        data_list = []
-        start = 0
-        ends = [m.start() for m in self.pattern.finditer(line)]
-        if ends:
-            for end in ends:
-                sent = line[start:end+1].strip()
-                # if sent and sent[0].isupper():
-                data = data_entry.copy()
-                data[self.output_field] = sent
-                data_list.append(DataEntry(data=data))
-                start = end+1
-            if start<len(line):
-                pass
-        else:
-            data = data_entry.copy()
-            data[self.output_field] = line.strip()
-            data_list.append(DataEntry(data=data))
-        return data_list
-
-class NumWords(BaseParallelProcessor):
-    """
-        Args:
-        input_field (str): where to get path to wav file.
-        output_field (str): where to put to frequency bandwidth.
-    """
-    def __init__(
-        self,
-        input_field: str,
-        output_field: str,
-        alphabet: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.input_field = input_field
-        self.output_field = output_field
-        self.pattern = re.compile("[^"+alphabet+"]")
-
-    def process_dataset_entry(self, data_entry):
-        text = data_entry[self.input_field]
-        cleaned_string = self.pattern.sub('', text).strip()
-        cleaned_string = re.sub('\s+', ' ', cleaned_string).strip()
-        words = cleaned_string.split()
-        num_words = len(words)
-        data_entry[self.output_field] = num_words
-        return [DataEntry(data=data_entry)]
 
 
 class GetSource(BaseParallelProcessor):
     """
-        Args:
-        input_field (str): where to get path to wav file.
-        output_field (str): where to put to frequency bandwidth.
+    A class for extracting source information from file paths and updating the dataset.
+
+    Args:
+    - input_field (str): The field containing the file path in the dataset.
+    - output_field (str): The field to store the extracted source information in the dataset.
+    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    Methods:
+    - process_dataset_entry(data_entry): Processes a single dataset entry, extracts source information, and updates the dataset.
+
+    Note:
+    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to extract source information from file paths and update the dataset.
     """
     def __init__(
         self,
@@ -106,6 +38,16 @@ class GetSource(BaseParallelProcessor):
 
 class MakeTsv(BaseProcessor):
     """
+    A class for converting a JSON manifest file to a TSV (Tab-Separated Values) file.
+
+    Args:
+    - **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
+
+    Methods:
+    - process(): Reads the input JSON manifest file, converts it to a DataFrame, and saves it as a TSV file.
+
+    Note:
+    - This class inherits from the `BaseProcessor` class and provides functionality to convert a JSON manifest file to a TSV file.
     """
     def __init__(
         self,
@@ -119,6 +61,18 @@ class MakeTsv(BaseProcessor):
 
 class RandomTsvPart(BaseProcessor):
     """
+    A class for creating a random subset of a TSV (Tab-Separated Values) file based on the specified fraction.
+
+    Args:
+    - part (float): The fraction of the dataset to include in the random subset, should be in the range (0.0, 1.0).
+    - random_state (int): Seed for reproducibility when generating the random subset.
+    - **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
+
+    Methods:
+    - process(): Reads the input TSV manifest file, creates a random subset based on the specified fraction, and saves it as a new TSV file.
+
+    Note:
+    - This class inherits from the `BaseProcessor` class and provides functionality to create a random subset of a TSV file.
     """
     def __init__(
         self,

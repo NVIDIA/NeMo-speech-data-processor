@@ -1,15 +1,13 @@
 import json
 import torch
-import whisper # pip install -U openai-whisper
 from tqdm import tqdm
 from pathlib import Path
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import load_manifest
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
-class ASR_Whisper(BaseProcessor):
+class ASRWhisper(BaseProcessor):
     """
-    Transcribe usinf ASR model from HuggingFace.
+    Transcribe using ASR Whisper model from HuggingFace.
     
     Args:
         pretrained_model (str): name of pretrained model on HuggingFace.
@@ -26,6 +24,8 @@ class ASR_Whisper(BaseProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        import whisper # pip install -U openai-whisper
+
         self.pretrained_model = pretrained_model
         self.output_text_field = output_text_field
         self.device = device
@@ -63,10 +63,11 @@ class ASR_Whisper(BaseProcessor):
         result = whisper.decode(self.model, mel, options)
         return result.text, lang
     
-class ASR_transformer(BaseProcessor):
+class ASRTransformer(BaseProcessor):
     """
-        Transcribe usinf ASR model from HuggingFace.
-        Args:
+    Transcribe usinf ASR Transformer model from HuggingFace.
+    
+    Args:
         pretrained_model (str): name of pretrained model on HuggingFace.
         output_text_field (str): field to save transcription result.
         device (str): Inference device.
@@ -81,6 +82,8 @@ class ASR_transformer(BaseProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+        
         self.pretrained_model = pretrained_model
         self.output_text_field = output_text_field
         self.device = device
@@ -118,7 +121,6 @@ class ASR_transformer(BaseProcessor):
         with Path(self.output_manifest_file).open('w') as f:
             for item in tqdm(json_list):
                 pred_text = self.pipe(item["audio_filepath"])["text"]
-                # print(pred_text)
 
                 item[self.output_text_field] = pred_text
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')

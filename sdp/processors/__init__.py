@@ -44,7 +44,9 @@ from sdp.processors.modify_manifest.common import (
 from sdp.processors.modify_manifest.data_to_data import (
     AudioDuration,
     FfmpegConvert,
-    ReadTxt,
+    ReadTxtLines,
+    SplitLineBySentence,
+    NumWords,
     InsIfASRInsertion,
     SubIfASRSubstitution,
     SubMakeLowercase,
@@ -73,7 +75,7 @@ from sdp.processors.nemo.asr_inference import ASRInference
 from sdp.processors.nemo.pc_inference import PCInference
 
 from sdp.processors.modify_manifest.speech_recognition import (
-    ASR_transformer,
-    ASR_Whisper,
+    ASRTransformer,
+    ASRWhisper,
 )
 from sdp.processors.modify_manifest.create_manifest import CreateInitialManifestByExt

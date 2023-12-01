@@ -24,7 +24,7 @@ from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
 
-
+    
 class AudioDuration(BaseParallelProcessor):
     """
     Count audio duration using audio file path from input_field
@@ -115,13 +115,20 @@ class FfmpegConvert(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
-class ReadTxt(BaseParallelProcessor):
+class ReadTxtLines(BaseParallelProcessor):
     """
-    Read contentn from txt file to manifest
-    
+    A class for reading text lines from a file and updating the dataset.
+
     Args:
-        input_field (str): where to get path to txt file.
-        output_field (str): where to put content of txt file.
+    - input_field (str): The field containing the file path in the dataset.
+    - output_field (str): The field to store the read text lines in the dataset.
+    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    Methods:
+    - process_dataset_entry(data_entry): Processes a single dataset entry, reads text lines from the specified file, and updates the dataset.
+
+    Note:
+    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to read text lines from a file and update the dataset.
     """
     def __init__(
         self,
@@ -144,6 +151,94 @@ class ReadTxt(BaseParallelProcessor):
                     data[self.output_field] = line
                     data_list.append(DataEntry(data=data))
         return data_list
+
+
+class SplitLineBySentence(BaseParallelProcessor):
+    """
+    A class for splitting lines of text into sentences based on a specified pattern.
+
+    Args:
+    - input_field (str): The field containing the input text lines in the dataset.
+    - output_field (str): The field to store the output sentences in the dataset.
+    - end_pattern (str): The regular expression pattern to identify sentence boundaries.
+    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    Methods:
+    - process_dataset_entry(data_entry): Processes a single dataset entry, splitting the input text lines into sentences based on the specified pattern, and updates the dataset.
+
+    Note:
+    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to split lines of text into sentences based on a specified pattern.
+    """
+    def __init__(
+        self,
+        input_field: str,
+        output_field: str,
+        end_pattern: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = input_field
+        self.output_field = output_field
+        self.pattern = re.compile(end_pattern)
+
+    def process_dataset_entry(self, data_entry):
+        line = data_entry[self.input_field]
+        data_list = []
+        start = 0
+        ends = [m.start() for m in self.pattern.finditer(line)]
+        if ends:
+            for end in ends:
+                sent = line[start:end+1].strip()
+                # if sent and sent[0].isupper():
+                data = data_entry.copy()
+                data[self.output_field] = sent
+                data_list.append(DataEntry(data=data))
+                start = end+1
+            if start<len(line):
+                pass
+        else:
+            data = data_entry.copy()
+            data[self.output_field] = line.strip()
+            data_list.append(DataEntry(data=data))
+        return data_list
+    
+    
+class NumWords(BaseParallelProcessor):
+    """
+    A class for counting the number of words in a text and updating the dataset.
+
+    Args:
+    - input_field (str): The field containing the input text in the dataset.
+    - output_field (str): The field to store the number of words in the dataset.
+    - alphabet (str): The alphabet to be used for word tokenization.
+    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    Methods:
+    - process_dataset_entry(data_entry): Processes a single dataset entry, counts the number of words, and updates the dataset.
+
+    Note:
+    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to count the number of words in a text and update the dataset.
+    """
+    def __init__(
+        self,
+        input_field: str,
+        output_field: str,
+        alphabet: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = input_field
+        self.output_field = output_field
+        self.pattern = re.compile("[^"+alphabet+"]")
+
+    def process_dataset_entry(self, data_entry):
+        text = data_entry[self.input_field]
+        cleaned_string = self.pattern.sub('', text).strip()
+        cleaned_string = re.sub('\s+', ' ', cleaned_string).strip()
+        words = cleaned_string.split()
+        num_words = len(words)
+        data_entry[self.output_field] = num_words
+        return [DataEntry(data=data_entry)]
 
 
 class InsIfASRInsertion(BaseParallelProcessor):
