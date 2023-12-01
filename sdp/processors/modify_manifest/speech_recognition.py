@@ -1,5 +1,4 @@
 import json
-import torch
 from tqdm import tqdm
 from pathlib import Path
 from sdp.processors.base_processor import BaseProcessor
@@ -24,6 +23,7 @@ class ASRWhisper(BaseProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        import torch
         import whisper # pip install -U openai-whisper
 
         self.pretrained_model = pretrained_model
