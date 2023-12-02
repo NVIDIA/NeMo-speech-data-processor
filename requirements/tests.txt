@@ -2,4 +2,7 @@ boto3
 # additional packages required to run tests
 pytest
 pytest-cov
+# lhotse requires torch and torchaudio to be present
 lhotse
+torch
+torchaudio
