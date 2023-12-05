@@ -1,5 +1,5 @@
 processors_to_run: "0:"
-workspace_dir: /path/to/your/audio/books #/mnt/ssd8/arm
+workspace_dir: /path/to/your/audio/books
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestByExt
@@ -22,7 +22,7 @@ processors:
     duration_field: duration
     output_manifest_file: ${workspace_dir}/manifest2.json
     
-  - _target_: sdp.processors.ASR_Whisper
+  - _target_: sdp.processors.ASRWhisper
     output_manifest_file: ${workspace_dir}/manifest3.json
     pretrained_model: "large-v2"
     output_text_field: text
@@ -53,7 +53,7 @@ processors:
       - {"pattern": 'թարգմանություն', "repl": "թարգմանությունը"}
       - {"pattern": 'արտաշ է սեմինի', "repl": "Արտաշես Էմինի"}
       # double space to single space
-      - {"pattern": "\s+", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
     test_cases:
       - {input: {text: "Գրիմ եղբայրներ, անտարի թնակը, Ռուսերենիս թարգմանեց, ամալիահ Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
       - {input: {text: "Էտկարպո, Մատնիչ սիրտը, թարգմանություն արտաշ է սեմինի."}, output: {text: "Էդգար Պո, Մատնիչ սիրտը, թարգմանությունը Արտաշես Էմինի."}}

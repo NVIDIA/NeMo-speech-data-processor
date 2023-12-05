@@ -3,7 +3,7 @@ workspace_dir: /path/to/your/txt/files
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestByExt
-    raw_data_dir: /home/nkarpov/workspace/arm_docs_old/arm_docs #/home/nkarpov/workspace/arm_docs
+    raw_data_dir: ${workspace_dir}/arm_docs
     extension: txt
     output_field: source_filepath
     output_manifest_file: ${workspace_dir}/manifest0.json

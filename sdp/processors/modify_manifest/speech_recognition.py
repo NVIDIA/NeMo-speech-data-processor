@@ -25,7 +25,7 @@ class ASRWhisper(BaseProcessor):
         super().__init__(**kwargs)
         import torch
         import whisper # pip install -U openai-whisper
-
+        self.whisper = whisper
         self.pretrained_model = pretrained_model
         self.output_text_field = output_text_field
         self.device = device
@@ -50,17 +50,17 @@ class ASRWhisper(BaseProcessor):
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
     def whisper_infer(self, audio_path):
-        audio = whisper.load_audio(audio_path)
+        audio = self.whisper.load_audio(audio_path)
 
-        audio = whisper.pad_or_trim(audio)
-        mel = whisper.log_mel_spectrogram(audio)
+        audio = self.whisper.pad_or_trim(audio)
+        mel = self.whisper.log_mel_spectrogram(audio)
         mel = mel.to(self.device)
 
         _, probs = self.model.detect_language(mel)
         lang = max(probs, key=probs.get)
         
-        options = whisper.DecodingOptions()
-        result = whisper.decode(self.model, mel, options)
+        options = self.whisper.DecodingOptions()
+        result = self.whisper.decode(self.model, mel, options)
         return result.text, lang
     
 class ASRTransformer(BaseProcessor):
@@ -82,6 +82,7 @@ class ASRTransformer(BaseProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        import torch
         from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
         
         self.pretrained_model = pretrained_model
