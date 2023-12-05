@@ -62,11 +62,11 @@ processors:
       - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
       - {input: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
 
-  - _target_: sdp.processors.NumWords
+  - _target_: sdp.processors.CountNumWords
     output_manifest_file: ${workspace_dir}/manifest7.json
     alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև"
-    input_field: text
-    output_field: num_words
+    text_key: text
+    num_words_key: num_words
 
   - _target_: sdp.processors.PreserveByThreshold
     output_manifest_file: ${workspace_dir}/manifest8.json

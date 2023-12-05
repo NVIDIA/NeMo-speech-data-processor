@@ -46,7 +46,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     FfmpegConvert,
     ReadTxtLines,
     SplitLineBySentence,
-    NumWords,
+    CountNumWords,
     InsIfASRInsertion,
     SubIfASRSubstitution,
     SubMakeLowercase,

@@ -200,13 +200,13 @@ class SplitLineBySentence(BaseParallelProcessor):
         return data_list
     
     
-class NumWords(BaseParallelProcessor):
+class CountNumWords(BaseParallelProcessor):
     """
     Processor for counting the number of words in a text and updating the dataset.
 
     Args:
-    - input_field (str): The field containing the input text in the dataset.
-    - output_field (str): The field to store the number of words in the dataset.
+    - text_key (str): The field containing the input text in the dataset.
+    - num_words_key (str): The field to store the number of words in the dataset.
     - alphabet (str): The alphabet to be used for word tokenization.
     - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
@@ -218,14 +218,14 @@ class NumWords(BaseParallelProcessor):
     """
     def __init__(
         self,
-        input_field: str,
-        output_field: str,
+        text_key: str,
+        num_words_key: str,
         alphabet: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = input_field
-        self.output_field = output_field
+        self.input_field = text_key
+        self.output_field = num_words_key
         self.pattern = re.compile("[^"+alphabet+"]")
 
     def process_dataset_entry(self, data_entry):

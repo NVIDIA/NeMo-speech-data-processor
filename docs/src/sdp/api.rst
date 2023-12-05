@@ -200,6 +200,20 @@ Miscellaneous
 .. autodata:: sdp.processors.KeepOnlySpecifiedFields
    :annotation:
 
+.. autodata:: sdp.processors.GetAudioDuration
+   :annotation:
+
+.. autodata:: sdp.processors.FfmpegConvert
+   :annotation:
+
+.. autodata:: sdp.processors.ReadTxtLines
+   :annotation:
+
+.. autodata:: sdp.processors.SplitLineBySentence
+   :annotation:
+
+.. autodata:: sdp.processors.CountNumWords
+   :annotation:
 
 .. _sdp-base-classes:
 
