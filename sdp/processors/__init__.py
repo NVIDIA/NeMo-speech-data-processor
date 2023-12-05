@@ -42,7 +42,7 @@ from sdp.processors.modify_manifest.common import (
     KeepOnlySpecifiedFields,
 )
 from sdp.processors.modify_manifest.data_to_data import (
-    AudioDuration,
+    GetAudioDuration,
     FfmpegConvert,
     ReadTxtLines,
     SplitLineBySentence,

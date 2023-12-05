@@ -25,40 +25,40 @@ from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
 
     
-class AudioDuration(BaseParallelProcessor):
+class GetAudioDuration(BaseParallelProcessor):
     """
-    Count audio duration using audio file path from input_field
+    Processor to count audio duration using audio file path from input_field
 
     Args:
-        input_field (str): where to get path to wav file.
-        output_field (str): where to put to audio duration.
+        audio_filepath_field (str): where to get path to wav file.
+        duration_field (str): where to put to audio duration.
     Returns:
         All the same fields as in the input manifest plus output_field
     """
     def __init__(
         self,
-        input_field: str,
-        output_field: str,
+        audio_filepath_field: str,
+        duration_field: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = input_field
-        self.output_field = output_field
+        self.audio_filepath_field = audio_filepath_field
+        self.duration_field = duration_field
     
     def process_dataset_entry(self, data_entry):
-        audio_filepath = data_entry[self.input_field]
+        audio_filepath = data_entry[self.audio_filepath_field]
         try:
             data, samplerate = sf.read(audio_filepath)
-            data_entry[self.output_field]=data.shape[0]/samplerate
+            data_entry[self.duration_field]=data.shape[0]/samplerate
         except Exception as e:
             logger.warning(str(e) + " file: " + audio_filepath)
-            data_entry[self.output_field] = -1.0
+            data_entry[self.duration_field] = -1.0
         return [DataEntry(data=data_entry)]
     
 
 class FfmpegConvert(BaseParallelProcessor):
     """
-    A class for converting video files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
+    Processor for converting video files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
 
     Args:
     - resampled_audio_dir (str): The directory to store the resampled audio files.
@@ -117,28 +117,28 @@ class FfmpegConvert(BaseParallelProcessor):
 
 class ReadTxtLines(BaseParallelProcessor):
     """
-    A class for reading text lines from a file and updating the dataset.
+    Processor for reading text lines from a file and updating the manifest.
 
     Args:
-    - input_field (str): The field containing the file path in the dataset.
-    - output_field (str): The field to store the read text lines in the dataset.
+    - source_filepath (str): The field containing the file path in the manifest.
+    - text_key (str): The field to store the read text lines in the manifest.
     - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:
-    - process_dataset_entry(data_entry): Processes a single dataset entry, reads text lines from the specified file, and updates the dataset.
+    - process_dataset_entry(data_entry): Processes a single dataset entry, reads text lines from the specified file, and updates the manifest.
 
     Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to read text lines from a file and update the dataset.
+    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to read text lines from a file and update the manifest.
     """
     def __init__(
         self,
-        input_field: str,
-        output_field: str,
+        source_filepath: str,
+        text_key: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = input_field
-        self.output_field = output_field
+        self.input_field = source_filepath
+        self.output_field = text_key
 
     def process_dataset_entry(self, data_entry):
         fname = data_entry[self.input_field]
@@ -155,11 +155,10 @@ class ReadTxtLines(BaseParallelProcessor):
 
 class SplitLineBySentence(BaseParallelProcessor):
     """
-    A class for splitting lines of text into sentences based on a specified pattern.
+    Processor for splitting lines of text into sentences based on a specified pattern.
 
     Args:
-    - input_field (str): The field containing the input text lines in the dataset.
-    - output_field (str): The field to store the output sentences in the dataset.
+    - text_key (str): The field containing the input text lines in the dataset.
     - end_pattern (str): The regular expression pattern to identify sentence boundaries.
     - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
@@ -171,18 +170,16 @@ class SplitLineBySentence(BaseParallelProcessor):
     """
     def __init__(
         self,
-        input_field: str,
-        output_field: str,
+        text_key: str,
         end_pattern: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = input_field
-        self.output_field = output_field
+        self.text_key = text_key
         self.pattern = re.compile(end_pattern)
 
     def process_dataset_entry(self, data_entry):
-        line = data_entry[self.input_field]
+        line = data_entry[self.text_key]
         data_list = []
         start = 0
         ends = [m.start() for m in self.pattern.finditer(line)]
@@ -191,21 +188,21 @@ class SplitLineBySentence(BaseParallelProcessor):
                 sent = line[start:end+1].strip()
                 # if sent and sent[0].isupper():
                 data = data_entry.copy()
-                data[self.output_field] = sent
+                data[self.text_key] = sent
                 data_list.append(DataEntry(data=data))
                 start = end+1
             if start<len(line):
                 pass
         else:
             data = data_entry.copy()
-            data[self.output_field] = line.strip()
+            data[self.text_key] = line.strip()
             data_list.append(DataEntry(data=data))
         return data_list
     
     
 class NumWords(BaseParallelProcessor):
     """
-    A class for counting the number of words in a text and updating the dataset.
+    Processor for counting the number of words in a text and updating the dataset.
 
     Args:
     - input_field (str): The field containing the input text in the dataset.

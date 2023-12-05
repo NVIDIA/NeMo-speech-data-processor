@@ -6,7 +6,7 @@ from sdp.utils.common import load_manifest
 
 class ASRWhisper(BaseProcessor):
     """
-    Transcribe using ASR Whisper model from HuggingFace.
+    Processor to transcribe using ASR Whisper model from HuggingFace.
     
     Args:
         pretrained_model (str): name of pretrained model on HuggingFace.
@@ -65,7 +65,7 @@ class ASRWhisper(BaseProcessor):
     
 class ASRTransformer(BaseProcessor):
     """
-    Transcribe usinf ASR Transformer model from HuggingFace.
+    Processor to transcribe using ASR Transformer model from HuggingFace.
     
     Args:
         pretrained_model (str): name of pretrained model on HuggingFace.

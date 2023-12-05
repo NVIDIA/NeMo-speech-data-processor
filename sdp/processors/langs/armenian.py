@@ -1,44 +1,45 @@
 import os
 import pandas as pd
+from pathlib import Path
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
-from sdp.processors.modify_manifest.common import load_manifest
+from sdp.utils.common import load_manifest
 
 
 class GetSource(BaseParallelProcessor):
     """
-    A class for extracting source information from file paths and updating the dataset.
+    Processor for extracting source information from file paths and updating the manifest.
 
     Args:
-    - input_field (str): The field containing the file path in the dataset.
-    - output_field (str): The field to store the extracted source information in the dataset.
+    - source_filepath (str): The field containing the file path in the manifest.
+    - source_field (str): The field to store the extracted source information in the manifest.
     - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:
-    - process_dataset_entry(data_entry): Processes a single dataset entry, extracts source information, and updates the dataset.
+    - process_dataset_entry(data_entry): Processes a single dataset entry, extracts source information, and updates the manifest.
 
     Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to extract source information from file paths and update the dataset.
+    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to extract source information from file paths and update the manifest.
     """
     def __init__(
         self,
-        input_field: str,
-        output_field: str,
+        source_filepath: str,
+        source_field: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = input_field
-        self.output_field = output_field
+        self.input_field = source_filepath
+        self.output_field = source_field
 
     def process_dataset_entry(self, data_entry):
         input_values = os.path.splitext(data_entry[self.input_field])[0].split("/")
         
-        data_entry[self.output_field] = input_values[-1]# + ", " +input_values[-2]
+        data_entry[self.output_field] = input_values[-1]
         return [DataEntry(data=data_entry)]
 
 
 class MakeTsv(BaseProcessor):
     """
-    A class for converting a JSON manifest file to a TSV (Tab-Separated Values) file.
+    Processor for converting a JSON manifest file to a TSV (Tab-Separated Values) file.
 
     Args:
     - **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
@@ -56,12 +57,12 @@ class MakeTsv(BaseProcessor):
         super().__init__(**kwargs)
 
     def process(self):
-        df1 = pd.DataFrame.from_records(load_manifest(self.input_manifest_file))
+        df1 = pd.DataFrame.from_records(load_manifest(Path(self.input_manifest_file)))
         df1.to_csv(self.output_manifest_file, index=None, sep='\t')
 
 class RandomTsvPart(BaseProcessor):
     """
-    A class for creating a random subset of a TSV (Tab-Separated Values) file based on the specified fraction.
+    Processor for creating a random subset of a TSV (Tab-Separated Values) file based on the specified fraction.
 
     Args:
     - part (float): The fraction of the dataset to include in the random subset, should be in the range (0.0, 1.0).

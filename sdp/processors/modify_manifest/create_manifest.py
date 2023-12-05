@@ -4,12 +4,12 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 class CreateInitialManifestByExt(BaseParallelProcessor):
     """
-    A class for creating an initial dataset manifest from image and text files with common keys.
+    Processor for creating an initial dataset manifest by saving filepaths with a common extension to the field specified in output_field.
 
     Args:
     - raw_data_dir (str): The directory containing image and text files to include in the initial dataset manifest.
     - output_field (str): The field to store the paths to the files in the dataset.
-    - extention (str): The field stecify extention of the file in the dataset.
+    - extension (str): The field stecify extention of the file in the dataset.
     - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:
@@ -25,17 +25,17 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         self,
         raw_data_dir: str,
         output_field: str = "audio_filepath",
-        extention: str = "mp3",
+        extension: str = "mp3",
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.raw_data_dir = Path(raw_data_dir)
         self.output_field = output_field
-        self.extention = extention
+        self.extension = extension
 
     def read_manifest(self):
         input_files = [str(self.raw_data_dir / video) for video in \
-                       self.raw_data_dir.rglob('*.' + self.extention)]
+                       self.raw_data_dir.rglob('*.' + self.extension)]
         return input_files
     
     def process_dataset_entry(self, data_entry):
