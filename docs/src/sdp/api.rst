@@ -215,6 +215,9 @@ Miscellaneous
 .. autodata:: sdp.processors.CountNumWords
    :annotation:
 
+.. autodata:: sdp.processors.Subprocess
+   :annotation:
+
 .. _sdp-base-classes:
 
 Base classes
