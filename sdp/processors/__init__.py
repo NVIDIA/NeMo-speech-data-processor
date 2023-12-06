@@ -67,3 +67,8 @@ from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
 )
 from sdp.processors.nemo.asr_inference import ASRInference
 from sdp.processors.nemo.pc_inference import PCInference
+
+
+from sdp.processors.datasets.librispeech.create_initial_manifest import CreateInitialManifestLibrispeech
+from sdp.processors.datasets.librispeech.sox_converter import Flac2Wav
+from sdp.processors.datasets.librispeech.get_audio_duration import GetAudioDuration

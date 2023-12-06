@@ -1,0 +1,24 @@
+documentation: |
+  LIBRISPEECH
+  ######
+  
+processors_to_run: all
+workspace_dir: ???
+final_manifest: ${workspace_dir}/manifest.json
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    output_manifest_file: ${workspace_dir}/manifest0.json
+    resampled_audio_dir: ${workspace_dir}/audio/
+    raw_data_dir: ${workspace_dir}/raw_data
+
+  - _target_: sdp.processors.Flac2Wav
+    output_manifest_file: ${workspace_dir}/manifest1.json
+    resampled_audio_dir: ${workspace_dir}/audio
+    input_field: "audio_filepath"
+    output_field: "audio_filepath"
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_field: audio_filepath
+    duration_field: duration
+    output_manifest_file: ${workspace_dir}/manifest2.json
