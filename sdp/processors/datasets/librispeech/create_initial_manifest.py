@@ -30,7 +30,8 @@ def get_librispeech_url_list() -> list[str]:
     # ]
 
     urls: list[str] = [
-        "https://www.openslr.org/resources/12/dev-clean.tar.gz"
+        "https://www.openslr.org/resources/12/dev-clean.tar.gz",
+        "https://www.openslr.org/resources/12/dev-other.tar.gz"
     ]
     return urls
 
