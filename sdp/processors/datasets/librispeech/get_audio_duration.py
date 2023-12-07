@@ -1,5 +1,6 @@
 import soundfile as sf
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry, BaseProcessor
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+
 
 class GetAudioDuration(BaseParallelProcessor):
     """
@@ -20,10 +21,9 @@ class GetAudioDuration(BaseParallelProcessor):
         super().__init__(**kwargs)
         self.audio_filepath_field = audio_filepath_field
         self.duration_field = duration_field
-    
+
     def process_dataset_entry(self, data_entry):
         audio_filepath = data_entry[self.audio_filepath_field]
         data, samplerate = sf.read(audio_filepath)
-        data_entry[self.duration_field]=data.shape[0]/samplerate
+        data_entry[self.duration_field] = data.shape[0] / samplerate
         return [DataEntry(data=data_entry)]
-    

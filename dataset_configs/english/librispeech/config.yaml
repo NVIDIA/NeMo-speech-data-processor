@@ -8,11 +8,13 @@ final_manifest: ${workspace_dir}/manifest.json
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    names: ["dev-clean"]
     output_manifest_file: ${workspace_dir}/manifest0.json
     resampled_audio_dir: ${workspace_dir}/audio/
     raw_data_dir: ${workspace_dir}/raw_data
 
   - _target_: sdp.processors.Flac2Wav
+    # input_manifest_file: ${workspace_dir}/manifest0.json
     output_manifest_file: ${workspace_dir}/manifest1.json
     resampled_audio_dir: ${workspace_dir}/audio
     input_field: "audio_filepath"
