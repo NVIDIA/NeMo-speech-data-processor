@@ -32,6 +32,7 @@ from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
 from sdp.processors.modify_manifest.common import (
+    Subprocess,
     AddConstantFields,
     ChangeToRelativePath,
     CombineSources,
@@ -42,7 +43,6 @@ from sdp.processors.modify_manifest.common import (
     KeepOnlySpecifiedFields,
 )
 from sdp.processors.modify_manifest.data_to_data import (
-    Subprocess,
     GetAudioDuration,
     FfmpegConvert,
     ReadTxtLines,

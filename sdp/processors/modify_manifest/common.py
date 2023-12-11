@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 from typing import Dict, List
 
 from tqdm import tqdm
@@ -9,6 +10,66 @@ from sdp.processors.base_processor import (
     BaseProcessor,
     DataEntry,
 )
+
+class Subprocess(BaseProcessor):
+    """
+    Processor for handling subprocess execution with additional features for managing input and output manifests.
+
+    Parameters:
+    - cmd (str): The command to be executed as a subprocess.
+    - input_manifest_arg (str, optional): The argument specifying the input manifest. Defaults to an empty string.
+    - output_manifest_arg (str, optional): The argument specifying the output manifest. Defaults to an empty string.
+    - arg_separator (str, optional): The separator used between argument and value. Defaults to "=".
+    - **kwargs: Additional keyword arguments to be passed to the base class.
+
+    Methods:
+    - process(): Executes the subprocess, handling input and output manifest arguments and ensuring they are not included in the command line.
+
+    Example:
+    ```yaml
+      - _target_: sdp.processors.datasets.commoncrawl.Subprocess
+        output_manifest_file: /workspace/manifest.json
+        input_manifest_arg: "--manifest"
+        output_manifest_arg: "--output_filename"
+        arg_separator: "="
+        cmd: "python /workspace/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
+            --language=en --n_jobs=-1 --batch_size=600 --manifest_text_field=text --cache_dir=${workspace_dir}/cache --overwrite_cache \
+            --whitelist=/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/en/data/whitelist/asr_with_pc.tsv"
+    ```
+
+    """
+    def __init__(
+        self,
+        cmd: str,
+        input_manifest_arg: str = "",
+        output_manifest_arg: str = "",
+        arg_separator: str = "=",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_manifest_arg = input_manifest_arg
+        self.output_manifest_arg = output_manifest_arg
+        self.arg_separator = arg_separator
+        self.cmd = cmd
+
+    def process(self):
+        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
+        if self.cmd.find(self.input_manifest_file) != -1 or self.cmd.find(self.output_manifest_file) != -1:
+            logger.error("input_manifest_file "+self.input_manifest_file+" and output_manifest_file "+self.output_manifest_file+" should be exluded from cmd line!")
+            raise ValueError
+        process_args = [x for x in self.cmd.split(" ") if x]
+        if self.arg_separator == " ":
+            if self.input_manifest_arg:
+                process_args.extend([self.input_manifest_arg, self.input_manifest_file])
+            if self.output_manifest_arg:
+                process_args.extend([self.output_manifest_arg, self.output_manifest_file])
+        else:
+            if self.input_manifest_arg:
+                process_args.extend([self.input_manifest_arg + self.arg_separator + self.input_manifest_file])
+            if self.output_manifest_arg:
+                process_args.extend([self.output_manifest_arg + self.arg_separator + self.output_manifest_file])
+
+        subprocess.run(process_args)
 
 
 class CombineSources(BaseParallelProcessor):
