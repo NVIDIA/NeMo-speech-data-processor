@@ -158,8 +158,8 @@ class DropHighLowDuration(BaseParallelProcessor):
         low_duration_threshold (float): lower duration threshold (in seconds).
             If the duration of an utterance's audio is lower than this number,
             the utterance will be dropped.
-        text_key (str): a string indicating which key of the data entries
-            should be used to find the utterance transcript. Defaults to "text".
+        duration_key (str): a string indicating which key of the data entries
+            should be used to find the utterance duration. Defaults to "duration".
 
     Returns:
          The same data as in the input manifest with some entries dropped.
