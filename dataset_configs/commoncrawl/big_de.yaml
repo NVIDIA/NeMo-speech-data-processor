@@ -1,10 +1,11 @@
-processors_to_run: "0:" # ü ä ö ß Ä Ö Ü
+processors_to_run: "0:"
 lang: de
-workspace_dir: /mnt/md1/out/${lang} # /mnt/md0/common_crawl/cc_sdp/de
+base_dir: /path/to/dataset/folder
+workspace_dir: ${base_dir}/${lang} 
 
 processors:
   - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
-    input_manifest_file: /mnt/md1/out/manifest11.json
+    input_manifest_file: /path/to/dataset/folder/manifest11.json
     output_manifest_file: ${workspace_dir}/manifest0.json
     input_field: audio_lang
     target_value: ${lang}
@@ -16,7 +17,7 @@ processors:
 
   - _target_: sdp.processors.ASRInference
     output_manifest_file: ${workspace_dir}/manifest2.json
-    pretrained_model: nvidia/stt_de_fastconformer_hybrid_large_pc
+    pretrained_model: nvidia/stt_${lang}_fastconformer_hybrid_large_pc
     batch_size: 64
   
   - _target_: sdp.processors.DuplicateFields
@@ -53,7 +54,7 @@ processors:
       - {"pattern": '„', "repl": '"'}
       - {"pattern": '®', "repl": ' '}
       - {"pattern": '@', "repl": " "}
-      - {"pattern": "  ", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
 
   - _target_: sdp.processors.DropHighLowWordrate
     output_manifest_file: ${workspace_dir}/manifest5.json
@@ -72,9 +73,8 @@ processors:
     output_manifest_arg: "--output_filename"
     arg_separator: "="
     cmd: "python /home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
-        --language=de --n_jobs=-1 --batch_size=600 --manifest_text_field=text  --cache_dir=${workspace_dir}/cache \
-        --whitelist=/home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/de/data/whitelist.tsv"
-    #  --overwrite_cache
+        --language=${lang} --n_jobs=-1 --batch_size=600 --manifest_text_field=text  --cache_dir=${workspace_dir}/cache \
+        --whitelist=/home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/${lang}/data/whitelist.tsv"
 
   - _target_: sdp.processors.RenameFields
     output_manifest_file: ${workspace_dir}/manifest8.json
@@ -90,7 +90,7 @@ processors:
       - {"pattern": '\$', "repl": ""}
       - {"pattern": "'", "repl": " "}
       - {"pattern": "[^a-zA-ZäöüÄÖÜßẞ.,?]", "repl": " "}
-      - {"pattern": '  ', "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
 
   - _target_: sdp.processors.DuplicateFields
     output_manifest_file: ${workspace_dir}/manifest10.json
@@ -106,7 +106,7 @@ processors:
     regex_params_list:
       - {"pattern": "[\\?\\.]", "repl": " "}
       - {"pattern": ",", "repl": " "}
-      - {"pattern": "  ", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
 
   - _target_: sdp.processors.DropIfRegexMatch
     output_manifest_file: ${workspace_dir}/manifest13.json
@@ -128,7 +128,7 @@ processors:
     regex_params_list:
       - {"pattern": "[\\?\\.]", "repl": " "}
       - {"pattern": ",", "repl": " "}
-      - {"pattern": "  ", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
 
   - _target_: sdp.processors.DropHighWER
     output_manifest_file: ${workspace_dir}/manifest17.json
@@ -142,19 +142,30 @@ processors:
     pred_text_key: pred_text
     cer_threshold: 30
     
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    fields_to_keep: ["audio_filepath", "duration", "text_pc"]
+
+  - _target_: sdp.processors.RenameFields
+    rename_fields: {"text_pc":"text"}
+
+  - _target_: sdp.processors.datasets.commoncrawl.drop_abs_path
+    output_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    path_key: audio_filepath
+    abs_path_to_drop: ${base_dir}/
+
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    output_manifest_file: ${workspace_dir}/manifest19.json
+    output_manifest_file: ${workspace_dir}/manifest_${lang}_train.json
     lang: ${lang}
     data_split: train
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    input_manifest_file: ${workspace_dir}/manifest18.json
-    output_manifest_file: ${workspace_dir}/manifest19_dev.json
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    output_manifest_file: ${workspace_dir}/manifest_${lang}_dev.json
     lang: ${lang}
     data_split: dev
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    input_manifest_file: ${workspace_dir}/manifest18.json
-    output_manifest_file: ${workspace_dir}/manifest19_test.json
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    output_manifest_file: ${workspace_dir}/manifest_${lang}_test.json
     lang: ${lang}
     data_split: test

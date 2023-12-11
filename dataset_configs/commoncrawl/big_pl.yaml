@@ -1,10 +1,11 @@
 processors_to_run: "0:" 
 lang: pl
-workspace_dir: /mnt/md1/out/${lang} #/mnt/md0/common_crawl/cc_sdp/pl
+base_dir: /path/to/dataset/folder
+workspace_dir: ${base_dir}/${lang}
 
 processors:
   - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
-    input_manifest_file: /mnt/md1/out/manifest11.json
+    input_manifest_file: ${base_dir}/manifest11.json
     output_manifest_file: ${workspace_dir}/manifest0.json
     input_field: audio_lang
     target_value: ${lang}
@@ -50,7 +51,7 @@ processors:
       - {"pattern": '„', "repl": '"'}
       - {"pattern": '®', "repl": ' '}
       - {"pattern": '@', "repl": " "}
-      - {"pattern": "  ", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
 
   - _target_: sdp.processors.DropHighLowWordrate
     output_manifest_file: ${workspace_dir}/manifest5.json
@@ -75,7 +76,7 @@ processors:
       - {"pattern": '\.{3}', "repl": '.'}
       - {"pattern": '\$', "repl": ""}
       - {"pattern": "[^a-pr-uwy-zA-PR-UWY-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ.,?]", "repl": " "}
-      - {"pattern": '  ', "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
 
   - _target_: sdp.processors.DuplicateFields
     output_manifest_file: ${workspace_dir}/manifest8.json
@@ -91,7 +92,7 @@ processors:
     regex_params_list:
       - {"pattern": "[\\?\\.]", "repl": " "}
       - {"pattern": ",", "repl": " "}
-      - {"pattern": "  ", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
 
   - _target_: sdp.processors.DropIfRegexMatch
     output_manifest_file: ${workspace_dir}/manifest11.json
@@ -113,7 +114,7 @@ processors:
     regex_params_list:
       - {"pattern": "[\\?\\.]", "repl": " "}
       - {"pattern": ",", "repl": " "}
-      - {"pattern": "  ", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
 
   - _target_: sdp.processors.DropHighWER
     output_manifest_file: ${workspace_dir}/manifest15.json
@@ -127,19 +128,30 @@ processors:
     pred_text_key: pred_text
     cer_threshold: 30
     
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    fields_to_keep: ["audio_filepath", "duration", "text_pc"]
+
+  - _target_: sdp.processors.RenameFields
+    rename_fields: {"text_pc":"text"}
+
+  - _target_: sdp.processors.datasets.commoncrawl.drop_abs_path
+    output_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    path_key: audio_filepath
+    abs_path_to_drop: ${base_dir}/
+
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    output_manifest_file: ${workspace_dir}/manifest17.json
+    output_manifest_file: ${workspace_dir}/manifest_${lang}_train.json
     lang: ${lang}
     data_split: train
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    input_manifest_file: ${workspace_dir}/manifest16.json
-    output_manifest_file: ${workspace_dir}/manifest17_dev.json
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    output_manifest_file: ${workspace_dir}/manifest_${lang}_dev.json
     lang: ${lang}
     data_split: dev
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    input_manifest_file: ${workspace_dir}/manifest16.json
-    output_manifest_file: ${workspace_dir}/manifest17_test.json
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    output_manifest_file: ${workspace_dir}/manifest_${lang}_test.json
     lang: ${lang}
     data_split: test
