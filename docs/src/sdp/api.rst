@@ -223,6 +223,9 @@ Miscellaneous
 .. autodata:: sdp.processors.Subprocess
    :annotation:
 
+.. autodata:: sdp.processors.CreateInitialManifestByExt
+   :annotation:
+
 .. _sdp-base-classes:
 
 Base classes

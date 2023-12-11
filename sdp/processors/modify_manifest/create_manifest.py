@@ -7,18 +7,18 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
     Processor for creating an initial dataset manifest by saving filepaths with a common extension to the field specified in output_field.
 
     Args:
-    - raw_data_dir (str): The directory containing image and text files to include in the initial dataset manifest.
-    - output_field (str): The field to store the paths to the files in the dataset.
-    - extension (str): The field stecify extention of the file in the dataset.
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        raw_data_dir (str): The directory containing image and text files to include in the initial dataset manifest.
+        output_field (str): The field to store the paths to the files in the dataset.
+        extension (str): The field stecify extention of the file in the dataset.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:
-    - prepare(): Creates the directory for saving the initial dataset manifest.
-    - read_manifest(): Reads the image and text files, extracts common keys, and creates a DataFrame with video, key, and text fields.
-    - process_dataset_entry(data_entry): Processes a single dataset entry, creating a DataEntry object with video, key, and text fields, and updates the dataset.
+        prepare(): Creates the directory for saving the initial dataset manifest.
+        read_manifest(): Reads the image and text files, extracts common keys, and creates a DataFrame with video, key, and text fields.
+        process_dataset_entry(data_entry): Processes a single dataset entry, creating a DataEntry object with video, key, and text fields, and updates the dataset.
 
     Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to create an initial dataset manifest from image and text files with common keys.
+        This class inherits from the `BaseParallelProcessor` class and extends its functionality to create an initial dataset manifest from image and text files with common keys.
     """
 
     def __init__(
