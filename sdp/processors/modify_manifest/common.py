@@ -16,18 +16,18 @@ class Subprocess(BaseProcessor):
     Processor for handling subprocess execution with additional features for managing input and output manifests.
 
     Parameters:
-    - cmd (str): The command to be executed as a subprocess.
-    - input_manifest_arg (str, optional): The argument specifying the input manifest. Defaults to an empty string.
-    - output_manifest_arg (str, optional): The argument specifying the output manifest. Defaults to an empty string.
-    - arg_separator (str, optional): The separator used between argument and value. Defaults to "=".
-    - **kwargs: Additional keyword arguments to be passed to the base class.
+        cmd (str): The command to be executed as a subprocess.
+        input_manifest_arg (str, optional): The argument specifying the input manifest. Defaults to an empty string.
+        output_manifest_arg (str, optional): The argument specifying the output manifest. Defaults to an empty string.
+        arg_separator (str, optional): The separator used between argument and value. Defaults to "=".
+        **kwargs: Additional keyword arguments to be passed to the base class.
 
     Methods:
-    - process(): Executes the subprocess, handling input and output manifest arguments and ensuring they are not included in the command line.
+        process(): Executes the subprocess, handling input and output manifest arguments and ensuring they are not included in the command line.
 
-    Example:
-    ```yaml
-      - _target_: sdp.processors.datasets.commoncrawl.Subprocess
+    Example::
+        
+        _target_: sdp.processors.datasets.commoncrawl.Subprocess
         output_manifest_file: /workspace/manifest.json
         input_manifest_arg: "--manifest"
         output_manifest_arg: "--output_filename"
@@ -35,7 +35,6 @@ class Subprocess(BaseProcessor):
         cmd: "python /workspace/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
             --language=en --n_jobs=-1 --batch_size=600 --manifest_text_field=text --cache_dir=${workspace_dir}/cache --overwrite_cache \
             --whitelist=/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/en/data/whitelist/asr_with_pc.tsv"
-    ```
 
     """
     def __init__(

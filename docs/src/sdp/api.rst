@@ -78,6 +78,11 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.PCInference
    :annotation:
 
+.. autodata:: sdp.processors.ASRWhisper
+   :annotation:
+
+.. autodata:: sdp.processors.ASRTransformer
+   :annotation:
 
 Text-only processors
 ####################
@@ -86,6 +91,9 @@ Text-only processors
     All processors in this section accept additional parameter
     ``text_key`` (defaults to "text") to control which field is used
     for modifications/filtering.
+
+.. autodata:: sdp.processors.ReadTxtLines
+   :annotation:
 
 Data modifications
 ''''''''''''''''''
@@ -100,6 +108,12 @@ Data modifications
    :annotation:
 
 .. autodata:: sdp.processors.MakeLettersUppercaseAfterPeriod
+   :annotation:
+
+.. autodata:: sdp.processors.SplitLineBySentence
+   :annotation:
+
+.. autodata:: sdp.processors.CountNumWords
    :annotation:
 
 Data filtering
@@ -204,15 +218,6 @@ Miscellaneous
    :annotation:
 
 .. autodata:: sdp.processors.FfmpegConvert
-   :annotation:
-
-.. autodata:: sdp.processors.ReadTxtLines
-   :annotation:
-
-.. autodata:: sdp.processors.SplitLineBySentence
-   :annotation:
-
-.. autodata:: sdp.processors.CountNumWords
    :annotation:
 
 .. autodata:: sdp.processors.Subprocess
