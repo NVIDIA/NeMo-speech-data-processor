@@ -10,4 +10,5 @@ regex
 sox
 tqdm
 wget
+ffmpeg
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
