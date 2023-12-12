@@ -153,24 +153,27 @@ processors:
   - _target_: sdp.processors.RenameFields
     rename_fields: {"text_pc":"text"}
 
+  - _target_: sdp.processors.AddConstantFields
+    fields: {"lang": '${lang}'}
+
   - _target_: sdp.processors.datasets.commoncrawl.drop_abs_path
     output_manifest_file: ${workspace_dir}/manifest_${lang}.json
     path_key: audio_filepath
     abs_path_to_drop: ${base_dir}/
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    output_manifest_file: ${workspace_dir}/manifest_${lang}_train.json
+    output_manifest_file: ${base_dir}/splited_manifests/${lang}_train.json
     lang: ${lang}
     data_split: train
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
     input_manifest_file: ${workspace_dir}/manifest_${lang}.json
-    output_manifest_file: ${workspace_dir}/manifest_${lang}_dev.json
+    output_manifest_file: ${base_dir}/splited_manifests/${lang}_dev.json
     lang: ${lang}
     data_split: dev
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
     input_manifest_file: ${workspace_dir}/manifest_${lang}.json
-    output_manifest_file: ${workspace_dir}/manifest_${lang}_test.json
+    output_manifest_file: ${base_dir}/splited_manifests/${lang}_test.json
     lang: ${lang}
     data_split: test

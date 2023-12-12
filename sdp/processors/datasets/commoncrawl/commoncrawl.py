@@ -20,7 +20,9 @@ from scipy.spatial import distance
 
 class drop_abs_path(BaseParallelProcessor):
     """
-        Args:
+    Drop absolute path
+
+    Args:
         path_key (str): where to get path to wav file.
         abs_path_to_drop (str): string to drop from the bigining of path to wav file.
     """
@@ -451,7 +453,7 @@ class BLEUScore(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 class Subprocess(BaseProcessor):
- """
+    """
     A class for handling subprocess execution with additional features for managing input and output manifests.
 
     Parameters:
@@ -473,7 +475,6 @@ class Subprocess(BaseProcessor):
     Note:
     - The `BaseProcessor` class is assumed to be the base class, providing common functionality.
     """
-
     def __init__(
         self,
         cmd: str,
