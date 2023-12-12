@@ -1,20 +1,53 @@
 documentation: |
-  LIBRISPEECH
+  librispeech
   ######
   
+  This config can be used to prepare
+  `Librispeech <https://openslr.org/12>`_
+  dataset in the NeMo format.
+
+  It produces 3 manifests for train/dev/test splits as well as a single
+  manifest with all the data.
+
+  This config performs the following data processing for each train/dev/test.
+
+  1. Downloads Librispeech data
+  2. Converts flac files to wav file
+  3. Calculates the length of wav files
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+
+  Note that you can customize any part of this config either directly or from command-line.
+ 
+  **Output format**.
+
+  This config generates multiple output manifest files:
+
+  * ``${workspace_dir}/train_manifest.json`` - training subset of the data.
+  * ``${workspace_dir}/dev_manifest.json`` - validation subset of the data.
+  * ``${workspace_dir}/test_manifest.json`` - test subset of the data.
+
+  All output manifests contain the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription (lower-case without punctuation).
+  * **duration (float)**: audio duration in seconds.
+
 processors_to_run: all
 workspace_dir: ???
 final_manifest: ${workspace_dir}/manifest.json
 
 processors:
+  # creating manifest for dev set
   - _target_: sdp.processors.CreateInitialManifestLibrispeech
     names: ["dev-clean", "dev-other"]
-    output_manifest_file: ${workspace_dir}/manifest0.json
-    raw_data_dir: ${workspace_dir}/raw_data
+    output_manifest_file: ${workspace_dir}/manifest-dev0.json
+    raw_data_dir: ${workspace_dir}/raw_data_dev
 
   - _target_: sdp.processors.Flac2Wav
-    # input_manifest_file: ${workspace_dir}/manifest0.json
-    output_manifest_file: ${workspace_dir}/manifest1.json
+    output_manifest_file: ${workspace_dir}/manifest-dev1.json
     resampled_audio_dir: ${workspace_dir}/audio
     input_field: "audio_filepath"
     output_field: "audio_filepath"
@@ -22,4 +55,38 @@ processors:
   - _target_: sdp.processors.GetAudioDuration
     audio_filepath_field: audio_filepath
     duration_field: duration
-    output_manifest_file: ${workspace_dir}/manifest2.json
+    output_manifest_file: ${workspace_dir}/dev_manifest.json
+
+  # creating manifest for test set
+  - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    names: ["test-clean", "test-other"]
+    output_manifest_file: ${workspace_dir}/manifest-test0.json
+    raw_data_dir: ${workspace_dir}/raw_data_test
+
+  - _target_: sdp.processors.Flac2Wav
+    output_manifest_file: ${workspace_dir}/manifest-test1.json
+    resampled_audio_dir: ${workspace_dir}/audio
+    input_field: "audio_filepath"
+    output_field: "audio_filepath"
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_field: audio_filepath
+    duration_field: duration
+    output_manifest_file: ${workspace_dir}/test_manifest.json
+
+  # creating manifest for test set
+  - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    names: ["train-clean-100", "train-clean-360", "train-other-500"]
+    output_manifest_file: ${workspace_dir}/manifest-train0.json
+    raw_data_dir: ${workspace_dir}/raw_data_test
+
+  - _target_: sdp.processors.Flac2Wav
+    output_manifest_file: ${workspace_dir}/manifest-train1.json
+    resampled_audio_dir: ${workspace_dir}/audio
+    input_field: "audio_filepath"
+    output_field: "audio_filepath"
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_field: audio_filepath
+    duration_field: duration
+    output_manifest_file: ${workspace_dir}/train_manifest.json

@@ -1,8 +1,22 @@
+# Copyright (c) 2023, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import fnmatch
 import glob
+import json
 import os
 import typing as tp
-import fnmatch
-import json
 
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import download_file, extract_archive
@@ -10,13 +24,13 @@ from sdp.utils.common import download_file, extract_archive
 
 def get_librispeech_url_list(names: list[str]) -> list[str]:
     urls = [
-        "https://www.openslr.org/resources/12/dev-clean.tar.gz",
-        "https://www.openslr.org/resources/12/dev-other.tar.gz",
-        "https://www.openslr.org/resources/12/test-clean.tar.gz",
-        "https://www.openslr.org/resources/12/test-other.tar.gz",
-        "https://www.openslr.org/resources/12/train-clean-100.tar.gz",
-        "https://www.openslr.org/resources/12/train-clean-360.tar.gz",
-        "https://www.openslr.org/resources/12/train-other-500.tar.gz",
+        "https://openslr.org/resources/12/dev-clean.tar.gz",
+        "https://openslr.org/resources/12/dev-other.tar.gz",
+        "https://openslr.org/resources/12/test-clean.tar.gz",
+        "https://openslr.org/resources/12/test-other.tar.gz",
+        "https://openslr.org/resources/12/train-clean-100.tar.gz",
+        "https://openslr.org/resources/12/train-clean-360.tar.gz",
+        "https://openslr.org/resources/12/train-other-500.tar.gz",
     ]
     if "all" not in names:
         filtered_urls = [url for url in urls if url.split('/')[-1].split('.tar')[0] in names]
@@ -32,12 +46,12 @@ def get_librispeech_url_list(names: list[str]) -> list[str]:
 class CreateInitialManifestLibrispeech(BaseProcessor):
     """Processor to create initial manifest for the Librispeech dataset.
 
-    Dataset link: https://www.openslr.org/12
+    Dataset link: https://openslr.org/12
 
-    Will download all files, extract tars and create manifest file with the 
-    'audio_filepath' and 'text' fields 
-    
-    Args: 
+    Will download all files, extract tars and create manifest file with the
+    'audio_filepath' and 'text' fields
+
+    Args:
         names (list[str]): Which data sets or their combinations shoudld be processed
             - options are:
             ["dev-clean"],
@@ -80,7 +94,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
 
         with open(file_path, encoding="utf-8") as fin:
             for line in fin:
-                id, text = line[: line.index(" ")], line[line.index(" ") + 1:]
+                id, text = line[: line.index(" ")], line[line.index(" ") + 1 :]
                 transcript_text = text.lower().strip()
 
                 flac_file = os.path.join(root, id + ".flac")
@@ -92,7 +106,6 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
         return entries
 
     def process_data(self, data_folder: str, manifest_file: str) -> None:
-
         files = []
         entries = []
 
