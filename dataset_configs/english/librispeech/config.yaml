@@ -78,7 +78,7 @@ processors:
   - _target_: sdp.processors.CreateInitialManifestLibrispeech
     names: ["train-clean-100", "train-clean-360", "train-other-500"]
     output_manifest_file: ${workspace_dir}/manifest-train0.json
-    raw_data_dir: ${workspace_dir}/raw_data_test
+    raw_data_dir: ${workspace_dir}/raw_data_train
 
   - _target_: sdp.processors.Flac2Wav
     output_manifest_file: ${workspace_dir}/manifest-train1.json
