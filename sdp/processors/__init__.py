@@ -46,7 +46,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
-    FlacToWavFfmpeg,
+    FfmpegConvert,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,

@@ -16,7 +16,7 @@ documentation: |
   **Required arguments**.
 
   * **workspace_dir**: specify the workspace folder where all audio files will be stored.
-    You need to manually place the downloaded MCV Italian data inside
+    You need to manually place the downloaded MCV Portuguese data inside
     ``<workspace dir>/raw_data/`` subfolder.
   * **data_split**: should be "train", "dev" or "test".
 

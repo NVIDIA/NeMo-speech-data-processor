@@ -15,9 +15,8 @@
 import collections
 import re
 import os
-import subprocess
 from typing import Dict, List
-
+from sdp.utils.common import ffmpeg_convert
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
@@ -309,45 +308,62 @@ class SubRegex(BaseParallelProcessor):
             logger.info(f"{word} {count}")
         super().finalize(metrics)
 
-
-class FlacToWavFfmpeg(BaseParallelProcessor):
+class FfmpegConvert(BaseParallelProcessor):
     """
+    Processor for converting video files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
+
+    Args:
         resampled_audio_dir (str): The directory to store the resampled audio files.
-        input_field (str): The field in the dataset representing the path to the input audio files.
+        input_field (str): The field in the dataset representing the path to the input video files.
         output_field (str): The field to store the path to the resampled audio files in the dataset.
-        target_samplerate (int): sample rate (Hz) to use for resampling. Defaults to 16000.
-        target_nchannels (int): number of channels to create during resampling process. Defaults to 1
+        key_field (str): The field in the dataset representing the unique key or identifier for each entry.
+        target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
+        target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    Methods:
+        process_dataset_entry(data_entry): Processes a single dataset entry, converts the input video to resampled audio, and updates the dataset.
+
+    Note:
+        This class inherits from the `BaseParallelProcessor` class and extends its functionality to convert video files to resampled audio using FFmpeg.
     """
 
     def __init__(
             self,
             resampled_audio_dir: str,
-            input_field: str, output_field: str,
+            input_field: str,
+            output_field: str,
+            key_field: str = None,
             target_samplerate: int = 16000,
             target_nchannels: int = 1,
-            **kwargs):
+            **kwargs,
+    ):
         super().__init__(**kwargs)
-
         self.input_field = input_field
         self.output_field = output_field
+        self.key_field = key_field
         self.resampled_audio_dir = resampled_audio_dir
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
+
+    def prepare(self):
+        os.makedirs(os.path.split(self.output_manifest_file)[0], exist_ok=True)
         os.makedirs(self.resampled_audio_dir, exist_ok=True)
 
-    def process_dataset_entry(self, data_entry) -> List:
-        audio_file_path = data_entry[self.input_field]
-        audio_name = audio_file_path.split('/')[-1].split('.')[0]
-        resampled_audio_name = os.path.join(self.resampled_audio_dir, audio_name) + '.wav'
+    def process_dataset_entry(self, data_entry):
+        video = data_entry[self.input_field]
+        if self.key_field:
+            key = data_entry[self.key_field]
+            os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
+        else:
+            key = os.path.splitext(video)[0].split("/")[-1]
+        audio = os.path.join(self.resampled_audio_dir, key) + ".wav"
 
-        self.ffmpeg_convert(audio_file_path, resampled_audio_name, self.target_samplerate, self.target_nchannels)
-        data_entry[self.output_field] = resampled_audio_name
+        if not os.path.isfile(audio):
+            ffmpeg_convert(video, audio, self.target_samplerate, self.target_nchannels)
+
+        data_entry[self.output_field] = audio
+        if self.key_field:
+            data_entry[self.key_field] = key
         return [DataEntry(data=data_entry)]
 
-    def ffmpeg_convert(self, jpg: str, wav: str, ar: int = 0, ac: int = 1):
-        process_args = ["ffmpeg", "-i", jpg, '-ac', str(ac), "-map", "0:a", "-c:a", "pcm_s16le", "-y", wav]
-        if ar:
-            process_args = process_args[:-1]
-            process_args.extend(["-ar", str(ar), wav])
-        return subprocess.run(process_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

@@ -12,8 +12,6 @@ documentation: |
   **Required arguments**.
 
   * **workspace_dir**: specify the workspace folder where all audio files will be stored.
-    You need to manually place the downloaded MCV Italian data inside
-    ``<workspace dir>/raw_data/`` subfolder.
   * **data_split**: should be "train", "dev" or "test".
 
   Note that you can customize any part of this config either directly or from command-line.
@@ -40,9 +38,9 @@ processors:
     raw_data_dir: ${workspace_dir}
     language: portuguese
     resampled_audio_dir: "" #not passing an argument here to convert it with ffmpeg
-    data_split: "${data_split}"
+    data_split: ${data_split}
 
-  - _target_: sdp.processors.FlacToWavFfmpeg
+  - _target_: sdp.processors.FfmpegConvert
     resampled_audio_dir: ${workspace_dir}/resampled
     input_field: audio_filepath
     output_field: audio_filepath
