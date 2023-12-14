@@ -15,15 +15,12 @@ class Subprocess(BaseProcessor):
     """
     Processor for handling subprocess execution with additional features for managing input and output manifests.
 
-    Parameters:
+    Args:
         cmd (str): The command to be executed as a subprocess.
         input_manifest_arg (str, optional): The argument specifying the input manifest. Defaults to an empty string.
         output_manifest_arg (str, optional): The argument specifying the output manifest. Defaults to an empty string.
         arg_separator (str, optional): The separator used between argument and value. Defaults to "=".
         **kwargs: Additional keyword arguments to be passed to the base class.
-
-    Methods:
-        process(): Executes the subprocess, handling input and output manifest arguments and ensuring they are not included in the command line.
 
     Example::
         

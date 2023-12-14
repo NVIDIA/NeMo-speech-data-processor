@@ -14,9 +14,6 @@ class GetSourceFolder(BaseParallelProcessor):
         source_field (str): The field to store the extracted source folder in the manifest.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
-    Methods:
-        process_dataset_entry(data_entry): Processes a single dataset entry, extracts source information, and updates the manifest.
-
     Note:
         This class inherits from the `BaseParallelProcessor` class and extends its functionality to extract source information from file paths and update the manifest.
     """
@@ -44,9 +41,6 @@ class MakeTsv(BaseProcessor):
     Args:
         **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
-    Methods:
-        process(): Reads the input JSON manifest file, converts it to a DataFrame, and saves it as a TSV file.
-
     Note:
         This class inherits from the `BaseProcessor` class and provides functionality to convert a JSON manifest file to a TSV file.
     """
@@ -68,9 +62,6 @@ class RandomTsvPart(BaseProcessor):
         part (float): The fraction of the dataset to include in the random subset, should be in the range (0.0, 1.0).
         random_state (int): Seed for reproducibility when generating the random subset.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
-
-    Methods:
-        process(): Reads the input TSV manifest file, creates a random subset based on the specified fraction, and saves it as a new TSV file.
 
     Note:
         This class inherits from the `BaseProcessor` class and provides functionality to create a random subset of a TSV file.

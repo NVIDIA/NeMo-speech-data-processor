@@ -69,9 +69,6 @@ class FfmpegConvert(BaseParallelProcessor):
         target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
-    Methods:
-        process_dataset_entry(data_entry): Processes a single dataset entry, converts the input video to resampled audio, and updates the dataset.
-
     Note:
         This class inherits from the `BaseParallelProcessor` class and extends its functionality to convert video files to resampled audio using FFmpeg.
     """
@@ -124,9 +121,6 @@ class ReadTxtLines(BaseParallelProcessor):
         text_key (str): The field to store the read text lines in the manifest.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
-    Methods:
-        process_dataset_entry(data_entry): Processes a single dataset entry, reads text lines from the specified file, and updates the manifest.
-
     Note:
         This class inherits from the `BaseParallelProcessor` class and extends its functionality to read text lines from a file and update the manifest.
     """
@@ -161,9 +155,6 @@ class SplitLineBySentence(BaseParallelProcessor):
         text_key (str): The field containing the input text lines in the dataset.
         end_pattern (str): The regular expression pattern to identify sentence boundaries.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
-
-    Methods:
-        process_dataset_entry(data_entry): Processes a single dataset entry, splitting the input text lines into sentences based on the specified pattern, and updates the dataset.
 
     Note:
         This class inherits from the `BaseParallelProcessor` class and extends its functionality to split lines of text into sentences based on a specified pattern.
@@ -209,9 +200,6 @@ class CountNumWords(BaseParallelProcessor):
         num_words_key (str): The field to store the number of words in the dataset.
         alphabet (str): The alphabet to be used for word tokenization.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
-
-    Methods:
-        process_dataset_entry(data_entry): Processes a single dataset entry, counts the number of words, and updates the dataset.
 
     Note:
         This class inherits from the `BaseParallelProcessor` class and extends its functionality to count the number of words in a text and update the dataset.
