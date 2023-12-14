@@ -34,7 +34,7 @@ class PreserveByValue(BaseParallelProcessor):
     """
     Processor for preserving dataset entries based on a specified condition involving a target value and an input field.
 
-    Parameters:
+    Args:
         input_field (str): The field in the dataset entries to be evaluated.
         target_value (Union[int, str]): The value to compare with the input field.
         operator (str, optional): The operator to apply for comparison. Options: "lt" (less than), "le" (less than or equal to), "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than). Defaults to "eq".
