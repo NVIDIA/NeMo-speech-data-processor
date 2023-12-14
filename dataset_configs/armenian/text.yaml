@@ -1,5 +1,5 @@
 processors_to_run: "0:"
-workspace_dir: /path/to/your/txt/files
+workspace_dir: ???
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestByExt
