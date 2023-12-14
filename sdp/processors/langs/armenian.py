@@ -14,8 +14,6 @@ class GetSourceFolder(BaseParallelProcessor):
         source_field (str): The field to store the extracted source folder in the manifest.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
-    Note:
-        This class inherits from the `BaseParallelProcessor` class and extends its functionality to extract source information from file paths and update the manifest.
     """
     def __init__(
         self,
@@ -24,13 +22,13 @@ class GetSourceFolder(BaseParallelProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = source_filepath
-        self.output_field = source_field
+        self.source_filepath = source_filepath
+        self.source_field = source_field
 
     def process_dataset_entry(self, data_entry):
-        input_values = os.path.splitext(data_entry[self.input_field])[0].split("/")
+        input_values = os.path.splitext(data_entry[self.source_filepath])[0].split("/")
         
-        data_entry[self.output_field] = input_values[-1]
+        data_entry[self.source_field] = input_values[-1]
         return [DataEntry(data=data_entry)]
 
 
@@ -41,8 +39,6 @@ class MakeTsv(BaseProcessor):
     Args:
         **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
-    Note:
-        This class inherits from the `BaseProcessor` class and provides functionality to convert a JSON manifest file to a TSV file.
     """
     def __init__(
         self,
@@ -63,8 +59,6 @@ class RandomTsvPart(BaseProcessor):
         random_state (int): Seed for reproducibility when generating the random subset.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
-    Note:
-        This class inherits from the `BaseProcessor` class and provides functionality to create a random subset of a TSV file.
     """
     def __init__(
         self,

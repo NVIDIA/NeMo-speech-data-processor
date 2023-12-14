@@ -40,8 +40,6 @@ class PreserveByValue(BaseParallelProcessor):
         operator (str, optional): The operator to apply for comparison. Options: "lt" (less than), "le" (less than or equal to), "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than). Defaults to "eq".
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
-    Note:
-        This class inherits from the `BaseParallelProcessor` class and extends its functionality to selectively preserve dataset entries.
     """
     def __init__(
         self,
