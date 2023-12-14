@@ -9,7 +9,7 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
     Args:
         raw_data_dir (str): The directory containing image and text files to include in the initial dataset manifest.
         output_field (str): The field to store the paths to the files in the dataset.
-        extension (str): The field stecify extention of the file in the dataset.
+        extension (str): The field stecify extension of the file in the dataset.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:

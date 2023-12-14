@@ -1,9 +1,9 @@
 processors_to_run: "0:"
-workspace_dir: /path/to/your/mcv/files
+workspace_dir: ???
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestMCV # conda install -c conda-forge -y sox libvorbis
-    raw_data_dir: /home/nkarpov/data/hy
+    raw_data_dir: ${workspace_dir}
     extract_archive_dir: ${workspace_dir}/row
     resampled_audio_dir: ${workspace_dir}/16k
     data_split: train
