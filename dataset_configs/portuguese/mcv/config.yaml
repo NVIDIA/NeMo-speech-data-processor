@@ -11,7 +11,7 @@ documentation: |
   1. Extracts and converts all data to the NeMo format.
   2. Replaces certain non-supported characters, abbreviations and  punctuation marks with equivalent supported versions.
   3. Drops any data that contains high/low character occurence.
-  3. Drops any data that contains symbols not in the supported alphabet.
+  4. Drops any data that contains symbols not in the supported alphabet.
 
   **Required arguments**.
 
@@ -35,14 +35,14 @@ documentation: |
 
 
 processors_to_run: "0:"
-workspace_dir: ??
+workspace_dir: ???
 data_split: ???
-final_manifest: ${workspace_dir}/${data_split}_manifest.json
+final_manifest: ???
 
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestMCV
-    raw_data_dir: raw_data_dir: ${workspace_dir}/raw_data
+    raw_data_dir: ${workspace_dir}/raw_data
     extract_archive_dir: ${workspace_dir}/row
     resampled_audio_dir: ${workspace_dir}/${data_split}/audio
     data_split: ${data_split}
