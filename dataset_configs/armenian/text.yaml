@@ -68,13 +68,13 @@ processors:
     text_key: text
     num_words_key: num_words
 
-  - _target_: sdp.processors.PreserveByThreshold
+  - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest8.json
     input_field: num_words
     target_value: 15
     operator: le
 
-  - _target_: sdp.processors.PreserveByThreshold
+  - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest9.json
     input_field: num_words
     target_value: 3

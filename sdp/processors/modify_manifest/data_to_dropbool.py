@@ -30,27 +30,26 @@ from sdp.utils.metrics_computation import (
 )
 
 
-class PreserveByThreshold(BaseParallelProcessor):
+class PreserveByValue(BaseParallelProcessor):
     """
-    A class for preserving dataset entries based on a specified condition involving a target value and an input field.
+    Processor for preserving dataset entries based on a specified condition involving a target value and an input field.
 
     Parameters:
-    - input_field (str): The field in the dataset entries to be evaluated.
-    - target_value (Union[int, str]): The value to compare with the input field.
-    - operator (str, optional): The operator to apply for comparison. Options: "lt" (less than), "le" (less than or equal to),
-      "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than). Defaults to "eq".
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        input_field (str): The field in the dataset entries to be evaluated.
+        target_value (Union[int, str]): The value to compare with the input field.
+        operator (str, optional): The operator to apply for comparison. Options: "lt" (less than), "le" (less than or equal to), "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than). Defaults to "eq".
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Attributes:
-    - input_field (str): The field in the dataset entries to be evaluated.
-    - target_value (Union[int, str]): The value to compare with the input field.
-    - operator (function): The operator function based on the specified operator.
+        input_field (str): The field in the dataset entries to be evaluated.
+        target_value (Union[int, str]): The value to compare with the input field.
+        operator (function): The operator function based on the specified operator.
 
     Methods:
-    - process_dataset_entry(data_entry): Processes a single dataset entry, preserving it based on the specified condition.
+        process_dataset_entry(data_entry): Processes a single dataset entry, preserving it based on the specified condition.
 
     Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to selectively preserve dataset entries.
+        This class inherits from the `BaseParallelProcessor` class and extends its functionality to selectively preserve dataset entries.
     """
     def __init__(
         self,
