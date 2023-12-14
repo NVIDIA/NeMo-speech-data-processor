@@ -54,7 +54,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubRegex,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
-    PreserveByThreshold,
+    PreserveByValue,
     DropASRError,
     DropASRErrorBeginningEnd,
     DropHighCER,

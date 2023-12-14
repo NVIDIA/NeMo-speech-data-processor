@@ -157,6 +157,9 @@ Data modifications
 Data filtering
 ''''''''''''''
 
+.. autodata:: sdp.processors.PreserveByValue
+   :annotation:
+
 .. autodata:: sdp.processors.DropASRError
    :annotation:
 
