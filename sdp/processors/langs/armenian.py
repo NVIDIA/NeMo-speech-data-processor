@@ -5,13 +5,13 @@ from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, 
 from sdp.utils.common import load_manifest
 
 
-class GetSource(BaseParallelProcessor):
+class GetSourceFolder(BaseParallelProcessor):
     """
-    Processor for extracting source information from file paths and updating the manifest.
+    Processor for extracting source folder from file paths and updating the manifest.
 
     Args:
         source_filepath (str): The field containing the file path in the manifest.
-        source_field (str): The field to store the extracted source information in the manifest.
+        source_field (str): The field to store the extracted source folder in the manifest.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:

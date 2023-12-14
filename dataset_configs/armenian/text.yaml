@@ -80,7 +80,7 @@ processors:
     target_value: 3
     operator: ge
 
-  - _target_: sdp.processors.langs.armenian.GetSource
+  - _target_: sdp.processors.langs.armenian.GetSourceFolder
     output_manifest_file: ${workspace_dir}/manifest10.json
     source_filepath: source_filepath
     source_field: Source
