@@ -69,8 +69,6 @@ class FfmpegConvert(BaseParallelProcessor):
         target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
-    Note:
-        This class inherits from the `BaseParallelProcessor` class and extends its functionality to convert video files to resampled audio using FFmpeg.
     """
     def __init__(
         self,
@@ -121,8 +119,6 @@ class ReadTxtLines(BaseParallelProcessor):
         text_key (str): The field to store the read text lines in the manifest.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
-    Note:
-        This class inherits from the `BaseParallelProcessor` class and extends its functionality to read text lines from a file and update the manifest.
     """
     def __init__(
         self,
@@ -156,8 +152,6 @@ class SplitLineBySentence(BaseParallelProcessor):
         end_pattern (str): The regular expression pattern to identify sentence boundaries.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
-    Note:
-        This class inherits from the `BaseParallelProcessor` class and extends its functionality to split lines of text into sentences based on a specified pattern.
     """
     def __init__(
         self,
@@ -201,8 +195,6 @@ class CountNumWords(BaseParallelProcessor):
         alphabet (str): The alphabet to be used for word tokenization.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
-    Note:
-        This class inherits from the `BaseParallelProcessor` class and extends its functionality to count the number of words in a text and update the dataset.
     """
     def __init__(
         self,

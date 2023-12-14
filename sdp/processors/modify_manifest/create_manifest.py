@@ -12,8 +12,6 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         extension (str): The field stecify extension of the file in the dataset.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
-    Note:
-        This class inherits from the `BaseParallelProcessor` class and extends its functionality to create an initial dataset manifest from image and text files with common keys.
     """
 
     def __init__(
