@@ -40,11 +40,6 @@ class PreserveByValue(BaseParallelProcessor):
         operator (str, optional): The operator to apply for comparison. Options: "lt" (less than), "le" (less than or equal to), "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than). Defaults to "eq".
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
-    Attributes:
-        input_field (str): The field in the dataset entries to be evaluated.
-        target_value (Union[int, str]): The value to compare with the input field.
-        operator (function): The operator function based on the specified operator.
-
     Methods:
         process_dataset_entry(data_entry): Processes a single dataset entry, preserving it based on the specified condition.
 
