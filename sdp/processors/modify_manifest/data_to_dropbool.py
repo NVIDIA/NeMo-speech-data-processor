@@ -63,6 +63,8 @@ class PreserveByValue(BaseParallelProcessor):
             self.operator = ge
         elif operator == "gt":
             self.operator = gt
+        else:
+            raise ValueError('Operator must be one from the list: "lt" (less than), "le" (less than or equal to), "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than)')
 
     def process_dataset_entry(self, data_entry):
         input_value = data_entry[self.input_field]

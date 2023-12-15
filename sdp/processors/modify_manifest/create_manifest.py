@@ -7,9 +7,9 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
     Processor for creating an initial dataset manifest by saving filepaths with a common extension to the field specified in output_field.
 
     Args:
-        raw_data_dir (str): The directory containing image and text files to include in the initial dataset manifest.
+        raw_data_dir (str): The root directory of the files to be added to the initial manifest. This processor will recursively look for files with the extension 'extension' inside this directory.
         output_field (str): The field to store the paths to the files in the dataset.
-        extension (str): The field stecify extension of the file in the dataset.
+        extension (str): The field stecify extension of the files to use them in the dataset.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     """
@@ -27,7 +27,7 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         self.extension = extension
 
     def read_manifest(self):
-        input_files = [str(self.raw_data_dir / video) for video in \
+        input_files = [str(self.raw_data_dir / file) for file in \
                        self.raw_data_dir.rglob('*.' + self.extension)]
         return input_files
     

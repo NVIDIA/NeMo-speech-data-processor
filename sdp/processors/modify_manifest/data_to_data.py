@@ -62,7 +62,7 @@ class FfmpegConvert(BaseParallelProcessor):
 
     Args:
         resampled_audio_dir (str): The directory to store the resampled audio files.
-        input_field (str): The field in the dataset representing the path to the input video files.
+        input_field (str): The field in the dataset representing the path to the input video or audio files.
         output_field (str): The field to store the path to the resampled audio files in the dataset.
         key_field (str): The field in the dataset representing the unique key or identifier for each entry.
         target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
@@ -89,7 +89,6 @@ class FfmpegConvert(BaseParallelProcessor):
         self.target_nchannels = target_nchannels
 
     def prepare(self):
-        os.makedirs(os.path.split(self.output_manifest_file)[0], exist_ok=True)
         os.makedirs(self.resampled_audio_dir, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
@@ -187,12 +186,12 @@ class SplitLineBySentence(BaseParallelProcessor):
     
 class CountNumWords(BaseParallelProcessor):
     """
-    Processor for counting the number of words in a text and updating the dataset.
+    Processor for counting the number of words in the text_key field saving the number in num_words_key.
 
     Args:
         text_key (str): The field containing the input text in the dataset.
         num_words_key (str): The field to store the number of words in the dataset.
-        alphabet (str): The alphabet to be used for word tokenization.
+        alphabet (str): Characters to be used to count words. Any other characters are substituted by whitespace and not take into account.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     """
@@ -204,17 +203,17 @@ class CountNumWords(BaseParallelProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = text_key
-        self.output_field = num_words_key
+        self.text_key = text_key
+        self.num_words_key = num_words_key
         self.pattern = re.compile("[^"+alphabet+"]")
 
     def process_dataset_entry(self, data_entry):
-        text = data_entry[self.input_field]
+        text = data_entry[self.text_key]
         cleaned_string = self.pattern.sub('', text).strip()
         cleaned_string = re.sub('\\s+', ' ', cleaned_string).strip()
         words = cleaned_string.split()
         num_words = len(words)
-        data_entry[self.output_field] = num_words
+        data_entry[self.num_words_key] = num_words
         return [DataEntry(data=data_entry)]
 
 

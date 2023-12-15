@@ -33,11 +33,13 @@ def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
             result.append(data)
     return result
 
-def ffmpeg_convert(jpg: str, wav: str, ar: int = 0, ac: int = 1):
-    process_args = ["ffmpeg", "-i", jpg, '-ac', str(ac), "-map", "0:a", "-c:a", "pcm_s16le", "-y", wav]
-    if ar:
+def ffmpeg_convert(input_file: str, output_wav: str, sample_rate: int = 0, num_channels: int = 1):
+    process_args = ["ffmpeg", "-i", input_file, 
+                    '-ac', str(num_channels), "-map", "0:a", "-c:a", 
+                    "pcm_s16le", "-y", output_wav]
+    if sample_rate:
         process_args = process_args[:-1]
-        process_args.extend(["-ar", str(ar), wav])
+        process_args.extend(["-ar", str(sample_rate), output_wav])
     return subprocess.run(process_args, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
 
 def download_file(source_url: str, target_directory: str, verbose = True):
