@@ -31,9 +31,9 @@ documentation: |
 
 
 processors_to_run: "0:"
-workspace_dir: /home/ntadevosyan/Documents/ASR_Portuguese/test_tedx
-data_split: train
-#final_manifest:
+workspace_dir: ???
+data_split: ???
+final_manifest: ??????
 
 
 processors:
@@ -55,7 +55,7 @@ processors:
     duration_field: duration
     text_field: text
     vtt_field: vtt_filepath
-    proxy_fields: [] #audio_lang, text_lang, audios]
+    proxy_fields: []
     duration_threshold: 10.0
   - _target_: sdp.processors.SubRegex
     regex_params_list:
@@ -94,6 +94,6 @@ processors:
     low_charrate_threshold: 1
  
   - _target_: sdp.processors.DropNonAlphabet
-    #output_manifest_file: ${final_manifest}
+    output_manifest_file: ${final_manifest}
     alphabet: " ãáàâçéêíõóôúüÃÁÀÂÇÉÊÍÕÓÔÚÜQWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm,.?"
  

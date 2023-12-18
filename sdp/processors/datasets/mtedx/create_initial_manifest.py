@@ -8,6 +8,29 @@ from sdp.utils.common import download_file, extract_archive
 MTEDX_URL = "https://www.openslr.org/resources/100/mtedx_{language_id}.tgz"
 
 class CreateInitialManifestMTEDX(BaseParallelProcessor):
+    """Processor to create initial manifest for the Multilingual TEDx (MTedX dataset.
+
+        Dataset link: https://www.openslr.org/100/
+
+        Downloads dataset for the specified language and creates initial manifest with the provided
+        audio and vtt files.
+
+        Args:
+            raw_data_dir (str): the directory where the downloaded data will be/is saved.
+                                This is also where the extracted and processed data will be.
+            data_split (str): "train", "dev" or "test".
+            language_id (str): the ID of the language of the data. E.g., "en", "es", "it", etc.
+            target_samplerate (int): sample rate (Hz) to use for resampling.
+
+        Returns:
+            This processor generates an initial manifest file with the following fields::
+
+                {
+                    "audio_filepath": <path to the audio file>,
+                    "vtt_filepath": <path to the corresponding vtt file>
+                    "duration": <duration of the audio in seconds>
+                }
+        """
     def __init__(
             self,
             raw_data_dir: str,
