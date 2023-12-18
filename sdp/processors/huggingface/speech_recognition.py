@@ -20,13 +20,14 @@ from sdp.utils.common import load_manifest
 
 class ASRWhisper(BaseProcessor):
     """
-    Processor to transcribe using ASR Whisper model from HuggingFace.
+    Simple example to transcribe using ASR Whisper model from HuggingFace.
+    There are many ways to improve it: make batch inference, split long files, return predicted language, etc.
     
     Args:
         pretrained_model (str): name of pretrained model on HuggingFace.
         output_text_field (str): field to save transcription result.
         device (str): Inference device.
-        batch_size (str): Inference batch size.
+        batch_size (int): Inference batch size. Defaults to 1.
     """
     def __init__(
         self,
@@ -85,14 +86,16 @@ class ASRTransformer(BaseProcessor):
         pretrained_model (str): name of pretrained model on HuggingFace.
         output_text_field (str): field to save transcription result.
         device (str): Inference device.
-        batch_size (str): Inference batch size.
+        batch_size (int): Inference batch size. Used only batch_size = 1 TODO: support batch_size > 1
+        torch_dtype (str): Tensor data type. Default to "float32"
     """
     def __init__(
         self,
         pretrained_model: str,
         output_text_field: str,
         device: str = None,
-        batch_size: int = 1,
+        batch_size: int = 1, # TODO: support batch_size > 1
+        torch_dtype: str = "float32",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -103,14 +106,20 @@ class ASRTransformer(BaseProcessor):
         self.output_text_field = output_text_field
         self.device = device
         self.batch_size = batch_size
+        if torch_dtype == "float32":
+            self.torch_dtype = torch.float32
+        elif torch_dtype == "float16":
+            self.torch_dtype = torch.float16
+        else:
+            raise NotImplementedError(torch_dtype + " is not implemented!")
+
         if self.device is None:
             if torch.cuda.is_available():
                 self.device = "cuda:0"
             else:
                 self.device = "cpu"
         
-        torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
-        self.model = AutoModelForSpeechSeq2Seq.from_pretrained(self.pretrained_model, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True)
+        self.model = AutoModelForSpeechSeq2Seq.from_pretrained(self.pretrained_model, torch_dtype=self.torch_dtype, low_cpu_mem_usage=True, use_safetensors=True)
         self.model.to(self.device)
         
         processor = AutoProcessor.from_pretrained(self.pretrained_model)
