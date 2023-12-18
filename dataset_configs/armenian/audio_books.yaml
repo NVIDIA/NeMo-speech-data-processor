@@ -1,5 +1,6 @@
 processors_to_run: "0:"
 workspace_dir: ???
+final_manifest: ${workspace_dir}/final_manifest.json
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestByExt
@@ -39,7 +40,7 @@ processors:
       - {input: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
 
   - _target_: sdp.processors.SubRegex
-    output_manifest_file: ${workspace_dir}/manifest6.json
+    output_manifest_file: ${final_manifest}
     regex_params_list:
       - {"pattern": '\[(.*?)\]', "repl": ' '}
       - {"pattern": 'a', "repl": "ա"}
