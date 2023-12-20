@@ -44,6 +44,7 @@ processors:
     resampled_audio_dir: ${workspace_dir}/resampled
     input_field: audio_filepath
     output_field: audio_filepath
+  
   - _target_: sdp.processors.SubRegex
     regex_params_list:
       - {"pattern": '[\-\‐\‑\–\—\―\"]', "repl": " "}
@@ -60,7 +61,7 @@ processors:
       # remove remaining repeated periods since most of the time they are unnecessary in this data
       - {"pattern": "\\.{2,20}", "repl": " "}
 
-      - {"pattern": " ([Pp])rofª ", "repl" : ' \1rofesora '}
+      - {"pattern": " ([Pp])rofa ", "repl" : ' \1rofessora '}
       - {"pattern": " ([Ss])ra.", "repl" : ' \1enhora'}
       - {"pattern": " ([Ss])rta.", "repl": '\1enhorita'}
       - {"pattern": " ([Ss])r.", 'repl': '\1enhor' }
@@ -68,16 +69,16 @@ processors:
       - {"pattern": " ([Dd])r.", "repl" : ' \1octor '}
       - {"pattern": " ([Dd])ra ", "repl" : ' \1octora '}
 
-      - {"pattern": "\\$", "repl" : "s"} 
       - {"pattern": " um km ", "repl" : " um quilômetro "}
-      - {"pattern": " km ", "repl" : " quilômetro "}
+      - {"pattern": " km ", "repl" : " quilômetros "}
   - _target_: sdp.processors.DropHighLowCharrate
     high_charrate_threshold: 21
     low_charrate_threshold: 1
+  
   - _target_: sdp.processors.DropHighLowDuration
     high_duration_threshold: 20
     low_duration_threshold: 1
 
   - _target_: sdp.processors.DropNonAlphabet
     output_manifest_file: ${final_manifest}
-    alphabet: " ãáàâçéêíõóôúüÃÁÀÂÇÉÊÍÕÓÔÚÜQWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm,.?"
+    alphabet: " ÁÃÀÂÇÉÊÍÕÓÔÚÜáãàâçéêíõóôúüABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.?"
