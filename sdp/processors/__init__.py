@@ -21,8 +21,6 @@ from sdp.processors.datasets.coraal import (
 from sdp.processors.datasets.librispeech.create_initial_manifest import (
     CreateInitialManifestLibrispeech,
 )
-from sdp.processors.datasets.librispeech.get_audio_duration import GetAudioDuration
-from sdp.processors.datasets.librispeech.sox_converter import Flac2Wav
 from sdp.processors.datasets.mcv.create_initial_manifest import CreateInitialManifestMCV
 from sdp.processors.datasets.mls.create_initial_manifest import CreateInitialManifestMLS
 from sdp.processors.datasets.mls.restore_pc import RestorePCForMLS
@@ -47,7 +45,9 @@ from sdp.processors.modify_manifest.common import (
     SplitOnFixedDuration,
 )
 from sdp.processors.modify_manifest.data_to_data import (
+    GetAudioDuration,
     InsIfASRInsertion,
+    SoxConvert,
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
