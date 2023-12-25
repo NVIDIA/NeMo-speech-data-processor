@@ -16,7 +16,7 @@ import fnmatch
 import glob
 import json
 import os
-import typing as tp
+import typing
 
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import download_file, extract_archive
@@ -84,7 +84,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
         self.names = names
         self.raw_data_dir = raw_data_dir
 
-    def process_transcrip(self, file_path: str) -> list[dict[str, tp.Any]]:
+    def process_transcrip(self, file_path: str) -> list[dict[str, typing.Any]]:
         """Parse transcript file and put it inside manyfest
         We assume that flac files are located in the same directory as transcript file.
         """
@@ -95,7 +95,8 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
         with open(file_path, encoding="utf-8") as fin:
             for line in fin:
                 id, text = line[: line.index(" ")], line[line.index(" ") + 1 :]
-                transcript_text = text.lower().strip()
+                # transcript_text = text.lower().strip()
+                transcript_text = text.strip()
 
                 flac_file = os.path.join(root, id + ".flac")
 

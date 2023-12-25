@@ -13,13 +13,97 @@
 # limitations under the License.
 
 import collections
+import os
 import re
 from typing import Dict, List
+
+import soundfile
+from sox import Transformer
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
+
+
+class GetAudioDuration(BaseParallelProcessor):
+    """
+    Processor to count audio duration using audio file path from input_field
+
+    Args:
+        audio_filepath_field (str): where to get path to wav file.
+        duration_field (str): where to put to audio duration.
+    Returns:
+        All the same fields as in the input manifest plus output_field
+    """
+
+    def __init__(
+        self,
+        audio_filepath_field: str,
+        duration_field: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.audio_filepath_field = audio_filepath_field
+        self.duration_field = duration_field
+
+    def process_dataset_entry(self, data_entry):
+        audio_filepath = data_entry[self.audio_filepath_field]
+        try:
+            data, samplerate = soundfile.read(audio_filepath)
+            data_entry[self.duration_field] = data.shape[0] / samplerate
+        except Exception as e:
+            logger.warning(str(e) + " file: " + audio_filepath)
+            data_entry[self.duration_field] = -1.0
+        return [DataEntry(data=data_entry)]
+
+
+class SoxConvert(BaseParallelProcessor):
+    """
+    Processor for converting audio files from one format to another using Sox,
+    and updating the dataset with the path to the converted audio files.
+
+    Args:
+        converted_audio_dir (str): Directory to store the converted audio files.
+        input_field (str): Field in the dataset representing the path to input audio files.
+        output_field (str): Field to store the path to the converted audio files in the dataset.
+        key_field (str, optional): Field in the dataset representing the unique key or identifier for each entry.
+        output_format (str): Format of the output audio files (e.g., 'wav', 'mp3').
+        conversion_parameters (dict, optional): Additional parameters for audio conversion.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+    """
+
+    def __init__(
+        self,
+        converted_audio_dir: str,
+        input_field: str,
+        output_field: str,
+        output_format: str,
+        conversion_parameters: dict = {},
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = input_field
+        self.output_field = output_field
+        self.converted_audio_dir = converted_audio_dir
+        self.output_format = output_format
+        self.conversion_parameters = conversion_parameters
+
+    def prepare(self):
+        os.makedirs(self.converted_audio_dir, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        audio_file = data_entry[self.input_field]
+
+        key = os.path.splitext(audio_file)[0].split("/")[-1]
+        converted_file = os.path.join(self.converted_audio_dir, key) + f".{self.output_format}"
+
+        if not os.path.isfile(converted_file):
+            transformer = Transformer()
+            transformer.build(audio_file, converted_file)
+
+        data_entry[self.output_field] = converted_file
+        return [DataEntry(data=data_entry)]
 
 
 class InsIfASRInsertion(BaseParallelProcessor):
@@ -49,7 +133,11 @@ class InsIfASRInsertion(BaseParallelProcessor):
     """
 
     def __init__(
-        self, insert_words: List[str], text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        insert_words: List[str],
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.insert_words = insert_words
@@ -138,7 +226,11 @@ class SubIfASRSubstitution(BaseParallelProcessor):
     """
 
     def __init__(
-        self, sub_words: Dict, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        sub_words: Dict,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.sub_words = sub_words
@@ -214,7 +306,9 @@ class SubMakeLowercase(BaseParallelProcessor):
     """
 
     def __init__(
-        self, text_key: str = "text", **kwargs,
+        self,
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.text_key = text_key
@@ -252,7 +346,10 @@ class SubRegex(BaseParallelProcessor):
     """
 
     def __init__(
-        self, regex_params_list: List[Dict], text_key: str = "text", **kwargs,
+        self,
+        regex_params_list: List[Dict],
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_params_list = regex_params_list
