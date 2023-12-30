@@ -52,9 +52,8 @@ class CreateInitialManifestMTEDX(BaseParallelProcessor):
         if not (self.raw_data_dir / f"mls_{self.language_id}.tar.gz").exists():
             download_file(url, str(self.raw_data_dir))
 
-        data_folder = extract_archive(str(self.raw_data_dir / os.path.basename(url)), str(self.raw_data_dir))
-
-
+        #data_folder = extract_archive(str(self.raw_data_dir / os.path.basename(url)), str(self.raw_data_dir))
+        data_folder = "/home/ntadevosyan/Documents/ASR_Portuguese/mtedx/raw_data/pt-pt/"
         self.audio_path_prefix = str(Path(data_folder) / 'data' / self.data_split/ "wav")
         self.vtt_path_prefix = str(str(Path(data_folder) / 'data' / self.data_split / "vtt"))
 
