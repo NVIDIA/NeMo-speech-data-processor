@@ -1,6 +1,6 @@
 documentation: |
-  librispeech
-  ######
+  Librispeech
+  ###########
   
   This config can be used to prepare
   `Librispeech <https://openslr.org/12>`_
