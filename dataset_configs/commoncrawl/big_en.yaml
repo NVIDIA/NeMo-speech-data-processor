@@ -1,21 +1,23 @@
 processors_to_run: "0:"
-workspace_dir: /mnt/md1/out/en #/mnt/md0/common_crawl/cc_sdp/en
+lang: en
+base_dir: /path/to/dataset/folder
+workspace_dir: ${base_dir}/${lang}
 
 processors:
   - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
-    input_manifest_file: /mnt/md1/out/manifest11.json
+    input_manifest_file: /path/to/dataset/folder/manifest11.json
     output_manifest_file: ${workspace_dir}/manifest0.json
     input_field: audio_lang
-    target_value: en
+    target_value: ${lang}
 
   - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest1.json
     input_field: text_lang
-    target_value: en
+    target_value: ${lang}
 
   - _target_: sdp.processors.ASRInference
     output_manifest_file: ${workspace_dir}/manifest2.json
-    pretrained_model: nvidia/stt_en_fastconformer_hybrid_large_pc
+    pretrained_model: nvidia/stt_${lang}_fastconformer_hybrid_large_pc
     batch_size: 64
 
   - _target_: sdp.processors.DropIfRegexMatch
@@ -114,7 +116,7 @@ processors:
     arg_separator: "="
     cmd: "python /home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
         --language=en --n_jobs=-1 --batch_size=600 --manifest_text_field=text --cache_dir=${workspace_dir}/cache --overwrite_cache \
-        --whitelist=/home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/en/data/whitelist/asr_with_pc.tsv"
+        --whitelist=/home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/${lang}/data/whitelist/asr_with_pc.tsv"
 
   - _target_: sdp.processors.RenameFields
     output_manifest_file: ${workspace_dir}/manifest9.json
@@ -227,7 +229,7 @@ processors:
 
   - _target_: sdp.processors.ASRInference
     output_manifest_file: ${workspace_dir}/manifest27.json
-    pretrained_model: nvidia/stt_en_fastconformer_hybrid_large_pc
+    pretrained_model: nvidia/stt_${lang}_fastconformer_hybrid_large_pc
     batch_size: 64
 
   - _target_: sdp.processors.DuplicateFields  
@@ -244,7 +246,7 @@ processors:
     regex_params_list:
       - {"pattern": "[\\?\\.]", "repl": " "}
       - {"pattern": ",", "repl": " "}
-      - {"pattern": "  ", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
     
   - _target_: sdp.processors.DropHighWER
     output_manifest_file: ${workspace_dir}/manifest31.json
@@ -296,19 +298,35 @@ processors:
     pred_text_key: text_asr_pred
     cer_threshold: 30
     
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    input_manifest_file: ${workspace_dir}/manifest20.json
+    fields_to_keep: ["audio_filepath", "duration", "text_pc"]
+
+  - _target_: sdp.processors.RenameFields
+    rename_fields: {"text_pc":"text"}
+
+  - _target_: sdp.processors.AddConstantFields
+    fields: {"lang": '${lang}'}
+
+  - _target_: sdp.processors.datasets.commoncrawl.drop_abs_path
+    output_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    path_key: audio_filepath
+    abs_path_to_drop: ${base_dir}/
+
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    output_manifest_file: ${workspace_dir}/manifest20_train.json
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    output_manifest_file: ${base_dir}/splited_manifests/${lang}_train.json
     lang: ${lang}
     data_split: train
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    input_manifest_file: ${workspace_dir}/manifest19.json
-    output_manifest_file: ${workspace_dir}/manifest20_dev.json
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    output_manifest_file: ${base_dir}/splited_manifests/${lang}_dev.json
     lang: ${lang}
     data_split: dev
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    input_manifest_file: ${workspace_dir}/manifest19.json
-    output_manifest_file: ${workspace_dir}/manifest20_test.json
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    output_manifest_file: ${base_dir}/splited_manifests/${lang}_test.json
     lang: ${lang}
     data_split: test

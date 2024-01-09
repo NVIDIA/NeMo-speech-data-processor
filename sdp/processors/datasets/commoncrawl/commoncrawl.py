@@ -18,6 +18,30 @@ from sdp.logging import logger
 from sdp.processors.datasets.commoncrawl.harv_utils import ffmpeg_convert, txt2vtt, make_trans_list, get_vtt_text, text2lid, load_manifest, read_jsonl, write_jsonl, split_by_vtt_new, audio_duration
 from scipy.spatial import distance
 
+class drop_abs_path(BaseParallelProcessor):
+    """
+    Drop absolute path
+
+    Args:
+        path_key (str): where to get path to wav file.
+        abs_path_to_drop (str): string to drop from the bigining of path to wav file.
+    """
+    def __init__(
+        self,
+        path_key: str,
+        abs_path_to_drop: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.path_key = path_key
+        self.abs_path_to_drop = abs_path_to_drop
+    
+    def process_dataset_entry(self, data_entry):
+        audio_filepath = data_entry[self.path_key]
+        data_entry[self.path_key]=audio_filepath[len(self.abs_path_to_drop):]
+        return [DataEntry(data=data_entry)]
+
+
 class TrainDevTestSplitCC(BaseParallelProcessor):
     """Custom train-dev-test split for CORAAL dataset.
 
