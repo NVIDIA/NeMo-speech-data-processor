@@ -429,29 +429,28 @@ class BLEUScore(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 class Subprocess(BaseProcessor):
- """
-    A class for handling subprocess execution with additional features for managing input and output manifests.
-
-    Parameters:
-    - cmd (str): The command to be executed as a subprocess.
-    - input_manifest_arg (str, optional): The argument specifying the input manifest. Defaults to an empty string.
-    - output_manifest_arg (str, optional): The argument specifying the output manifest. Defaults to an empty string.
-    - arg_separator (str, optional): The separator used between argument and value. Defaults to "=".
-    - **kwargs: Additional keyword arguments to be passed to the base class.
-
-    Attributes:
-    - input_manifest_arg (str): The argument specifying the input manifest.
-    - output_manifest_arg (str): The argument specifying the output manifest.
-    - arg_separator (str): The separator used between argument and value.
-    - cmd (str): The command to be executed.
-
-    Methods:
-    - process(): Executes the subprocess, handling input and output manifest arguments and ensuring they are not included in the command line.
-
-    Note:
-    - The `BaseProcessor` class is assumed to be the base class, providing common functionality.
     """
+    Processor for handling subprocess execution with additional features for managing input and output manifests.
 
+    Args:
+        cmd (str): The command to be executed as a subprocess.
+        input_manifest_arg (str, optional): The argument specifying the input manifest. Defaults to an empty string.
+        output_manifest_arg (str, optional): The argument specifying the output manifest. Defaults to an empty string.
+        arg_separator (str, optional): The separator used between argument and value. Defaults to "=".
+        **kwargs: Additional keyword arguments to be passed to the base class.
+
+    Example:
+        
+        _target_: sdp.processors.datasets.commoncrawl.Subprocess
+        output_manifest_file: /workspace/manifest.json
+        input_manifest_arg: "--manifest"
+        output_manifest_arg: "--output_filename"
+        arg_separator: "="
+        cmd: "python /workspace/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
+            --language=en --n_jobs=-1 --batch_size=600 --manifest_text_field=text --cache_dir=${workspace_dir}/cache --overwrite_cache \
+            --whitelist=/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/en/data/whitelist/asr_with_pc.tsv"
+
+    """
     def __init__(
         self,
         cmd: str,
@@ -490,23 +489,12 @@ class NmtSubprocess(Subprocess):
     A class for executing Neural Machine Translation (NMT) subprocess with enhanced functionality for managing input and output fields.
 
     Parameters:
-    - input_field (str): The field in the input manifest containing the source text for translation.
-    - output_field (str): The field to store the translated output in the output manifest.
-    - srctext_file (str): The file path to store the source text for translation.
-    - tgtout_file (str): The file path to store the translated output.
-    - **kwargs: Additional keyword arguments to be passed to the base class `Subprocess`.
+        input_field (str): The field in the input manifest containing the source text for translation.
+        output_field (str): The field to store the translated output in the output manifest.
+        srctext_file (str): The file path to store the source text for translation.
+        tgtout_file (str): The file path to store the translated output.
+        **kwargs: Additional keyword arguments to be passed to the base class `Subprocess`.
 
-    Attributes:
-    - input_field (str): The field in the input manifest containing the source text for translation.
-    - output_field (str): The field to store the translated output in the output manifest.
-    - srctext_file (str): The file path to store the source text for translation.
-    - tgtout_file (str): The file path to store the translated output.
-
-    Methods:
-    - process(): Executes the NMT subprocess, handling source text and translation output fields.
-
-    Note:
-    - This class inherits from the `Subprocess` class and extends its functionality to handle NMT-specific processing.
     """
 
     def __init__(
@@ -542,19 +530,10 @@ class AlignerSubprocess(Subprocess):
     A class for aligning audio transcripts using an aligner subprocess with additional features for managing output fields.
 
     Parameters:
-    - output_field (str): The field in the output manifest to store the aligned transcripts.
-    - duration_threshold (int, optional): The maximum duration threshold for audio files in seconds. Files exceeding this threshold are excluded from alignment. Defaults to 5000.
-    - **kwargs: Additional keyword arguments to be passed to the base class `Subprocess`.
+        output_field (str): The field in the output manifest to store the aligned transcripts.
+        duration_threshold (int, optional): The maximum duration threshold for audio files in seconds. Files exceeding this threshold are excluded from alignment. Defaults to 5000.
+        **kwargs: Additional keyword arguments to be passed to the base class `Subprocess`.
 
-    Attributes:
-    - output_field (str): The field in the output manifest to store the aligned transcripts.
-    - duration_threshold (int): The maximum duration threshold for audio files in seconds.
-
-    Methods:
-    - process(): Executes the aligner subprocess, handling text processing, duration filtering, alignment, and manifest updates.
-
-    Note:
-    - This class inherits from the `Subprocess` class and extends its functionality to handle aligner-specific processing.
     """
 
     def __init__(
@@ -611,22 +590,12 @@ class PreserveByValue(BaseParallelProcessor):
     A class for preserving dataset entries based on a specified condition involving a target value and an input field.
 
     Parameters:
-    - input_field (str): The field in the dataset entries to be evaluated.
-    - target_value (Union[int, str]): The value to compare with the input field.
-    - operator (str, optional): The operator to apply for comparison. Options: "lt" (less than), "le" (less than or equal to),
+        input_field (str): The field in the dataset entries to be evaluated.
+        target_value (Union[int, str]): The value to compare with the input field.
+        operator (str, optional): The operator to apply for comparison. Options: "lt" (less than), "le" (less than or equal to),
       "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than). Defaults to "eq".
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
-    Attributes:
-    - input_field (str): The field in the dataset entries to be evaluated.
-    - target_value (Union[int, str]): The value to compare with the input field.
-    - operator (function): The operator function based on the specified operator.
-
-    Methods:
-    - process_dataset_entry(data_entry): Processes a single dataset entry, preserving it based on the specified condition.
-
-    Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to selectively preserve dataset entries.
     """
     def __init__(
         self,
@@ -864,14 +833,15 @@ class AudioLid(BaseProcessor):
     A class for language identification (LID) of audio files using a pre-trained LID model.
 
     Args:
-    - input_audio_field (str): The field in the dataset containing the path to the audio files for language identification.
-    - pretrained_model (str): The name of the pre-trained ASR model for language identification.
-    - output_lang_field (str): The field to store the identified language for each audio file.
-    - device (str): The device to run the ASR model on (e.g., 'cuda', 'cpu'). If None, it automatically selects the available GPU if present; otherwise, it uses the CPU.
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
-
-    Note:
-    - This class inherits from the `BaseProcessor` class and extends its functionality to perform language identification using a pre-trained ASR model.
+        input_audio_field (str): The field in the dataset containing the path to the audio files for language identification.
+        pretrained_model (str): The name of the pre-trained ASR model for language identification.
+        output_lang_field (str): The field to store the identified language for each audio file.
+        device (str): The device to run the ASR model on (e.g., 'cuda', 'cpu'). If None, it automatically selects the available GPU if present; otherwise, it uses the CPU.
+        segment_duration (float): Random sample duration in seconds. Delault is np.inf.
+        num_segments (int): Number of segments of file to use for majority vote. Delault is 1.
+        random_seed (int): Seed for generating the starting position of the segment. Delault is None.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
+    
     """
     def __init__(
         self,
@@ -879,12 +849,18 @@ class AudioLid(BaseProcessor):
         pretrained_model: str,
         output_lang_field: str,
         device: str,
+        segment_duration: float = np.inf,
+        num_segments: int = 1,
+        random_seed: int = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.input_audio_field = input_audio_field
         self.pretrained_model = pretrained_model
         self.output_lang_field = output_lang_field
+        self.segment_duration = segment_duration
+        self.num_segments = num_segments
+        self.random_seed = random_seed
         self.device = device
     
     def process(self):
@@ -909,7 +885,7 @@ class AudioLid(BaseProcessor):
                 audio_file = item[self.input_audio_field]
 
                 try:
-                    lang = model.get_label(audio_file, 60*5)
+                    lang = model.get_label(audio_file, self.segment_duration, self.num_segments)
                 except Exception as e:
                     logger.warning("AudioLid " + audio_file+ " " + str(e))
                     lang = None
@@ -924,18 +900,16 @@ class TextLid(BaseProcessor):
     A class for language identification (LID) of text using a pre-trained text classification model.
 
     Args:
-    - input_text_field (str): The field in the dataset containing the text for language identification.
-    - pretrained_model (str): The name or path of the pre-trained text classification model for language identification.
-    - output_lang_field (str): The field to store the identified language for each text.
-    - device (str): The device to run the text classification model on (e.g., 'cuda', 'cpu'). If None, it automatically selects the available GPU if present; otherwise, it uses the CPU.
-    - drop_text_duplicates (bool, optional): If True, drops duplicate texts from the output manifest. Defaults to False.
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
+        input_text_field (str): The field in the dataset containing the text for language identification.
+        pretrained_model (str): The name or path of the pre-trained text classification model for language identification.
+        output_lang_field (str): The field to store the identified language for each text.
+        device (str): The device to run the text classification model on (e.g., 'cuda', 'cpu'). If None, it automatically selects the available GPU if present; otherwise, it uses the CPU.
+        drop_text_duplicates (bool, optional): If True, drops duplicate texts from the output manifest. Defaults to False.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
     Methods:
     - process(): Processes the language identification for each text in the dataset and saves the results in a new manifest file.
 
-    Note:
-    - This class inherits from the `BaseProcessor` class and extends its functionality to perform language identification using a pre-trained text classification model.
     """
     def __init__(
         self,
@@ -991,15 +965,13 @@ class AllVttText(BaseParallelProcessor):
     A class for extracting text content from VTT (WebVTT) files and updating the manifest.
 
     Args:
-    - output_text_field (str): The field to store the extracted text content in the manifest.
-    - input_filepath_field (str, optional): The field in the manifest containing the path to VTT files. Defaults to "vtt_filepath".
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        output_text_field (str): The field to store the extracted text content in the manifest.
+        input_filepath_field (str, optional): The field in the manifest containing the path to VTT files. Defaults to "vtt_filepath".
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:
-    - process_dataset_entry(data_entry): Processes a single dataset entry, extracts text content from the specified VTT file, and updates the manifest.
+        process_dataset_entry(data_entry): Processes a single dataset entry, extracts text content from the specified VTT file, and updates the manifest.
 
-    Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to extract text content from VTT files and update the manifest.
     """
     def __init__(
         self,
@@ -1028,18 +1000,16 @@ class TxtToVtt(BaseParallelProcessor):
     A class for converting text files to WebVTT (VTT) format and updating the manifest.
 
     Args:
-    - vtt_files_dir (str): The directory where the generated VTT files will be saved.
-    - key_field (str): The field in the manifest representing the unique key or identifier for each entry.
-    - text_field (str): The field in the manifest containing the text content to be converted to VTT format.
-    - vtt_field (str): The field to store the generated VTT file paths in the manifest.
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        vtt_files_dir (str): The directory where the generated VTT files will be saved.
+        key_field (str): The field in the manifest representing the unique key or identifier for each entry.
+        text_field (str): The field in the manifest containing the text content to be converted to VTT format.
+        vtt_field (str): The field to store the generated VTT file paths in the manifest.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:
-    - prepare(): Creates the directory for saving the generated VTT files.
-    - process_dataset_entry(data_entry): Processes a single dataset entry, converts the text content to VTT format, and updates the manifest.
+        prepare(): Creates the directory for saving the generated VTT files.
+        process_dataset_entry(data_entry): Processes a single dataset entry, converts the text content to VTT format, and updates the manifest.
 
-    Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to convert text files to WebVTT (VTT) format and update the manifest.
     """
     def __init__(
         self,
@@ -1078,18 +1048,16 @@ class ReadParquet(BaseParallelProcessor):
     A class for reading information from Parquet files and updating the manifest with video URLs and captions.
 
     Args:
-    - output_video_field (str): The field to store the extracted video URLs in the manifest.
-    - output_caption_field (str): The field to store the extracted captions in the manifest.
-    - key_field (str): The field in the manifest representing the unique key or identifier for each entry.
-    - raw_data_dir (str): The directory containing Parquet files with information to be read.
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        output_video_field (str): The field to store the extracted video URLs in the manifest.
+        output_caption_field (str): The field to store the extracted captions in the manifest.
+        key_field (str): The field in the manifest representing the unique key or identifier for each entry.
+        raw_data_dir (str): The directory containing Parquet files with information to be read.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:
     - prepare(): Reads and prepares information from Parquet files, storing it in the `urls` DataFrame.
     - process_dataset_entry(data_entry): Processes a single dataset entry, extracts video URLs and captions based on the key, and updates the manifest.
 
-    Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to read information from Parquet files and update the manifest with video URLs and captions.
     """
     def __init__(
         self,
@@ -1139,19 +1107,17 @@ class CreateInitialManifestCC(BaseParallelProcessor):
     A class for creating an initial dataset manifest from image and text files with common keys.
 
     Args:
-    - raw_data_dir (str): The directory containing image and text files to include in the initial dataset manifest.
-    - video_field (str): The field to store the paths to the image files in the dataset.
-    - key_field (str): The field to represent the common key or identifier for each entry.
-    - text_field (str): The field to store the paths to the text files in the dataset.
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        raw_data_dir (str): The directory containing image and text files to include in the initial dataset manifest.
+        video_field (str): The field to store the paths to the image files in the dataset.
+        key_field (str): The field to represent the common key or identifier for each entry.
+        text_field (str): The field to store the paths to the text files in the dataset.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:
-    - prepare(): Creates the directory for saving the initial dataset manifest.
-    - read_manifest(): Reads the image and text files, extracts common keys, and creates a DataFrame with video, key, and text fields.
-    - process_dataset_entry(data_entry): Processes a single dataset entry, creating a DataEntry object with video, key, and text fields, and updates the dataset.
+        prepare(): Creates the directory for saving the initial dataset manifest.
+        read_manifest(): Reads the image and text files, extracts common keys, and creates a DataFrame with video, key, and text fields.
+        process_dataset_entry(data_entry): Processes a single dataset entry, creating a DataEntry object with video, key, and text fields, and updates the dataset.
 
-    Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to create an initial dataset manifest from image and text files with common keys.
     """
     def __init__(
         self,
@@ -1198,19 +1164,17 @@ class FfmpegConvert(BaseParallelProcessor):
     A class for converting video files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
 
     Args:
-    - resampled_audio_dir (str): The directory to store the resampled audio files.
-    - input_field (str): The field in the dataset representing the path to the input video files.
-    - output_field (str): The field to store the path to the resampled audio files in the dataset.
-    - key_field (str): The field in the dataset representing the unique key or identifier for each entry.
-    - target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
-    - target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        resampled_audio_dir (str): The directory to store the resampled audio files.
+        input_field (str): The field in the dataset representing the path to the input video files.
+        output_field (str): The field to store the path to the resampled audio files in the dataset.
+        key_field (str): The field in the dataset representing the unique key or identifier for each entry.
+        target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
+        target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:
-    - process_dataset_entry(data_entry): Processes a single dataset entry, converts the input video to resampled audio, and updates the dataset.
+        process_dataset_entry(data_entry): Processes a single dataset entry, converts the input video to resampled audio, and updates the dataset.
 
-    Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to convert video files to resampled audio using FFmpeg.
     """
     def __init__(
         self,
@@ -1249,18 +1213,16 @@ class CreateInitialManifestExt(BaseParallelProcessor):
     A class for creating an initial dataset manifest from audio files with a specified extension.
 
     Args:
-    - raw_data_dir (str): The directory containing audio files to include in the initial dataset manifest.
-    - output_field (str, optional): The field to store the audio file paths in the dataset. Defaults to "audio_filepath".
-    - extention (str, optional): The file extension of the audio files to include in the manifest. Defaults to "mp3".
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        raw_data_dir (str): The directory containing audio files to include in the initial dataset manifest.
+        output_field (str, optional): The field to store the audio file paths in the dataset. Defaults to "audio_filepath".
+        extention (str, optional): The file extension of the audio files to include in the manifest. Defaults to "mp3".
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:
-    - prepare(): Creates the directory for saving the initial dataset manifest.
-    - read_manifest(): Reads the audio files with the specified extension and creates a DataFrame with the specified output field.
-    - process_dataset_entry(data_entry): Processes a single dataset entry, creating a DataEntry object with the audio file path, and updates the dataset.
+        prepare(): Creates the directory for saving the initial dataset manifest.
+        read_manifest(): Reads the audio files with the specified extension and creates a DataFrame with the specified output field.
+        process_dataset_entry(data_entry): Processes a single dataset entry, creating a DataEntry object with the audio file path, and updates the dataset.
 
-    Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to create an initial dataset manifest from audio files.
     """
     def __init__(
         self,
