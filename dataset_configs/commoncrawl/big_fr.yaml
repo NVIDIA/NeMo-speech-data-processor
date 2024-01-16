@@ -57,7 +57,7 @@ processors:
       - {"pattern": '„', "repl": '"'}
       - {"pattern": '®', "repl": ' '}
       - {"pattern": '@', "repl": " "}
-      - {"pattern": "  ", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
 
   - _target_: sdp.processors.DropHighLowWordrate
     output_manifest_file: ${workspace_dir}/manifest6.json
@@ -156,10 +156,15 @@ processors:
   - _target_: sdp.processors.AddConstantFields
     fields: {"lang": '${lang}'}
 
-  - _target_: sdp.processors.datasets.commoncrawl.drop_abs_path
+  - _target_: sdp.processors.datasets.commoncrawl.CopyFiles
+    file_field: audio_filepath
+    path_to_copy: ${base_dir}/splited_manifests/${lang}/
+    path_levels: 2
+    
+  - _target_: sdp.processors.datasets.commoncrawl.DropAbsPath
     output_manifest_file: ${workspace_dir}/manifest_${lang}.json
     path_key: audio_filepath
-    abs_path_to_drop: ${base_dir}/
+    abs_path_to_drop: ${base_dir}/splited_manifests/
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
     output_manifest_file: ${base_dir}/splited_manifests/${lang}_train.json

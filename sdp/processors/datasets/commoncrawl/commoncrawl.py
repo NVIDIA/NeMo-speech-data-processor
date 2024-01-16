@@ -2,6 +2,7 @@ import os
 import re
 import math
 import json
+import shutil
 import subprocess
 import librosa
 from tqdm import tqdm
@@ -18,7 +19,7 @@ from sdp.logging import logger
 from sdp.processors.datasets.commoncrawl.harv_utils import ffmpeg_convert, txt2vtt, make_trans_list, get_vtt_text, text2lid, load_manifest, read_jsonl, write_jsonl, split_by_vtt_new, audio_duration
 from scipy.spatial import distance
 
-class drop_abs_path(BaseParallelProcessor):
+class DropAbsPath(BaseParallelProcessor):
     """
     Drop absolute path
 
@@ -40,6 +41,60 @@ class drop_abs_path(BaseParallelProcessor):
         audio_filepath = data_entry[self.path_key]
         data_entry[self.path_key]=audio_filepath[len(self.abs_path_to_drop):]
         return [DataEntry(data=data_entry)]
+
+
+class CopyFiles(BaseParallelProcessor):
+    def __init__(
+        self,
+        file_field : str,
+        path_to_copy: str,
+        path_levels: str = 1,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.file_field = file_field
+        self.path_to_copy = path_to_copy
+        self.path_levels = path_levels
+
+    def prepare(self):
+        os.makedirs(self.path_to_copy, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        rel_file_path = "/".join(data_entry[self.file_field].split("/")[-self.path_levels:])
+        new_file_path = os.path.join(self.path_to_copy, rel_file_path)
+
+        if not os.path.isfile(new_file_path):
+            os.makedirs(os.path.split(new_file_path)[0], exist_ok=True)
+            shutil.copyfile(data_entry[self.file_field], new_file_path)
+        data_entry[self.file_field] = new_file_path
+        return [DataEntry(data=data_entry)]
+
+
+class GetSpecificFiles(BaseParallelProcessor):
+    def __init__(
+        self,
+        file_field : str,
+        path_to_copy: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.file_field = file_field
+        self.path_to_copy = path_to_copy
+
+        self.split_map = set(
+            ['0634236', '0693626', '0029743', '0881322', '0357427', '0455788', '0198472', '0496259', '0812890', '0142281', '0076612', '0629004', '0931592', '0577447', '0768107', '0907768', '0963898', '0671754', '0851569', '0896715',
+            '0366790', '0837221', '0733702', '0278253', '0738313', '0437256', '0558223', '0292533', '0777911', '0826607', '0544257', '0744206', '0576248', '0307575', '0307577', '0879895', '0006783', '0006755', '0125649', '0896701']
+        )
+    def prepare(self):
+        os.makedirs(self.path_to_copy, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        file_id = os.path.splitext(data_entry[self.file_field])[0].split("/")[-1]
+        if file_id in self.split_map:
+            shutil.copyfile(data_entry[self.file_field],os.path.join(self.path_to_copy, file_id+".wav"))
+            return [DataEntry(data=data_entry)]
+        else:
+            return []
 
 
 class TrainDevTestSplitCC(BaseParallelProcessor):

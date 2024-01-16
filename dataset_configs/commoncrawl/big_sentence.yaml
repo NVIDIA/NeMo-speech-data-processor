@@ -94,3 +94,9 @@ processors:
     output_manifest_file: ${workspace_dir_s}/manifest5a.json
     input_field: source_audio
     output_field: bandwidth
+
+  - _target_: sdp.processors.datasets.commoncrawl.GetSpecificFiles
+    input_manifest_file: ${workspace_dir_s}/manifest6.json
+    output_manifest_file: ${workspace_dir_s}/long_dev_test/manifest6.json
+    file_field: source_audio
+    path_to_copy: ${workspace_dir_s}/long_dev_test
