@@ -1,0 +1,66 @@
+processors_to_run: "0:"
+workspace_dir: /mnt/ssd8/multilang/portuguese/yt/sdp
+final_manifest: ${workspace_dir}/final_manifest.json
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestByExt
+    raw_data_dir: /mnt/ssd8/multilang/portuguese/yt/wavs
+    extension: wav
+    output_field: audio_filepath
+    output_manifest_file: ${workspace_dir}/manifest0.json
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_field: audio_filepath
+    duration_field: duration
+    output_manifest_file: ${workspace_dir}/manifest1.json
+
+  - _target_: sdp.processors.AudioLid
+    output_manifest_file: ${workspace_dir}/manifest2.json
+    input_audio_field: audio_filepath
+    output_lang_field: audio_lang
+    device: cuda
+    pretrained_model: "langid_ambernet"
+    segment_duration: 20
+    num_segments: 3
+
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest3.json
+    input_field: audio_lang
+    target_value: pt
+
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest4.json
+    input_field: duration
+    operator: le
+    target_value: 20000.0
+  
+  - _target_: sdp.processors.Subprocess
+    output_manifest_file: ${workspace_dir}/vad
+    input_manifest_arg: "manifest_filepath"
+    output_manifest_arg: "output_dir"
+    cmd: "python /home/nkarpov/NeMo/examples/asr/asr_vad/speech_to_text_with_vad.py audio_type=wav \
+    vad_model=vad_multilingual_frame_marblenet  vad_config=/home/nkarpov/NeMo/examples/asr/conf/vad/frame_vad_infer_postprocess.yaml"
+
+  - _target_: sdp.processors.RenameFields
+    input_manifest_file: ${workspace_dir}/vad/temp_manifest_vad_rttm-onset0.3-offset0.3-pad_onset0.2-pad_offset0.2-min_duration_on0.2-min_duration_off0.2-filter_speech_firstTrue.json
+    output_manifest_file: ${workspace_dir}/manifest6.json
+    rename_fields: {"audio_filepath":"source_filepath"}
+
+  - _target_: sdp.processors.nemo.rttm.GetRttmSegments
+    output_manifest_file: ${workspace_dir}/manifest7.json
+    rttm_field: rttm_file
+    output_file_field: audio_segments
+    duration_threshold: 20.0
+    duration_field: duration
+
+  - _target_: sdp.processors.nemo.rttm.SplitFile
+    output_manifest_file: ${workspace_dir}/manifest8.json
+    splited_audio_dir: /mnt/ssd8/multilang/portuguese/yt/splited_wavs/
+    segments_field: audio_segments
+    input_file_field: source_filepath
+    output_file_field: audio_filepath
+    duration_field: duration
+
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${workspace_dir}/manifest9.json
+    fields_to_keep: ["audio_filepath", "duration"]

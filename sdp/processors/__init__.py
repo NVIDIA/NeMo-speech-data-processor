@@ -33,6 +33,7 @@ from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
 )
 from sdp.processors.datasets.lhotse import LhotseImport
 from sdp.processors.modify_manifest.common import (
+    Subprocess,
     AddConstantFields,
     ChangeToRelativePath,
     CombineSources,
@@ -43,12 +44,14 @@ from sdp.processors.modify_manifest.common import (
     KeepOnlySpecifiedFields,
 )
 from sdp.processors.modify_manifest.data_to_data import (
+    GetAudioDuration,
     InsIfASRInsertion,
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
+    PreserveByValue,
     DropASRError,
     DropASRErrorBeginningEnd,
     DropHighCER,
@@ -68,3 +71,5 @@ from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
 )
 from sdp.processors.nemo.asr_inference import ASRInference
 from sdp.processors.nemo.pc_inference import PCInference
+from sdp.processors.nemo.lid_inference import AudioLid
+from sdp.processors.modify_manifest.create_manifest import CreateInitialManifestByExt

@@ -14,6 +14,8 @@
 
 import collections
 import re
+from typing import List, Union
+from operator import lt, le, eq, ne, ge, gt
 from typing import List
 
 from sdp.logging import logger
@@ -28,7 +30,50 @@ from sdp.utils.metrics_computation import (
     get_wordrate,
 )
 
+class PreserveByValue(BaseParallelProcessor):
+    """
+    Processor for preserving dataset entries based on a specified condition involving a target value and an input field.
 
+    Args:
+        input_field (str): The field in the dataset entries to be evaluated.
+        target_value (Union[int, str]): The value to compare with the input field.
+        operator (str, optional): The operator to apply for comparison. Options: "lt" (less than), "le" (less than or equal to), "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than). Defaults to "eq".
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+    def __init__(
+        self,
+        input_field: str,
+        target_value: Union[int, str],
+        operator: str = "eq",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = input_field
+        self.target_value = target_value
+        if operator == "lt":
+            self.operator = lt
+        elif operator == "le":
+            self.operator = le
+        elif operator == "eq":
+            self.operator = eq
+        elif operator == "ne":
+            self.operator = ne
+        elif operator == "ge":
+            self.operator = ge
+        elif operator == "gt":
+            self.operator = gt
+        else:
+            raise ValueError('Operator must be one from the list: "lt" (less than), "le" (less than or equal to), "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than)')
+
+    def process_dataset_entry(self, data_entry):
+        input_value = data_entry[self.input_field]
+        target = self.target_value
+        if self.operator(input_value, target):
+            return [DataEntry(data=data_entry)]
+        else:
+            return [DataEntry(data=None)]
+        
 class DropHighLowCharrate(BaseParallelProcessor):
     """Drops utterances if their character rate is too low or too high.
 

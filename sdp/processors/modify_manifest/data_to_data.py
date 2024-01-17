@@ -15,12 +15,42 @@
 import collections
 import re
 from typing import Dict, List
+import soundfile as sf
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
 
+class GetAudioDuration(BaseParallelProcessor):
+    """
+    Processor to count audio duration using audio file path from input_field
+
+    Args:
+        audio_filepath_field (str): where to get path to wav file.
+        duration_field (str): where to put to audio duration.
+    Returns:
+        All the same fields as in the input manifest plus output_field
+    """
+    def __init__(
+        self,
+        audio_filepath_field: str,
+        duration_field: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.audio_filepath_field = audio_filepath_field
+        self.duration_field = duration_field
+    
+    def process_dataset_entry(self, data_entry):
+        audio_filepath = data_entry[self.audio_filepath_field]
+        try:
+            data, samplerate = sf.read(audio_filepath)
+            data_entry[self.duration_field]=data.shape[0]/samplerate
+        except Exception as e:
+            logger.warning(str(e) + " file: " + audio_filepath)
+            data_entry[self.duration_field] = -1.0
+        return [DataEntry(data=data_entry)]
 
 class InsIfASRInsertion(BaseParallelProcessor):
     """Processor that adds substrings to transcription if they are present in ASR predictions.

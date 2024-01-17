@@ -16,11 +16,22 @@ import os
 import tarfile
 import urllib
 import zipfile
-
+import json
 import wget
+
+from pathlib import Path
+from typing import Dict, List, Union
 
 from sdp.logging import logger
 
+def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
+    # read NeMo manifest as a list of dicts
+    result = []
+    with manifest.open() as f:
+        for line in f:
+            data = json.loads(line)
+            result.append(data)
+    return result
 
 def download_file(source_url: str, target_directory: str, verbose = True):
     # make sure target_directory is an absolute path to avoid bugs when we change directories to download data later
