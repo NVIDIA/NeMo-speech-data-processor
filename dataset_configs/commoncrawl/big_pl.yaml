@@ -135,31 +135,55 @@ processors:
     rename_fields: {"text_pc":"text"}
 
   - _target_: sdp.processors.AddConstantFields
+    output_manifest_file: ${workspace_dir}/manifest_${lang}.json
     fields: {"lang": '${lang}'}
 
-  - _target_: sdp.processors.datasets.commoncrawl.CopyFiles
-    file_field: audio_filepath
-    path_to_copy: ${base_dir}/splited_manifests/${lang}/
-    path_levels: 2
-    
-  - _target_: sdp.processors.datasets.commoncrawl.DropAbsPath
-    output_manifest_file: ${workspace_dir}/manifest_${lang}.json
-    path_key: audio_filepath
-    abs_path_to_drop: ${base_dir}/splited_manifests/
-
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    output_manifest_file: ${base_dir}/splited_manifests/${lang}_train.json
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    output_manifest_file: ${workspace_dir}/manifest_${lang}_train.json
     lang: ${lang}
     data_split: train
 
-  - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
-    output_manifest_file: ${base_dir}/splited_manifests/${lang}_dev.json
-    lang: ${lang}
-    data_split: dev
+  - _target_: sdp.processors.datasets.commoncrawl.CopyFiles
+    file_field: audio_filepath
+    path_to_copy: ${base_dir}/splited_manifests/${lang}_train/
+    path_levels: 2
+    
+  - _target_: sdp.processors.datasets.commoncrawl.DropAbsPath
+    output_manifest_file: ${base_dir}/splited_manifests/${lang}_train.json 
+    path_key: audio_filepath
+    abs_path_to_drop: ${base_dir}/splited_manifests/
+
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
     input_manifest_file: ${workspace_dir}/manifest_${lang}.json
-    output_manifest_file: ${base_dir}/splited_manifests/${lang}_test.json
+    output_manifest_file: ${workspace_dir}/manifest_${lang}_dev.json
+    lang: ${lang}
+    data_split: dev
+
+  - _target_: sdp.processors.datasets.commoncrawl.CopyFiles
+    file_field: audio_filepath
+    path_to_copy: ${base_dir}/splited_manifests/${lang}_dev/
+    path_levels: 2
+  
+  - _target_: sdp.processors.datasets.commoncrawl.DropAbsPath
+    output_manifest_file: ${base_dir}/splited_manifests/${lang}_dev.json 
+    path_key: audio_filepath
+    abs_path_to_drop: ${base_dir}/splited_manifests/
+
+
+  - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    output_manifest_file: ${workspace_dir}/manifest_${lang}_test.json
     lang: ${lang}
     data_split: test
+
+  - _target_: sdp.processors.datasets.commoncrawl.CopyFiles
+    file_field: audio_filepath
+    path_to_copy: ${base_dir}/splited_manifests/${lang}_test/
+    path_levels: 2
+  
+  - _target_: sdp.processors.datasets.commoncrawl.DropAbsPath
+    output_manifest_file: ${base_dir}/splited_manifests/${lang}_test.json 
+    path_key: audio_filepath
+    abs_path_to_drop: ${base_dir}/splited_manifests/
