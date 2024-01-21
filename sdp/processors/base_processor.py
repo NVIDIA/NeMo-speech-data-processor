@@ -18,12 +18,14 @@ import multiprocessing
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from sdp.logging import logger
+from sdp.utils.common import load_manifest
 
 
 @dataclass
@@ -57,17 +59,31 @@ class BaseProcessor(ABC):
     """
 
     def __init__(self, output_manifest_file: str, input_manifest_file: Optional[str] = None):
-
         if output_manifest_file and input_manifest_file and (output_manifest_file == input_manifest_file):
             # we cannot have the same input and output manifest file specified because we need to be able to
             # read from the input_manifest_file and write to the output_manifest_file at the same time
-            raise ValueError(
-                "A processor's specified input_manifest_file and output_manifest_file cannot be the same"
-            )
+            raise ValueError("A processor's specified input_manifest_file and output_manifest_file cannot be the same")
 
         self.output_manifest_file = output_manifest_file
         self.input_manifest_file = input_manifest_file
 
+    def read_input_manifest(
+        self, logger_error: str = 'Trying to read with modify_manifest/common.py approach'
+    ) -> list:
+        try:
+            json_list = load_manifest(Path(self.input_manifest_file))
+        except UnicodeDecodeError as ue:
+            logger.warning(f'Failed to read input_manifest {ue.__str__()}')
+            logger.info(logger_error)
+            with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
+                json_list = [json.loads(line) for line in fin.readlines()]
+
+            ## Uncomment for generator approach
+            # with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
+            #     for line in fin:
+            #         yield json.loads(line)
+
+        return json_list
 
     @abstractmethod
     def process(self):
@@ -116,7 +132,7 @@ class BaseParallelProcessor(BaseProcessor):
         chunksize: int = 100,
         in_memory_chunksize: int = 1000000,
         test_cases: Optional[List[Dict]] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         if max_workers == -1:
@@ -213,8 +229,7 @@ class BaseParallelProcessor(BaseProcessor):
         """
 
     def _chunk_manifest(self):
-        """Splits the manifest into smaller chunks defined by ``in_memory_chunksize``.
-        """
+        """Splits the manifest into smaller chunks defined by ``in_memory_chunksize``."""
         manifest_chunk = []
         for idx, data_entry in enumerate(self.read_manifest(), 1):
             manifest_chunk.append(data_entry)
@@ -293,7 +308,6 @@ class BaseParallelProcessor(BaseProcessor):
         logger.info("Total number of entries after processing: %d", self.number_of_entries)
         if self.total_duration != 0:
             logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
-
 
     def test(self):
         """Applies processing to "test_cases" and raises an error in case of mismatch."""
