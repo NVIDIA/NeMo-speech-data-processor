@@ -64,7 +64,7 @@ class ASRWhisper(BaseProcessor):
         json_list = self.read_input_manifest()
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
 
-        with Path(self.output_manifest_file).open('w') as f:
+        with Path(self.output_manifest_file).open('w', encoding='utf-8') as f:
             for item in tqdm(json_list):
                 pred_text, pred_lang = self.whisper_infer(item["audio_filepath"])
 
@@ -155,7 +155,7 @@ class ASRTransformer(BaseProcessor):
             chunk_length_s=30,
             batch_size=16,
             return_timestamps=True,
-            torch_dtype=torch_dtype,
+            torch_dtype=self.torch_dtype,
             device=self.device,
         )
 
@@ -163,7 +163,7 @@ class ASRTransformer(BaseProcessor):
         json_list = self.read_input_manifest()
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
 
-        with Path(self.output_manifest_file).open('w') as f:
+        with Path(self.output_manifest_file).open('w', encoding='utf-8') as f:
             for item in tqdm(json_list):
                 pred_text = self.pipe(item["audio_filepath"])["text"]
 
