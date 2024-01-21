@@ -38,7 +38,6 @@ formatter = logging.Formatter(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 handler.setFormatter(formatter)
-logger.handlers
 logger.addHandler(handler)
 logger.propagate = False
 

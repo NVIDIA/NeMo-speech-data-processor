@@ -269,7 +269,7 @@ class InsIfASRInsertion(BaseParallelProcessor):
             orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
             diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
-            if len(diff) > 0:  # ie if there are differences between text and pred_text
+            if len(diff) > 0:  # i.e. if there are differences between text and pred_text
                 new_sent = ""
 
                 for diff_entry in diff:
@@ -364,7 +364,7 @@ class SubIfASRSubstitution(BaseParallelProcessor):
             orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
             diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
-            if len(diff) > 0:  # ie if there are differences between text and pred_text
+            if len(diff) > 0:  # i.e. if there are differences between text and pred_text
                 new_sent = ""
 
                 for diff_entry in diff:
@@ -380,12 +380,12 @@ class SubIfASRSubstitution(BaseParallelProcessor):
 
                     elif isinstance(diff_entry, tuple):  # substitution
                         if diff_entry[0][1] == original_word and diff_entry[1][1] == new_word:
-                            # ie. substitution is one we want to use to change the original text
+                            # i.e. substitution is one we want to use to change the original text
                             new_sent += new_word
                             sub_word_counter[original_word] += 1
 
                         else:
-                            # ie. substitution is one we want to ignore
+                            # i.e. substitution is one we want to ignore
                             new_sent += diff_entry[0][1]
                     else:
                         raise ValueError(f"unexpected item in diff_entry: {diff_entry}")
@@ -444,7 +444,7 @@ class SubRegex(BaseParallelProcessor):
 
     Before applying regex changes, we will add a space
     character to the beginning and end of the ``text`` and ``pred_text``
-    keys for each data entry. After the the regex changes,
+    keys for each data entry. After the regex changes,
     the extra spaces are removed. This includes the spaces in the beginning
     and end of the text, as well as any double spaces ``"  "``.
 
