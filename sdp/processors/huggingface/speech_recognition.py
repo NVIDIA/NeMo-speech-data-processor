@@ -11,12 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import json
+import os
 from pathlib import Path
 
 from tqdm import tqdm
 
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import load_manifest
 
@@ -30,26 +31,29 @@ class ASRWhisper(BaseProcessor):
         pretrained_model (str): name of pretrained model on HuggingFace.
         output_text_field (str): field to save transcription result.
         device (str): Inference device.
-        batch_size (int): Inference batch size. Defaults to 1.
     """
 
     def __init__(
         self,
         pretrained_model: str,
-        output_text_field: str,
+        output_text_key: str,
         device: str = None,
-        batch_size: int = 1,
+        output_lang_key: str = "lid",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        import torch
-        import whisper  # pip install -U openai-whisper
+        try:
+            import torch
+            import whisper
+        except:
+            raise ImportError("Need to install whisper: pip install -U openai-whisper")
 
+        logger.warning("This is an example processor, for demonstration only. Do not use it for production purposes.")
         self.whisper = whisper
         self.pretrained_model = pretrained_model
-        self.output_text_field = output_text_field
+        self.output_text_key = output_text_key
         self.device = device
-        self.batch_size = batch_size
+        self.output_lang_key = output_lang_key
         if self.device is None:
             if torch.cuda.is_available():
                 self.device = "cuda"
@@ -66,11 +70,24 @@ class ASRWhisper(BaseProcessor):
             for item in tqdm(json_list):
                 pred_text, pred_lang = self.whisper_infer(item["audio_filepath"])
 
-                item[self.output_text_field] = pred_text
+                item[self.output_text_key] = pred_text
+                item[self.output_lang_key] = pred_lang
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
     def whisper_infer(self, audio_path):
-        audio = self.whisper.load_audio(audio_path)
+        try:
+            audio = self.whisper.load_audio(audio_path)
+        except FileNotFoundError as fe:  # whisper bug: https://github.com/openai/whisper/discussions/109
+            if os.path.exists(audio_path):
+                if self.log_in_loop < 1:
+                    self.log_in_loop += 1  # do not log more than once in a loop
+                    logger.warning(f'While reading audio whisper results in {fe.__str__()}')
+                    logger.info('Trying to read the audio with librosa')
+            else:
+                raise fe
+
+            samplerate = os.environ.get('RESAMPLED_RATE', 16000)
+            audio, sr = librosa.load(audio_path, sr=samplerate)
 
         audio = self.whisper.pad_or_trim(audio)
         mel = self.whisper.log_mel_spectrogram(audio)
@@ -84,33 +101,37 @@ class ASRWhisper(BaseProcessor):
         return result.text, lang
 
 
-class ASRTransformer(BaseProcessor):
+class ASRTransformers(BaseProcessor):
     """
-    Processor to transcribe using ASR Transformer model from HuggingFace.
+    Processor to transcribe using ASR Transformers model from HuggingFace.
 
     Args:
         pretrained_model (str): name of pretrained model on HuggingFace.
         output_text_field (str): field to save transcription result.
         device (str): Inference device.
-        batch_size (int): Inference batch size. Used only batch_size = 1 TODO: support batch_size > 1
+        batch_size (int): Inference batch size. Defaults to 1. TODO: support batch_size > 1
         torch_dtype (str): Tensor data type. Default to "float32"
     """
 
     def __init__(
         self,
         pretrained_model: str,
-        output_text_field: str,
+        output_text_key: str,
         device: str = None,
-        batch_size: int = 1,  # TODO: support batch_size > 1
+        batch_size: int = 1,
         torch_dtype: str = "float32",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        import torch
-        from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+        try:
+            import torch
+            from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+        except:
+            raise ImportError("Need to install transformers: pip install accelerate transformers")
 
+        logger.warning("This is an example processor, for demonstration only. Do not use it for production purposes.")
         self.pretrained_model = pretrained_model
-        self.output_text_field = output_text_field
+        self.output_text_key = output_text_key
         self.device = device
         self.batch_size = batch_size
         if torch_dtype == "float32":
@@ -139,7 +160,7 @@ class ASRTransformer(BaseProcessor):
             feature_extractor=processor.feature_extractor,
             max_new_tokens=128,
             chunk_length_s=30,
-            batch_size=16,
+            batch_size=self.batch_size,
             return_timestamps=True,
             torch_dtype=self.torch_dtype,
             device=self.device,
@@ -150,9 +171,9 @@ class ASRTransformer(BaseProcessor):
 
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
 
-        with Path(self.output_manifest_file).open('w') as f:
+        with Path(self.output_manifest_file).open('w', encoding='utf-8') as f:
             for item in tqdm(json_list):
                 pred_text = self.pipe(item["audio_filepath"])["text"]
 
-                item[self.output_text_field] = pred_text
+                item[self.output_text_key] = pred_text
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
