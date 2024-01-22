@@ -3,43 +3,92 @@ workspace_dir: ???
 final_manifest: ${workspace_dir}/final_manifest.json
 
 processors:
-  - _target_: sdp.processors.CreateInitialManifestMCV # conda install -c conda-forge -y sox libvorbis
+  - _target_: sdp.processors.CreateInitialManifestMCV  # conda install -c conda-forge -y sox libvorbis
+    language_id: hy-AM
+    target_nchannels: 1
+    data_split: validated
+    already_extracted: true
+    target_samplerate: 16000
     raw_data_dir: ${workspace_dir}
-    extract_archive_dir: ${workspace_dir}/row
-    resampled_audio_dir: ${workspace_dir}/16k
-    data_split: train
-    language_id: cv-corpus-15.0-2023-09-08-hy-AM
-    output_manifest_file: ${workspace_dir}/manifest0.json
+    resampled_audio_dir: ${workspace_dir}/data/16k
+    extract_archive_dir: ${workspace_dir}/data/original/cv-corpus-16.0-2023-12-06
+    output_manifest_file: ${workspace_dir}/data/manifests/manifest_mcv_0.json
+
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: ".,? 'աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքևօֆԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖ՜֊՞՛՝»«։<>´`՚"
+    test_cases:
+      - { input: { text: "test тест 测试" }, output: null }
+      - { input: { text: "Բարև" }, output: { text: "Բարև" } }
+    input_manifest_file: ${workspace_dir}/data/manifests/manifest_mcv_0.json
+    output_manifest_file: ${workspace_dir}/data/manifests/manifest_dropalphabet_1.json
+
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      - {"pattern": "!", "repl": "." }
+      - {"pattern": "…", "repl": "." }
+      - { "pattern": "’", "repl": "'" }
+      - { "pattern": '[\":\(\)“”;]', "repl": '' }
+      - { "pattern": "[-/]", "repl": " " }
+      # - {"pattern": "«", "repl": "<<"}
+      - { "pattern": "ó", "repl": "o" }
+      # - {"pattern": "»", "repl": ">>"}
+      - { "pattern": "Ó", "repl": "O" }
+    test_cases:
+      - { input: { text: "Բարև!" }, output: { text: "Բարև." } }
+    input_manifest_file: ${workspace_dir}/data/manifests/manifest_dropalphabet_1.json
+    output_manifest_file: ${workspace_dir}/data/manifests/manifest_subregex_2.json
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    regex_patterns: [
+      # corrupted audios
+      "common_voice_hy-AM_26600902.mp3",
+      "common_voice_hy-AM_26600920.mp3",
+      "common_voice_hy-AM_27555073.mp3",
+      "common_voice_hy-AM_27555103.mp3",
+      "common_voice_hy-AM_27555122.mp3",
+      "common_voice_hy-AM_36858460.mp3",
+      "common_voice_hy-AM_36858462.mp3",
+      "common_voice_hy-AM_36858463.mp3",
+      "common_voice_hy-AM_36858464.mp3",
+      "common_voice_hy-AM_39393509.mp3",
+      "common_voice_hy-AM_39393523.mp3",
+      "common_voice_hy-AM_39516269.mp3",
+      "common_voice_hy-AM_39534930.mp3",
+      "common_voice_hy-AM_39534945.mp3",
+      "common_voice_hy-AM_39534946.mp3",
+      "common_voice_hy-AM_39534953.mp3",
+      "common_voice_hy-AM_39534958.mp3",
+      "common_voice_hy-AM_39538083.mp3",
+      "common_voice_hy-AM_39538084.mp3",
+      "common_voice_hy-AM_39538085.mp3"
+    ]
+    text_key: audio_filepath
+    input_manifest_file: ${workspace_dir}/data/manifests/manifest_subregex_2.json
+    output_manifest_file: ${workspace_dir}/data/manifests/manifest_dropregex_3.json
 
   - _target_: sdp.processors.ASRWhisper
-    output_manifest_file: ${workspace_dir}/manifest1.json
     pretrained_model: "large-v2"
     output_text_field: pred_text
+    input_manifest_file: ${workspace_dir}/data/manifests/manifest_dropregex_3.json
+    output_manifest_file: ${workspace_dir}/data/manifests/manifest_whisper_4.json
 
   - _target_: sdp.processors.DropHighWER
     text_key: text
     pred_text_key: pred_text
     wer_threshold: 75
+    input_manifest_file: ${workspace_dir}/data/manifests/manifest_whisper_4.json
+    output_manifest_file: ${workspace_dir}/data/manifests/manifest_dropwer_5.json
 
   - _target_: sdp.processors.DropHighCER
-    output_manifest_file: ${workspace_dir}/manifest3.json
     text_key: text
     pred_text_key: pred_text
     cer_threshold: 30
-
-  - _target_: sdp.processors.ASRTransformer #pip install accelerate
-    input_manifest_file: ${workspace_dir}/manifest1.json
-    output_manifest_file: ${workspace_dir}/manifest4.json
-    pretrained_model: "distil-whisper/distil-large-v2" #"openai/whisper-large-v3"
-    output_text_field: pred_text3
-
-  - _target_: sdp.processors.DropHighWER
-    text_key: text
-    pred_text_key: pred_text3
-    wer_threshold: 75
-
-  - _target_: sdp.processors.DropHighCER
+    input_manifest_file: ${workspace_dir}/data/manifests/manifest_dropwer_5.json
     output_manifest_file: ${final_manifest}
-    text_key: text
-    pred_text_key: pred_text3
-    cer_threshold: 30
+#    output_manifest_file: ${workspace_dir}/data/manifests/manifest_dropcer_6.json
+#
+#  - _target_: sdp.processors.ASRTransformer  #pip install accelerate
+#    input_manifest_file: ${workspace_dir}/data/manifests/manifest_dropcer_6.json
+#    output_manifest_file: ${final_manifest}
+#    pretrained_model: "distil-whisper/distil-large-v2" #"openai/whisper-large-v3"
+#    output_text_field: pred_text3
