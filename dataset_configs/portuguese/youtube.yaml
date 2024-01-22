@@ -61,6 +61,12 @@ processors:
     output_file_field: audio_filepath
     duration_field: duration
 
-  - _target_: sdp.processors.KeepOnlySpecifiedFields
+  - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest9.json
+    input_field: duration
+    operator: gt
+    target_value: 0.0
+
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${workspace_dir}/manifest10.json
     fields_to_keep: ["audio_filepath", "duration"]

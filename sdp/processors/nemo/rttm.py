@@ -1,11 +1,13 @@
 import os
-from tqdm import tqdm
-import soundfile as sf
 from typing import Dict, List, Union
 
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+import soundfile as sf
+from tqdm import tqdm
+
 from sdp.logging import logger
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import load_manifest
+
 
 class GetRttmSegments(BaseParallelProcessor):
     """
@@ -18,6 +20,7 @@ class GetRttmSegments(BaseParallelProcessor):
         **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
     """
+
     def __init__(
         self,
         rttm_field: str,
@@ -31,22 +34,21 @@ class GetRttmSegments(BaseParallelProcessor):
         self.duration_threshold = duration_threshold
         self.duration_field = duration_field
         self.output_file_field = output_file_field
-        
+
     def split_long_segment(self, slices, duration, last_slice):
         duration0 = self.duration_threshold
         while duration0 < duration:
-            slices.append(last_slice+duration0)
+            slices.append(last_slice + duration0)
             duration0 += self.duration_threshold
-            if duration0>duration:
+            if duration0 > duration:
                 duration0 = duration
-        slices.append(last_slice+duration0)
+        slices.append(last_slice + duration0)
         return slices, last_slice + duration0
-
 
     def process_dataset_entry(self, data_entry: Dict):
         file_duration = data_entry[self.duration_field]
         rttm_file = data_entry[self.rttm_field]
-        
+
         starts = []
         with open(rttm_file, "r") as f:
             for line in f:
@@ -58,15 +60,15 @@ class GetRttmSegments(BaseParallelProcessor):
         for start in starts:
             duration = start - last_slice
 
-            if duration<=self.duration_threshold:
+            if duration <= self.duration_threshold:
                 pass
-            elif duration>self.duration_threshold and last_duration < self.duration_threshold:
+            elif duration > self.duration_threshold and last_duration < self.duration_threshold:
                 slices.append(last_start)
                 last_slice = last_start
                 last_start = start
                 last_duration = duration
                 duration = start - last_slice
-                if duration<=self.duration_threshold:
+                if duration <= self.duration_threshold:
                     slices.append(start)
                     last_slice = start
                 else:
@@ -79,8 +81,9 @@ class GetRttmSegments(BaseParallelProcessor):
             last_duration = duration
 
         data_entry[self.output_file_field] = sorted(list(set(slices)))
-        
+
         return [DataEntry(data=data_entry)]
+
 
 class SplitFile(BaseParallelProcessor):
     """
@@ -93,6 +96,7 @@ class SplitFile(BaseParallelProcessor):
         **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
     """
+
     def __init__(
         self,
         splited_audio_dir: str,
@@ -110,23 +114,34 @@ class SplitFile(BaseParallelProcessor):
         self.duration_field = duration_field
 
     def write_segment(self, data, samplerate, start_sec, end_sec, input_file):
-        wav_save_file = os.path.join(self.splited_audio_dir, os.path.splitext(os.path.split(input_file)[1])[0], str(int(start_sec*100))+"-"+str(int(end_sec*100))+".wav")
+        wav_save_file = os.path.join(
+            self.splited_audio_dir,
+            os.path.splitext(os.path.split(input_file)[1])[0],
+            str(int(start_sec * 100)) + "-" + str(int(end_sec * 100)) + ".wav",
+        )
         if not os.path.isfile(wav_save_file):
-            data_sample = data[int(start_sec*samplerate):int(end_sec*samplerate)]
-            duration = len(data_sample)/samplerate
+            data_sample = data[int(start_sec * samplerate) : int(end_sec * samplerate)]
+            duration = len(data_sample) / samplerate
             os.makedirs(os.path.split(wav_save_file)[0], exist_ok=True)
             sf.write(wav_save_file, data_sample, samplerate)
-        return wav_save_file, duration
-    
+            return wav_save_file, duration
+        else:
+            try:
+                data, samplerate = sf.read(wav_save_file)
+                duration = data.shape[0] / samplerate
+            except Exception as e:
+                logger.warning(str(e) + " file: " + wav_save_file)
+                duration = -1.0
+            return wav_save_file, duration
+
     def process_dataset_entry(self, data_entry: Dict):
         slices = data_entry[self.segments_field]
         input_file = data_entry[self.input_file_field]
         input_data, samplerate = sf.read(input_file)
         data_entries = []
         for i in range(len(slices[:-1])):
-            wav_save_file, duration = self.write_segment(input_data, samplerate, slices[i], slices[i+1], input_file)
+            wav_save_file, duration = self.write_segment(input_data, samplerate, slices[i], slices[i + 1], input_file)
             data_entry[self.output_file_field] = wav_save_file
             data_entry[self.duration_field] = duration
             data_entries.append(DataEntry(data=data_entry.copy()))
         return data_entries
-    
