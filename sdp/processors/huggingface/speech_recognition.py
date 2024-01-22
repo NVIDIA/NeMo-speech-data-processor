@@ -141,7 +141,7 @@ class ASRTransformer(BaseProcessor):
             chunk_length_s=30,
             batch_size=self.batch_size,
             return_timestamps=True,
-            torch_dtype=torch_dtype,
+            torch_dtype=self.torch_dtype,
             device=self.device,
         )
 
