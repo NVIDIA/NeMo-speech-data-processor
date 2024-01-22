@@ -19,7 +19,7 @@ import hydra
 from sdp.run_processors import run_processors
 
 
-@hydra.main(version_base=None)
+@hydra.main(version_base=None, config_path='dataset_configs/armenian', config_name='mcv.yaml')
 def main(cfg):
     run_processors(cfg)
 
