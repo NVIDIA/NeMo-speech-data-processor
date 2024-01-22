@@ -30,7 +30,6 @@ class ASRWhisper(BaseProcessor):
         pretrained_model (str): name of pretrained model on HuggingFace.
         output_text_field (str): field to save transcription result.
         device (str): Inference device.
-        batch_size (int): Inference batch size. Defaults to 1.
     """
 
     def __init__(
@@ -38,7 +37,7 @@ class ASRWhisper(BaseProcessor):
         pretrained_model: str,
         output_text_field: str,
         device: str = None,
-        batch_size: int = 1,
+        output_lang_field: str = "lid",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -49,7 +48,7 @@ class ASRWhisper(BaseProcessor):
         self.pretrained_model = pretrained_model
         self.output_text_field = output_text_field
         self.device = device
-        self.batch_size = batch_size
+        self.output_lang_field = output_lang_field
         if self.device is None:
             if torch.cuda.is_available():
                 self.device = "cuda"
@@ -67,6 +66,7 @@ class ASRWhisper(BaseProcessor):
                 pred_text, pred_lang = self.whisper_infer(item["audio_filepath"])
 
                 item[self.output_text_field] = pred_text
+                item[self.output_lang_field] = pred_lang
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
     def whisper_infer(self, audio_path):
@@ -101,7 +101,7 @@ class ASRTransformer(BaseProcessor):
         pretrained_model: str,
         output_text_field: str,
         device: str = None,
-        batch_size: int = 1,  # TODO: support batch_size > 1
+        batch_size: int = 1, 
         torch_dtype: str = "float32",
         **kwargs,
     ):
@@ -139,7 +139,7 @@ class ASRTransformer(BaseProcessor):
             feature_extractor=processor.feature_extractor,
             max_new_tokens=128,
             chunk_length_s=30,
-            batch_size=16,
+            batch_size=self.batch_size,
             return_timestamps=True,
             torch_dtype=self.torch_dtype,
             device=self.device,
