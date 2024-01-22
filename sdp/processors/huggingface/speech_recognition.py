@@ -66,7 +66,7 @@ class ASRWhisper(BaseProcessor):
 
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
 
-        with Path(self.output_manifest_file).open('w', encoding='utf-8') as f:
+        with Path(self.output_manifest_file).open('w') as f:
             for item in tqdm(json_list):
                 pred_text, pred_lang = self.whisper_infer(item["audio_filepath"])
 
