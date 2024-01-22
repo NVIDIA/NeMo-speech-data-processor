@@ -32,7 +32,6 @@ from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
 from sdp.processors.modify_manifest.common import (
-    Subprocess,
     AddConstantFields,
     ChangeToRelativePath,
     CombineSources,
