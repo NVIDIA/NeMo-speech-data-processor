@@ -16,4 +16,4 @@ from .commoncrawl import UseSonar, BLEUScore, Subprocess, NmtSubprocess, Preserv
     Lang2Iso, SplitByVttSentence, SplitByVtt, AudioLid, TextLid, AllVttText, TxtToVtt, \
         ReadParquet, CreateInitialManifestCC, FfmpegConvert, ASR_HF, AlignerSubprocess, \
         SplitByAligner, JoinBy, EvalBandwidth, CreateInitialManifestExt, AudioDuration, \
-        TrainDevTestSplitCC, DropAbsPath, GetSpecificFiles, CopyFiles
+        TrainDevTestSplitCC, DropAbsPath, GetSpecificFiles, CopyFiles, ManifestToUtf8

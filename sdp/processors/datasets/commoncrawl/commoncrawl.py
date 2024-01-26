@@ -19,6 +19,15 @@ from sdp.logging import logger
 from sdp.processors.datasets.commoncrawl.harv_utils import ffmpeg_convert, txt2vtt, make_trans_list, get_vtt_text, text2lid, load_manifest, read_jsonl, write_jsonl, split_by_vtt_new, audio_duration
 from scipy.spatial import distance
 
+class ManifestToUtf8(BaseProcessor):
+    """
+    Processor to convert manifest file to UTF-8 encoding.
+    """
+    def process(self):
+        with open(self.output_manifest_file, "w") as wout, open(self.input_manifest_file) as win:
+            for line in win:
+                print(json.dumps(json.loads(line), ensure_ascii=False), file=wout)
+    
 class DropAbsPath(BaseParallelProcessor):
     """
     Drop absolute path

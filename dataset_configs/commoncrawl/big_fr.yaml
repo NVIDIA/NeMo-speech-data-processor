@@ -153,12 +153,22 @@ processors:
   - _target_: sdp.processors.RenameFields
     rename_fields: {"text_pc":"text"}
 
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    text_key: text
+    regex_params_list:
+      - {"pattern": "\\s+\\?", "repl": "?"}
+      - {"pattern": "\\s+\\.", "repl": "."}
+      - {"pattern": "\\s+,", "repl": ","}
+      - {"pattern": "\\s+", "repl": " "}
+
+  - _target_: sdp.processors.datasets.commoncrawl.ManifestToUtf8
+
   - _target_: sdp.processors.AddConstantFields
     output_manifest_file: ${workspace_dir}/manifest_${lang}.json
     fields: {"lang": '${lang}'}
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
-    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
     output_manifest_file: ${workspace_dir}/manifest_${lang}_train.json
     lang: ${lang}
     data_split: train
@@ -172,7 +182,6 @@ processors:
     output_manifest_file: ${base_dir}/splited_manifests/${lang}_train.json 
     path_key: audio_filepath
     abs_path_to_drop: ${base_dir}/splited_manifests/
-
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
     input_manifest_file: ${workspace_dir}/manifest_${lang}.json
@@ -189,7 +198,6 @@ processors:
     output_manifest_file: ${base_dir}/splited_manifests/${lang}_dev.json 
     path_key: audio_filepath
     abs_path_to_drop: ${base_dir}/splited_manifests/
-
 
   - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
     input_manifest_file: ${workspace_dir}/manifest_${lang}.json
