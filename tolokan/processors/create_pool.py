@@ -21,17 +21,8 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
 class CreateTolokaPool(BaseParallelProcessor):
-    def __init__(
-        self,
-        # API_KEY: str = "-------",
-        # project_id: str = "-------",
-        # platform: str = "-------",
-        **kwargs
-    ):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # self.API_KEY = API_KEY
-        # self.project_id = project_id
-        # self.platform = platform
 
     def process_dataset_entry(self, data_entry):
         API_KEY = data_entry["API_KEY"]
@@ -48,7 +39,7 @@ class CreateTolokaPool(BaseParallelProcessor):
             assignment_max_duration_seconds=60 * 10,
             auto_accept_solutions=False,
             auto_accept_period_day=1,
-            filter=((toloka.client.filter.Languages.in_('EN')) & (toloka.client.filter.ClientType == 'TOLOKA_APP')),
+            filter=((toloka.client.filter.Languages.in_('HY')) & (toloka.client.filter.ClientType == 'TOLOKA_APP')),
         )
         new_pool.set_mixer_config(real_tasks_count=5)
         new_pool = toloka_client.create_pool(new_pool)

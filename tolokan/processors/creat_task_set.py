@@ -67,7 +67,7 @@ class CreateTolokaTaskSet(BaseParallelProcessor):
         with open(self.input_manifest_file, "rt") as fin:
             total_lines = sum(1 for line in fin)
 
-            lines_to_read = int(total_lines * (self.limit / 100))
+            lines_to_read = max(1, int(total_lines * (self.limit / 100)))
 
             fin.seek(0)
 
