@@ -1,0 +1,103 @@
+processors_to_run: "0:"
+workspace_dir: ???
+final_manifest: ${workspace_dir}/final_manifest.json
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestMCV  # conda install -c conda-forge -y sox libvorbis
+    language_id: hy-AM
+    target_nchannels: 1
+    data_split: validated
+    already_extracted: true
+    target_samplerate: 16000
+    raw_data_dir: ${workspace_dir}
+    resampled_audio_dir: ${workspace_dir}/data/16k
+    extract_archive_dir: ${workspace_dir}/data/original/cv-corpus-16.0-2023-12-06
+    output_manifest_file: ${workspace_dir}/data/manifests/manifest_mcv_0.json
+
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: "աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքևօֆԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖ՜֊՞՛՝»«։<>´`՚.,? '"
+    test_cases:
+      - { input: { text: "test тест 测试" }, output: null }
+      - { input: { text: "Բարև" }, output: { text: "Բարև" } }
+      - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
+    input_manifest_file: ${workspace_dir}/data/manifests/manifest_mcv_0.json
+    output_manifest_file: ${workspace_dir}/data/manifests/manifest_dropalphabet_1.json
+
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      - {"pattern": "!", "repl": "." }
+      - {"pattern": "…", "repl": "." }
+      - { "pattern": "’", "repl": "'" }
+      - { "pattern": '[\":\(\)“”;]', "repl": '' }
+      - { "pattern": "[-/]", "repl": " " }
+      # - {"pattern": "«", "repl": "<<"}
+      - { "pattern": "ó", "repl": "o" }
+      # - {"pattern": "»", "repl": ">>"}
+      - { "pattern": "Ó", "repl": "O" }
+      - { "pattern": "Եվ", "repl": "և" }
+      - { "pattern": "ԵՎ", "repl": "և" }
+      - { "pattern": "եՎ", "repl": "և" }
+      - { "pattern": '—', "repl": "-" }
+      - { "pattern": '–', "repl": "-" }
+      - { "pattern": '―', "repl": "-" }
+      - { "pattern": '\.\.\.', "repl": "…" }
+      - { "pattern": '\\s+', "repl": " " }
+    test_cases:
+      - { input: { text: "Բարև!" }, output: { text: "Բարև." } }
+      - { input: { text: "― Ո՛չ, ո՛չ,― ընդհատեց Ալթունովը,― ես համաձայն չեմ։" },
+          output: { text: "- Ո՛չ, ո՛չ,- ընդհատեց Ալթունովը,- ես համաձայն չեմ։" } }
+    input_manifest_file: ${workspace_dir}/data/manifests/manifest_dropalphabet_1.json
+    output_manifest_file: ${workspace_dir}/data/manifests/manifest_subregex_2.json
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    regex_patterns: [
+      # corrupted audios
+      "common_voice_hy-AM_26600902.mp3",
+      "common_voice_hy-AM_26600920.mp3",
+      "common_voice_hy-AM_27555073.mp3",
+      "common_voice_hy-AM_27555103.mp3",
+      "common_voice_hy-AM_27555122.mp3",
+      "common_voice_hy-AM_36858460.mp3",
+      "common_voice_hy-AM_36858462.mp3",
+      "common_voice_hy-AM_36858463.mp3",
+      "common_voice_hy-AM_36858464.mp3",
+      "common_voice_hy-AM_39393509.mp3",
+      "common_voice_hy-AM_39393523.mp3",
+      "common_voice_hy-AM_39516269.mp3",
+      "common_voice_hy-AM_39534930.mp3",
+      "common_voice_hy-AM_39534945.mp3",
+      "common_voice_hy-AM_39534946.mp3",
+      "common_voice_hy-AM_39534953.mp3",
+      "common_voice_hy-AM_39534958.mp3",
+      "common_voice_hy-AM_39538083.mp3",
+      "common_voice_hy-AM_39538084.mp3",
+      "common_voice_hy-AM_39538085.mp3",
+      "[А-Яа-я]",
+      "[A-Za-z]",
+      "=",
+      "¬",
+      "&"
+    ]
+    text_key: audio_filepath
+    input_manifest_file: ${workspace_dir}/data/manifests/manifest_subregex_2.json
+    output_manifest_file: ${workspace_dir}/data/manifests/manifest_dropregex_3.json
+
+  - _target_: sdp.processors.ASRWhisper
+    pretrained_model: "large-v2"
+    output_text_field: pred_text
+    input_manifest_file: ${workspace_dir}/data/manifests/manifest_dropregex_3.json
+    output_manifest_file: ${workspace_dir}/data/manifests/manifest_whisper_4.json
+
+  - _target_: sdp.processors.DropHighWER
+    text_key: text
+    pred_text_key: pred_text
+    wer_threshold: 75
+    input_manifest_file: ${workspace_dir}/data/manifests/manifest_whisper_4.json
+    output_manifest_file: ${workspace_dir}/data/manifests/manifest_dropwer_5.json
+
+  - _target_: sdp.processors.DropHighCER
+    text_key: text
+    pred_text_key: pred_text
+    cer_threshold: 30
+    input_manifest_file: ${workspace_dir}/data/manifests/manifest_dropwer_5.json
+    output_manifest_file: ${final_manifest}
