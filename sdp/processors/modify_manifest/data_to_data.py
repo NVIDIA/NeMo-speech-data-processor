@@ -49,7 +49,11 @@ class InsIfASRInsertion(BaseParallelProcessor):
     """
 
     def __init__(
-        self, insert_words: List[str], text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        insert_words: List[str],
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.insert_words = insert_words
@@ -138,7 +142,11 @@ class SubIfASRSubstitution(BaseParallelProcessor):
     """
 
     def __init__(
-        self, sub_words: Dict, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        sub_words: Dict,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.sub_words = sub_words
@@ -214,7 +222,9 @@ class SubMakeLowercase(BaseParallelProcessor):
     """
 
     def __init__(
-        self, text_key: str = "text", **kwargs,
+        self,
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.text_key = text_key
@@ -252,7 +262,10 @@ class SubRegex(BaseParallelProcessor):
     """
 
     def __init__(
-        self, regex_params_list: List[Dict], text_key: str = "text", **kwargs,
+        self,
+        regex_params_list: List[Dict],
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_params_list = regex_params_list
@@ -289,7 +302,7 @@ class SubRegex(BaseParallelProcessor):
                 replace_word_counter[regex_params["pattern"]] += 1
             text_in = text_out
 
-        text_out = remove_extra_spaces(text_out)
+        text_out = remove_extra_spaces(text_out)  # Local variable 'text_out' might be referenced before assignment
 
         data_entry[self.text_key] = text_out
 
