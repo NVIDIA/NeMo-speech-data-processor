@@ -1,0 +1,50 @@
+documentation: |
+  Seamless Armenian
+
+processors_to_run: all
+workspace_dir: ???
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestMCV  # apt-get update # apt-get upgrade # apt-get install sox libsox-fmt-all
+    output_manifest_file: ${workspace_dir}/manifest0.json
+    language_id: cv-corpus-15.0-2023-09-08-hy-AM
+    # language_id: cv-corpus-16.1-2023-12-06-hy-AM
+    extract_archive_dir: ${workspace_dir}/raw
+    resampled_audio_dir: ${workspace_dir}/16k
+    data_split: train
+    raw_data_dir: ${workspace_dir}
+
+  - _target_: sdp.processors.ASRSeamless
+    input_manifest_file: ${workspace_dir}/manifest0.json
+    output_manifest_file: ${workspace_dir}/manifest1.json
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: ${workspace_dir}/manifest1.json
+    text_key: text
+    regex_params_list:
+      - {"pattern": '[^ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: text
+
+  - _target_: sdp.processors.SubRegex
+    text_key: model_transcribed_text
+    regex_params_list:
+      - {"pattern": '[^ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/manifest2.json
+    text_key: model_transcribed_text
+
+  - _target_: sdp.processors.DropHighWER
+    input_manifest_file: ${workspace_dir}/manifest2.json
+    text_key: text
+    pred_text_key: model_transcribed_text
+    wer_threshold: 0
+
+  - _target_: sdp.processors.DropHighCER
+    output_manifest_file: ${workspace_dir}/final_manifest.json
+    text_key: text
+    pred_text_key: model_transcribed_text
+    cer_threshold: 0
+

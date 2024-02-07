@@ -7,3 +7,5 @@ docs/html
 docs/src/sdp/config-docs/
 .hypothesis
 tolokan/prob.py
+tolokan/mcv_data_hye
+tolokatest

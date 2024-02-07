@@ -1,0 +1,48 @@
+documentation: |
+  Toloka Armenian
+
+processors_to_run: all
+workspace_dir: ???
+API_KEY: "1V0v8tbFtwPhDVMbN3cvcQ.045e.k93FVRUudCOHplT6OHcDNjc-k8V_rSFr8l5_jLyo4rLT9W4fgabM40EyompNakPZ0uU-_sgc0hKHzrEge5AJNy5MwZCu93BHoTJGOS1lwqE"
+
+processors:
+  - _target_: tolokan.processors.GetTolokaResults
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    status: ACCEPTED
+    output_dir: ${workspace_dir}/results
+    output_manifest_file: ${workspace_dir}/result_manifest.json
+
+  - _target_: sdp.processors.ASRSeamless
+    input_manifest_file: ${workspace_dir}/result_manifest.json
+    input_field: audio_path
+    output_manifest_file: ${workspace_dir}/result_manifest_pred.json
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: ${workspace_dir}/result_manifest_pred.json
+    text_key: text
+    regex_params_list:
+      - {"pattern": '[^ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
+      - {"pattern": 'եւ', "repl": "և"}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: text
+
+  - _target_: sdp.processors.SubRegex
+    text_key: model_transcribed_text
+    regex_params_list:
+      - {"pattern": '[^ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
+      - {"pattern": 'եւ', "repl": "և"}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: model_transcribed_text
+
+  - _target_: sdp.processors.GetWER
+    pred_text_key: model_transcribed_text
+    output_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+
+  - _target_: tolokan.processors.AcceptIfWERLess
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    input_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+    output_manifest_file: ${workspace_dir}/result_manifest_pred_review.json
