@@ -18,6 +18,7 @@ from sdp.processors.datasets.coraal import (
     CreateInitialManifestCORAAL,
     TrainDevTestSplitCORAAL,
 )
+from sdp.processors.datasets.lhotse import LhotseImport
 from sdp.processors.datasets.mcv.create_initial_manifest import CreateInitialManifestMCV
 from sdp.processors.datasets.mls.create_initial_manifest import CreateInitialManifestMLS
 from sdp.processors.datasets.mls.restore_pc import RestorePCForMLS
@@ -31,16 +32,16 @@ from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
 from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
-
-from sdp.processors.datasets.lhotse import LhotseImport
-
-from sdp.processors.huggingface.speech_recognition import ASRTransformer, ASRWhisper
+from sdp.processors.huggingface.speech_recognition import ASRTransformers, ASRWhisper
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ChangeToRelativePath,
     CombineSources,
+    ConvertDatasetToTar,
+    CreateTokenizer,
     DuplicateFields,
     KeepOnlySpecifiedFields,
+    RemoveExtraSymbols,
     RenameFields,
     SortManifest,
     SplitOnFixedDuration,
