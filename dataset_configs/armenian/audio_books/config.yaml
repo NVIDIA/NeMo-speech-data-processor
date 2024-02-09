@@ -28,12 +28,17 @@ processors:
     pretrained_model: "large-v2"
     output_text_field: text
 
-  - _target_: sdp.processors.SubMakeLowercase
+  - _target_: sdp.processors.ASRTransformer #pip install accelerate
     output_manifest_file: ${workspace_dir}/manifest4.json
+    pretrained_model: "distil-whisper/distil-large-v2" #"openai/whisper-large-v3"
+    output_text_field: pred_text
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/manifest5.json
     text_key: "text"
 
   - _target_: sdp.processors.DropNonAlphabet
-    output_manifest_file: ${workspace_dir}/manifest5.json
+    output_manifest_file: ${workspace_dir}/manifest6.json
     alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև.,!?"
     test_cases:
       - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
