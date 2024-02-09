@@ -89,6 +89,7 @@ def get_test_cases():
         # No checks, but need to mock the url list function (done above)
         (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
         (f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", lambda raw_data_dir: True),
+        (f"{DATASET_CONFIGS_ROOT}/armenian/audio_books/config.yaml", lambda raw_data_dir: True),
     ]
 
 
