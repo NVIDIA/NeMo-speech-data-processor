@@ -19,6 +19,9 @@ from sdp.processors.datasets.coraal import (
     TrainDevTestSplitCORAAL,
 )
 from sdp.processors.datasets.mcv.create_initial_manifest import CreateInitialManifestMCV
+from sdp.processors.datasets.mcv_new.create_initial_manifest import (
+    CreateInitialManifestMCVNew,
+)
 from sdp.processors.datasets.mls.create_initial_manifest import CreateInitialManifestMLS
 from sdp.processors.datasets.mls.restore_pc import RestorePCForMLS
 from sdp.processors.datasets.slr83.create_initial_manifest import (
@@ -46,6 +49,7 @@ from sdp.processors.modify_manifest.create_manifest import (
     CreateInitialManifestByExt,
 )
 from sdp.processors.modify_manifest.data_to_data import (
+    CopyManifestData,
     CountNumWords,
     InsIfASRInsertion,
     ReadDocxLines,

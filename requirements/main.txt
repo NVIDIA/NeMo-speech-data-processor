@@ -12,4 +12,8 @@ sox
 toloka-kit
 tqdm
 wget
+xlsxwriter
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
+# for seamless: pip install git+https://github.com/huggingface/transformers.git sentencepiece
+# for mcv: apt-get update \ apt-get upgrade \ apt-get install sox libsox-fmt-all
+# apt-get update && apt-get upgrade -y && apt-get install -y sox libsox-fmt-all

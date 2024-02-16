@@ -1,0 +1,16 @@
+documentation: |
+  translation set
+
+processors_to_run: all
+workspace_dir: ???
+
+processors:
+  - _target_: tolokan_translate.processors.CreateValidationSet
+    limit: 100
+    lines_to_read: 50
+    input_manifest_file: ${workspace_dir}/arm_tasks.json
+    # output_manifest_file: ${workspace_dir}/manifest1.json
+
+  - _target_: tolokan_translate.processors.ExcelToJsonConverter
+    input_excel_file: ${workspace_dir}/exam_tasks.xls
+    output_manifest_file: ${workspace_dir}/exam_tasks.json

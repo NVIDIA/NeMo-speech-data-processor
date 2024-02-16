@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import collections
+import os
 import re
+import shutil
 from typing import Dict, List
 
 from docx import Document
@@ -22,6 +24,31 @@ from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
+
+
+class CopyManifestData(BaseParallelProcessor):
+    def __init__(
+        self,
+        copy_path: str,
+        source_filepath: str = "audio_path",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = source_filepath
+        self.copy_path = copy_path
+
+    def prepare(self):
+        os.makedirs(self.copy_path, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        print(f"-=----------------------------------------------{data_entry}")
+        fname = data_entry[self.input_field]
+
+        dest_file_path = os.path.join(self.copy_path, os.path.basename(fname))
+        shutil.copy(fname, dest_file_path)
+        data_entry[self.input_field] = dest_file_path
+
+        return [DataEntry(data=data_entry)]
 
 
 class ReadDocxLines(BaseParallelProcessor):

@@ -1,0 +1,18 @@
+documentation: |
+  Toloka Armenian
+
+processors_to_run: all
+workspace_dir: ???
+API_KEY: "1V0v8tbFtwPhDVMbN3cvcQ.045e.k93FVRUudCOHplT6OHcDNjc-k8V_rSFr8l5_jLyo4rLT9W4fgabM40EyompNakPZ0uU-_sgc0hKHzrEge5AJNy5MwZCu93BHoTJGOS1lwqE"
+
+processors:
+  - _target_: sdp.processors.DropHighWER
+    input_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+    output_manifest_file: ${workspace_dir}/result_manifest_pred_accepted.json
+    text_key: text
+    pred_text_key: model_transcribed_text
+    wer_threshold: 75
+
+  - _target_: sdp.processors.CopyManifestData
+    copy_path: ${workspace_dir}/clean_data
+    input_manifest_file: ${workspace_dir}/result_manifest_pred_accepted.json
