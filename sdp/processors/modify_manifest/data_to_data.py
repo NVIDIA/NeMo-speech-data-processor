@@ -41,7 +41,6 @@ class CopyManifestData(BaseParallelProcessor):
         os.makedirs(self.copy_path, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        print(f"-=----------------------------------------------{data_entry}")
         fname = data_entry[self.input_field]
 
         dest_file_path = os.path.join(self.copy_path, os.path.basename(fname))
@@ -460,3 +459,60 @@ class SubRegex(BaseParallelProcessor):
         for word, count in total_counter_sorted.items():
             logger.info(f"{word} {count}")
         super().finalize(metrics)
+
+
+class ExtractFromBrackets(BaseParallelProcessor):
+    def __init__(
+        self,
+        brackets: List[str],
+        text_key: str = "text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.brackets = brackets
+        self.text_key = text_key
+
+    def extract_text_within_brackets(self, text, brackets):
+        """Extract text within the specified brackets. Handles nested brackets."""
+        open_bracket, close_bracket = brackets
+        depth = 0
+        buffer = ""
+        sentences = []
+
+        for char in text:
+            if char == open_bracket:
+                if depth > 0:  # Already inside brackets, add to buffer
+                    buffer += char
+                depth += 1
+            elif char == close_bracket:
+                depth -= 1
+                if depth == 0:  # Exiting brackets, process buffer
+                    if buffer:
+                        sentences.append(buffer)
+                        buffer = ""  # Reset buffer for next sentence
+                elif depth > 0:  # Still inside nested brackets, add to buffer
+                    buffer += char
+            elif depth > 0:  # Inside brackets, collect char
+                buffer += char
+
+        return sentences
+
+    def process_dataset_entry(self, data_entry) -> List:
+        data: list[dict] = []
+        sentences = []
+        text_in = data_entry[self.text_key]
+
+        for bracket in self.brackets:
+            sentences.extend(self.extract_text_within_brackets(text_in, bracket))
+
+        for sentence in sentences:
+            new_entry = data_entry.copy()
+            new_entry[self.text_key] = sentence
+            # new_entry["ORIGINAL TEXT"] = text_in  # for testing
+            data.append(new_entry)
+
+        data_list = []
+        for data_point in data:
+            data_list.append(DataEntry(data=data_point))
+
+        return data_list

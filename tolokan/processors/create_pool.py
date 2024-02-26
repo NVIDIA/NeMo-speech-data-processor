@@ -38,7 +38,7 @@ class CreateTolokaPool(BaseParallelProcessor):
             reward_per_assignment=0.01,
             assignment_max_duration_seconds=60 * 10,
             auto_accept_solutions=False,
-            auto_accept_period_day=1,
+            auto_accept_period_day=14,
             filter=((toloka.client.filter.Languages.in_('HY')) & (toloka.client.filter.ClientType == 'TOLOKA_APP')),
         )
         new_pool.set_mixer_config(real_tasks_count=5)

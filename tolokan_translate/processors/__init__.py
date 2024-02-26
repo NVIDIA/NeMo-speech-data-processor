@@ -18,7 +18,6 @@ from tolokan_translate.processors.create_pool_translate import CreateTolokaPoolT
 from tolokan_translate.processors.create_project_translate import (
     CreateTolokaProjectTranslate,
 )
-from tolokan_translate.processors.create_set_from_xls import ExcelToJsonConverter
 from tolokan_translate.processors.create_training_task_set_translate import (
     CreateTolokaTaskSetTranslate,
 )

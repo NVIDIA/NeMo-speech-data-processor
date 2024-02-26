@@ -11,6 +11,7 @@ processors:
     input_manifest_file: ${workspace_dir}/arm_tasks.json
     # output_manifest_file: ${workspace_dir}/manifest1.json
 
-  - _target_: tolokan_translate.processors.ExcelToJsonConverter
-    input_excel_file: ${workspace_dir}/exam_tasks.xls
+  - _target_: sdp.processors.ExcelToJsonConverter
+    input_excel_file: ${workspace_dir}/output.xlsx
     output_manifest_file: ${workspace_dir}/exam_tasks.json
+    column_keys: ["input_text", "ouput_text"]

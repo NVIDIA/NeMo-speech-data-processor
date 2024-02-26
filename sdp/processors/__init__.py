@@ -47,10 +47,12 @@ from sdp.processors.modify_manifest.common import (
 from sdp.processors.modify_manifest.create_manifest import (
     CreateCombinedManifests,
     CreateInitialManifestByExt,
+    ExcelToJsonConverter,
 )
 from sdp.processors.modify_manifest.data_to_data import (
     CopyManifestData,
     CountNumWords,
+    ExtractFromBrackets,
     InsIfASRInsertion,
     ReadDocxLines,
     SplitLineBySentence,
@@ -61,6 +63,7 @@ from sdp.processors.modify_manifest.data_to_data import (
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,
     DropASRErrorBeginningEnd,
+    DropDublicates,
     DropHighCER,
     DropHighLowCharrate,
     DropHighLowDuration,

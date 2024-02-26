@@ -16,6 +16,7 @@ processors:
     output_manifest_file: ${workspace_dir}/data_file.json
 
   - _target_: tolokan_translate.processors.CreateTolokaPoolTranslate
+    skill_id: 15358
     input_manifest_file: ${workspace_dir}/data_file.json
     output_manifest_file: ${workspace_dir}/taskpool.json
 
