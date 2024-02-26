@@ -17,6 +17,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import load_manifest
 
@@ -41,9 +42,13 @@ class ASRWhisper(BaseProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        import torch
-        import whisper  # pip install -U openai-whisper
+        try:
+            import torch
+            import whisper
+        except:
+            raise ImportError("Need to install whisper: pip install -U openai-whisper")
 
+        logger.warning("This is an example processor, for demonstration only. Do not use it for production purposes.")
         self.whisper = whisper
         self.pretrained_model = pretrained_model
         self.output_text_field = output_text_field
@@ -84,9 +89,9 @@ class ASRWhisper(BaseProcessor):
         return result.text, lang
 
 
-class ASRTransformer(BaseProcessor):
+class ASRTransformers(BaseProcessor):
     """
-    Processor to transcribe using ASR Transformer model from HuggingFace.
+    Processor to transcribe using ASR Transformers model from HuggingFace.
 
     Args:
         pretrained_model (str): name of pretrained model on HuggingFace.
@@ -106,9 +111,13 @@ class ASRTransformer(BaseProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        import torch
-        from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+        try:
+            import torch
+            from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+        except:
+            raise ImportError("Need to install transformers: pip install accelerate transformers")
 
+        logger.warning("This is an example processor, for demonstration only. Do not use it for production purposes.")
         self.pretrained_model = pretrained_model
         self.output_text_field = output_text_field
         self.device = device

@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import collections
-import re
 import os
+import re
 from typing import Dict, List
+
 import soundfile as sf
 
 from sdp.logging import logger
@@ -27,14 +28,17 @@ from sdp.utils.get_diff import get_diff_with_subs_grouped
 
 class GetAudioDuration(BaseParallelProcessor):
     """
-    Processor to count audio duration using audio file path from input_field
+    Processor that computes the duration of the file in audio_filepath_field (using soundfile)
+    and saves the duration in duration_field. If there is an error computing the duration,
+    the duration_field will be updated with the value -1.0.
 
     Args:
         audio_filepath_field (str): where to get path to wav file.
         duration_field (str): where to put to audio duration.
     Returns:
-        All the same fields as in the input manifest plus output_field
+        All the same fields as in the input manifest plus duration_field
     """
+
     def __init__(
         self,
         audio_filepath_field: str,
@@ -44,21 +48,21 @@ class GetAudioDuration(BaseParallelProcessor):
         super().__init__(**kwargs)
         self.audio_filepath_field = audio_filepath_field
         self.duration_field = duration_field
-    
+
     def process_dataset_entry(self, data_entry):
         audio_filepath = data_entry[self.audio_filepath_field]
         try:
             data, samplerate = sf.read(audio_filepath)
-            data_entry[self.duration_field]=data.shape[0]/samplerate
+            data_entry[self.duration_field] = data.shape[0] / samplerate
         except Exception as e:
             logger.warning(str(e) + " file: " + audio_filepath)
             data_entry[self.duration_field] = -1.0
         return [DataEntry(data=data_entry)]
-    
+
 
 class FfmpegConvert(BaseParallelProcessor):
     """
-    Processor for converting video files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
+    Processor for converting video or audio files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
 
     Args:
         resampled_audio_dir (str): The directory to store the resampled audio files.
@@ -70,6 +74,7 @@ class FfmpegConvert(BaseParallelProcessor):
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     """
+
     def __init__(
         self,
         resampled_audio_dir: str,
@@ -92,18 +97,18 @@ class FfmpegConvert(BaseParallelProcessor):
         os.makedirs(self.resampled_audio_dir, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        video = data_entry[self.input_field]
+        input_file = data_entry[self.input_field]
         if self.key_field:
             key = data_entry[self.key_field]
             os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
         else:
-            key = os.path.splitext(video)[0].split("/")[-1]
+            key = os.path.splitext(input_file)[0].split("/")[-1]
         audio = os.path.join(self.resampled_audio_dir, key) + ".wav"
 
         if not os.path.isfile(audio):
-            ffmpeg_convert(video, audio, self.target_samplerate, self.target_nchannels)
+            ffmpeg_convert(input_file, audio, self.target_samplerate, self.target_nchannels)
 
-        data_entry[self.output_field]= audio
+        data_entry[self.output_field] = audio
         if self.key_field:
             data_entry[self.key_field] = key
         return [DataEntry(data=data_entry)]
@@ -111,7 +116,8 @@ class FfmpegConvert(BaseParallelProcessor):
 
 class ReadTxtLines(BaseParallelProcessor):
     """
-    Processor for reading text lines from a file and updating the manifest.
+    The text file specified in source_filepath will be read, and each line in it will be added as a line in the output manifest,
+    saved in the field text_key.
 
     Args:
         source_filepath (str): The field containing the file path in the manifest.
@@ -119,6 +125,7 @@ class ReadTxtLines(BaseParallelProcessor):
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     """
+
     def __init__(
         self,
         source_filepath: str,
@@ -126,18 +133,18 @@ class ReadTxtLines(BaseParallelProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = source_filepath
-        self.output_field = text_key
+        self.source_filepath = source_filepath
+        self.text_key = text_key
 
     def process_dataset_entry(self, data_entry):
-        fname = data_entry[self.input_field]
+        fname = data_entry[self.source_filepath]
         data_list = []
         with open(fname, "r") as f:
             for line in f:
                 line = line.strip()
                 if line:
                     data = data_entry.copy()
-                    data[self.output_field] = line
+                    data[self.text_key] = line
                     data_list.append(DataEntry(data=data))
         return data_list
 
@@ -145,13 +152,15 @@ class ReadTxtLines(BaseParallelProcessor):
 class SplitLineBySentence(BaseParallelProcessor):
     """
     Processor for splitting lines of text into sentences based on a specified pattern.
+    One line containing N sentences will be transformed into N lines containing one sentence.
 
     Args:
-        text_key (str): The field containing the input text lines in the dataset.
+        text_key (str): The field containing the text lines in the dataset.
         end_pattern (str): The regular expression pattern to identify sentence boundaries.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     """
+
     def __init__(
         self,
         text_key: str,
@@ -169,21 +178,21 @@ class SplitLineBySentence(BaseParallelProcessor):
         ends = [m.start() for m in self.pattern.finditer(line)]
         if ends:
             for end in ends:
-                sent = line[start:end+1].strip()
+                sent = line[start : end + 1].strip()
                 # if sent and sent[0].isupper():
                 data = data_entry.copy()
                 data[self.text_key] = sent
                 data_list.append(DataEntry(data=data))
-                start = end+1
-            if start<len(line):
+                start = end + 1
+            if start < len(line):
                 pass
         else:
             data = data_entry.copy()
             data[self.text_key] = line.strip()
             data_list.append(DataEntry(data=data))
         return data_list
-    
-    
+
+
 class CountNumWords(BaseParallelProcessor):
     """
     Processor for counting the number of words in the text_key field saving the number in num_words_key.
@@ -195,6 +204,7 @@ class CountNumWords(BaseParallelProcessor):
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     """
+
     def __init__(
         self,
         text_key: str,
@@ -205,7 +215,7 @@ class CountNumWords(BaseParallelProcessor):
         super().__init__(**kwargs)
         self.text_key = text_key
         self.num_words_key = num_words_key
-        self.pattern = re.compile("[^"+alphabet+"]")
+        self.pattern = re.compile("[^" + alphabet + "]")
 
     def process_dataset_entry(self, data_entry):
         text = data_entry[self.text_key]
@@ -244,7 +254,11 @@ class InsIfASRInsertion(BaseParallelProcessor):
     """
 
     def __init__(
-        self, insert_words: List[str], text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        insert_words: List[str],
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.insert_words = insert_words
@@ -333,7 +347,11 @@ class SubIfASRSubstitution(BaseParallelProcessor):
     """
 
     def __init__(
-        self, sub_words: Dict, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        sub_words: Dict,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.sub_words = sub_words
@@ -409,7 +427,9 @@ class SubMakeLowercase(BaseParallelProcessor):
     """
 
     def __init__(
-        self, text_key: str = "text", **kwargs,
+        self,
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.text_key = text_key
@@ -447,7 +467,10 @@ class SubRegex(BaseParallelProcessor):
     """
 
     def __init__(
-        self, regex_params_list: List[Dict], text_key: str = "text", **kwargs,
+        self,
+        regex_params_list: List[Dict],
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_params_list = regex_params_list
