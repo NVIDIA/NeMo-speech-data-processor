@@ -1,3 +1,38 @@
+documentation: |
+  Audio books
+  ######
+
+  This config can be used as example to process audiobooks in Armenian language and prepare 
+  dataset in the NeMo format.
+
+  This config performs the following data processing.
+
+  1. Create initial manifest by collecling all avalible files with mp3 expention in raw_data_dir folder.
+     
+  2. Convert mp3 into wav format using the Ffmpeg suite, with a downsampling to a 16000 Hz sample rate 
+  and a unification of all audio channels into a mono track.
+  3. Count duration for audio files in seconds and save it into duration field.
+  4. Filter out broken files with duration shorter than 0 seconds.
+     You can directly change the config file to control this.
+  5. Predict transcription using large-v2 Whisper ASR model into text field.
+  6. Predict transcription using distil-whisper/distil-large-v2 transformers ASR model into pred_text field.
+  7. Drops everything with non-armenean characters.
+  8. Normalise some text examples with SubRegex.
+
+  **Required arguments**.
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+
+  Note that you can customize any part of this config either directly or from command-line.
+
+  **Output format**.
+  * ``${workspace_dir}/final_manifest.json`` - final_manifest manifest with all the data.
+
+  Output manifest contain the following fields:
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription predicted by Whisper (Upper-case with punctuation).
+  * **pred_text (str)**: transcription predicted by Transformers (Upper-case without punctuation).
+  * **duration (float)**: audio duration in seconds.
+
 processors_to_run: "0:"
 workspace_dir: ???
 final_manifest: ${workspace_dir}/final_manifest.json
@@ -22,20 +57,22 @@ processors:
     audio_filepath_field: audio_filepath
     duration_field: duration
     output_manifest_file: ${workspace_dir}/manifest2.json
-    
-  - _target_: sdp.processors.ASRWhisper
+
+  - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest3.json
+    input_field: duration
+    target_value: 0
+    operator: gt
+    
+  - _target_: sdp.processors.ASRWhisper # pip install -U openai-whisper
+    output_manifest_file: ${workspace_dir}/manifest4.json
     pretrained_model: "large-v2"
     output_text_field: text
 
-  - _target_: sdp.processors.ASRTransformer
-    output_manifest_file: ${workspace_dir}/manifest4.json
+  - _target_: sdp.processors.ASRTransformers #pip install accelerate transformers
+    output_manifest_file: ${workspace_dir}/manifest5.json
     pretrained_model: "distil-whisper/distil-large-v2" #"openai/whisper-large-v3"
     output_text_field: pred_text
-
-  - _target_: sdp.processors.SubMakeLowercase
-    output_manifest_file: ${workspace_dir}/manifest5.json
-    text_key: "text"
 
   - _target_: sdp.processors.DropNonAlphabet
     output_manifest_file: ${workspace_dir}/manifest6.json
@@ -43,6 +80,10 @@ processors:
     test_cases:
       - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
       - {input: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/manifest7.json
+    text_key: "text"
 
   - _target_: sdp.processors.SubRegex
     output_manifest_file: ${final_manifest}
