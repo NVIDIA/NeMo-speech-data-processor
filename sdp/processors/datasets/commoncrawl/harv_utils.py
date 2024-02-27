@@ -48,7 +48,14 @@ def load_manifest(manifest: Path, keys: List[str] = []) -> List[Dict[str, Union[
 
 def get_vtt_text(vtt_file):
     text_all = []
-    for caption in webvtt.read(vtt_file):
+    if os.path.splitext(vtt_file)[1]=='.vtt':
+        webvtt_i = webvtt.read
+    elif os.path.splitext(vtt_file)[1]=='.srt':
+        webvtt_i = webvtt.from_srt
+    else:
+        raise ValueError("Unsupported extention of file "+vtt_file)
+
+    for caption in webvtt_i(vtt_file):
         text = caption.text
         if text.find("thumbnails")!=-1:
             pass
@@ -122,7 +129,15 @@ def split_by_vtt_new(vtt_file, samplerate):
     try:
         _begin = datetime.strptime('00:00:00.000', '%H:%M:%S.%f')
         text_list, start_s, end_s = [], [], []
-        for caption in webvtt.read(vtt_file):
+        if os.path.splitext(vtt_file)[1]=='.vtt':
+            webvtt_i = webvtt.read
+        elif os.path.splitext(vtt_file)[1]=='.srt':
+            webvtt_i = webvtt.from_srt
+        else:
+            raise ValueError("Unsupporte extention of file "+vtt_file)
+
+
+        for caption in webvtt_i(vtt_file): 
             text = ' '.join(caption.text.split('\n'))
 
             _start = parse_hours(caption.start)
