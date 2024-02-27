@@ -748,8 +748,8 @@ class Lang2Iso(BaseParallelProcessor):
         self.iso_m = {'English':'en', 'Spanish':'es', 'Basque':'eu', 'Dutch':'nl', 'Welsh':'cy', 'Italian':'it',
             'Catalan':'ca', 'Maltese':'mt', 'Swedish':'sv', 'French':'fr', 'German':'de', 'Chuvash':'cv',
             'Kinyarwanda':'rw', 'Polish':'pl', 'Kabyle':'kab', 'Interlingua': 'ua', 'Portuguese': 'pt', 'Hakha_Chin': 'cnh', 'Romansh_Sursilvan':'roh', 'Breton':'br', 'Esperanto':'epo', 'Czech':'ces', 'Latvian':'lav',
-            'Indonesian':'ind', 'Slovenian':'slv', 'Turkish':'tur', 'Frisian':'frr', 'Tatar':'tat', 'Persian':'fas', 'Estonian':'est', 'Romanian':'rum', 'Chinese_Hongkong':'zh', 'Chinese_Taiwan':'zh',
-            'Georgian':'kat', 'Kyrgyz':'kir', 'Dhivehi':'div', 'Sakha':'sah'}
+            'Indonesian':'ind', 'Slovenian':'slv', 'Turkish':'tur', 'Frisian':'frr', 'Tatar':'tat', 'Persian':'fas', 'Estonian':'est', 'Romanian':'rum', 'Chinese_Hongkong':'zh', 'Chinese_Taiwan':'zh', 'Chinese_China':'zh', 
+            'Georgian':'kat', 'Kyrgyz':'kir', 'Dhivehi':'div', 'Sakha':'sah', 'Arabic':'ar', 'Japanese': 'ja'}
         
     def process_dataset_entry(self, data_entry):
         data_entry[self.output_lang_field] = self.iso_m[data_entry[self.input_lang_field]]
@@ -1269,7 +1269,7 @@ class FfmpegConvert(BaseParallelProcessor):
         resampled_audio_dir: str,
         input_field: str,
         output_field: str,
-        key_field: str,
+        key_field: str = None,
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
         **kwargs,
@@ -1282,17 +1282,25 @@ class FfmpegConvert(BaseParallelProcessor):
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
 
+    def prepare(self):
+        os.makedirs(self.resampled_audio_dir, exist_ok=True)
+        return super().prepare()
+    
     def process_dataset_entry(self, data_entry):
-        video = data_entry[self.input_field]
-        key = data_entry[self.key_field]
-        os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
+        input_file = data_entry[self.input_field]
+        if self.key_field:
+            key = data_entry[self.key_field]
+            os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
+        else:
+            key = os.path.splitext(input_file)[0].split("/")[-1]
         audio = os.path.join(self.resampled_audio_dir, key) + ".wav"
 
         if not os.path.isfile(audio):
-            ffmpeg_convert(video, audio, self.target_samplerate, self.target_nchannels)
+            ffmpeg_convert(input_file, audio, self.target_samplerate, self.target_nchannels)
 
-        data_entry[self.output_field]= audio
-        data_entry[self.key_field] = key
+        data_entry[self.output_field] = audio
+        if self.key_field:
+            data_entry[self.key_field] = key
         return [DataEntry(data=data_entry)]
 
 
