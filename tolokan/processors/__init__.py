@@ -14,7 +14,9 @@
 
 # from create_project import CreateTolokaProject
 
+from tolokan.processors.accept_if import AcceptIfWERLess
 from tolokan.processors.creat_task_set import CreateTolokaTaskSet
 from tolokan.processors.create_pool import CreateTolokaPool
 from tolokan.processors.create_project import CreateTolokaProject
 from tolokan.processors.create_sentence_set import CreateSentenceSet
+from tolokan.processors.download_responces import GetTolokaResults

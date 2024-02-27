@@ -75,6 +75,8 @@ class GetTolokaResults(BaseParallelProcessor):
                 # SKIPPED — Skipped by the Toloker.
                 # SUBMITTED — Completed but not checked.
                 for task, solution in zip(assignment.tasks, assignment.solutions):
+                    suit_id = assignment.task_suite_id
+                    assignment_id = assignment.id
                     task_id = task.id
                     text = task.input_values['text']
                     attachment_id = solution.output_values.get('audio_file', None)
@@ -84,6 +86,8 @@ class GetTolokaResults(BaseParallelProcessor):
                         'text': text,
                         'attachment_id': attachment_id,
                         'status': str(status),
+                        'suit_id': suit_id,
+                        'assignment_id': assignment_id,
                     }
                     yield task_info
 
@@ -92,6 +96,8 @@ class GetTolokaResults(BaseParallelProcessor):
         text = data_entry["text"]
         attachment_id = data_entry["attachment_id"]
         status = data_entry["status"]
+        suit_id = data_entry["suit_id"]
+        assignment_id = data_entry["assignment_id"]
         output_path = os.path.join(self.output_dir, attachment_id + '.wav')
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
@@ -104,6 +110,8 @@ class GetTolokaResults(BaseParallelProcessor):
             'attachment_id': attachment_id,
             'status': status,
             'audio_path': output_path,
+            'suit_id': suit_id,
+            'assignment_id': assignment_id,
         }
 
         return [DataEntry(data=task_info)]

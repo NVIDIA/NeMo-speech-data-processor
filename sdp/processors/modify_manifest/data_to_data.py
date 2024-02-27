@@ -24,6 +24,13 @@ from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
+from sdp.utils.metrics_computation import (
+    get_cer,
+    get_charrate,
+    get_wer,
+    get_wmr,
+    get_wordrate,
+)
 
 
 class CopyManifestData(BaseParallelProcessor):
@@ -516,3 +523,19 @@ class ExtractFromBrackets(BaseParallelProcessor):
             data_list.append(DataEntry(data=data_point))
 
         return data_list
+
+
+class GetWER(BaseParallelProcessor):
+    def __init__(
+        self,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.text_key = text_key
+        self.pred_text_key = pred_text_key
+
+    def process_dataset_entry(self, data_entry) -> List:
+        data_entry['wer'] = get_wer(data_entry[self.text_key], data_entry[self.pred_text_key])
+        return [DataEntry(data=data_entry)]
