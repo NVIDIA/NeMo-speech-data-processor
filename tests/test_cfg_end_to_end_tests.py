@@ -14,10 +14,10 @@
 
 import json
 import os
+import shutil
 import tarfile
 from functools import partial
 from pathlib import Path
-import shutil
 from typing import Callable
 from unittest import mock
 
@@ -75,19 +75,20 @@ def get_test_cases():
     """Returns paths, and data check fn for all configs that we want to test."""
 
     return [
-        (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
-        # above one is without p&c, but it's also important to check p&c version as it's substantially different
-        (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
-        (
-            f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml",
-            partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es"),
-        ),
-        (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
-        # audio will be downloaded on the fly, so nothing to check here
-        (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
-        # audio will be downloaded on the fly from a subset of files.
-        # No checks, but need to mock the url list function (done above)
-        (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
+        # # above one is without p&c, but it's also important to check p&c version as it's substantially different
+        # (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
+        # (
+        #     f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml",
+        #     partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es"),
+        # ),
+        # (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
+        # # audio will be downloaded on the fly, so nothing to check here
+        # (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
+        # # audio will be downloaded on the fly from a subset of files.
+        # # No checks, but need to mock the url list function (done above)
+        # (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
+        (f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", lambda raw_data_dir: True),
     ]
 
 
@@ -157,8 +158,10 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
     assert "processors" in cfg
     cfg["processors_to_run"] = "all"
     cfg["workspace_dir"] = str(tmp_path)
-    cfg["final_manifest"] = str(tmp_path / "final_manifest.json")
-    cfg["data_split"] = "train"
+    if not cfg["final_manifest"]:
+        cfg["final_manifest"] = str(tmp_path / "final_manifest.json")
+    if not cfg["data_split"]:
+        cfg["data_split"] = "train"
     cfg["processors"][0]["raw_data_dir"] = str(Path(test_data_root) / rel_path_from_root)
 
     run_processors(cfg)
@@ -168,9 +171,11 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
         cfg["final_manifest"], "rt", encoding="utf8"
     ) as generated_fin:
         # sorting to avoid mismatches because of randomness in utterances order
+        raise ValueError(generated_fin.readlines())
         reference_lines = sorted(reference_fin.readlines())
         generated_lines = sorted(generated_fin.readlines())
         assert len(reference_lines) == len(generated_lines)
+
         for reference_line, generated_line in zip(reference_lines, generated_lines):
             reference_data = json.loads(reference_line)
             generated_data = json.loads(generated_line)

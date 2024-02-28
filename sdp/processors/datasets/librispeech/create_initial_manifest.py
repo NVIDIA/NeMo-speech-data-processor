@@ -129,6 +129,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
 
         # downloading all files
         for file_url in get_librispeech_url_list(self.names):
+            # if xxx not in file_url[end part]
             download_file(file_url, str(dst_folder))
         for data_file in glob.glob(f'{dst_folder}/*.tar.gz'):
             extract_archive(str(data_file), str(dst_folder), force_extract=True)
