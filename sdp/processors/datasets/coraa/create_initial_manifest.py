@@ -64,10 +64,12 @@ class CreateInitialManifestCORAA(BaseParallelProcessor):
 
             if self.data_split == 'train':
                 first_rar_file = glob.glob(str(self.raw_data_dir) + "/train_dividido"+f"/*{self.data_split}*1.rar")
+                if first_rar_file and not isinstance(first_rar_file, str):
+                    first_rar_file = first_rar_file[0]
 
                 if rarfile.is_rarfile(first_rar_file):
                     rar = rarfile.RarFile(first_rar_file)
-                    rar.extract(path=self.extract_archive_dir)
+                    rar.extractall(path=self.extract_archive_dir)
             else:
 
                 zip_files =glob.glob(str(self.raw_data_dir) + f"/*{self.data_split}.zip")

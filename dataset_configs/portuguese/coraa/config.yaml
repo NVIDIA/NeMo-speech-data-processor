@@ -39,7 +39,7 @@ processors:
     data_split: ${data_split}
     extract_archive_dir: ${workspace_dir}/extracted
     resampled_audio_dir:  ${workspace_dir}/extracted/16k
-    already_downloaded: false
+    already_downloaded: True
     already_extracted: false
     output_manifest_file: ${workspace_dir}/${data_split}_manifest0.json
   

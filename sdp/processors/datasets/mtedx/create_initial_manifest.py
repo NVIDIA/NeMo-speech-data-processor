@@ -36,12 +36,14 @@ class CreateInitialManifestMTEDX(BaseParallelProcessor):
             raw_data_dir: str,
             language_id: str,
             data_split: str,
+            already_extracted: bool = False,
             **kwargs,
     ):
         super().__init__(**kwargs)
         self.raw_data_dir = Path(raw_data_dir)
         self.language_id = language_id
         self.data_split = data_split
+        self.already_extracted =already_extracted
 
     def prepare(self):
         """Downloading and extracting data (unless already done)."""
@@ -49,11 +51,12 @@ class CreateInitialManifestMTEDX(BaseParallelProcessor):
 
 
         url = MTEDX_URL.format(language_id=self.language_id)
-        if not (self.raw_data_dir / f"mls_{self.language_id}.tar.gz").exists():
+        if not (self.raw_data_dir / f"mtedx_{self.language_id}.tgz").exists():
             download_file(url, str(self.raw_data_dir))
-
-        #data_folder = extract_archive(str(self.raw_data_dir / os.path.basename(url)), str(self.raw_data_dir))
-        data_folder = "/home/ntadevosyan/Documents/ASR_Portuguese/mtedx/raw_data/pt-pt/"
+        if not self.already_extracted:
+            data_folder = extract_archive(str(self.raw_data_dir / os.path.basename(url)), str(self.raw_data_dir))
+        else:
+            data_folder = self.raw_data_dir 
         self.audio_path_prefix = str(Path(data_folder) / 'data' / self.data_split/ "wav")
         self.vtt_path_prefix = str(str(Path(data_folder) / 'data' / self.data_split / "vtt"))
 
