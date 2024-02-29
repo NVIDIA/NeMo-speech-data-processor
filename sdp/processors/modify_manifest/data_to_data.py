@@ -63,12 +63,13 @@ class GetAudioDuration(BaseParallelProcessor):
 class FfmpegConvert(BaseParallelProcessor):
     """
     Processor for converting video or audio files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
-
+    If key_field is not None it is used as an output file name. If key_field is None the output file name is the same as input file name with different extention
+    and input file name saves to key_field back.
     Args:
         resampled_audio_dir (str): The directory to store the resampled audio files.
         input_field (str): The field in the dataset representing the path to the input video or audio files.
         output_field (str): The field to store the path to the resampled audio files in the dataset.
-        key_field (str): The field in the dataset representing the unique key or identifier for each entry.
+        key_field (str): The field in the dataset representing the unique key or identifier for each entry. Defaults to None.
         target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
         target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
