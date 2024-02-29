@@ -65,4 +65,3 @@ processors:
 
   - _target_: sdp.processors.SubMakeLowercase
     output_manifest_file: ${final_manifest}
-    # output_manifest_file: ${workspace_dir}/test_data_reference.json

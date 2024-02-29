@@ -49,7 +49,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
     Dataset link: https://openslr.org/12
 
     Will download all files, extract tars and create manifest file with the
-    'audio_filepath' and 'text' fields
+    "audio_filepath" and "text" fields
 
     Args:
         splits (list[str]): Which data sets or their combinations shoudld be processed
@@ -95,7 +95,6 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
         with open(file_path, encoding="utf-8") as fin:
             for line in fin:
                 id, text = line[: line.index(" ")], line[line.index(" ") + 1 :]
-                # transcript_text = text.lower().strip()
                 transcript_text = text.strip()
 
                 flac_file = os.path.join(root, id + ".flac")
@@ -129,7 +128,6 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
 
         # downloading all files
         for file_url in get_librispeech_url_list(self.splits):
-            # if xxx not in file_url[end part]
             download_file(file_url, str(dst_folder))
         for data_file in glob.glob(f'{dst_folder}/*.tar.gz'):
             extract_archive(str(data_file), str(dst_folder), force_extract=True)

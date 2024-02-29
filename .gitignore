@@ -6,5 +6,3 @@ pytest-coverage.txt
 docs/html
 docs/src/sdp/config-docs/
 .hypothesis
-.flake8
-tests/test_librispeech.py

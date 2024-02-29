@@ -28,13 +28,13 @@ from sdp.utils.get_diff import get_diff_with_subs_grouped
 
 class GetAudioDuration(BaseParallelProcessor):
     """
-    Processor to count audio duration using audio file path from input_field
+    Processor to count audio duration using audio file path from audio_filepath_field
 
     Args:
         audio_filepath_field (str): where to get path to wav file.
         duration_field (str): where to put to audio duration.
     Returns:
-        All the same fields as in the input manifest plus output_field
+        All the same fields as in the input manifest plus duration_field
     """
 
     def __init__(
@@ -66,9 +66,7 @@ class SoxConvert(BaseParallelProcessor):
     Args:
         converted_audio_dir (str): Directory to store the converted audio files.
         input_field (str): Field in the dataset representing the path to input audio files.
-        output_field (str): Field to store the path to the converted audio files in the dataset.
-        key_field (str, optional): Field in the dataset representing the unique key or identifier for each entry.
-        output_format (str): Format of the output audio files (e.g., 'wav', 'mp3').
+        output_field (str): Field to store the path to the converted audio files in the dataset.        output_format (str): Format of the output audio files (e.g., 'wav', 'mp3').
         conversion_parameters (dict, optional): Additional parameters for audio conversion.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
     """
