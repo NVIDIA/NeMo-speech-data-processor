@@ -6,8 +6,19 @@ documentation: |
   `Librispeech <https://openslr.org/12>`_
   dataset in the NeMo format.
 
-  It produces 3 manifests for train/dev/test splits.
-  This config performs the following data processing for each train/dev/test.
+  It produces manifests for dev split(for other splits please configure, change or combine).
+  - options are:
+            ["dev-clean"],
+            ["dev-other"],
+            ["test-clean"],
+            ["test-other"],
+            ["train-clean-100"],
+            ["train-clean-360"],
+            ["train-other-500"],
+            ["all"] (for all datasets avalable)
+
+
+  This config performs the following data processing.
 
   1. Downloads Librispeech data
   2. Converts flac files to wav file
@@ -21,11 +32,9 @@ documentation: |
  
   **Output format**.
 
-  This config generates multiple output manifest files:
+  This config generates multiple output manifest file:
 
-  * ``${workspace_dir}/train_manifest.json`` - training subset of the data.
-  * ``${workspace_dir}/dev_manifest.json`` - validation subset of the data.
-  * ``${workspace_dir}/test_manifest.json`` - test subset of the data.
+  * ``${workspace_dir}/manifest.json`` - developement subset of the data.
 
   All output manifests contain the following fields:
 
@@ -35,15 +44,14 @@ documentation: |
 
 processors_to_run: all
 workspace_dir: ???
-raw_data_dir: ???
 data_split: ["dev-clean"]
 final_manifest: ${workspace_dir}/manifest.json
 
 processors:
   # creating manifest for dev set
   - _target_: sdp.processors.CreateInitialManifestLibrispeech
-    names: ${data_split}
-    raw_data_dir: ${workspace_dir}/${raw_data_dir}
+    splits: ${data_split}
+    raw_data_dir: ${workspace_dir}/raw_data
 
   - _target_: sdp.processors.SoxConvert
     converted_audio_dir: ${workspace_dir}/audio

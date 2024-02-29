@@ -22,7 +22,7 @@ from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import download_file, extract_archive
 
 
-def get_librispeech_url_list(names: list[str]) -> list[str]:
+def get_librispeech_url_list(splits: list[str]) -> list[str]:
     urls = [
         "https://openslr.org/resources/12/dev-clean.tar.gz",
         "https://openslr.org/resources/12/dev-other.tar.gz",
@@ -32,8 +32,8 @@ def get_librispeech_url_list(names: list[str]) -> list[str]:
         "https://openslr.org/resources/12/train-clean-360.tar.gz",
         "https://openslr.org/resources/12/train-other-500.tar.gz",
     ]
-    if "all" not in names:
-        filtered_urls = [url for url in urls if url.split('/')[-1].split('.tar')[0] in names]
+    if "all" not in splits:
+        filtered_urls = [url for url in urls if url.split('/')[-1].split('.tar')[0] in splits]
     else:
         filtered_urls = urls
 
@@ -52,7 +52,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
     'audio_filepath' and 'text' fields
 
     Args:
-        names (list[str]): Which data sets or their combinations shoudld be processed
+        splits (list[str]): Which data sets or their combinations shoudld be processed
             - options are:
             ["dev-clean"],
             ["dev-other"],
@@ -63,7 +63,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
             ["train-other-500"],
             ["all"] (for all datasets avalable)
 
-        raw_data_dir (str): Path to folder where should the filed be donwloaded and extracted
+        raw_data_dir (str): Path to folder where should the data archive be donwloaded and extracted
 
     Returns:
        This processor generates an initial manifest file with the following fields::
@@ -76,12 +76,12 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
 
     def __init__(
         self,
-        names: list[str],
+        splits: list[str],
         raw_data_dir: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.names = names
+        self.splits = splits
         self.raw_data_dir = raw_data_dir
 
     def process_transcrip(self, file_path: str) -> list[dict[str, typing.Any]]:
@@ -128,7 +128,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
         os.makedirs(dst_folder, exist_ok=True)
 
         # downloading all files
-        for file_url in get_librispeech_url_list(self.names):
+        for file_url in get_librispeech_url_list(self.splits):
             # if xxx not in file_url[end part]
             download_file(file_url, str(dst_folder))
         for data_file in glob.glob(f'{dst_folder}/*.tar.gz'):
