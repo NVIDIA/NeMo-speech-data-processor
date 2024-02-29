@@ -126,3 +126,28 @@ Corpus of Regional African American Language (CORAAL)
    :hidden:
 
    config-docs/english/coraal/config
+
+Corpus of Armenian Text to Upload into Common Voice (MCV)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://commonvoice.mozilla.org/
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/text_mcv/config.yaml>`__ |
+:doc:`documentation <config-docs/armenian/text_mcv/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/armenian/text_mcv/config
+
+Corpus based on Armenian audiobooks 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/audio_books/config.yaml>`__ |
+:doc:`documentation <config-docs/armenian/audio_books/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/armenian/audio_books/config
