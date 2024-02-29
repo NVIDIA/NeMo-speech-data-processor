@@ -97,7 +97,7 @@ class ASRTransformers(BaseProcessor):
         pretrained_model (str): name of pretrained model on HuggingFace.
         output_text_field (str): field to save transcription result.
         device (str): Inference device.
-        batch_size (int): Inference batch size. Used only batch_size = 1 TODO: support batch_size > 1
+        batch_size (int): Inference batch size. Defaults to 1. TODO: support batch_size > 1
         torch_dtype (str): Tensor data type. Default to "float32"
     """
 
