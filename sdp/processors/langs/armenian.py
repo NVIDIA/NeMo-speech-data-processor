@@ -13,9 +13,15 @@
 # limitations under the License.
 
 import os
-import pandas as pd
 from pathlib import Path
-from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
+
+import pandas as pd
+
+from sdp.processors.base_processor import (
+    BaseParallelProcessor,
+    BaseProcessor,
+    DataEntry,
+)
 from sdp.utils.common import load_manifest
 
 
@@ -24,25 +30,26 @@ class GetSourceBookName(BaseParallelProcessor):
     Processor for extracting source book name from file paths and updating the manifest.
 
     Args:
-        source_filepath (str): The field containing the file path in the manifest.
-        source_field (str): The field to store the extracted source book name in the manifest.
+        source_file_key (str): The field containing the file path in the manifest.
+        source_key (str): The field to store the extracted source book name in the manifest.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     """
+
     def __init__(
         self,
-        source_filepath: str,
-        source_field: str,
+        source_file_key: str,
+        source_key: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.source_filepath = source_filepath
-        self.source_field = source_field
+        self.source_file_key = source_file_key
+        self.source_key = source_key
 
     def process_dataset_entry(self, data_entry):
-        input_values = os.path.splitext(data_entry[self.source_filepath])[0].split("/")
-        
-        data_entry[self.source_field] = input_values[-1]
+        input_values = os.path.splitext(data_entry[self.source_file_key])[0].split("/")
+
+        data_entry[self.source_key] = input_values[-1]
         return [DataEntry(data=data_entry)]
 
 
@@ -54,9 +61,11 @@ class MakeTsv(BaseProcessor):
         **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
     """
+
     def process(self):
         df1 = pd.DataFrame.from_records(load_manifest(Path(self.input_manifest_file)))
         df1.to_csv(self.output_manifest_file, index=None, sep='\t')
+
 
 class RandomTsvPart(BaseProcessor):
     """
@@ -68,6 +77,7 @@ class RandomTsvPart(BaseProcessor):
         **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
     """
+
     def __init__(
         self,
         part: float,
@@ -80,4 +90,6 @@ class RandomTsvPart(BaseProcessor):
 
     def process(self):
         df1 = pd.read_csv(self.input_manifest_file, sep='\t')
-        df1.sample(frac=self.part, random_state = self.random_state).to_csv(self.output_manifest_file, index=None, sep='\t')
+        df1.sample(frac=self.part, random_state=self.random_state).to_csv(
+            self.output_manifest_file, index=None, sep='\t'
+        )
