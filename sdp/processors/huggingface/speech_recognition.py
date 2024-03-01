@@ -36,9 +36,9 @@ class ASRWhisper(BaseProcessor):
     def __init__(
         self,
         pretrained_model: str,
-        output_text_field: str,
+        output_text_key: str,
         device: str = None,
-        output_lang_field: str = "lid",
+        output_lang_key: str = "lid",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -51,9 +51,9 @@ class ASRWhisper(BaseProcessor):
         logger.warning("This is an example processor, for demonstration only. Do not use it for production purposes.")
         self.whisper = whisper
         self.pretrained_model = pretrained_model
-        self.output_text_field = output_text_field
+        self.output_text_key = output_text_key
         self.device = device
-        self.output_lang_field = output_lang_field
+        self.output_lang_key = output_lang_key
         if self.device is None:
             if torch.cuda.is_available():
                 self.device = "cuda"
@@ -70,8 +70,8 @@ class ASRWhisper(BaseProcessor):
             for item in tqdm(json_list):
                 pred_text, pred_lang = self.whisper_infer(item["audio_filepath"])
 
-                item[self.output_text_field] = pred_text
-                item[self.output_lang_field] = pred_lang
+                item[self.output_text_key] = pred_text
+                item[self.output_lang_key] = pred_lang
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
     def whisper_infer(self, audio_path):
@@ -104,7 +104,7 @@ class ASRTransformers(BaseProcessor):
     def __init__(
         self,
         pretrained_model: str,
-        output_text_field: str,
+        output_text_key: str,
         device: str = None,
         batch_size: int = 1,
         torch_dtype: str = "float32",
@@ -119,7 +119,7 @@ class ASRTransformers(BaseProcessor):
 
         logger.warning("This is an example processor, for demonstration only. Do not use it for production purposes.")
         self.pretrained_model = pretrained_model
-        self.output_text_field = output_text_field
+        self.output_text_key = output_text_key
         self.device = device
         self.batch_size = batch_size
         if torch_dtype == "float32":
@@ -163,5 +163,5 @@ class ASRTransformers(BaseProcessor):
             for item in tqdm(json_list):
                 pred_text = self.pipe(item["audio_filepath"])["text"]
 
-                item[self.output_text_field] = pred_text
+                item[self.output_text_key] = pred_text
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')

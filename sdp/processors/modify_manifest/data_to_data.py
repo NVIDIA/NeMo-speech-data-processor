@@ -33,43 +33,43 @@ class GetAudioDuration(BaseParallelProcessor):
     the duration_field will be updated with the value -1.0.
 
     Args:
-        audio_filepath_field (str): where to get path to wav file.
-        duration_field (str): where to put to audio duration.
+        audio_file_key (str): Key to get path to wav file.
+        duration_key (str): Key to put to audio duration.
     Returns:
         All the same fields as in the input manifest plus duration_field
     """
 
     def __init__(
         self,
-        audio_filepath_field: str,
-        duration_field: str,
+        audio_file_key: str,
+        duration_key: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.audio_filepath_field = audio_filepath_field
-        self.duration_field = duration_field
+        self.audio_file_key = audio_file_key
+        self.duration_key = duration_key
 
     def process_dataset_entry(self, data_entry):
-        audio_filepath = data_entry[self.audio_filepath_field]
+        audio_filepath = data_entry[self.audio_file_key]
         try:
             data, samplerate = sf.read(audio_filepath)
-            data_entry[self.duration_field] = data.shape[0] / samplerate
+            data_entry[self.duration_key] = data.shape[0] / samplerate
         except Exception as e:
             logger.warning(str(e) + " file: " + audio_filepath)
-            data_entry[self.duration_field] = -1.0
+            data_entry[self.duration_key] = -1.0
         return [DataEntry(data=data_entry)]
 
 
 class FfmpegConvert(BaseParallelProcessor):
     """
     Processor for converting video or audio files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
-    If key_field is not None it is used as an output file name. If key_field is None the output file name is the same as input file name with different extention
-    and input file name saves to key_field back.
+    If id_key is not None it is used as an output file name. If id_key is None the output file name is the same as input file name with different extention
+    and input file name saves to id_key back.
     Args:
         resampled_audio_dir (str): The directory to store the resampled audio files.
-        input_field (str): The field in the dataset representing the path to the input video or audio files.
-        output_field (str): The field to store the path to the resampled audio files in the dataset.
-        key_field (str): The field in the dataset representing the unique key or identifier for each entry. Defaults to None.
+        input_file_key (str): The field in the dataset representing the path to the input video or audio files.
+        output_file_key (str): The field to store the path to the resampled audio files in the dataset.
+        id_key (str): The field in the dataset representing the unique ID or identifier for each entry. Defaults to None.
         target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
         target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
@@ -79,17 +79,17 @@ class FfmpegConvert(BaseParallelProcessor):
     def __init__(
         self,
         resampled_audio_dir: str,
-        input_field: str,
-        output_field: str,
-        key_field: str = None,
+        input_file_key: str,
+        output_file_key: str,
+        id_key: str = None,
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = input_field
-        self.output_field = output_field
-        self.key_field = key_field
+        self.input_file_key = input_file_key
+        self.output_file_key = output_file_key
+        self.id_key = id_key
         self.resampled_audio_dir = resampled_audio_dir
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
@@ -98,9 +98,9 @@ class FfmpegConvert(BaseParallelProcessor):
         os.makedirs(self.resampled_audio_dir, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        input_file = data_entry[self.input_field]
-        if self.key_field:
-            key = data_entry[self.key_field]
+        input_file = data_entry[self.input_file_key]
+        if self.id_key:
+            key = data_entry[self.id_key]
             os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
         else:
             key = os.path.splitext(input_file)[0].split("/")[-1]
@@ -109,9 +109,9 @@ class FfmpegConvert(BaseParallelProcessor):
         if not os.path.isfile(audio):
             ffmpeg_convert(input_file, audio, self.target_samplerate, self.target_nchannels)
 
-        data_entry[self.output_field] = audio
-        if self.key_field:
-            data_entry[self.key_field] = key
+        data_entry[self.output_file_key] = audio
+        if self.id_key:
+            data_entry[self.id_key] = key
         return [DataEntry(data=data_entry)]
 
 
@@ -121,24 +121,24 @@ class ReadTxtLines(BaseParallelProcessor):
     saved in the field text_key.
 
     Args:
-        source_filepath (str): The field containing the file path in the manifest.
-        text_key (str): The field to store the read text lines in the manifest.
+        input_file_key (str): The key in the manifest containing the input txt file path .
+        text_key (str): The key to store the read text lines in the manifest.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     """
 
     def __init__(
         self,
-        source_filepath: str,
+        input_file_key: str,
         text_key: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.source_filepath = source_filepath
+        self.input_file_key = input_file_key
         self.text_key = text_key
 
     def process_dataset_entry(self, data_entry):
-        fname = data_entry[self.source_filepath]
+        fname = data_entry[self.input_file_key]
         data_list = []
         with open(fname, "r") as f:
             for line in f:
