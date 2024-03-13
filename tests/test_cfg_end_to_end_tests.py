@@ -61,10 +61,10 @@ def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
 
 
 def data_check_fn_librispeech(raw_data_dir: str) -> None:
-    if (Path(raw_data_dir) / "dev-clean.tar.gz").exists():
+    if (Path(raw_data_dir) / "train-clean-360.tar.gz").exists():
         return
 
-    expected_file = Path(raw_data_dir) / "dev-clean.tar.gz"
+    expected_file = Path(raw_data_dir) / "train-clean-360.tar.gz"
     if not expected_file.exists():
         raise ValueError(f"No such file {str(expected_file)}")
 

@@ -6,21 +6,22 @@ documentation: |
   `Librispeech <https://openslr.org/12>`_
   dataset in the NeMo format.
 
-  It produces manifests for dev split(for other splits please configure, change or combine).
-  - options are:
-            ["dev-clean"],
-            ["dev-other"],
-            ["test-clean"],
-            ["test-other"],
-            ["train-clean-100"],
-            ["train-clean-360"],
-            ["train-other-500"],
-            ["all"] (for all datasets avalable)
+  It produces manifests for the train-clean-360 split (for other splits, please configure, change, or combine). The options are:
+
+  - ``["dev-clean"]``,
+  - ``["dev-other"]``,
+  - ``["test-clean"]``,
+  - ``["test-other"]``,
+  - ``["train-clean-100"]``,
+  - ``["train-clean-360"]``,
+  - ``["train-other-500"]``,
+  - ``["all"]`` (for all datasets available)
 
 
   This config performs the following data processing.
 
   1. Downloads Librispeech data
+  2. Removes Elizabeth Klett(1259) speacker data
   2. Converts flac files to wav file
   3. Calculates the length of wav files
 
@@ -32,11 +33,11 @@ documentation: |
  
   **Output format**.
 
-  This config generates multiple output manifest file:
+  This config generates output manifest file:
 
-  * ``${workspace_dir}/manifest.json`` - developement subset of the data.
+  * ``${workspace_dir}/manifest.json`` - train-clean-360 subset of the data.
 
-  All output manifests contain the following fields:
+  Output manifest contains the following fields:
 
   * **audio_filepath (str)**: relative path to the audio files.
   * **text (str)**: transcription (lower-case without punctuation).
@@ -44,14 +45,18 @@ documentation: |
 
 processors_to_run: all
 workspace_dir: ???
-data_split: ["dev-clean"]
-final_manifest: ${workspace_dir}/manifest.json
+data_split: ["train-clean-360"]
+final_manifest: ${workspace_dir}/manifest.json  # test_data_reference
 
 processors:
-  # creating manifest for dev set
+  # creating manifest for train-clean-360 set
   - _target_: sdp.processors.CreateInitialManifestLibrispeech
     splits: ${data_split}
     raw_data_dir: ${workspace_dir}/raw_data
+
+  - _target_: sdp.processors.DropIfNoneOfRegexMatch # removing Elizabeth Klett(1259) by legal team request
+    text_key: "audio_filepath"
+    regex_patterns: "\/1259-"
 
   - _target_: sdp.processors.SoxConvert
     converted_audio_dir: ${workspace_dir}/audio
