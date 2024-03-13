@@ -64,17 +64,15 @@ class ASRSeamless(BaseProcessor):
             for idx in tqdm(selected_indices, desc="Processing Audio Files"):
                 line = lines[idx]
                 entry = json.loads(line)
-                print(entry)
+                # print(entry)
                 audio_file_path = entry[self.input_field]
 
                 waveform, orig_sampling_rate = torchaudio.load(audio_file_path)
                 waveform = waveform.to(device)
                 if orig_sampling_rate != 16000:
-                    print("Not in the right sample rate. Resampling to 16kHz.")
+                    # print("Not in the right sample rate. Resampling to 16kHz.")
                     resampler = torchaudio.transforms.Resample(orig_freq=orig_sampling_rate, new_freq=16000).to(device)
                     waveform = resampler(waveform)
-
-                print(waveform.shape)
 
                 audio_inputs = processor(
                     audios=waveform.squeeze().cpu().numpy(), src_lang="hye", sampling_rate=16000, return_tensors="pt"
