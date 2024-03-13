@@ -127,5 +127,5 @@ class AcceptIfWERLess(BaseProcessor):
                         big_dict[data_entry["assignment_id"]] += 1
 
         for assignment_id, count in big_dict.items():
-            if count == 5:
+            if count >= 3:  # should be >= 3 or == 5
                 self.toloka_client.accept_assignment(assignment_id=assignment_id, public_comment='Well done!')

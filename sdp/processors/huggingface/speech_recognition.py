@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import random
 
 import torch
 import torchaudio
@@ -33,11 +34,13 @@ class ASRSeamless(BaseProcessor):
         device: str = "cuda:1" if torch.cuda.is_available() else "cpu",
         input_field: str = "audio_filepath",
         output_field: str = "model_transcribed_text",
+        limit: int = 100,
         **kwargs,
     ):
         self.device = device
         self.input_field = input_field
         self.output_field = output_field
+        self.limit = limit
         super().__init__(**kwargs)
 
     def process(self):
@@ -51,12 +54,15 @@ class ASRSeamless(BaseProcessor):
 
         entries = []
 
-        with open(self.input_manifest_file, 'r+') as f:
-            total_lines = sum(1 for line in f)
-            f.seek(0)
+        with open(self.input_manifest_file, 'r') as f:
+            lines = f.readlines()
 
-            for _ in tqdm(range(total_lines), desc="Processing Audio Files"):
-                line = f.readline()
+            total_lines = len(lines)
+            files_to_process_count = int((self.limit / 100) * total_lines)
+            selected_indices = random.sample(range(total_lines), files_to_process_count)
+
+            for idx in tqdm(selected_indices, desc="Processing Audio Files"):
+                line = lines[idx]
                 entry = json.loads(line)
                 print(entry)
                 audio_file_path = entry[self.input_field]
@@ -70,7 +76,6 @@ class ASRSeamless(BaseProcessor):
 
                 print(waveform.shape)
 
-                # audio_inputs = processor(auido=waveform, sampling_rate=16000, return_tensors="pt")
                 audio_inputs = processor(
                     audios=waveform.squeeze().cpu().numpy(), src_lang="hye", sampling_rate=16000, return_tensors="pt"
                 ).to(device)
@@ -81,7 +86,6 @@ class ASRSeamless(BaseProcessor):
 
                 entry[self.output_field] = str(transcribed_text)
                 entries.append(entry)
-
             with open(self.output_manifest_file, 'w', encoding='utf-8') as f_out:
                 for entry in entries:
                     json.dump(entry, f_out, ensure_ascii=False)

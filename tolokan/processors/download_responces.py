@@ -77,6 +77,7 @@ class GetTolokaResults(BaseParallelProcessor):
                 for task, solution in zip(assignment.tasks, assignment.solutions):
                     suit_id = assignment.task_suite_id
                     assignment_id = assignment.id
+                    user_id = assignment.user_id
                     task_id = task.id
                     text = task.input_values['text']
                     attachment_id = solution.output_values.get('audio_file', None)
@@ -88,10 +89,12 @@ class GetTolokaResults(BaseParallelProcessor):
                         'status': str(status),
                         'suit_id': suit_id,
                         'assignment_id': assignment_id,
+                        'user_id': user_id,
                     }
                     yield task_info
 
     def process_dataset_entry(self, data_entry):
+        user_id = data_entry["user_id"]
         task_id = data_entry["task_id"]
         text = data_entry["text"]
         attachment_id = data_entry["attachment_id"]
@@ -112,6 +115,7 @@ class GetTolokaResults(BaseParallelProcessor):
             'audio_path': output_path,
             'suit_id': suit_id,
             'assignment_id': assignment_id,
+            'user_id': user_id,
         }
 
         return [DataEntry(data=task_info)]
