@@ -60,12 +60,6 @@ Librispeech
    :annotation:
    
 
-Fleurs
-''''''
-
-.. autodata:: sdp.processors.CreateInitialManifestFleurs
-   :annotation:
-
 SLR83
 '''''
 
