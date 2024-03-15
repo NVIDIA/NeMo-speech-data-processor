@@ -24,7 +24,6 @@ from sdp.processors.base_processor import (
 )
 from sdp.processors.datasets.commoncrawl.harv_utils import (
     audio_duration,
-    ffmpeg_convert,
     get_vtt_text,
     load_manifest,
     make_trans_list,

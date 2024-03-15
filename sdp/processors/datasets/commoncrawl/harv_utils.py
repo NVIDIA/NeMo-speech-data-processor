@@ -1,15 +1,17 @@
+import json
 import os
-import torch
-# import ffmpeg # pip install ffmpeg-python
-import webvtt # pip install webvtt-py
-import subprocess, sys
-import json, os
-import soundfile as sf
-from typing import Dict, List, Union
+import subprocess
+import sys
 from datetime import datetime
-import numpy as np
 from pathlib import Path
+from typing import Dict, List, Union
+
+import numpy as np
 import pandas as pd
+import soundfile as sf
+import torch
+import webvtt  # pip install webvtt-py
+
 from sdp.logging import logger
 
 
@@ -20,21 +22,23 @@ def read_jsonl(manifest_file):
             rec.append(json.loads(l))
     return pd.DataFrame.from_records(rec)
 
+
 def write_jsonl(df_in, manifest_filename):
     with open(manifest_filename, 'w') as the_file:
         for i, x in enumerate(df_in.itertuples()):
             r_dict = {}
             for column in df_in.columns:
-                r_dict[column] = getattr(x,column)
+                r_dict[column] = getattr(x, column)
             l1 = json.dumps(r_dict)
-            the_file.write(l1+'\n')
+            the_file.write(l1 + '\n')
+
 
 def load_manifest(manifest: Path, keys: List[str] = []) -> List[Dict[str, Union[str, float]]]:
     result = []
     r_dict = dict()
     for key in keys:
         r_dict[key] = list()
-    
+
     with manifest.open() as f:
         for i, line in enumerate(f):
             data = json.loads(line)
@@ -46,25 +50,29 @@ def load_manifest(manifest: Path, keys: List[str] = []) -> List[Dict[str, Union[
     else:
         return result
 
+
 def get_vtt_text(vtt_file):
     text_all = []
-    if os.path.splitext(vtt_file)[1]=='.vtt':
+    if os.path.splitext(vtt_file)[1] == '.vtt':
         webvtt_i = webvtt.read
-    elif os.path.splitext(vtt_file)[1]=='.srt':
+    elif os.path.splitext(vtt_file)[1] == '.srt':
         webvtt_i = webvtt.from_srt
     else:
-        raise ValueError("Unsupported extention of file "+vtt_file)
+        raise ValueError("Unsupported extention of file " + vtt_file)
 
     for caption in webvtt_i(vtt_file):
         text = caption.text
-        if text.find("thumbnails")!=-1:
+        if text.find("thumbnails") != -1:
             pass
         else:
             text_all.append(' '.join(text.split('\n')))
     return ' '.join(text_all)
 
+
 def text2lid(text_model, tokenizer, text):
-    text_langs = "Arabic, Basque, Breton, Catalan, Chinese_China, Chinese_Hongkong, Chinese_Taiwan, Chuvash, Czech, Dhivehi, Dutch, English, Esperanto, Estonian, French, Frisian, Georgian, German, Greek, Hakha_Chin, Indonesian, Interlingua, Italian, Japanese, Kabyle, Kinyarwanda, Kyrgyz, Latvian, Maltese, Mongolian, Persian, Polish, Portuguese, Romanian, Romansh_Sursilvan, Russian, Sakha, Slovenian, Spanish, Swedish, Tamil, Tatar, Turkish, Ukranian, Welsh".split(", ")
+    text_langs = "Arabic, Basque, Breton, Catalan, Chinese_China, Chinese_Hongkong, Chinese_Taiwan, Chuvash, Czech, Dhivehi, Dutch, English, Esperanto, Estonian, French, Frisian, Georgian, German, Greek, Hakha_Chin, Indonesian, Interlingua, Italian, Japanese, Kabyle, Kinyarwanda, Kyrgyz, Latvian, Maltese, Mongolian, Persian, Polish, Portuguese, Romanian, Romansh_Sursilvan, Russian, Sakha, Slovenian, Spanish, Swedish, Tamil, Tatar, Turkish, Ukranian, Welsh".split(
+        ", "
+    )
     inputs = tokenizer(text[:512], return_tensors="pt").to("cuda:0")
     with torch.no_grad():
         text_logits = text_model(**inputs).logits
@@ -74,80 +82,83 @@ def text2lid(text_model, tokenizer, text):
 
 def parse_hours(inp):
     inp_list = inp.split(":")
-    if len(inp_list) == 3 and int(inp_list[0])>=24:
-        hours = int(inp_list[0])%24
-        days = int(inp_list[0])//24
+    if len(inp_list) == 3 and int(inp_list[0]) >= 24:
+        hours = int(inp_list[0]) % 24
+        days = int(inp_list[0]) // 24
         if days < 31:
-            inp = str(1+days)+":"+str(hours)+":"+":".join(inp_list[1:])
+            inp = str(1 + days) + ":" + str(hours) + ":" + ":".join(inp_list[1:])
             return datetime.strptime(inp, '%d:%H:%M:%S.%f')
         else:
-            months = days//31
-            days = days%31
-            inp = str(1+months)+"/"+str(1+days)+" "+str(hours)+":"+":".join(inp_list[1:])
+            months = days // 31
+            days = days % 31
+            inp = str(1 + months) + "/" + str(1 + days) + " " + str(hours) + ":" + ":".join(inp_list[1:])
             return datetime.strptime(inp, '%m/%d %H:%M:%S.%f')
     else:
         return datetime.strptime(inp, '%H:%M:%S.%f')
-    
+
+
 def split_by_vtt(vtt_file, wav_file, wav_save_path):
     try:
         data, samplerate = sf.read(wav_file)
         target_sr = samplerate
-        if len(data.shape)>1:
+        if len(data.shape) > 1:
             data = np.mean(data, axis=1)
         _begin = datetime.strptime('00:00:00.000', '%H:%M:%S.%f')
         rel_vtt_file = '/'.join(os.path.splitext(vtt_file)[0].split('/')[-2:])
         wav_list, text_list, dur_list = [], [], []
         for caption in webvtt.read(vtt_file):
             _start = parse_hours(caption.start)
-            start = (_start-_begin).total_seconds()
-            start_sr = int(start*samplerate)
+            start = (_start - _begin).total_seconds()
+            start_sr = int(start * samplerate)
 
             _end = parse_hours(caption.end)
-            end = (_end-_begin).total_seconds()
-            end_sr = int(end*samplerate)
+            end = (_end - _begin).total_seconds()
+            end_sr = int(end * samplerate)
 
             text = ' '.join(caption.text.split('\n'))
 
-            wav_save_file = os.path.join(wav_save_path, rel_vtt_file, str(int(start*1000))+"-"+str(int(end*1000))+".wav")
+            wav_save_file = os.path.join(
+                wav_save_path, rel_vtt_file, str(int(start * 1000)) + "-" + str(int(end * 1000)) + ".wav"
+            )
             os.makedirs(os.path.split(wav_save_file)[0], exist_ok=True)
 
             # number_of_samples = round(len(data[start_sr:end_sr]) * float(target_sr) / samplerate)
             # if number_of_samples > 0:
-                # if not os.path.exists(wav_save_file):
-                    # data_sample = sps.resample(data[start_sr:end_sr], number_of_samples)
+            # if not os.path.exists(wav_save_file):
+            # data_sample = sps.resample(data[start_sr:end_sr], number_of_samples)
             data_sample = data[start_sr:end_sr]
             sf.write(wav_save_file, data_sample, target_sr)
             text_list.append(text)
             wav_list.append(wav_save_file)
-            dur_list.append(data_sample.shape[0]/samplerate) #(_end-_start).total_seconds()
+            dur_list.append(data_sample.shape[0] / samplerate)  # (_end-_start).total_seconds()
         return wav_list, text_list, dur_list
     except Exception as e:
         logger.warning(str(e) + vtt_file)
         return None, None, None
-    
+
+
 def split_by_vtt_new(vtt_file, samplerate):
     try:
         _begin = datetime.strptime('00:00:00.000', '%H:%M:%S.%f')
         text_list, start_s, end_s = [], [], []
-        if os.path.splitext(vtt_file)[1]=='.vtt':
+        if os.path.splitext(vtt_file)[1] == '.vtt':
             webvtt_i = webvtt.read
-        elif os.path.splitext(vtt_file)[1]=='.srt':
+        elif os.path.splitext(vtt_file)[1] == '.srt':
             webvtt_i = webvtt.from_srt
         else:
-            raise ValueError("Unsupporte extention of file "+vtt_file)
+            raise ValueError("Unsupporte extention of file " + vtt_file)
 
-
-        for caption in webvtt_i(vtt_file): 
+        for caption in webvtt_i(vtt_file):
             text = ' '.join(caption.text.split('\n'))
 
             _start = parse_hours(caption.start)
-            start = (_start-_begin).total_seconds()
-            start_sr = int(start*samplerate)
+            start = (_start - _begin).total_seconds()
+            start_sr = int(start * samplerate)
 
             _end = parse_hours(caption.end)
-            end = (_end-_begin).total_seconds()
-            end_sr = int(end*samplerate)
-            
+            end = (_end - _begin).total_seconds()
+            end_sr = int(end * samplerate)
+
             text_list.append(text.strip())
             start_s.append(start_sr)
             end_s.append(end_sr)
@@ -156,9 +167,11 @@ def split_by_vtt_new(vtt_file, samplerate):
         logger.warning(str(e) + vtt_file)
         return None, None, None
 
+
 def audio_duration(fname):
     data, samplerate = sf.read(fname)
-    return data.shape[0]/samplerate
+    return data.shape[0] / samplerate
+
 
 def ffmpeg_convert(jpg: str, wav: str, ar: int = 0, ac: int = 1):
     process_args = ["ffmpeg", "-i", jpg, '-ac', str(ac), "-map", "0:a", "-c:a", "pcm_s16le", "-y", wav]
@@ -166,17 +179,20 @@ def ffmpeg_convert(jpg: str, wav: str, ar: int = 0, ac: int = 1):
     if ar:
         process_args = process_args[:-1]
         process_args.extend(["-ar", str(ar), wav])
-    return subprocess.run(process_args, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
+    return subprocess.run(process_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
 
 def read_txt(txt_file):
     with open(txt_file, "r") as f:
         text = f.read()
         return text[2:-1].replace("\\n", "\n").replace("\\r", "\r")
-    
+
+
 def translate(txt, trans_list):
     for trans in trans_list:
         txt = txt.replace(trans[0], trans[1])
     return txt
+
 
 def txt2vtt(txt_file: str, vtt_file: str, trans_list: List):
     txt = read_txt(txt_file)
@@ -184,11 +200,12 @@ def txt2vtt(txt_file: str, vtt_file: str, trans_list: List):
         if txt[:6] == "WEBVTT":
             pass
         else:
-            txt = "WEBVTT"+txt
-#                 print(f"'{txt[:7]}''")
+            txt = "WEBVTT" + txt
+        #                 print(f"'{txt[:7]}''")
         vtt = translate(txt, trans_list)
         with open(vtt_file, "w") as f:
             f.write(vtt)
+
 
 def make_trans_list():
     t1 = """U+0000	 	&nbsp;
@@ -836,5 +853,5 @@ def make_trans_list():
     trans_list = []
     for a in t1.split('\n'):
         b = a.split("\t")
-        trans_list.append((b[2],b[1]))
+        trans_list.append((b[2], b[1]))
     return trans_list
