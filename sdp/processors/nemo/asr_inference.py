@@ -54,12 +54,23 @@ class ASRInference(BaseProcessor):
     def process(self):
         """This will add "pred_text" key into the output manifest."""
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
-        subprocess.run(
-            f"python {self.script_path} "
-            f"pretrained_name={self.pretrained_model} "
-            f"dataset_manifest={self.input_manifest_file} "
-            f"output_filename={self.output_manifest_file} "
-            f"batch_size={self.batch_size} ",
-            shell=True,
-            check=True,
-        )
+        if self.pretrained_model[-5:] == ".nemo":
+            subprocess.run(
+                f"python {self.script_path} "
+                f"model_path={self.pretrained_model} "
+                f"dataset_manifest={self.input_manifest_file} "
+                f"output_filename={self.output_manifest_file} "
+                f"batch_size={self.batch_size} ",
+                shell=True,
+                check=True,
+            )
+        else:
+            subprocess.run(
+                f"python {self.script_path} "
+                f"pretrained_name={self.pretrained_model} "
+                f"dataset_manifest={self.input_manifest_file} "
+                f"output_filename={self.output_manifest_file} "
+                f"batch_size={self.batch_size} ",
+                shell=True,
+                check=True,
+            )
