@@ -102,12 +102,12 @@ class CopyFiles(BaseParallelProcessor):
 class GetSpecificFiles(BaseParallelProcessor):
     def __init__(
         self,
-        file_field: str,
+        input_file_key: str,
         path_to_copy: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.file_field = file_field
+        self.input_file_key = input_file_key
         self.path_to_copy = path_to_copy
 
         self.split_map = set(
@@ -159,9 +159,9 @@ class GetSpecificFiles(BaseParallelProcessor):
         os.makedirs(self.path_to_copy, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        file_id = os.path.splitext(data_entry[self.file_field])[0].split("/")[-1]
+        file_id = os.path.splitext(data_entry[self.input_file_key])[0].split("/")[-1]
         if file_id in self.split_map:
-            shutil.copyfile(data_entry[self.file_field], os.path.join(self.path_to_copy, file_id + ".wav"))
+            shutil.copyfile(data_entry[self.input_file_key], os.path.join(self.path_to_copy, file_id + ".wav"))
             return [DataEntry(data=data_entry)]
         else:
             return []
@@ -573,44 +573,13 @@ class JoinBy(BaseProcessor):
         write_jsonl(df2[[self.audio_field, self.text_field]], self.output_manifest_file)
 
 
-class AudioDuration(BaseParallelProcessor):
-    """
-    Count audio duration using audio file path from input_field
-
-    Args:
-        input_field (str): where to get path to wav file.
-        output_field (str): where to put to audio duration.
-    Returns:
-        All the same fields as in the input manifest plus output_field
-    """
-
-    def __init__(
-        self,
-        input_field: str,
-        output_field: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.input_field = input_field
-        self.output_field = output_field
-
-    def process_dataset_entry(self, data_entry):
-        audio_filepath = data_entry[self.input_field]
-        try:
-            data_entry[self.output_field] = audio_duration(audio_filepath)
-        except Exception as e:
-            logger.warning(str(e) + " file: " + audio_filepath)
-            data_entry[self.output_field] = -1.0
-        return [DataEntry(data=data_entry)]
-
-
 class EvalBandwidth(BaseParallelProcessor):
     """
     Count audio bandwidth using audio file path from input_field
 
     Args:
-        input_field (str): where to get path to wav file.
-        output_field (str): where to put to frequency bandwidth.
+        input_file_key (str): where to get path to wav file.
+        bandwidth_key (str): where to put to frequency bandwidth.
         threshold (str): power threshold (in dB relative to peak power in spectrum bin) to estimate frequency bandwidth.
 
     Returns:
@@ -619,21 +588,21 @@ class EvalBandwidth(BaseParallelProcessor):
 
     def __init__(
         self,
-        input_field: str,
-        output_field: str,
+        input_file_key: str,
+        bandwidth_key: str,
         threshold: int = -50,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = input_field
-        self.output_field = output_field
+        self.input_file_key = input_file_key
+        self.bandwidth_key = bandwidth_key
         self.threshold = threshold
 
     def process_dataset_entry(self, data_entry):
-        audio_filepath = data_entry[self.input_field]
+        audio_filepath = data_entry[self.input_file_key]
         data, samplerate = sf.read(audio_filepath)
         freqband = self.eval_bandwidth(data, samplerate, threshold=self.threshold)
-        data_entry[self.output_field] = freqband
+        data_entry[self.bandwidth_key] = freqband
         return [DataEntry(data=data_entry)]
 
     def eval_bandwidth(self, signal, sr, threshold=-50):
@@ -1125,31 +1094,20 @@ class Lang2Iso(BaseParallelProcessor):
     A class for converting language names to ISO language codes in a dataset.
 
     Parameters:
-    - input_lang_field (str): The field in the dataset containing language names to be converted.
-    - output_lang_field (str): The field to store the corresponding ISO language codes.
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        input_lang_key (str): The field in the dataset containing language names to be converted.
+        output_lang_key (str): The field to store the corresponding ISO language codes.
 
-    Attributes:
-    - input_lang_field (str): The field in the dataset containing language names to be converted.
-    - output_lang_field (str): The field to store the corresponding ISO language codes.
-    - iso_m (dict): A mapping of language names to ISO language codes.
-
-    Methods:
-    - process_dataset_entry(data_entry): Processes a single dataset entry, converting language names to ISO language codes.
-
-    Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to perform language name to ISO code conversion.
     """
 
     def __init__(
         self,
-        input_lang_field: str,
-        output_lang_field: str,
+        input_lang_key: str,
+        output_lang_key: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_lang_field = input_lang_field
-        self.output_lang_field = output_lang_field
+        self.input_lang_key = input_lang_key
+        self.output_lang_key = output_lang_key
         self.iso_m = {
             'English': 'en',
             'Spanish': 'es',
@@ -1195,7 +1153,7 @@ class Lang2Iso(BaseParallelProcessor):
         }
 
     def process_dataset_entry(self, data_entry):
-        data_entry[self.output_lang_field] = self.iso_m[data_entry[self.input_lang_field]]
+        data_entry[self.output_lang_key] = self.iso_m[data_entry[self.input_lang_key]]
         return [DataEntry(data=data_entry)]
 
 
@@ -1204,58 +1162,49 @@ class SplitByVttSentence(BaseParallelProcessor):
     A class for splitting audio files based on VTT (WebVTT) sentence-level segmentation in a dataset.
 
     Parameters:
-    - splited_audio_dir (str): The directory to store the split audio files.
-    - source_audio_field (str): The field in the dataset containing the path to the source audio files.
-    - target_audio_field (str): The field to store the paths of the split audio files.
-    - duration_field (str): The field to store the duration of each split audio segment.
-    - text_field (str): The field to store the transcriptions corresponding to each split audio segment.
-    - vtt_field (str): The field in the dataset containing the path to the VTT (WebVTT) files for segmentation.
-    - proxy_fields (List[str], optional): List of additional fields to proxy from the original data entry to the split entries. Defaults to an empty list.
-    - duration_threshold (float, optional): The duration threshold in seconds for each split audio segment. Defaults to 10.0.
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
-
-
-    Methods:
-    - prepare(): Creates the directory to store the split audio files.
-    - process_dataset_entry(data_entry): Processes a single dataset entry, splitting audio based on VTT sentence-level segmentation.
-
-    Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to split audio files based on VTT segmentation.
+        splited_audio_dir (str): The directory to store the split audio files.
+        source_audio_key (str): The field in the dataset containing the path to the source audio files.
+        target_audio_key (str): The field to store the paths of the split audio files.
+        duration_key (str): The field to store the duration of each split audio segment.
+        text_key (str): The field to store the transcriptions corresponding to each split audio segment.
+        caption_file_key (str): The field in the dataset containing the path to the VTT (WebVTT) files for segmentation.
+        proxy_keys (List[str], optional): List of additional fields to proxy from the original data entry to the split entries. Defaults to an empty list.
+        duration_threshold (float, optional): The duration threshold in seconds for each split audio segment. Defaults to 10.0.
     """
 
     def __init__(
         self,
         splited_audio_dir: str,
-        source_audio_field: str,
-        target_audio_field: str,
-        duration_field: str,
-        text_field: str,
-        vtt_field: str,
-        proxy_fields: List[str] = [],
+        source_audio_key: str,
+        target_audio_key: str,
+        duration_key: str,
+        text_key: str,
+        caption_file_key: str,
+        proxy_keys: List[str] = [],
         duration_threshold: float = 10.0,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.splited_audio_dir = splited_audio_dir
-        self.source_audio_field = source_audio_field
-        self.target_audio_field = target_audio_field
-        self.duration_field = duration_field
-        self.text_field = text_field
-        self.vtt_field = vtt_field
+        self.source_audio_key = source_audio_key
+        self.target_audio_key = target_audio_key
+        self.duration_key = duration_key
+        self.text_key = text_key
+        self.caption_file_key = caption_file_key
         self.duration_threshold = duration_threshold
-        self.proxy_fields = proxy_fields
+        self.proxy_keys = proxy_keys
 
     def prepare(self):
         os.makedirs(self.splited_audio_dir, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        vtt_file = data_entry[self.vtt_field]
-        source_audio = data_entry[self.source_audio_field]
+        caption_file = data_entry[self.caption_file_key]
+        source_audio = data_entry[self.source_audio_key]
         res_list = []
 
         if os.path.isfile(source_audio):
             data, samplerate = sf.read(source_audio)
-            text_list, start_s, end_s = split_by_vtt_new(vtt_file, samplerate)
+            text_list, start_s, end_s = split_by_vtt_new(caption_file, samplerate)
             text_c = ''
             start_c, end_c = 0, 0
             if text_list:
@@ -1272,14 +1221,16 @@ class SplitByVttSentence(BaseParallelProcessor):
                         or text_c[-1] == "?"
                     ):
                         res_list.append(
-                            self.makeDataEntry(data_entry, data, vtt_file, samplerate, text_c, start_c, end_c)
+                            self.makeDataEntry(data_entry, data, caption_file, samplerate, text_c, start_c, end_c)
                         )
                         text_c = ''
                         start_c, end_c = 0, 0
                     else:
                         pass
                 if len(text_c) > 0 and start_c != 0:
-                    res_list.append(self.makeDataEntry(data_entry, data, vtt_file, samplerate, text_c, start_c, end_c))
+                    res_list.append(
+                        self.makeDataEntry(data_entry, data, caption_file, samplerate, text_c, start_c, end_c)
+                    )
 
         return res_list
 
@@ -1295,89 +1246,13 @@ class SplitByVttSentence(BaseParallelProcessor):
             sf.write(wav_save_file, data_sample, samplerate)
 
         data = {
-            self.target_audio_field: wav_save_file,
-            self.duration_field: data_sample.shape[0] / samplerate,
-            self.text_field: text_c.strip(),
+            self.target_audio_key: wav_save_file,
+            self.duration_key: data_sample.shape[0] / samplerate,
+            self.text_key: text_c.strip(),
         }
-        for proxy_field in self.proxy_fields:
-            data[proxy_field] = data_entry[proxy_field]
+        for proxy_key in self.proxy_keys:
+            data[proxy_key] = data_entry[proxy_key]
         return DataEntry(data=data)
-
-
-class SplitByVtt(BaseParallelProcessor):
-    """
-    A class for splitting audio files based on VTT (WebVTT) segmentation in a dataset.
-
-    Parameters:
-    - splited_audio_dir (str): The directory to store the split audio files.
-    - source_audio_field (str): The field in the dataset containing the path to the source audio files.
-    - text_lang_field (str): The field in the dataset containing the language information of the text.
-    - audio_lang_field (str): The field in the dataset containing the language information of the audio.
-    - key_field (str): The field in the dataset containing a unique key for each entry.
-    - target_audio_field (str): The field to store the paths of the split audio files.
-    - duration_field (str): The field to store the duration of each split audio segment.
-    - text_field (str): The field to store the transcriptions corresponding to each split audio segment.
-    - vtt_field (str): The field in the dataset containing the path to the VTT (WebVTT) files for segmentation.
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
-
-    Methods:
-    - prepare(): Creates the directory to store the split audio files.
-    - process_dataset_entry(data_entry): Processes a single dataset entry, splitting audio based on VTT segmentation.
-
-    Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to split audio files based on VTT segmentation.
-    """
-
-    def __init__(
-        self,
-        splited_audio_dir: str,
-        source_audio_field: str,
-        text_lang_field: str,
-        audio_lang_field: str,
-        key_field: str,
-        target_audio_field: str,
-        duration_field: str,
-        text_field: str,
-        vtt_field: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.splited_audio_dir = splited_audio_dir
-        self.source_audio_field = source_audio_field
-        self.text_lang_field = text_lang_field
-        self.audio_lang_field = audio_lang_field
-        self.key_field = key_field
-        self.target_audio_field = target_audio_field
-        self.duration_field = duration_field
-        self.text_field = text_field
-        self.vtt_field = vtt_field
-
-    def prepare(self):
-        os.makedirs(self.splited_audio_dir, exist_ok=True)
-
-    def process_dataset_entry(self, data_entry):
-        key = data_entry[self.key_field]
-        vtt_file = data_entry[self.vtt_field]
-        source_audio = data_entry[self.source_audio_field]
-        res_list = []
-
-        if os.path.isfile(source_audio):
-            wav_list, text_list, dur_list = split_by_vtt(vtt_file, source_audio, self.splited_audio_dir)
-            if wav_list:
-                for wav, text, dur in zip(wav_list, text_list, dur_list):
-                    res_list.append(
-                        DataEntry(
-                            data={
-                                self.target_audio_field: wav,
-                                self.duration_field: dur,
-                                self.text_field: text,
-                                self.audio_lang_field: data_entry[self.audio_lang_field],
-                                self.text_lang_field: data_entry[self.text_lang_field],
-                                self.key_field: key,
-                            }
-                        )
-                    )
-        return res_list
 
 
 class AudioLid(BaseProcessor):
@@ -1385,9 +1260,9 @@ class AudioLid(BaseProcessor):
     A class for language identification (LID) of audio files using a pre-trained LID model.
 
     Args:
-        input_audio_field (str): The field in the dataset containing the path to the audio files for language identification.
+        input_audio_key (str): The field in the dataset containing the path to the audio files for language identification.
         pretrained_model (str): The name of the pre-trained ASR model for language identification.
-        output_lang_field (str): The field to store the identified language for each audio file.
+        output_lang_key (str): The field to store the identified language for each audio file.
         device (str): The device to run the ASR model on (e.g., 'cuda', 'cpu'). If None, it automatically selects the available GPU if present; otherwise, it uses the CPU.
         segment_duration (float): Random sample duration in seconds. Delault is np.inf.
         num_segments (int): Number of segments of file to use for majority vote. Delault is 1.
@@ -1398,9 +1273,9 @@ class AudioLid(BaseProcessor):
 
     def __init__(
         self,
-        input_audio_field: str,
+        input_audio_key: str,
         pretrained_model: str,
-        output_lang_field: str,
+        output_lang_key: str,
         device: str,
         segment_duration: float = np.inf,
         num_segments: int = 1,
@@ -1408,9 +1283,9 @@ class AudioLid(BaseProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_audio_field = input_audio_field
+        self.input_audio_key = input_audio_key
         self.pretrained_model = pretrained_model
-        self.output_lang_field = output_lang_field
+        self.output_lang_key = output_lang_key
         self.segment_duration = segment_duration
         self.num_segments = num_segments
         self.random_seed = random_seed
@@ -1435,7 +1310,7 @@ class AudioLid(BaseProcessor):
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
         with Path(self.output_manifest_file).open('w') as f:
             for item in tqdm(manifest):
-                audio_file = item[self.input_audio_field]
+                audio_file = item[self.input_audio_key]
 
                 try:
                     lang = model.get_label(audio_file, self.segment_duration, self.num_segments)
@@ -1444,7 +1319,7 @@ class AudioLid(BaseProcessor):
                     lang = None
 
                 if lang:
-                    item[self.output_lang_field] = lang
+                    item[self.output_lang_key] = lang
                     f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
 
@@ -1453,31 +1328,28 @@ class TextLid(BaseProcessor):
     A class for language identification (LID) of text using a pre-trained text classification model.
 
     Args:
-        input_text_field (str): The field in the dataset containing the text for language identification.
+        input_text_key (str): The field in the dataset containing the text for language identification.
         pretrained_model (str): The name or path of the pre-trained text classification model for language identification.
-        output_lang_field (str): The field to store the identified language for each text.
+        output_lang_key (str): The field to store the identified language for each text.
         device (str): The device to run the text classification model on (e.g., 'cuda', 'cpu'). If None, it automatically selects the available GPU if present; otherwise, it uses the CPU.
         drop_text_duplicates (bool, optional): If True, drops duplicate texts from the output manifest. Defaults to False.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
-
-    Methods:
-    - process(): Processes the language identification for each text in the dataset and saves the results in a new manifest file.
 
     """
 
     def __init__(
         self,
-        input_text_field: str,
+        input_text_key: str,
         pretrained_model: str,
-        output_lang_field: str,
+        output_lang_key: str,
         device: str,
         drop_text_duplicates: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_text_field = input_text_field
+        self.input_text_key = input_text_key
         self.pretrained_model = pretrained_model
-        self.output_lang_field = output_lang_field
+        self.output_lang_key = output_lang_key
         self.device = device
         self.drop_duplicates = drop_text_duplicates
 
@@ -1502,7 +1374,7 @@ class TextLid(BaseProcessor):
         text_set = set()
         with Path(self.output_manifest_file).open('w') as f:
             for item in tqdm(manifest):
-                text = item[self.input_text_field]
+                text = item[self.input_text_key]
                 if self.drop_duplicates and text not in text_set:
                     text_set.add(text)
                     if text:
@@ -1511,7 +1383,7 @@ class TextLid(BaseProcessor):
                         lid = None
 
                     if lid:
-                        item[self.output_lang_field] = lid
+                        item[self.output_lang_key] = lid
                         f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
 
@@ -1520,8 +1392,8 @@ class AllVttText(BaseParallelProcessor):
     A class for extracting text content from VTT (WebVTT) files and updating the manifest.
 
     Args:
-        output_text_field (str): The field to store the extracted text content in the manifest.
-        input_filepath_field (str, optional): The field in the manifest containing the path to VTT files. Defaults to "vtt_filepath".
+        output_text_key (str): The field to store the extracted text content in the manifest.
+        input_filepath_key (str, optional): The field in the manifest containing the path to VTT files. Defaults to "vtt_filepath".
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:
@@ -1531,20 +1403,20 @@ class AllVttText(BaseParallelProcessor):
 
     def __init__(
         self,
-        output_text_field: str,
-        input_filepath_field: str = "vtt_filepath",
+        output_text_key: str,
+        input_filepath_key: str = "vtt_filepath",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.output_text_field = output_text_field
-        self.input_filepath_field = input_filepath_field
+        self.output_text_key = output_text_key
+        self.input_filepath_key = input_filepath_key
 
     def process_dataset_entry(self, data_entry):
-        vtt_file = data_entry[self.input_filepath_field]
+        vtt_file = data_entry[self.input_filepath_key]
         res_list = [DataEntry(data=None)]
         if os.path.isfile(vtt_file):
             try:
-                data_entry[self.output_text_field] = get_vtt_text(vtt_file)
+                data_entry[self.output_text_key] = get_vtt_text(vtt_file)
                 res_list = [DataEntry(data=data_entry)]
             except Exception as e:
                 logger.warning("AllVttText " + vtt_file + " " + str(e))
@@ -1557,7 +1429,7 @@ class TxtToVtt(BaseParallelProcessor):
 
     Args:
         vtt_files_dir (str): The directory where the generated VTT files will be saved.
-        key_field (str): The field in the manifest representing the unique key or identifier for each entry.
+        id_key (str): The field in the manifest representing the unique key or identifier for each entry.
         text_field (str): The field in the manifest containing the text content to be converted to VTT format.
         vtt_field (str): The field to store the generated VTT file paths in the manifest.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
@@ -1571,16 +1443,16 @@ class TxtToVtt(BaseParallelProcessor):
     def __init__(
         self,
         vtt_files_dir: str,
-        key_field: str,
-        text_field: str,
-        vtt_field: str,
+        id_key: str,
+        text_key: str,
+        vtt_key: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.vtt_files_dir = vtt_files_dir
-        self.key_field = key_field
-        self.text_field = text_field
-        self.vtt_field = vtt_field
+        self.id_key = id_key
+        self.text_key = text_key
+        self.vtt_key = vtt_key
 
         self.trans_list = make_trans_list()
 
@@ -1588,15 +1460,15 @@ class TxtToVtt(BaseParallelProcessor):
         os.makedirs(self.vtt_files_dir, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        key = data_entry[self.key_field]
-        text_file = data_entry[self.text_field]
+        key = data_entry[self.id_key]
+        text_file = data_entry[self.text_key]
         os.makedirs(os.path.join(self.vtt_files_dir, key.split("/")[0]), exist_ok=True)
 
         vtt_file = os.path.join(self.vtt_files_dir, key) + ".vtt"
 
         txt2vtt(text_file, vtt_file, self.trans_list)
 
-        data_entry[self.vtt_field] = vtt_file
+        data_entry[self.vtt_key] = vtt_file
 
         return [DataEntry(data=data_entry)]
 
@@ -1606,30 +1478,26 @@ class ReadParquet(BaseParallelProcessor):
     A class for reading information from Parquet files and updating the manifest with video URLs and captions.
 
     Args:
-        output_video_field (str): The field to store the extracted video URLs in the manifest.
-        output_caption_field (str): The field to store the extracted captions in the manifest.
-        key_field (str): The field in the manifest representing the unique key or identifier for each entry.
+        output_video_key (str): The field to store the extracted video URLs in the manifest.
+        output_caption_key (str): The field to store the extracted captions in the manifest.
+        id_key (str): The field in the manifest representing the unique key or identifier for each entry.
         raw_data_dir (str): The directory containing Parquet files with information to be read.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
-
-    Methods:
-    - prepare(): Reads and prepares information from Parquet files, storing it in the `urls` DataFrame.
-    - process_dataset_entry(data_entry): Processes a single dataset entry, extracts video URLs and captions based on the key, and updates the manifest.
 
     """
 
     def __init__(
         self,
-        output_video_field: str,
-        output_caption_field: str,
-        key_field: str,
+        output_video_key: str,
+        output_caption_key: str,
+        id_key: str,
         raw_data_dir: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.output_video_field = output_video_field
-        self.output_caption_field = output_caption_field
-        self.key_field = key_field
+        self.output_video_key = output_video_key
+        self.output_caption_key = output_caption_key
+        self.id_key = id_key
         self.raw_data_dir = Path(raw_data_dir)
 
     def prepare(self):
@@ -1646,14 +1514,14 @@ class ReadParquet(BaseParallelProcessor):
                 logger.warning(str(e) + ", file: " + parquet)
 
     def process_dataset_entry(self, data_entry):
-        key = data_entry[self.key_field]
+        key = data_entry[self.id_key]
         key = key.split("/")[1]
         try:
-            data_entry[self.output_video_field] = self.urls.loc[key]['url']
-            data_entry[self.output_caption_field] = self.urls.loc[key]['caption']
+            data_entry[self.output_video_key] = self.urls.loc[key]['url']
+            data_entry[self.output_caption_key] = self.urls.loc[key]['caption']
         except:
-            data_entry[self.output_video_field] = "NN"
-            data_entry[self.output_caption_field] = "NN"
+            data_entry[self.output_video_key] = "NN"
+            data_entry[self.output_caption_key] = "NN"
             logger.warning("Key without URL or caption: " + key)
         return [DataEntry(data=data_entry)]
 
@@ -1669,9 +1537,9 @@ class CreateInitialManifestCC(BaseParallelProcessor):
 
     Args:
         raw_data_dir (str): The directory containing image and text files to include in the initial dataset manifest.
-        video_field (str): The field to store the paths to the image files in the dataset.
-        key_field (str): The field to represent the common key or identifier for each entry.
-        text_field (str): The field to store the paths to the text files in the dataset.
+        video_key (str): The field to store the paths to the image files in the dataset.
+        id_key (str): The field to represent the common key or identifier for each entry.
+        text_key (str): The field to store the paths to the text files in the dataset.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Methods:
@@ -1684,16 +1552,16 @@ class CreateInitialManifestCC(BaseParallelProcessor):
     def __init__(
         self,
         raw_data_dir: str,
-        video_field: str,
-        key_field: str,
-        text_field: str,
+        video_key: str,
+        id_key: str,
+        text_key: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.raw_data_dir = Path(raw_data_dir)
-        self.video_field = video_field
-        self.key_field = key_field
-        self.text_field = text_field
+        self.video_key = video_key
+        self.id_key = id_key
+        self.text_key = text_key
 
     def prepare(self):
         os.makedirs(self.raw_data_dir, exist_ok=True)
@@ -1701,79 +1569,21 @@ class CreateInitialManifestCC(BaseParallelProcessor):
     def read_manifest(self):
         videos = [str(self.raw_data_dir / video) for video in self.raw_data_dir.rglob('*.jpg')]
         texts = [str(self.raw_data_dir / text) for text in self.raw_data_dir.rglob('*.txt')]
-        v_df = pd.DataFrame({self.video_field: videos})
-        t_df = pd.DataFrame({self.text_field: texts})
+        v_df = pd.DataFrame({self.video_key: videos})
+        t_df = pd.DataFrame({self.text_key: texts})
 
-        v_df[self.key_field] = v_df[self.video_field].apply(get_key)
-        t_df[self.key_field] = t_df[self.text_field].apply(get_key)
-        v_df = v_df.drop_duplicates(self.key_field)
-        t_df = t_df.drop_duplicates(self.key_field)
-        vt_df = v_df.merge(t_df, on=self.key_field, how="left")
+        v_df[self.id_key] = v_df[self.video_key].apply(get_key)
+        t_df[self.id_key] = t_df[self.text_key].apply(get_key)
+        v_df = v_df.drop_duplicates(self.id_key)
+        t_df = t_df.drop_duplicates(self.id_key)
+        vt_df = v_df.merge(t_df, on=self.id_key, how="left")
         return vt_df.values
 
     def process_dataset_entry(self, data_entry):
         (video, key, text) = data_entry
 
-        data = {self.video_field: video, self.key_field: key, self.text_field: text}
+        data = {self.video_key: video, self.id_key: key, self.text_key: text}
         return [DataEntry(data=data)]
-
-
-class FfmpegConvert(BaseParallelProcessor):
-    """
-    A class for converting video files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
-
-    Args:
-        resampled_audio_dir (str): The directory to store the resampled audio files.
-        input_field (str): The field in the dataset representing the path to the input video files.
-        output_field (str): The field to store the path to the resampled audio files in the dataset.
-        key_field (str): The field in the dataset representing the unique key or identifier for each entry.
-        target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
-        target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
-
-    Methods:
-        process_dataset_entry(data_entry): Processes a single dataset entry, converts the input video to resampled audio, and updates the dataset.
-
-    """
-
-    def __init__(
-        self,
-        resampled_audio_dir: str,
-        input_field: str,
-        output_field: str,
-        key_field: str = None,
-        target_samplerate: int = 16000,
-        target_nchannels: int = 1,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.input_field = input_field
-        self.output_field = output_field
-        self.key_field = key_field
-        self.resampled_audio_dir = resampled_audio_dir
-        self.target_samplerate = target_samplerate
-        self.target_nchannels = target_nchannels
-
-    def prepare(self):
-        os.makedirs(self.resampled_audio_dir, exist_ok=True)
-        return super().prepare()
-
-    def process_dataset_entry(self, data_entry):
-        input_file = data_entry[self.input_field]
-        if self.key_field:
-            key = data_entry[self.key_field]
-            os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
-        else:
-            key = os.path.splitext(input_file)[0].split("/")[-1]
-        audio = os.path.join(self.resampled_audio_dir, key) + ".wav"
-
-        if not os.path.isfile(audio):
-            ffmpeg_convert(input_file, audio, self.target_samplerate, self.target_nchannels)
-
-        data_entry[self.output_field] = audio
-        if self.key_field:
-            data_entry[self.key_field] = key
-        return [DataEntry(data=data_entry)]
 
 
 class CreateInitialManifestExt(BaseParallelProcessor):
