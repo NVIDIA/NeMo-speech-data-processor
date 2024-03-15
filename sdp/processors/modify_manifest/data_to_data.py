@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,13 +13,219 @@
 # limitations under the License.
 
 import collections
+import os
 import re
 from typing import Dict, List
 
+import soundfile as sf
+
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
+
+
+class GetAudioDuration(BaseParallelProcessor):
+    """
+    Processor that computes the duration of the file in audio_filepath_field (using soundfile)
+    and saves the duration in duration_field. If there is an error computing the duration,
+    the duration_field will be updated with the value -1.0.
+
+    Args:
+        audio_file_key (str): Key to get path to wav file.
+        duration_key (str): Key to put to audio duration.
+    Returns:
+        All the same fields as in the input manifest plus duration_field
+    """
+
+    def __init__(
+        self,
+        audio_file_key: str,
+        duration_key: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.audio_file_key = audio_file_key
+        self.duration_key = duration_key
+
+    def process_dataset_entry(self, data_entry):
+        audio_filepath = data_entry[self.audio_file_key]
+        try:
+            data, samplerate = sf.read(audio_filepath)
+            data_entry[self.duration_key] = data.shape[0] / samplerate
+        except Exception as e:
+            logger.warning(str(e) + " file: " + audio_filepath)
+            data_entry[self.duration_key] = -1.0
+        return [DataEntry(data=data_entry)]
+
+
+class FfmpegConvert(BaseParallelProcessor):
+    """
+    Processor for converting video or audio files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
+    If id_key is not None it is used as an output file name. If id_key is None the output file name is the same as input file name with different extention
+    and input file name saves to id_key back.
+    Args:
+        resampled_audio_dir (str): The directory to store the resampled audio files.
+        input_file_key (str): The field in the dataset representing the path to the input video or audio files.
+        output_file_key (str): The field to store the path to the resampled audio files in the dataset.
+        id_key (str): The field in the dataset representing the unique ID or identifier for each entry. Defaults to None.
+        target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
+        target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        resampled_audio_dir: str,
+        input_file_key: str,
+        output_file_key: str,
+        id_key: str = None,
+        target_samplerate: int = 16000,
+        target_nchannels: int = 1,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_file_key = input_file_key
+        self.output_file_key = output_file_key
+        self.id_key = id_key
+        self.resampled_audio_dir = resampled_audio_dir
+        self.target_samplerate = target_samplerate
+        self.target_nchannels = target_nchannels
+
+    def prepare(self):
+        os.makedirs(self.resampled_audio_dir, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        input_file = data_entry[self.input_file_key]
+        if self.id_key:
+            key = data_entry[self.id_key]
+            os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
+        else:
+            key = os.path.splitext(input_file)[0].split("/")[-1]
+        audio = os.path.join(self.resampled_audio_dir, key) + ".wav"
+
+        if not os.path.isfile(audio):
+            ffmpeg_convert(input_file, audio, self.target_samplerate, self.target_nchannels)
+
+        data_entry[self.output_file_key] = audio
+        if self.id_key:
+            data_entry[self.id_key] = key
+        return [DataEntry(data=data_entry)]
+
+
+class ReadTxtLines(BaseParallelProcessor):
+    """
+    The text file specified in source_filepath will be read, and each line in it will be added as a line in the output manifest,
+    saved in the field text_key.
+
+    Args:
+        input_file_key (str): The key in the manifest containing the input txt file path .
+        text_key (str): The key to store the read text lines in the manifest.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        input_file_key: str,
+        text_key: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_file_key = input_file_key
+        self.text_key = text_key
+
+    def process_dataset_entry(self, data_entry):
+        fname = data_entry[self.input_file_key]
+        data_list = []
+        with open(fname, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    data = data_entry.copy()
+                    data[self.text_key] = line
+                    data_list.append(DataEntry(data=data))
+        return data_list
+
+
+class SplitLineBySentence(BaseParallelProcessor):
+    """
+    Processor for splitting lines of text into sentences based on a specified pattern.
+    One line containing N sentences will be transformed into N lines containing one sentence.
+
+    Args:
+        text_key (str): The field containing the text lines in the dataset.
+        end_pattern (str): The regular expression pattern to identify sentence boundaries.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        text_key: str,
+        end_pattern: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.text_key = text_key
+        self.pattern = re.compile(end_pattern)
+
+    def process_dataset_entry(self, data_entry):
+        line = data_entry[self.text_key]
+        data_list = []
+        start = 0
+        ends = [m.start() for m in self.pattern.finditer(line)]
+        if ends:
+            for end in ends:
+                sent = line[start : end + 1].strip()
+                # if sent and sent[0].isupper():
+                data = data_entry.copy()
+                data[self.text_key] = sent
+                data_list.append(DataEntry(data=data))
+                start = end + 1
+            if start < len(line):
+                pass
+        else:
+            data = data_entry.copy()
+            data[self.text_key] = line.strip()
+            data_list.append(DataEntry(data=data))
+        return data_list
+
+
+class CountNumWords(BaseParallelProcessor):
+    """
+    Processor for counting the number of words in the text_key field saving the number in num_words_key.
+
+    Args:
+        text_key (str): The field containing the input text in the dataset.
+        num_words_key (str): The field to store the number of words in the dataset.
+        alphabet (str): Characters to be used to count words. Any other characters are substituted by whitespace and not take into account.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        text_key: str,
+        num_words_key: str,
+        alphabet: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.text_key = text_key
+        self.num_words_key = num_words_key
+        self.pattern = re.compile("[^" + alphabet + "]")
+
+    def process_dataset_entry(self, data_entry):
+        text = data_entry[self.text_key]
+        cleaned_string = self.pattern.sub('', text).strip()
+        cleaned_string = re.sub('\\s+', ' ', cleaned_string).strip()
+        words = cleaned_string.split()
+        num_words = len(words)
+        data_entry[self.num_words_key] = num_words
+        return [DataEntry(data=data_entry)]
 
 
 class InsIfASRInsertion(BaseParallelProcessor):
@@ -49,7 +255,11 @@ class InsIfASRInsertion(BaseParallelProcessor):
     """
 
     def __init__(
-        self, insert_words: List[str], text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        insert_words: List[str],
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.insert_words = insert_words
@@ -138,7 +348,11 @@ class SubIfASRSubstitution(BaseParallelProcessor):
     """
 
     def __init__(
-        self, sub_words: Dict, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        sub_words: Dict,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.sub_words = sub_words
@@ -214,7 +428,9 @@ class SubMakeLowercase(BaseParallelProcessor):
     """
 
     def __init__(
-        self, text_key: str = "text", **kwargs,
+        self,
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.text_key = text_key
@@ -252,7 +468,10 @@ class SubRegex(BaseParallelProcessor):
     """
 
     def __init__(
-        self, regex_params_list: List[Dict], text_key: str = "text", **kwargs,
+        self,
+        regex_params_list: List[Dict],
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_params_list = regex_params_list
