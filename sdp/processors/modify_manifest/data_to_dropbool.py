@@ -14,8 +14,8 @@
 
 import collections
 import re
+from operator import eq, ge, gt, le, lt, ne
 from typing import List, Union
-from operator import lt, le, eq, ne, ge, gt
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
@@ -35,21 +35,22 @@ class PreserveByValue(BaseParallelProcessor):
     Processor for preserving dataset entries based on a specified condition involving a target value and an input field.
 
     Args:
-        input_field (str): The field in the dataset entries to be evaluated.
+        input_value_key (str): The field in the dataset entries to be evaluated.
         target_value (Union[int, str]): The value to compare with the input field.
         operator (str, optional): The operator to apply for comparison. Options: "lt" (less than), "le" (less than or equal to), "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than). Defaults to "eq".
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     """
+
     def __init__(
         self,
-        input_field: str,
+        input_value_key: str,
         target_value: Union[int, str],
         operator: str = "eq",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = input_field
+        self.input_value_key = input_value_key
         self.target_value = target_value
         if operator == "lt":
             self.operator = lt
@@ -64,16 +65,19 @@ class PreserveByValue(BaseParallelProcessor):
         elif operator == "gt":
             self.operator = gt
         else:
-            raise ValueError('Operator must be one from the list: "lt" (less than), "le" (less than or equal to), "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than)')
+            raise ValueError(
+                'Operator must be one from the list: "lt" (less than), "le" (less than or equal to), "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than)'
+            )
 
     def process_dataset_entry(self, data_entry):
-        input_value = data_entry[self.input_field]
+        input_value = data_entry[self.input_value_key]
         target = self.target_value
         if self.operator(input_value, target):
             return [DataEntry(data=data_entry)]
         else:
             return [DataEntry(data=None)]
-        
+
+
 class DropHighLowCharrate(BaseParallelProcessor):
     """Drops utterances if their character rate is too low or too high.
 
@@ -96,7 +100,11 @@ class DropHighLowCharrate(BaseParallelProcessor):
     """
 
     def __init__(
-        self, high_charrate_threshold: float, low_charrate_threshold: float, text_key: str = "text", **kwargs,
+        self,
+        high_charrate_threshold: float,
+        low_charrate_threshold: float,
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
 
@@ -157,7 +165,11 @@ class DropHighLowWordrate(BaseParallelProcessor):
     """
 
     def __init__(
-        self, high_wordrate_threshold: float, low_wordrate_threshold: float, text_key: str = "text", **kwargs,
+        self,
+        high_wordrate_threshold: float,
+        low_wordrate_threshold: float,
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
 
@@ -211,7 +223,11 @@ class DropHighLowDuration(BaseParallelProcessor):
     """
 
     def __init__(
-        self, high_duration_threshold: float, low_duration_threshold: float, duration_key: str = "duration", **kwargs,
+        self,
+        high_duration_threshold: float,
+        low_duration_threshold: float,
+        duration_key: str = "duration",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.high_duration_threshold = high_duration_threshold
@@ -269,7 +285,10 @@ class DropIfNoneOfRegexMatch(BaseParallelProcessor):
     """
 
     def __init__(
-        self, regex_patterns: List[str], text_key: str = "text", **kwargs,
+        self,
+        regex_patterns: List[str],
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_patterns = regex_patterns
@@ -316,7 +335,10 @@ class DropNonAlphabet(BaseParallelProcessor):
     """
 
     def __init__(
-        self, alphabet: str, text_key: str = "text", **kwargs,
+        self,
+        alphabet: str,
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.alphabet = alphabet
@@ -423,7 +445,8 @@ class DropASRErrorBeginningEnd(BaseParallelProcessor):
             beginning_drop_counter,
         )
         logger.info(
-            "Num of utterances that were dropped due to asr insertions/deletions at the end: %d", end_drop_counter,
+            "Num of utterances that were dropped due to asr insertions/deletions at the end: %d",
+            end_drop_counter,
         )
         super().finalize(metrics)
 
@@ -445,7 +468,11 @@ class DropASRError(BaseParallelProcessor):
     """
 
     def __init__(
-        self, consecutive_words_threshold: int, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        consecutive_words_threshold: int,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.consecutive_words_threshold = consecutive_words_threshold
@@ -487,7 +514,11 @@ class DropHighCER(BaseParallelProcessor):
     """
 
     def __init__(
-        self, cer_threshold: float, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        cer_threshold: float,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.cer_threshold = cer_threshold
@@ -506,7 +537,9 @@ class DropHighCER(BaseParallelProcessor):
         for dropped in metrics:
             drop_counter += dropped
         logger.info(
-            "Num of utterances that were dropped due to CER > %d: %d", self.cer_threshold, drop_counter,
+            "Num of utterances that were dropped due to CER > %d: %d",
+            self.cer_threshold,
+            drop_counter,
         )
         super().finalize(metrics)
 
@@ -533,7 +566,11 @@ class DropHighWER(BaseParallelProcessor):
     """
 
     def __init__(
-        self, wer_threshold: float, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        wer_threshold: float,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.wer_threshold = wer_threshold
@@ -552,7 +589,9 @@ class DropHighWER(BaseParallelProcessor):
         for dropped in metrics:
             drop_counter += dropped
         logger.info(
-            "Num of utterances that were dropped due to WER > %d: %d", self.wer_threshold, drop_counter,
+            "Num of utterances that were dropped due to WER > %d: %d",
+            self.wer_threshold,
+            drop_counter,
         )
         super().finalize(metrics)
 
@@ -579,7 +618,11 @@ class DropLowWordMatchRate(BaseParallelProcessor):
     """
 
     def __init__(
-        self, wmr_threshold: float, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        wmr_threshold: float,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.wmr_threshold = wmr_threshold
@@ -599,7 +642,9 @@ class DropLowWordMatchRate(BaseParallelProcessor):
         for dropped in metrics:
             drop_counter += dropped
         logger.info(
-            "Num of utterances that were dropped due to WMR < %d: %d", self.wmr_threshold, drop_counter,
+            "Num of utterances that were dropped due to WMR < %d: %d",
+            self.wmr_threshold,
+            drop_counter,
         )
         super().finalize(metrics)
 
@@ -625,7 +670,10 @@ class DropIfRegexMatch(BaseParallelProcessor):
     """
 
     def __init__(
-        self, regex_patterns: List[str], text_key: str = "text", **kwargs,
+        self,
+        regex_patterns: List[str],
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_patterns = regex_patterns
@@ -666,7 +714,10 @@ class DropOnAttribute(BaseParallelProcessor):
     """
 
     def __init__(
-        self, key: str, drop_if_false: bool = False, **kwargs,
+        self,
+        key: str,
+        drop_if_false: bool = False,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.key = key
@@ -710,7 +761,11 @@ class DropIfSubstringInInsertion(BaseParallelProcessor):
     """
 
     def __init__(
-        self, substrings_in_insertion: List[str], text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        substrings_in_insertion: List[str],
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.substrings_in_insertion = substrings_in_insertion

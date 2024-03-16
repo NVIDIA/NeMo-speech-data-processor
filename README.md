@@ -17,7 +17,7 @@ To learn more about SDP, have a look at our [documentation](https://nvidia.githu
 
 ## Installation
 
-SDP is officially supported for Python 3.9, but might work for other versions.
+SDP is officially supported for Python 3.10, but might work for other versions.
 
 To install all required dependencies run `pip install -r requirements/main.txt`. You will need to install
 additional requirements if you want to [run tests](tests/README.md) or [build documentation](docs/README.md).
