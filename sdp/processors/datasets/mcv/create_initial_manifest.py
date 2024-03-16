@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# To convert mp3 files to wav using sox, you must have installed sox with mp3 support
-# For example sudo apt-get install libsox-fmt-mp3
 import csv
 import glob
+
+# To convert mp3 files to wav using sox, you must have installed sox with mp3 support
+# For example sudo apt-get install libsox-fmt-mp3
 import os
+import sys
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 
 import sox
 from sox import Transformer
@@ -27,6 +29,8 @@ from tqdm.contrib.concurrent import process_map
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import extract_archive
+
+from .enlarge_train_data import merge_tsvs
 
 
 class CreateInitialManifestMCV(BaseParallelProcessor):
@@ -50,7 +54,10 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
             Defaults to 16000.
         target_nchannels (int): number of channels to create during resampling process.
             Defaults to 1.
-
+        enlarge_train (bool): if True, merges Train Dev and Other .tsv files into a single Train.tsv
+            Defaults to False.
+        corrupted (Optional[str]): Path to .csv with corrupted audios (to remove). Used if enlarge_train is True
+        Defaults to None.
     Returns:
         This processor generates an initial manifest file with the following fields::
 
@@ -71,9 +78,13 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
         already_extracted: bool = False,
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
+        enlarge_train: bool = False,
+        corrupted: Optional[str] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
+        self.corrupted = corrupted
+        self.enlarge_train = enlarge_train
         self.raw_data_dir = Path(raw_data_dir)
         self.extract_archive_dir = extract_archive_dir
         self.resampled_audio_dir = resampled_audio_dir
@@ -85,9 +96,8 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
 
     def prepare(self):
         """Extracting data (unless already done)."""
-        os.makedirs(self.raw_data_dir, exist_ok=True)
-
         if not self.already_extracted:
+            os.makedirs(self.raw_data_dir, exist_ok=True)  # if data is already extracted no need to create
             tar_gz_files = glob.glob(str(self.raw_data_dir) + f"/*{self.language_id}.tar.gz")
             if not tar_gz_files:
                 raise RuntimeError(
@@ -107,6 +117,10 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
             self.transcription_file = Path(self.extract_archive_dir) / self.language_id
         self.audio_path_prefix = str(self.transcription_file / "clips")
         self.transcription_file = str(self.transcription_file / (self.data_split + ".tsv"))
+
+        if self.enlarge_train and self.data_split == "train":
+            self.transcription_file = merge_tsvs(self.transcription_file, corrupted=self.corrupted)
+            logger.success("Successfully Enlarged the Train.tsv")
         os.makedirs(self.resampled_audio_dir, exist_ok=True)
 
     def read_manifest(self):
@@ -126,6 +140,8 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
 
         audio_path = os.path.join(self.audio_path_prefix, file_path)
         output_wav_path = os.path.join(self.resampled_audio_dir, file_name + ".wav")
+        if sys.platform.startswith('win'):  # windows has problems with path concat ( "\\" and "/")
+            output_wav_path = r"{}".format(os.path.normpath(output_wav_path))
 
         if not os.path.exists(output_wav_path):
             tfm = Transformer()

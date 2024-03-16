@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import json
+import os
 from pathlib import Path
 
 from tqdm import tqdm
@@ -75,7 +75,19 @@ class ASRWhisper(BaseProcessor):
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
     def whisper_infer(self, audio_path):
-        audio = self.whisper.load_audio(audio_path)
+        try:
+            audio = self.whisper.load_audio(audio_path)
+        except FileNotFoundError as fe:  # whisper bug: https://github.com/openai/whisper/discussions/109
+            if os.path.exists(audio_path):
+                if self.log_in_loop < 1:
+                    self.log_in_loop += 1  # do not log more than once in a loop
+                    logger.warning(f'While reading audio whisper results in {fe.__str__()}')
+                    logger.info('Trying to read the audio with librosa')
+            else:
+                raise fe
+
+            samplerate = os.environ.get('RESAMPLED_RATE', 16000)
+            audio, sr = librosa.load(audio_path, sr=samplerate)
 
         audio = self.whisper.pad_or_trim(audio)
         mel = self.whisper.log_mel_spectrogram(audio)
@@ -159,7 +171,7 @@ class ASRTransformers(BaseProcessor):
 
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
 
-        with Path(self.output_manifest_file).open('w') as f:
+        with Path(self.output_manifest_file).open('w', encoding='utf-8') as f:
             for item in tqdm(json_list):
                 pred_text = self.pipe(item["audio_filepath"])["text"]
 

@@ -14,15 +14,23 @@
 
 import json
 import os
-from typing import Dict, List
+import subprocess
+import sys
+from functools import partial
+from glob import glob
+from typing import Callable, Dict, List, Literal, Optional, TypeAlias
 
 from tqdm import tqdm
 
+from sdp.logging import logger
 from sdp.processors.base_processor import (
     BaseParallelProcessor,
     BaseProcessor,
     DataEntry,
 )
+
+lang_: TypeAlias = Literal['armenian']  # add a couple of your own - Literal["armenian", "new_language"]
+
 
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.
@@ -341,3 +349,257 @@ class KeepOnlySpecifiedFields(BaseProcessor):
                 line = json.loads(line)
                 new_line = {field: line[field] for field in self.fields_to_keep}
                 fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")
+
+
+class RemoveExtraSymbols(BaseParallelProcessor):
+    """Removes extra (defined manually) symbols instead of `Hard` dropping the whole sentence
+    as the data_to_dropbool.py Processors do (e.g. DropNonAlphabet, DropIfNoneOfRegexMatch ...)
+
+    Args:
+        ignore_symbols (str): a string containing all of the characters/symbols to be deleted
+        target_language (str): the language of the dataset (can be used to define specific rules)
+        text_key (str): a string indicating which key of the data entries
+        should be used to find the utterance transcript. Defaults to "text".
+
+            .. note::
+                Don't forget to keep the have the punctuations in the target_language
+                instead of their English equivalents
+
+    Returns:
+         The same data as in the input manifest with some text modifications (removed extra symbols).
+    """
+
+    def __init__(
+        self,
+        ignore_symbols: str,
+        target_language: str,
+        text_key: str = "text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.text_key = text_key
+        self.filter_text = partial(self.clear_text, ignore=ignore_symbols, lang=target_language)
+
+    @staticmethod
+    def clear_text(text: str, ignore: str, lang: Optional[lang_] = 'armenian') -> str:
+        """
+        Function that iterates over a string (text) and removes extra symbols (replaces with '')
+        The utility is static method as it can also be used for instance during CreateInitialManifestMCV
+
+        Args:
+             text (str): the sentence to be processed - text.replace("<extra_symbols>", "")
+             ignore (str): a string containing all of the characters/symbols to be deleted from text
+        Returns:
+            Cleaned text (str)
+        """
+        if lang == 'armenian':
+            text = text.replace(".", "․").replace(":", "։")
+
+        for x in ignore:
+            text = text.replace(x, "")
+            text = text.replace(x.upper(), "")
+
+        return text
+
+    def process_dataset_entry(self, data_entry) -> List:
+        original_text = data_entry[self.text_key]
+        cleaned_text = self.filter_text(original_text)
+        n_removed_symbols = len(original_text) - len(cleaned_text)
+        return [DataEntry(data=data_entry, metrics=n_removed_symbols)]
+
+    def finalize(self, metrics):
+        logger.info(f"Num of extra symbols removed: {sum(metrics)}")
+        super().finalize(metrics)
+
+
+class CreateTokenizer(BaseProcessor):
+    """Processor for training a tokenizer on the corpus (supports extra corpus given by glob pattern)
+
+    Args:
+        nemo_repo_path (str): path to cloned NeMo repo directory.
+        vocab_size (int): vocabular size used in encoding the text.
+        data_folder (str): path to folder where .tsv files are stored.
+        nemo_executable (str): as python virtualEnvs can differ from nemo & nemo-SDP, provide the python.exe manually
+
+        extra_corpus (str): `glob` path to extra .txts to build the tokenizer.
+        target_language (str): the language of the dataset (can be used to define specific rules).
+        ignore_symbols (str): a string containing all of the characters/symbols to be deleted (when inserting extra_corpus data).
+
+        tokenizer (Literal["spe", "bpe"]): type of tokenization to perform - wpe or spe.
+        lower_case (bool): whether to tokenize with lower case character set only (for english).
+        spe_type: (Literal['bpe', 'unigram', 'char', 'word']): type of tokenization model used for spe.
+
+    Returns:
+        None
+                .. note::
+                    Creates directory where stores the corpus (document.txt) the tokenizer (.pb) and the vocab
+    """
+
+    def __init__(
+        self,
+        data_folder: str,
+        nemo_repo_path: str,
+        vocab_size: int = 128,
+        extra_corpus: str = '',
+        lower_case: bool = True,
+        ignore_symbols: str = '',
+        target_language: str = '',
+        nemo_executable: str = '~/anaconda3/envs/nemo/python.exe',
+        tokenizer: Literal['spe', 'bpe'] = 'spe',
+        spe_type: Literal['bpe', 'unigram', 'char', 'word'] = 'unigram',
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        script_path = os.path.join(nemo_repo_path, 'scripts/tokenizers/process_asr_text_tokenizer.py')
+
+        if not os.path.exists(nemo_executable):
+            logger.warning(
+                f"Provided nemo executable: {nemo_executable} does not exists. Have to replace with {sys.executable}"
+            )
+            nemo_executable = sys.executable
+
+        def get_command_to_run() -> List[str]:
+            """
+            Storing the procedure for preparing the tokenizer training
+            No files (text_corpus, document.txt) are created until self.process()
+            """
+            os.makedirs(os.path.join(data_folder, 'text_corpus'), exist_ok=True)
+            document_path = os.path.join(data_folder, 'text_corpus', 'document.txt')
+
+            with open(document_path, 'w', encoding='utf-8') as out_writer:
+                with open(self.input_manifest_file, 'r', encoding='utf-8') as in_reader:
+                    for line in in_reader:
+                        item = json.loads(line)
+                        text = item['text']
+
+                        out_writer.write(text + '\n')
+                        out_writer.flush()
+
+            logger.info(f"Finished extracting manifest from MCV: {document_path}")
+
+            if extra_corpus:
+                filter_text = partial(RemoveExtraSymbols.clear_text, ignore=ignore_symbols, lang=target_language)
+                self.insert_files_into_doc(document_path, extra_corpus, filter_text)
+
+            command = [
+                nemo_executable,
+                script_path,
+                '--data_file',
+                document_path,
+                "--vocab_size",
+                vocab_size,
+                "--data_root",
+                data_folder,
+                "--tokenizer",
+                tokenizer,
+                "--spe_type",
+                spe_type,
+            ]
+            if lower_case:
+                command.append("--no_lower_case")
+
+            return [str(x) for x in command]
+
+        self.get_command = get_command_to_run
+
+    @staticmethod
+    def insert_files_into_doc(doc_txt_path: str, corpus: str, filter_function: Callable = lambda x: x) -> None:
+        corpus = glob(corpus)
+        assert isinstance(corpus, list)
+
+        with open(doc_txt_path, 'a', encoding='utf-8') as doc_file:
+            for txt_file_path in tqdm(corpus):
+                with open(txt_file_path, 'r', encoding='utf-8') as txt_file:
+                    for line in txt_file:
+                        doc_file.write(filter_function(line))
+
+    def process(self):
+        subprocess.run(self.get_command())
+
+
+class ConvertDatasetToTar(BaseProcessor):
+    """Processor to prepare tarred dataset for training
+
+    Args:
+        workers (int): Number of worker processes.
+        nemo_repo_path (str): path to cloned NeMo repo directory.
+        nemo_executable (str): as python virtualEnvs can differ from nemo & nemo-SDP, provide the python.exe manually
+        sort_in_shards (bool): Whether or not to sort samples inside the shards based on their duration.
+        num_shards (int): Number of shards (tarballs) to create. Used for partitioning data among workers.
+        shuffle (bool): Whether or not to randomly shuffle the samples in the manifest before tarring/sharding.
+        max_duration (float): Maximum duration of audio clip in the dataset. By default, it is None and is required to be set.
+        min_duration (float): Minimum duration of audio clip in the dataset. By default, it is None and will not filter files.
+        target_dir (str): Target directory for resulting tarballs and manifest. Defaults to `./tarred`. Creates the path if necessary.
+
+    Returns:
+        None
+                .. note::
+                    Creates directory where stores the corpus (document.txt) the tokenizer (.pb) and the vocab
+    """
+
+    def __init__(
+        self,
+        target_dir: str,
+        nemo_repo_path: str,
+        shuffle: bool = True,
+        workers: int = -1,
+        nemo_executable: str = "~/anaconda3/envs/nemo/python.exe",
+        shuffle_seed: int = 1,
+        num_shards: int = 1024,
+        min_duration: float = 1.0,
+        max_duration: float = 15.0,
+        sort_in_shards: bool = True,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        script_path = os.path.join(nemo_repo_path, 'scripts\speech_recognition\convert_to_tarred_audio_dataset.py')
+
+        if not os.path.exists(nemo_executable):
+            nemo_executable = sys.executable
+
+        def get_command_to_run() -> List[str]:
+            """
+            Storing the procedure for preparing the tokenizer training
+            No files (text_corpus, document.txt) are created until self.process()
+            """
+            command = [
+                nemo_executable,
+                script_path,
+                '--manifest_path',
+                self.input_manifest_file,
+                "--min_duration",
+                min_duration,
+                "--target_dir",
+                target_dir,
+                "--shuffle_seed",
+                shuffle_seed,
+                "--max_duration",
+                max_duration,
+                "--workers",
+                workers,
+                "--num_shards",
+                num_shards,
+            ]
+            if shuffle:
+                command.append("--shuffle")
+
+            if sort_in_shards:
+                command.append("--sort_in_shards")
+
+            return [str(x) for x in command]
+
+        self.get_command = get_command_to_run
+
+    @staticmethod
+    def insert_files_into_doc(doc_txt_path: str, corpus: str, filter_function: Callable = lambda x: x) -> None:
+        corpus = glob(corpus)
+        assert isinstance(corpus, list)
+
+        with open(doc_txt_path, 'a', encoding='utf-8') as doc_file:
+            for txt_file_path in tqdm(corpus):
+                with open(txt_file_path, 'r', encoding='utf-8') as txt_file:
+                    for line in txt_file:
+                        doc_file.write(filter_function(line))
+
+    def process(self):
+        subprocess.run(self.get_command())
