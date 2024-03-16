@@ -15,7 +15,7 @@ processors:
     output_manifest_file: ${workspace_dir}/data/manifests/manifest_mcv_0.json
 
   - _target_: sdp.processors.DropNonAlphabet
-    alphabet: ".,? 'աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքևօֆԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖ՜֊՞՛՝»«։<>´`՚"
+    alphabet: "աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքևօֆԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖ՜֊՞՛՝»«։<>´`՚.,? '"
     test_cases:
       - { input: { text: "test тест 测试" }, output: null }
       - { input: { text: "Բարև" }, output: { text: "Բարև" } }
@@ -33,8 +33,17 @@ processors:
       - { "pattern": "ó", "repl": "o" }
       # - {"pattern": "»", "repl": ">>"}
       - { "pattern": "Ó", "repl": "O" }
+      - { "pattern": "Եվ", "repl": "և" }
+      - { "pattern": "ԵՎ", "repl": "և" }
+      - { "pattern": "եՎ", "repl": "և" }
+      - { "pattern": '—', "repl": "-" }
+      - { "pattern": '–', "repl": "-" }
+      - { "pattern": '―', "repl": "-" }
+      - { "pattern": '\.\.\.', "repl": "…" }
+      - { "pattern": "\\s+", "repl": " " }
     test_cases:
       - { input: { text: "Բարև!" }, output: { text: "Բարև." } }
+      - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
     input_manifest_file: ${workspace_dir}/data/manifests/manifest_dropalphabet_1.json
     output_manifest_file: ${workspace_dir}/data/manifests/manifest_subregex_2.json
 
@@ -60,7 +69,13 @@ processors:
       "common_voice_hy-AM_39534958.mp3",
       "common_voice_hy-AM_39538083.mp3",
       "common_voice_hy-AM_39538084.mp3",
-      "common_voice_hy-AM_39538085.mp3"
+      "common_voice_hy-AM_39538085.mp3",
+      "[А-Яа-я]",
+      "[A-Za-z]",
+      "\\+",
+      "=",
+      "¬",
+      "&"
     ]
     text_key: audio_filepath
     input_manifest_file: ${workspace_dir}/data/manifests/manifest_subregex_2.json
