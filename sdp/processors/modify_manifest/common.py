@@ -14,15 +14,20 @@
 
 import json
 import os
-from typing import Dict, List
+from functools import partial
+from typing import Dict, List, Literal, Optional, TypeAlias
 
 from tqdm import tqdm
 
+from sdp.logging import logger
 from sdp.processors.base_processor import (
     BaseParallelProcessor,
     BaseProcessor,
     DataEntry,
 )
+
+lang_: TypeAlias = Literal['armenian']  # add a couple of your own - Literal["armenian", "new_language"]
+
 
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.
@@ -341,3 +346,64 @@ class KeepOnlySpecifiedFields(BaseProcessor):
                 line = json.loads(line)
                 new_line = {field: line[field] for field in self.fields_to_keep}
                 fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")
+
+
+class RemoveExtraSymbols(BaseParallelProcessor):
+    """Removes extra (defined manually) symbols instead of `Hard` dropping the whole sentence
+    as the data_to_dropbool.py Processors do (e.g. DropNonAlphabet, DropIfNoneOfRegexMatch ...)
+
+    Args:
+        ignore_symbols (str): a string containing all of the characters/symbols to be deleted
+        target_language (str): the language of the dataset (can be used to define specific rules)
+        text_key (str): a string indicating which key of the data entries
+        should be used to find the utterance transcript. Defaults to "text".
+
+            .. note::
+                Don't forget to keep the have the punctuations in the target_language
+                instead of their English equivalents
+
+    Returns:
+         The same data as in the input manifest with some text modifications (removed extra symbols).
+    """
+
+    def __init__(
+        self,
+        ignore_symbols: str,
+        target_language: str,
+        text_key: str = "text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.text_key = text_key
+        self.filter_text = partial(self.clear_text, ignore=ignore_symbols, lang=target_language)
+
+    @staticmethod
+    def clear_text(text: str, ignore: str, lang: Optional[lang_] = 'armenian') -> str:
+        """
+        Function that iterates over a string (text) and removes extra symbols (replaces with '')
+        The utility is static method as it can also be used for instance during CreateInitialManifestMCV
+
+        Args:
+             text (str): the sentence to be processed - text.replace("<extra_symbols>", "")
+             ignore (str): a string containing all of the characters/symbols to be deleted from text
+        Returns:
+            Cleaned text (str)
+        """
+        if lang == 'armenian':
+            text = text.replace(".", "․").replace(":", "։")
+
+        for x in ignore:
+            text = text.replace(x, "")
+            text = text.replace(x.upper(), "")
+
+        return text
+
+    def process_dataset_entry(self, data_entry) -> List:
+        original_text = data_entry[self.text_key]
+        cleaned_text = self.filter_text(original_text)
+        n_removed_symbols = len(original_text) - len(cleaned_text)
+        return [DataEntry(data=data_entry, metrics=n_removed_symbols)]
+
+    def finalize(self, metrics):
+        logger.info(f"Num of extra symbols removed: {sum(metrics)}")
+        super().finalize(metrics)
