@@ -14,8 +14,10 @@
 
 import json
 import os
+import subprocess
 from functools import partial
-from typing import Dict, List, Literal, Optional, TypeAlias
+from glob import glob
+from typing import Callable, Dict, List, Literal, Optional, TypeAlias
 
 from tqdm import tqdm
 
@@ -407,3 +409,99 @@ class RemoveExtraSymbols(BaseParallelProcessor):
     def finalize(self, metrics):
         logger.info(f"Num of extra symbols removed: {sum(metrics)}")
         super().finalize(metrics)
+
+
+class CreateTokenizer(BaseProcessor):
+    """Processor which will sort the manifest by some specified attribute.
+
+    Args:
+        nemo_repo_path (str): path to cloned NeMo repo directory.
+        vocab_size (int): vocabular size used in encoding the text.
+        data_folder (str): path to folder where .tsv files are stored.
+
+        extra_corpus (str): `glob` path to extra .txts to build the tokenizer.
+        target_language (str): the language of the dataset (can be used to define specific rules).
+        ignore_symbols (str): a string containing all of the characters/symbols to be deleted (when inserting extra_corpus data).
+
+        tokenizer (Literal["spe", "bpe"]): type of tokenization to perform - wpe or spe.
+        lower_case (bool): whether to tokenize with lower case character set only (for english).
+        spe_type: (Literal['bpe', 'unigram', 'char', 'word']): type of tokenization model used for spe.
+
+    Returns:
+        The same entries as in the input manifest, but sorted based
+        on the provided parameters.
+    """
+
+    def __init__(
+        self,
+        data_folder: str,
+        nemo_repo_path: str,
+        vocab_size: int = 128,
+        extra_corpus: str = '',
+        lower_case: bool = True,
+        ignore_symbols: str = '',
+        target_language: str = '',
+        tokenizer: Literal['spe', 'bpe'] = 'spe',
+        spe_type: Literal['bpe', 'unigram', 'char', 'word'] = 'unigram',
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        script_path = os.path.join(nemo_repo_path, 'scripts/tokenizers/process_asr_text_tokenizer.py')
+
+        def get_command_to_run() -> List[str]:
+            """
+            Storing the procedure for preparing the tokenizer training
+            No files (text_corpus, document.txt) are created until self.process()
+            """
+            os.makedirs(os.path.join(data_folder, 'text_corpus'), exist_ok=True)
+            document_path = os.path.join(data_folder, 'text_corpus', 'document.txt')
+
+            with open(document_path, 'w', encoding='utf-8') as out_writer:
+                with open(self.input_manifest_file, 'r', encoding='utf-8') as in_reader:
+                    for line in in_reader:
+                        item = json.loads(line)
+                        text = item['text']
+
+                        out_writer.write(text + '\n')
+                        out_writer.flush()
+
+            logger.info(f"Finished extracting manifest from MCV: {document_path}")
+
+            if extra_corpus:
+                filter_text = partial(RemoveExtraSymbols.clear_text, ignore=ignore_symbols, lang=target_language)
+                self.insert_files_into_doc(document_path, extra_corpus, filter_text)
+
+            command = [
+                "python",
+                script_path,
+                '--data_file',
+                document_path,
+                "--vocab_size",
+                vocab_size,
+                "--data_root",
+                data_folder,
+                "--tokenizer",
+                tokenizer,
+                "--spe_type",
+                spe_type,
+            ]
+            if lower_case:
+                command.append("--no_lower_case")
+
+            return command
+
+        self.get_command = get_command_to_run
+
+    @staticmethod
+    def insert_files_into_doc(doc_txt_path: str, corpus: str, filter_function: Callable = lambda x: x) -> None:
+        corpus = glob(corpus)
+        assert isinstance(corpus, list)
+
+        with open(doc_txt_path, 'a', encoding='utf-8') as doc_file:
+            for txt_file_path in tqdm(corpus):
+                with open(txt_file_path, 'r', encoding='utf-8') as txt_file:
+                    for line in txt_file:
+                        doc_file.write(filter_function(line))
+
+    def process(self):
+        subprocess.run(self.get_command())
