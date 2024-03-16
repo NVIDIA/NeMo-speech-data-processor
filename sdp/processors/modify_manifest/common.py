@@ -413,7 +413,7 @@ class RemoveExtraSymbols(BaseParallelProcessor):
 
 
 class CreateTokenizer(BaseProcessor):
-    """Processor which will sort the manifest by some specified attribute.
+    """Processor for training a tokenizer on the corpus (supports extra corpus given by glob pattern)
 
     Args:
         nemo_repo_path (str): path to cloned NeMo repo directory.
@@ -518,7 +518,7 @@ class CreateTokenizer(BaseProcessor):
 
 
 class ConvertDatasetToTar(BaseProcessor):
-    """Processor which will sort the manifest by some specified attribute.
+    """Processor to prepare tarred dataset for training
 
     Args:
         workers (int): Number of worker processes.
