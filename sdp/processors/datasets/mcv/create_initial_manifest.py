@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# To convert mp3 files to wav using sox, you must have installed sox with mp3 support
-# For example sudo apt-get install libsox-fmt-mp3
 import csv
 import glob
+
+# To convert mp3 files to wav using sox, you must have installed sox with mp3 support
+# For example sudo apt-get install libsox-fmt-mp3
 import os
+import sys
 from pathlib import Path
 from typing import Tuple
 
@@ -85,9 +87,8 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
 
     def prepare(self):
         """Extracting data (unless already done)."""
-        os.makedirs(self.raw_data_dir, exist_ok=True)
-
         if not self.already_extracted:
+            os.makedirs(self.raw_data_dir, exist_ok=True)  # if data is already extracted no need to create
             tar_gz_files = glob.glob(str(self.raw_data_dir) + f"/*{self.language_id}.tar.gz")
             if not tar_gz_files:
                 raise RuntimeError(
@@ -126,6 +127,8 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
 
         audio_path = os.path.join(self.audio_path_prefix, file_path)
         output_wav_path = os.path.join(self.resampled_audio_dir, file_name + ".wav")
+        if sys.platform.startswith('win'):  # windows has problems with path concat ( "\\" and "/")
+            output_wav_path = r"{}".format(os.path.normpath(output_wav_path))
 
         if not os.path.exists(output_wav_path):
             tfm = Transformer()
