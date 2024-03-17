@@ -1,0 +1,77 @@
+processors_to_run: "0:" 
+base_dir: "/ws/test_subset"
+workspace_dir: "/ws/test_subset_out"
+lang: de
+min_duration: 1
+max_duration: 40
+
+processors:
+  # Create initial manifests based on pairs of .opus audio + .srt transcript (with ground-truth timestamps)
+  - _target_: sdp.processors.datasets.youtube.CreateInitialManifest
+    data_dir: ${base_dir}
+    output_audio_dir: ${workspace_dir}/audio/wav_samples
+    output_manifest_file: ${workspace_dir}/manifest1.json
+    chunksize: 10
+    in_memory_chunksize: 400
+  
+  # Aggregate ground-truth segments to longer one based on duration threshold
+  - _target_: sdp.processors.datasets.youtube.AggregateSegments
+    max_duration: ${max_duration}
+    output_segments_audio_dir: ${workspace_dir}/audio/wav_segments
+    output_manifest_file: ${workspace_dir}/manifest2.json
+  
+  # Filter out samples which duration is out of range 0-40 sec.
+  - _target_: sdp.processors.DropHighLowDuration
+    output_manifest_file: ${workspace_dir}/manifest3.json
+    low_duration_threshold: ${min_duration}
+    high_duration_threshold: ${max_duration}
+
+  # Identify language of the text
+  - _target_: sdp.processors.datasets.commoncrawl.TextLid
+    output_manifest_file: ${workspace_dir}/manifest4.json
+    input_text_key: orig_text
+    output_lang_key: text_lang
+    device: cuda
+    pretrained_model: "jb2k/bert-base-multilingual-cased-language-detection"
+    drop_text_duplicates: True
+  
+  - _target_: sdp.processors.datasets.commoncrawl.Lang2Iso
+    output_manifest_file: ${workspace_dir}/manifest5.json
+    input_lang_key: text_lang
+    output_lang_key: text_lang
+  
+  ## Filter out samples with text in non-target language
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest6.json
+    input_value_key: text_lang
+    target_value: ${lang}
+  
+  # Identify language of the audio
+  - _target_: sdp.processors.datasets.commoncrawl.AudioLid
+    output_manifest_file: ${workspace_dir}/manifest7.json
+    input_audio_key: audio_filepath
+    output_lang_key: audio_lang
+    device: cuda
+    pretrained_model: "langid_ambernet"
+
+  ## Filter out samples with audio in non-target language
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest8.json
+    input_value_key: audio_lang
+    target_value: ${lang}
+  
+  # ASR Inference
+  - _target_: sdp.processors.ASRInferenceParallel
+    output_manifest_file: ${workspace_dir}/manifest9.json
+    pretrained_model: nvidia/stt_${lang}_fastconformer_hybrid_large_pc
+    batch_size: 64
+    devices: 4
+
+  
+
+
+
+
+  
+
+
