@@ -85,7 +85,7 @@ class AcceptIfWERLess(BaseProcessor):
         API_KEY: str = "---",
         platform: str = "---",
         pool_id: str = "---",
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.input_data_file = input_data_file
@@ -126,6 +126,10 @@ class AcceptIfWERLess(BaseProcessor):
                     if str(data_entry["status"]) == "Status.SUBMITTED":
                         big_dict[data_entry["assignment_id"]] += 1
 
+        accepted = 0
         for assignment_id, count in big_dict.items():
-            if count >= 3:  # should be >= 3 or == 5
+            if count >= 2:  # should be >= 3 or == 5
                 self.toloka_client.accept_assignment(assignment_id=assignment_id, public_comment='Well done!')
+                accepted += 1
+
+        print(f"Number of accepted task suits: {accepted}")
