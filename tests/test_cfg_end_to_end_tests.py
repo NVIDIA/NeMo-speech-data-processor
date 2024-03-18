@@ -165,13 +165,11 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
 
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
-    # if not cfg["processors_to_run"]:
     cfg["processors_to_run"] = "all"
-    # if not cfg["workspace_dir"]:
     cfg["workspace_dir"] = str(tmp_path)
-    if not cfg["final_manifest"]:
+    if "final_manifest" not in cfg:
         cfg["final_manifest"] = str(tmp_path / "final_manifest.json")
-    if not cfg["data_split"]:
+    if "data_split" not in cfg:
         cfg["data_split"] = "train"
     cfg["processors"][0]["raw_data_dir"] = str(Path(test_data_root) / rel_path_from_root)
 
