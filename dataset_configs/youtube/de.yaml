@@ -1,0 +1,253 @@
+processors_to_run: "0:" 
+base_dir: "/ws/test_subset/"
+workspace_dir: "/ws/test_subset_out/"
+
+# filters
+lang: de
+min_duration: 1.0
+max_duration: 40.0
+max_wer: 75.0
+max_cer: 30.0
+
+
+processors:
+  # Create initial manifests based on pairs of .opus audio + .srt transcript (with ground-truth timestamps)
+  - _target_: sdp.processors.datasets.youtube.CreateInitialManifest
+    data_dir: ${base_dir}
+    output_audio_dir: ${workspace_dir}/audio/wav_samples
+    output_manifest_file: ${workspace_dir}/manifest1.json
+    chunksize: 10
+    in_memory_chunksize: 400
+  
+  # Aggregate ground-truth segments to longer one based on duration threshold
+  - _target_: sdp.processors.datasets.youtube.AggregateSegments
+    max_duration: ${max_duration}
+    output_segments_audio_dir: ${workspace_dir}/audio/wav_segments
+    output_manifest_file: ${workspace_dir}/manifest2.json
+  
+  # Filter out samples which duration is out of range 0-40 sec.
+  - _target_: sdp.processors.DropHighLowDuration
+    output_manifest_file: ${workspace_dir}/manifest3.json
+    low_duration_threshold: ${min_duration}
+    high_duration_threshold: ${max_duration}
+
+  # Identify language of the text
+  - _target_: sdp.processors.datasets.commoncrawl.TextLid
+    output_manifest_file: ${workspace_dir}/manifest4.json
+    input_text_key: orig_text
+    output_lang_key: text_lang
+    device: cuda
+    pretrained_model: "jb2k/bert-base-multilingual-cased-language-detection"
+    drop_text_duplicates: True
+  
+  - _target_: sdp.processors.datasets.commoncrawl.Lang2Iso
+    output_manifest_file: ${workspace_dir}/manifest5.json
+    input_lang_key: text_lang
+    output_lang_key: text_lang
+  
+  ## Filter out samples with text in non-target language
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest6.json
+    input_value_key: text_lang
+    target_value: ${lang}
+  
+  # Identify language of the audio
+  - _target_: sdp.processors.datasets.commoncrawl.AudioLid
+    output_manifest_file: ${workspace_dir}/manifest7.json
+    input_audio_key: audio_filepath
+    output_lang_key: audio_lang
+    device: cuda
+    pretrained_model: "langid_ambernet"
+
+  ## Filter out samples with audio in non-target language
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest8.json
+    input_value_key: audio_lang
+    target_value: ${lang}
+  
+  # ASR Inference
+  - _target_: sdp.processors.ASRInferenceParallel
+    output_manifest_file: ${workspace_dir}/manifest9.json
+    pretrained_model: nvidia/stt_${lang}_fastconformer_hybrid_large_pc
+    batch_size: 64
+    devices: 2
+  
+  ## Merge manifests
+  - _target_: sdp.processors.datasets.youtube.MergeManifests
+    input_manifest_file: ${workspace_dir}/manifest8.json
+    input_manifest_file2: ${workspace_dir}/manifest9.json
+    output_manifest_file: ${workspace_dir}/manifest10.json
+    key_field: audio_filepath
+    fields_to_merge: 
+      - {"pred_text" : "pred_text_pc"}
+  
+  # Filter out samples with empty pred_text_pc
+  - _target_: sdp.processors.DropIfRegexMatch
+    output_manifest_file: ${workspace_dir}/manifest11.json
+    text_key: pred_text_pc
+    regex_patterns:
+      - "^\\s*$"
+  
+  # Preprocess orig text for audio-based TN
+  - _target_: sdp.processors.DuplicateFields
+    output_manifest_file: ${workspace_dir}/manifest12.json
+    duplicate_fields: {"orig_text" : "pre_normalized"}
+
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest13.json
+    text_key: pre_normalized
+    regex_params_list:
+        - {"pattern": '\\[hn]', "repl" : " "}
+        - {"pattern": "\\s+", "repl" : " "}
+        - {"pattern": "\\[", "repl" : " "}
+        - {"pattern": "\\]", "repl" : " "}
+        - {"pattern": "!", "repl" : "."}
+        - {"pattern": "\\)", "repl" : " "}
+        - {"pattern": "\\(", "repl" : " "}
+        - {"pattern": "“", "repl" : " "}
+        - {"pattern": "„", "repl" : " "}
+        - {"pattern": "–", "repl" : " "}
+        - {"pattern": ";", "repl" : ","}
+        - {"pattern": "'", "repl" : " "}
+        - {"pattern": "…", "repl" : "."}
+        - {"pattern": "«", "repl" : " "}
+        - {"pattern": "»", "repl" : " "}
+        - {"pattern": "’", "repl" : " "}
+        - {"pattern": "‘", "repl" : " "}
+        - {"pattern": "”", "repl" : " "}
+        - {"pattern": "—", "repl" : " "}
+        - {"pattern": "´", "repl" : " "}
+        - {"pattern": "″", "repl" : " "}
+        - {"pattern": "`", "repl" : " "}
+        - {"pattern": "\\|", "repl" : " "}
+        - {"pattern": "−", "repl" : " "}
+        - {"pattern": "‟", "repl" : " "}
+        - {"pattern": "‒", "repl" : " "}
+        - {"pattern": "	", "repl" : " "}
+        - {"pattern": "￼", "repl" : " "}
+        - {"pattern": "‐", "repl" : " "}
+        - {"pattern": "ʻ", "repl" : " "}
+        - {"pattern": "′", "repl" : " "}
+        - {"pattern": "\\\\", "repl" : " "}
+        - {"pattern": "^\\s?\\.\\.\\.", "repl" : ""}
+        - {"pattern": "\\s?\\.\\.\\.$", "repl" : "."}
+    
+  ## Remove extra space
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest14.json
+    text_key: pre_normalized
+    regex_params_list:
+      - {"pattern": "\\s+", "repl" : " "}
+      - {"pattern": "^\\s+", "repl" : ""}
+      - {"pattern": "\\s+$", "repl" : ""}
+
+  ## Filter out samples out of Regex
+  - _target_: sdp.processors.DropIfNoneOfRegexMatch
+    output_manifest_file: ${workspace_dir}/manifest15.json
+    text_key: pre_normalized
+    regex_patterns: 
+      - "^[ !#$%&'*+,\\-.0-9:=?ABCDEFGHIJKLMNOPQRSTUVWXYZ^_abcdefghijklmnopqrstuvwxyz{}~£¥°²³µÄÖÜßäöüμω₩€/]+$"
+
+  # Run audio based TN
+  - _target_: sdp.processors.datasets.commoncrawl.Subprocess
+    output_manifest_file: ${workspace_dir}/manifest16.json
+    input_manifest_arg: "--manifest"
+    output_manifest_arg: "--output_filename"
+    arg_separator: "="
+    cmd: "python /ws/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
+        --language=${lang} --n_jobs=-1 --batch_size=600 --manifest_text_field=pre_normalized  --manifest_asr_pred_field=pred_text_pc \
+        --cache_dir=${workspace_dir}/cache \
+        --whitelist=/ws/NeMo-text-processing/nemo_text_processing/text_normalization/${lang}/data/whitelist.tsv"
+
+  # Post-normalization processing
+  - _target_: sdp.processors.DuplicateFields
+    output_manifest_file: ${workspace_dir}/manifest17.json
+    duplicate_fields: {"normalized" : "post_normalized"}
+
+  ## Extra chars removing from normalized text
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest18.json
+    text_key: post_normalized
+    regex_params_list:
+        - {"pattern": "['\\-:{}\\/]", "repl" : " "}
+        - {"pattern": "!", "repl" : "."}
+        - {"pattern": "\\s+", "repl" : " "}
+        - {"pattern": "^\\s+", "repl" : ""}
+        - {"pattern": "\\s+$", "repl" : ""}
+  
+  ## Remove samples with chars out of list (letters, comma, period, question mark, space)
+  - _target_: sdp.processors.DropIfNoneOfRegexMatch
+    output_manifest_file: ${workspace_dir}/manifest19.json
+    text_key: post_normalized
+    regex_patterns: 
+      - "^[a-zA-ZäÄöÖüÜß,\\.?\\s]+$"
+  
+  # Create text field with lowercased clean "post_normalized"
+  - _target_: sdp.processors.DuplicateFields
+    output_manifest_file: ${workspace_dir}/manifest20.json
+    duplicate_fields: {"post_normalized" : "text"}
+  
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/manifest21.json
+    text_key: "text"
+  
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest22.json
+    text_key: "text"
+    regex_params_list:
+      - {"pattern": "[\\.\\?\\,]", "repl" : " "}
+      - {"pattern": "\\s+", "repl" : " "}
+      - {"pattern": "^\\s+", "repl" : ""}
+      - {"pattern": "\\s+$", "repl" : ""}
+  
+  # Create pred_text field with lowercased clean  "pred_text_pc"
+  - _target_: sdp.processors.DuplicateFields
+    output_manifest_file: ${workspace_dir}/manifest23.json
+    duplicate_fields: {"pred_text_pc" : "pred_text"}
+  
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/manifest24.json
+    text_key: "pred_text"
+  
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest25.json
+    text_key: "pred_text"
+    regex_params_list:
+      - {"pattern": "[\\.\\?\\,]", "repl" : " "}
+      - {"pattern": "\\s+", "repl" : " "}
+      - {"pattern": "^\\s+", "repl" : ""}
+      - {"pattern": "\\s+$", "repl" : ""}
+  
+  # Filtration
+  - _target_: sdp.processors.DropHighCER
+    output_manifest_file: ${workspace_dir}/manifest26.json
+    cer_threshold: ${max_cer}
+    text_key: "text"
+    pred_text_key: "pred_text"
+  
+  - _target_: sdp.processors.DropHighWER
+    output_manifest_file: ${workspace_dir}/manifest27.json
+    wer_threshold: ${max_wer}
+    text_key: "text"
+    pred_text_key: "pred_text"
+  
+  # Finalization 
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${workspace_dir}/manifest28.json
+    fields_to_keep: ["audio_filepath", "duration", "post_normalized"]
+  
+  - _target_: sdp.processors.RenameFields
+    output_manifest_file: ${workspace_dir}/manifest29.json
+    rename_fields: {"post_normalized":"text"}
+  
+  - _target_: sdp.processors.datasets.commoncrawl.CopyFiles
+    file_field: audio_filepath
+    path_to_copy: ${workspace_dir}/clean_data/audio/
+    path_levels: 1
+  
+  - _target_: sdp.processors.datasets.commoncrawl.DropAbsPath
+    output_manifest_file: ${workspace_dir}/clean_data/${lang}_manifest.json
+    path_key: audio_filepath
+    abs_path_to_drop: ${workspace_dir}
+
+

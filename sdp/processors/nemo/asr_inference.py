@@ -14,6 +14,7 @@
 
 import os
 import subprocess
+import shutil
 from pathlib import Path
 
 from sdp.processors.base_processor import BaseProcessor
@@ -74,3 +75,34 @@ class ASRInference(BaseProcessor):
                 shell=True,
                 check=True,
             )
+
+
+class ASRInferenceParallel(BaseProcessor):
+    def __init__(
+        self,
+        pretrained_model: str,
+        batch_size: int = 32,
+        devices: int = 2,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.script_path = Path(__file__).parents[1] / "nemo" / "transcribe_speech_parallel.py"
+        self.pretrained_model = pretrained_model
+        self.batch_size = batch_size
+        self.devices = devices
+        self.output_manifest_dir = self.output_manifest_file.replace(".json", "")
+
+    def process(self):
+        subprocess.run(
+            f"python {self.script_path} "
+            f"model={self.pretrained_model} "
+            f"predict_ds.manifest_filepath={self.input_manifest_file} "
+            f"output_path={self.output_manifest_dir} "
+            f"predict_ds.batch_size={self.batch_size} "
+            f"trainer.devices={self.devices} ",
+            shell=True,
+            check=True,
+        )
+
+        os.rename(os.path.join(self.output_manifest_dir, "predictions_all.json"), self.output_manifest_file)
+        shutil.rmtree(self.output_manifest_dir)
