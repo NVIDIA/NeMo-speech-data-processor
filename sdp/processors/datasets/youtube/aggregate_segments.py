@@ -35,14 +35,14 @@ class AggregateSegments(BaseParallelProcessor):
     
     def process_dataset_entry(self, data_entry: dict):
         sample_id = data_entry['sample_id']
-        segmnets = data_entry['segments']
+        segments = data_entry['segments']
         agg_segments = []
 
-        first_segment = RawSegment(**segmnets[0])
+        first_segment = RawSegment(**segments[0])
         agg_segment = AggregatedSegment(segment=first_segment, segment_id=1, sample_id=sample_id, 
                                         output_audio_dir = self.output_segments_audio_dir)
 
-        for segment in segmnets[1 : ]:
+        for segment in segments[1 : ]:
             segment = RawSegment(**segment)
             
             if (not agg_segment.duration_match or 
