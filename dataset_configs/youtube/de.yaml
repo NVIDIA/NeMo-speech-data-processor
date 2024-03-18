@@ -1,6 +1,6 @@
-processors_to_run: "0:" 
-base_dir: "/ws/test_subset/"
-workspace_dir: "/ws/test_subset_out/"
+processors_to_run: "0:2" 
+base_dir: "/data/supervised/2/audios"
+workspace_dir: "/data/processed/2"
 
 # filters
 lang: de
