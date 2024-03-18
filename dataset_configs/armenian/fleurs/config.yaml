@@ -1,24 +1,21 @@
 documentation: |
-  Fleurs
+  FLEURS
   ######
   This config can be used to prepare
-  `Fleurs <https://huggingface.co/datasets/google/fleurs>`_
+  `FLEURS <https://huggingface.co/datasets/google/fleurs>`_
   dataset in the NeMo format.
-  It produces 3 manifests for train/dev/test splits.
-  This config performs the following data processing for each train/dev/test.
-  1. Downloads Librispeech data
-  2. Converts flac files to wav file
-  3. Calculates the length of wav files
+  It produces manifest for dev split of armenian language.
+  This config performs the following data processing.
+  1. Downloads FLEURS data
+  2. Calculates the length of wav files
   **Required arguments**.
   * **workspace_dir**: specify the workspace folder where all audio files will be stored.
   Note that you can customize any part of this config either directly or from command-line.
  
   **Output format**.
-  This config generates multiple output manifest files:
-  * ``${workspace_dir}/train_manifest.json`` - training subset of the data.
-  * ``${workspace_dir}/dev_manifest.json`` - validation subset of the data.
-  * ``${workspace_dir}/test_manifest.json`` - test subset of the data.
-  All output manifests contain the following fields:
+  This config generates output manifest files:
+  * ``${workspace_dir}/manifest.json`` - dev subset of the data.
+  Output manifest contains the following fields:
   * **audio_filepath (str)**: relative path to the audio files.
   * **text (str)**: transcription (lower-case without punctuation).
   * **duration (float)**: audio duration in seconds.
@@ -29,24 +26,11 @@ final_manifest: ${workspace_dir}/manifest.json
 processors:
   # creating manifest for armenian test set
   - _target_: sdp.processors.CreateInitialManifestFleurs
-    config: "hy_am"
-    split: "test"
-    output_manifest_file: ${workspace_dir}/manifest-test-armenian-0.json
-    audio_dir: ${workspace_dir}/audio_dir_test
+    lang: "hy_am"
+    split: "dev"
+    raw_data_dir: ${workspace_dir}/raw_data
 
   - _target_: sdp.processors.GetAudioDuration
     audio_filepath_field: audio_filepath
     duration_field: duration
-    output_manifest_file: ${workspace_dir}/test_manifest_armenian.json
-
-    # creating manifest for korean test set
-  - _target_: sdp.processors.CreateInitialManifestFleurs
-    config: "ko_kr"
-    split: "test"
-    output_manifest_file: ${workspace_dir}/manifest-test-korea-0.json
-    audio_dir: ${workspace_dir}/audio_dir_test
-
-  - _target_: sdp.processors.GetAudioDuration
-    audio_filepath_field: audio_filepath
-    duration_field: duration
-    output_manifest_file: ${workspace_dir}/test_manifest_korean.json
+    output_manifest_file: ${final_manifest}

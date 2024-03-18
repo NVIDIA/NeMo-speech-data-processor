@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,60 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import concurrent.futures
+import fnmatch
+import glob
 import json
 import os
+import shutil
 import typing
 from urllib.parse import parse_qs, urlparse
-
-import requests
 
 from sdp.processors.base_processor import BaseProcessor, DataEntry
 from sdp.utils.common import download_file, extract_archive
 
 
-def get_fleurs_url_list(config: str, split: str) -> list[str]:
-    # URL to fetch JSON data
-    json_url = "https://datasets-server.huggingface.co/splits?dataset=google%2Ffleurs"
+def get_fleurs_url_list(lang: str, split: list[str]) -> list[str]:
+    urls = []
+    # examples
+    # "https://huggingface.co/datasets/google/fleurs/resolve/main/data/hy_am/audio/dev.tar.gz",
+    # "https://huggingface.co/datasets/google/fleurs/resolve/main/data/hy_am/dev.tsv"
 
-    # Send a request to the URL and parse the JSON response
-    response = requests.get(json_url)
-    if response.status_code != 200:
-        raise Exception("Failed to fetch data")
+    base_url = "https://huggingface.co/datasets/google/fleurs/resolve/main/data"
 
-    data = response.json()
+    base_lang_url = os.path.join(base_url, lang)
+    tsv_url = f"{base_lang_url}/{split}.tsv"
+    urls.append(tsv_url)
 
-    # Base URL for constructing the download URLs
-    base_url = "https://datasets-server.huggingface.co/first-rows?dataset=google%2Ffleurs"
+    tar_gz_url = f"{base_lang_url}/audio/{split}.tar.gz"
+    urls.append(tar_gz_url)
 
-    # Filter and construct the URLs
-    filtered_urls = []
-    for entry in data["splits"]:
-        if (entry["config"] == config or config == 'all') and entry["split"] == split:
-            download_url = f"{base_url}&config={config}&split={split}"
-            filtered_urls.append(download_url)
-
-    if len(filtered_urls) == 0:
-        print(f"CONFIG: {config}\n SPLIT: {split}")
-        raise ValueError("No data found for the specified config and split")
-
-    return filtered_urls
-
-
-def fetch_data(url: str) -> list[dict[str, typing.Any]]:
-    try:
-        # Fetching the data from the URL
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an error if the request failed
-
-        data = response.json()
-
-        rows = data.get('rows', [])
-
-        return rows
-
-    except requests.RequestException as e:
-        print(f"Error fetching data: {e}")
+    return urls
 
 
 class CreateInitialManifestFleurs(BaseProcessor):
@@ -84,7 +58,7 @@ class CreateInitialManifestFleurs(BaseProcessor):
             - options are:
             "test",
             "train",
-            "validation"
+            "dev"
         audio_dir (str): Path to folder where should the filed be donwloaded and extracted
     Returns:
        This processor generates an initial manifest file with the following fields::
@@ -96,66 +70,86 @@ class CreateInitialManifestFleurs(BaseProcessor):
 
     def __init__(
         self,
-        config: str,
+        lang: str,
         split: str,
-        audio_dir: str,
+        raw_data_dir: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.config = config
+        self.lang = lang
         self.split = split
-        self.audio_dir = audio_dir
+        self.raw_data_dir = raw_data_dir
 
-    def process_transcrip(self, url: str, data_folder: str) -> list[dict[str, typing.Any]]:
+    def process_transcript(self, file_path: str) -> list[dict[str, typing.Any]]:
+        """
+        Parse transcript TSV file and put it inside manyfest.
+        Assumes the TSV file has two columns: file name and text.
+        """
+
         entries = []
+        root = os.path.dirname(file_path)
 
-        data_rows = fetch_data(url)
-        for row in data_rows:
-            file_url = row['row']['audio'][0]['src']
-            file_transcription = row['row']['transcription']
-            file_name = '-'.join(file_url.split('/')[-5:])
-            file_path = os.path.join(data_folder, file_name)
-            entry = {}
-            entry["audio_filepath"] = os.path.abspath(file_path)
-            entry["text"] = file_transcription
-            entries.append(entry)
+        with open(file_path, encoding="utf-8") as fin:
+            for line in fin:
+                # Split the line into filename text using the tab delimiter
+                parts = line.strip().split('\t')
+                if len(parts) < 2:  # Skip lines that don't have at least 2 parts
+                    continue
+
+                file_name, transcript_text = parts[1], parts[2]
+                wav_file = os.path.join(root, file_name)
+
+                entry = {"audio_filepath": os.path.abspath(wav_file), "text": transcript_text}
+                entries.append(entry)
 
         return entries
 
     def process_data(self, data_folder: str, manifest_file: str) -> None:
+        files = []
         entries = []
 
-        urls = get_fleurs_url_list(self.config, self.split)
-        for url in urls:
-            result = self.process_transcrip(url, data_folder)
+        for root, _, filenames in os.walk(data_folder):
+            for filename in fnmatch.filter(filenames, "*.tsv"):
+                files.append(os.path.join(root, filename))
+
+        for file in files:
+            result = self.process_transcript(file)
             entries.extend(result)
 
-        with open(manifest_file, "w") as fout:
+        with open(manifest_file, "w", encoding="utf-8") as fout:
             for m in entries:
-                fout.write(json.dumps(m) + "\n")
+                fout.write(json.dumps(m, ensure_ascii=False) + "\n")
 
-    def download_files(self, dst_folder: str) -> None:
-        """Downloading files in parallel."""
+    def download_extract_files(self, dst_folder: str) -> None:
+        """downloading and extracting files"""
 
         os.makedirs(dst_folder, exist_ok=True)
-        tasks = []
-        for url in get_fleurs_url_list(self.config, self.split):
-            data_rows = fetch_data(url)
-            for row in data_rows:
-                file_url = row['row']['audio'][0]['src']
-                file_name = '-'.join(file_url.split('/')[-5:])
-                tasks.append((file_url, str(dst_folder), False, file_name))
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [executor.submit(download_file, *task) for task in tasks]
+        # downloading all files
+        for file_url in get_fleurs_url_list(self.lang, self.split):
+            download_file(file_url, str(dst_folder))
+        for data_file in glob.glob(f'{dst_folder}/*.tar.gz'):
+            extract_archive(str(data_file), str(dst_folder), force_extract=True)
 
-            # Wait for all futures to complete and handle exceptions
-            for future in concurrent.futures.as_completed(futures):
-                try:
-                    future.result()
-                except Exception as e:
-                    print(f"Error occurred: {e}")
+        # Organizing files into their respective folders
+        folder_mappings = {'test': '*test.tsv', 'train': '*train.tsv', 'dev': '*dev.tsv'}
+
+        for folder, file_pattern in folder_mappings.items():
+            target_folder = os.path.join(dst_folder, folder)
+
+            if not os.path.exists(target_folder):
+                continue
+
+            all_files = os.listdir(dst_folder)
+
+            matching_files = fnmatch.filter(all_files, file_pattern)
+
+            for file_name in matching_files:
+                file_path = os.path.join(dst_folder, file_name)
+                dest_file_path = os.path.join(target_folder, file_name)
+                shutil.move(file_path, dest_file_path)
+                print(f'Moved {file_path} to {dest_file_path}')
 
     def process(self):
-        self.download_files(self.audio_dir)
-        self.process_data(self.audio_dir, self.output_manifest_file)
+        self.download_extract_files(self.raw_data_dir)
+        self.process_data(self.raw_data_dir, self.output_manifest_file)
