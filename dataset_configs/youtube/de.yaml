@@ -154,10 +154,10 @@ processors:
     input_manifest_arg: "--manifest"
     output_manifest_arg: "--output_filename"
     arg_separator: "="
-    cmd: "python /ws/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
+    cmd: "python /workspace/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
         --language=${lang} --n_jobs=-1 --batch_size=600 --manifest_text_field=pre_normalized  --manifest_asr_pred_field=pred_text_pc \
         --cache_dir=${workspace_dir}/cache \
-        --whitelist=/ws/NeMo-text-processing/nemo_text_processing/text_normalization/${lang}/data/whitelist.tsv"
+        --whitelist=/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/${lang}/data/whitelist.tsv"
 
   # Post-normalization processing
   - _target_: sdp.processors.DuplicateFields
