@@ -43,29 +43,30 @@ def get_fleurs_url_list(lang: str, split: list[str]) -> list[str]:
 
 
 class CreateInitialManifestFleurs(BaseProcessor):
-    """Processor to create initial manifest for the fleurs dataset.
+    """
+    Processor to create initial manifest for the FLEURS dataset.
+
     Dataset link: https://huggingface.co/datasets/google/fleurs
-    Will download all files in parallel and create manifest file with the
-    'audio_filepath' and 'text' fields
-    Args:
-        config (str): Which data set shoudld be processed
-            - options are:
-            TODO: Add all language options in the format
-            "hy_am": armenian
-            "ko_kr": korean
-            ["all"] (for all datasets avalable)
-        split (str): Which data split should be processed
-            - options are:
-            "test",
-            "train",
-            "dev"
-        audio_dir (str): Path to folder where should the filed be donwloaded and extracted
+
+    Will download all audio files from the FLEURS dataset, and create a manifest file with
+    the "audio_filepath" and "text" fields.
+
+    Attributes:
+        lang (str): Language to be processed, identified by a combination of ISO 639-1 and ISO 3166-1 alpha-2 codes.
+                    Examples include:
+                    - ``"hy_am"`` for Armenian
+                    - ``"ko_kr"`` for Korean
+        split (str): Which dataset splits to process. Options are:
+                    - ``"test"``
+                    - ``"train"``
+                    - ``"dev"``
+        audio_dir (str): Path to the directory where audio files will be downloaded and extracted.
     Returns:
-       This processor generates an initial manifest file with the following fields::
-            {
-                "audio_filepath": <path to the audio file>,
-                "text": <transcription>,
-            }
+        This processor generates an initial manifest file with the following fields:
+        {
+            "audio_filepath": <path to the audio file>,
+            "text": <transcription>,
+        }
     """
 
     def __init__(
