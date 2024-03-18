@@ -14,10 +14,10 @@
 
 import json
 import os
+import shutil
 import tarfile
 from functools import partial
 from pathlib import Path
-import shutil
 from typing import Callable
 from unittest import mock
 
@@ -71,6 +71,16 @@ coraal_processor.get_coraal_url_list = mock.Mock(
 )
 
 
+def data_check_fn_fleurs(raw_data_dir: str) -> None:
+    """Raises error if do not find expected data"""
+    expected_file = Path(raw_data_dir) / f"dev.tar.gz"
+    if not expected_file.exists():
+        raise ValueError(f"No such file {str(expected_file)}")
+    # expected_file = Path(raw_data_dir) / f"dev.tsv"
+    # if not expected_file.exists():
+    #     raise ValueError(f"No such file {str(expected_file)}")
+
+
 def get_test_cases():
     """Returns paths, and data check fn for all configs that we want to test."""
 
@@ -88,6 +98,7 @@ def get_test_cases():
         # audio will be downloaded on the fly from a subset of files.
         # No checks, but need to mock the url list function (done above)
         (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", lambda raw_data_dir: True),
     ]
 
 
@@ -158,7 +169,8 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
     cfg["processors_to_run"] = "all"
     cfg["workspace_dir"] = str(tmp_path)
     cfg["final_manifest"] = str(tmp_path / "final_manifest.json")
-    cfg["data_split"] = "train"
+    if "data_split" not in cfg:
+        cfg["data_split"] = "train"
     cfg["processors"][0]["raw_data_dir"] = str(Path(test_data_root) / rel_path_from_root)
 
     run_processors(cfg)
