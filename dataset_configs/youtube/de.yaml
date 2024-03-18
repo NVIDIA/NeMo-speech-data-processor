@@ -1,4 +1,4 @@
-processors_to_run: "25:" 
+processors_to_run: "1:5" 
 base_dir: "/ws/test_subset/"
 workspace_dir: "/ws/test_subset_out/"
 
