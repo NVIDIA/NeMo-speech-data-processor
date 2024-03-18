@@ -83,33 +83,32 @@ EXPECTED_SPLIT_STATS = {
 
 
 class CreateInitialManifestSLR83(BaseParallelProcessor):
-    """Processor to create initial manifest for the SLR83 dataset.
+    """Processor to create initial manifest for the Librispeech dataset.
 
-    This is a dataset introduced in `Open-source Multi-speaker Corpora of the
-    English Accents in the British Isles <https://aclanthology.org/2020.lrec-1.804/>`_.
+    Dataset link: https://openslr.org/12
+
+    Will download all files, extract tars, and create a manifest file with the
+    "audio_filepath" and "text" fields.
 
     Args:
-        raw_data_dir (str): where to put raw downloaded data.
-        dialect (str): should be one of the
+        splits (list[str]): Which datasets or their combinations should be processed.
+            Options are:
+            - ``["dev-clean"]``
+            - ``["dev-other"]``
+            - ``["test-clean"]``
+            - ``["test-other"]``
+            - ``["train-clean-100"]``
+            - ``["train-clean-360"]``
+            - ``["train-other-500"]``
+            - ``["all"]`` (for all datasets available)
 
-            * ``irish_english_male``
-            * ``midlands_english_female``
-            * ``midlands_english_male``
-            * ``northern_english_female``
-            * ``northern_english_male``
-            * ``scottish_english_female``
-            * ``scottish_english_male``
-            * ``southern_english_female``
-            * ``southern_english_male``
-            * ``welsh_english_female``
-            * ``welsh_english_male``
+        raw_data_dir (str): Path to the folder where the data archive should be downloaded and extracted.
 
     Returns:
-        This processor generates an initial manifest file with the following fields::
+    This processor generates an initial manifest file with the following fields::
 
             {
                 "audio_filepath": <path to the audio file>,
-                "duration": <duration of the audio in seconds>,
                 "text": <transcription>,
             }
     """
