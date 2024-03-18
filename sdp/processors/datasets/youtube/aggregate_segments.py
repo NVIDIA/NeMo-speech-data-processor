@@ -38,6 +38,9 @@ class AggregateSegments(BaseParallelProcessor):
         segments = data_entry['segments']
         agg_segments = []
 
+        if len(segments) == 0:
+            return agg_segments
+
         first_segment = RawSegment(**segments[0])
         agg_segment = AggregatedSegment(segment=first_segment, segment_id=1, sample_id=sample_id, 
                                         output_audio_dir = self.output_segments_audio_dir)
