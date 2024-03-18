@@ -65,6 +65,12 @@ SLR83
 ..       Probably need some policy on shat lives in main folder vs configs.
 ..       To control the number of processors we support.
 
+FLEURS
+''''''   
+
+.. autodata:: sdp.processors.CreateInitialManifestFleurs
+   :annotation:
+
 Data enrichment
 ###############
 
