@@ -9,9 +9,11 @@ openpyxl
 pandas
 python-docx
 regex
+sentencepiece
 sox
 toloka-kit
 tqdm
+transformers
 wget
 xlsxwriter
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
