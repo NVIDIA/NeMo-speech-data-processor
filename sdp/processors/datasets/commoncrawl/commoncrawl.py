@@ -27,6 +27,7 @@ from sdp.processors.datasets.commoncrawl.harv_utils import (
     load_manifest,
     make_trans_list,
     read_jsonl,
+    split_by_vtt,
     split_by_vtt_new,
     text2lid,
     txt2vtt,
@@ -1108,6 +1109,43 @@ class Lang2Iso(BaseParallelProcessor):
     def process_dataset_entry(self, data_entry):
         data_entry[self.output_lang_key] = self.iso_m[data_entry[self.input_lang_key]]
         return [DataEntry(data=data_entry)]
+
+
+class SplitByVtt(BaseParallelProcessor):
+    def __init__(
+        self,
+        source_audio_key: str,
+        caption_file_key: str,
+        duration_key: str = "duration",
+        output_text_key: str = "orig_text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.source_audio_key = source_audio_key
+        self.duration_key = duration_key
+        self.output_text_key = output_text_key
+        self.caption_file_key = caption_file_key
+
+    def prepare(self):
+        os.makedirs(self.splited_audio_dir, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        caption_file = data_entry[self.caption_file_key]
+        source_audio = data_entry[self.source_audio_key]
+        res_list = []
+
+        if os.path.isfile(source_audio):
+            data, samplerate = sf.read(source_audio)
+            text_list, start_s, end_s = split_by_vtt(caption_file, samplerate)
+            if text_list:
+                for segment_id, orig_text, start_time, end_time in enumerate(zip(text_list, start_s, end_s)):
+                    data_entry["segment_id"] = segment_id
+                    data_entry[self.output_text_key] = orig_text
+                    data_entry["start_time"] = start_time
+                    data_entry["end_time"] = end_time
+
+                    # self.makeDataEntry(data_entry, data, caption_file, samplerate, text, start_sr, end_sr)
+        return res_list
 
 
 class SplitByVttSentence(BaseParallelProcessor):
