@@ -4,7 +4,6 @@ import os
 import re
 import shutil
 import subprocess
-from operator import eq, ge, gt, le, lt, ne
 from pathlib import Path
 from typing import Dict, List, Union
 
