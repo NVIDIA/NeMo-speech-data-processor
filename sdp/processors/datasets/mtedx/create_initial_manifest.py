@@ -55,10 +55,12 @@ class CreateInitialManifestMTEDX(BaseParallelProcessor):
             download_file(url, str(self.raw_data_dir))
         if not self.already_extracted:
             data_folder = extract_archive(str(self.raw_data_dir / os.path.basename(url)), str(self.raw_data_dir))
+            self.audio_path_prefix = Path(data_folder) / 'data' / self.data_split / "wav"
+            self.vtt_path_prefix = Path(data_folder) / 'data' / self.data_split / "vtt"        
         else:
             data_folder = self.raw_data_dir 
-        self.audio_path_prefix = Path(data_folder) / f"{self.language_id}-{self.language_id}" / 'data' / self.data_split / "wav"
-        self.vtt_path_prefix = Path(data_folder) / f"{self.language_id}-{self.language_id}" / 'data' / self.data_split / "vtt"
+            self.audio_path_prefix = Path(data_folder) / f"{self.language_id}-{self.language_id}" / 'data' / self.data_split / "wav"
+            self.vtt_path_prefix = Path(data_folder) / f"{self.language_id}-{self.language_id}" / 'data' / self.data_split / "vtt"        
 
     def read_manifest(self):
         """Creating entries of initial manifest with flac and vtt files"""
