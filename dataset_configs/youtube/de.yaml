@@ -1,4 +1,4 @@
-processors_to_run: "0:2" 
+processors_to_run: "3:" 
 base_dir: "/data/supervised/2/audios"
 workspace_dir: "/data/processed/2"
 
@@ -36,8 +36,8 @@ processors:
     output_manifest_file: ${workspace_dir}/manifest4.json
     input_text_key: orig_text
     output_lang_key: text_lang
-    device: cuda
     pretrained_model: "jb2k/bert-base-multilingual-cased-language-detection"
+    device: cuda
     drop_text_duplicates: True
   
   - _target_: sdp.processors.datasets.commoncrawl.Lang2Iso
@@ -70,7 +70,7 @@ processors:
     output_manifest_file: ${workspace_dir}/manifest9.json
     pretrained_model: nvidia/stt_${lang}_fastconformer_hybrid_large_pc
     batch_size: 64
-    devices: 2
+    devices: 4
   
   ## Merge manifests
   - _target_: sdp.processors.datasets.youtube.MergeManifests
