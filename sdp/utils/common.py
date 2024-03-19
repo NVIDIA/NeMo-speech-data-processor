@@ -18,6 +18,7 @@ import urllib
 import zipfile
 
 import wget
+import subprocess
 
 from sdp.logging import logger
 
@@ -75,3 +76,9 @@ def extract_archive(archive_path: str, extract_path: str, force_extract: bool = 
     if force_extract:
         return None
     return archive_contents_dir
+def ffmpeg_convert(jpg: str, wav: str, ar: int = 0, ac: int = 1):
+    process_args = ["ffmpeg", "-nostdin", "-i", jpg, '-ac', str(ac), "-map", "0:a", "-c:a", "pcm_s16le", "-y", wav]
+    if ar:
+        process_args = process_args[:-1]
+        process_args.extend(["-ar", str(ar), wav])
+    return subprocess.run(process_args, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)

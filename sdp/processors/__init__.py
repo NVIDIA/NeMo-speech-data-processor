@@ -20,6 +20,8 @@ from sdp.processors.datasets.coraal import (
 )
 from sdp.processors.datasets.mcv.create_initial_manifest import CreateInitialManifestMCV
 from sdp.processors.datasets.mls.create_initial_manifest import CreateInitialManifestMLS
+from sdp.processors.datasets.mtedx.create_initial_manifest import CreateInitialManifestMTEDX
+from sdp.processors.datasets.coraa.create_initial_manifest import CreateInitialManifestCORAA
 from sdp.processors.datasets.mls.restore_pc import RestorePCForMLS
 from sdp.processors.datasets.slr83.create_initial_manifest import (
     CreateInitialManifestSLR83,
@@ -47,6 +49,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
+    FfmpegConvert,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,
