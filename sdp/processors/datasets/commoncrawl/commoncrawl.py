@@ -1107,7 +1107,7 @@ class Lang2Iso(BaseParallelProcessor):
         }
 
     def process_dataset_entry(self, data_entry):
-        data_entry[self.output_lang_key] = self.iso_m[data_entry[self.input_lang_key]]
+        data_entry[self.output_lang_key] = self.iso_m.get(data_entry[self.input_lang_key], None)
         return [DataEntry(data=data_entry)]
 
 
