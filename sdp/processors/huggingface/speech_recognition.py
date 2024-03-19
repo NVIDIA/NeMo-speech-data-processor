@@ -95,9 +95,11 @@ class ASRTransformers(BaseProcessor):
 
     Args:
         pretrained_model (str): name of pretrained model on HuggingFace.
-        output_text_field (str): field to save transcription result.
+        output_text_key (str): Key to save transcription result.
+        input_audio_key (str): Key to read audio file. Defaults to "audio_filepath".
+        input_duration_key (str): Audio duration key. Defaults to "duration".
         device (str): Inference device.
-        batch_size (int): Inference batch size. Defaults to 1. TODO: support batch_size > 1
+        batch_size (int): Inference batch size. Defaults to 1.
         torch_dtype (str): Tensor data type. Default to "float32"
     """
 
@@ -105,6 +107,8 @@ class ASRTransformers(BaseProcessor):
         self,
         pretrained_model: str,
         output_text_key: str,
+        input_audio_key: str = "audio_filepath",
+        input_duration_key: str = "duration",
         device: str = None,
         batch_size: int = 1,
         torch_dtype: str = "float32",
@@ -119,7 +123,9 @@ class ASRTransformers(BaseProcessor):
 
         logger.warning("This is an example processor, for demonstration only. Do not use it for production purposes.")
         self.pretrained_model = pretrained_model
+        self.input_audio_key = input_audio_key
         self.output_text_key = output_text_key
+        self.input_duration_key = input_duration_key
         self.device = device
         self.batch_size = batch_size
         if torch_dtype == "float32":
@@ -156,12 +162,18 @@ class ASRTransformers(BaseProcessor):
 
     def process(self):
         json_list = load_manifest(Path(self.input_manifest_file))
+        json_list_sorted = sorted(json_list, key=lambda d: d[self.input_duration_key], reverse=True)
 
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
 
         with Path(self.output_manifest_file).open('w') as f:
-            for item in tqdm(json_list):
-                pred_text = self.pipe(item["audio_filepath"])["text"]
+            start_index = 0
+            for _ in tqdm(range(len(json_list_sorted) // self.batch_size)):
+                batch = json_list_sorted[start_index : start_index + self.batch_size]
+                start_index += self.batch_size
+                audio_files = [item[self.input_audio_key] for item in batch]
+                results = self.pipe(audio_files)
 
-                item[self.output_text_key] = pred_text
-                f.write(json.dumps(item, ensure_ascii=False) + '\n')
+                for i, item in enumerate(batch):
+                    item[self.output_text_key] = results[i]["text"]
+                    f.write(json.dumps(item, ensure_ascii=False) + '\n')
