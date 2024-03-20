@@ -39,9 +39,21 @@ class RawSegment:
 
 
 class AggregatedSegment(RawSegment):
-    def __init__(self, segment: dict, segment_id: int, sample_id: str, output_audio_dir: str):
+    def __init__(
+        self,
+        segment: dict,
+        segment_id: int,
+        sample_id: str,
+        output_audio_dir: str,
+        audio_lang: str,
+        text_lang: str,
+        source_audio: str,
+    ):
         super().__init__(**segment.__dict__)
         self.segment_id = f"{sample_id}_{str(segment_id).zfill(4)}"
+        self.audio_lang = audio_lang
+        self.text_lang = text_lang
+        self.source_audio = source_audio
         self.audio_filepath = (
             os.path.join(output_audio_dir, f'{self.segment_id}.wav') if output_audio_dir is not None else None
         )

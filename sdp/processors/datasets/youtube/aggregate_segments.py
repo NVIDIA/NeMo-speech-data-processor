@@ -52,7 +52,13 @@ class AggregateSegments(BaseParallelProcessor):
 
         first_segment = RawSegment(**segments[0])
         agg_segment = AggregatedSegment(
-            segment=first_segment, segment_id=1, sample_id=sample_id, output_audio_dir=self.output_segments_audio_dir
+            segment=first_segment,
+            segment_id=1,
+            sample_id=sample_id,
+            output_audio_dir=self.output_segments_audio_dir,
+            audio_lang=data_entry['audio_lang'],
+            text_lang=data_entry['text_lang'],
+            source_audio=data_entry[self.source_audio_key],
         )
 
         for segment in segments[1:]:
@@ -68,6 +74,9 @@ class AggregateSegments(BaseParallelProcessor):
                     segment=segment,
                     segment_id=len(agg_segments) + 1,
                     sample_id=sample_id,
+                    audio_lang=data_entry['audio_lang'],
+                    text_lang=data_entry['text_lang'],
+                    source_audio=data_entry[self.source_audio_key],
                     output_audio_dir=self.output_segments_audio_dir,
                 )
             else:
