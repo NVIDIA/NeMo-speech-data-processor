@@ -97,7 +97,7 @@ def parse_hours(inp):
         return datetime.strptime(inp, '%H:%M:%S.%f')
 
 
-def split_by_vtt(vtt_file, samplerate):
+def split_by_vtt(vtt_file):
     try:
         _begin = datetime.strptime('00:00:00.000', '%H:%M:%S.%f')
         text_list, start_s, end_s = [], [], []
@@ -113,11 +113,9 @@ def split_by_vtt(vtt_file, samplerate):
 
             _start = parse_hours(caption.start)
             start = (_start - _begin).total_seconds()
-            start_sr = int(start * samplerate)
 
             _end = parse_hours(caption.end)
             end = (_end - _begin).total_seconds()
-            end_sr = int(end * samplerate)
 
             text_list.append(text.strip())
             start_s.append(start)

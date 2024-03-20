@@ -20,7 +20,6 @@ from .commoncrawl import (
     BLEUScore,
     CopyFiles,
     CreateInitialManifestCC,
-    CreateInitialManifestExt,
     DropAbsPath,
     EvalBandwidth,
     GetSpecificFiles,

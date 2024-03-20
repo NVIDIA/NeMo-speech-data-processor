@@ -33,6 +33,7 @@ from sdp.processors.datasets.commoncrawl.harv_utils import (
     txt2vtt,
     write_jsonl,
 )
+from sdp.processors.datasets.youtube.utils import Sample, parse_srt
 
 
 class ManifestToUtf8(BaseProcessor):
@@ -1126,26 +1127,16 @@ class SplitByVtt(BaseParallelProcessor):
         self.output_text_key = output_text_key
         self.caption_file_key = caption_file_key
 
-    def prepare(self):
-        os.makedirs(self.splited_audio_dir, exist_ok=True)
-
     def process_dataset_entry(self, data_entry):
         caption_file = data_entry[self.caption_file_key]
-        source_audio = data_entry[self.source_audio_key]
-        res_list = []
+        audio_file = data_entry[self.source_audio_key]
+        if not os.path.exists(audio_file):
+            return []
+        segments = parse_srt(caption_file, verify_duration=True, wav_filepath=audio_file)
 
-        if os.path.isfile(source_audio):
-            data, samplerate = sf.read(source_audio)
-            text_list, start_s, end_s = split_by_vtt(caption_file, samplerate)
-            if text_list:
-                for segment_id, orig_text, start_time, end_time in enumerate(zip(text_list, start_s, end_s)):
-                    data_entry["segment_id"] = segment_id
-                    data_entry[self.output_text_key] = orig_text
-                    data_entry["start_time"] = start_time
-                    data_entry["end_time"] = end_time
-
-                    # self.makeDataEntry(data_entry, data, caption_file, samplerate, text, start_sr, end_sr)
-        return res_list
+        if len(segments) > 0:
+            data_entry['segments'] = [segment.__dict__ for segment in segments]
+        return [DataEntry(data=data_entry)]
 
 
 class SplitByVttSentence(BaseParallelProcessor):
@@ -1574,48 +1565,4 @@ class CreateInitialManifestCC(BaseParallelProcessor):
         (video, key, text) = data_entry
 
         data = {self.video_key: video, self.id_key: key, self.text_key: text}
-        return [DataEntry(data=data)]
-
-
-class CreateInitialManifestExt(BaseParallelProcessor):
-    """
-    A class for creating an initial dataset manifest from audio files with a specified extension.
-
-    Args:
-        raw_data_dir (str): The directory containing audio files to include in the initial dataset manifest.
-        output_field (str, optional): The field to store the audio file paths in the dataset. Defaults to "audio_filepath".
-        extention (str, optional): The file extension of the audio files to include in the manifest. Defaults to "mp3".
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
-
-    Methods:
-        prepare(): Creates the directory for saving the initial dataset manifest.
-        read_manifest(): Reads the audio files with the specified extension and creates a DataFrame with the specified output field.
-        process_dataset_entry(data_entry): Processes a single dataset entry, creating a DataEntry object with the audio file path, and updates the dataset.
-
-    """
-
-    def __init__(
-        self,
-        raw_data_dir: str,
-        output_field: str = "audio_filepath",
-        extention: str = "mp3",
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.raw_data_dir = Path(raw_data_dir)
-        self.output_field = output_field
-        self.extention = extention
-
-    def prepare(self):
-        os.makedirs(self.raw_data_dir, exist_ok=True)
-
-    def read_manifest(self):
-        input_files = [str(self.raw_data_dir / video) for video in self.raw_data_dir.rglob('*.' + self.extention)]
-        v_df = pd.DataFrame({self.output_field: input_files})
-        return v_df.values
-
-    def process_dataset_entry(self, data_entry):
-        (inputf) = data_entry
-
-        data = {self.output_field: inputf[0]}
         return [DataEntry(data=data)]
