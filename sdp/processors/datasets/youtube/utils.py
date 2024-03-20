@@ -63,6 +63,7 @@ class AggregatedSegment(RawSegment):
         self.duration = self.end_time - self.start_time
         self.orig_text = re.sub("\s+", " ", f"{self.orig_text} {segment.orig_text}".strip())
 
+
 @dataclass
 class Sample:
     sample_id: str = None
