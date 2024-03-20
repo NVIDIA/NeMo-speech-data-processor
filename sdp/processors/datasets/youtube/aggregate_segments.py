@@ -20,6 +20,7 @@ from sdp.processors.datasets.youtube.utils import (
     get_audio_segment,
 )
 
+
 class AggregateSegments(BaseParallelProcessor):
     def __init__(
         self,
@@ -92,4 +93,5 @@ class AggregateSegments(BaseParallelProcessor):
                     end_time=agg_segment.data['end_time'],
                     output_audio_filepath=agg_segment.data[self.splited_audio_key],
                 )
+        
         return agg_segments
