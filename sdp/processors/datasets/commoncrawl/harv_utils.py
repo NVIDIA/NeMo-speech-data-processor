@@ -97,41 +97,30 @@ def parse_hours(inp):
         return datetime.strptime(inp, '%H:%M:%S.%f')
 
 
-def split_by_vtt(vtt_file, wav_file, wav_save_path):
+def split_by_vtt(vtt_file):
     try:
-        data, samplerate = sf.read(wav_file)
-        target_sr = samplerate
-        if len(data.shape) > 1:
-            data = np.mean(data, axis=1)
         _begin = datetime.strptime('00:00:00.000', '%H:%M:%S.%f')
-        rel_vtt_file = '/'.join(os.path.splitext(vtt_file)[0].split('/')[-2:])
-        wav_list, text_list, dur_list = [], [], []
-        for caption in webvtt.read(vtt_file):
+        text_list, start_s, end_s = [], [], []
+        if os.path.splitext(vtt_file)[1] == '.vtt':
+            webvtt_i = webvtt.read
+        elif os.path.splitext(vtt_file)[1] == '.srt':
+            webvtt_i = webvtt.from_srt
+        else:
+            raise ValueError("Unsupporte extention of file " + vtt_file)
+
+        for caption in webvtt_i(vtt_file):
+            text = ' '.join(caption.text.split('\n'))
+
             _start = parse_hours(caption.start)
             start = (_start - _begin).total_seconds()
-            start_sr = int(start * samplerate)
 
             _end = parse_hours(caption.end)
             end = (_end - _begin).total_seconds()
-            end_sr = int(end * samplerate)
 
-            text = ' '.join(caption.text.split('\n'))
-
-            wav_save_file = os.path.join(
-                wav_save_path, rel_vtt_file, str(int(start * 1000)) + "-" + str(int(end * 1000)) + ".wav"
-            )
-            os.makedirs(os.path.split(wav_save_file)[0], exist_ok=True)
-
-            # number_of_samples = round(len(data[start_sr:end_sr]) * float(target_sr) / samplerate)
-            # if number_of_samples > 0:
-            # if not os.path.exists(wav_save_file):
-            # data_sample = sps.resample(data[start_sr:end_sr], number_of_samples)
-            data_sample = data[start_sr:end_sr]
-            sf.write(wav_save_file, data_sample, target_sr)
-            text_list.append(text)
-            wav_list.append(wav_save_file)
-            dur_list.append(data_sample.shape[0] / samplerate)  # (_end-_start).total_seconds()
-        return wav_list, text_list, dur_list
+            text_list.append(text.strip())
+            start_s.append(start)
+            end_s.append(end)
+        return text_list, start_s, end_s
     except Exception as e:
         logger.warning(str(e) + vtt_file)
         return None, None, None

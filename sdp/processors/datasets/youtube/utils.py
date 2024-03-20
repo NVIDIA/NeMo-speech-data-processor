@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import re
+from dataclasses import dataclass
+
 import pysrt
 from pydub import AudioSegment
-from dataclasses import dataclass
-import re
-import os 
+
 from sdp.processors.base_processor import DataEntry
 
 
@@ -28,17 +30,34 @@ class RawSegment:
     duration: str = None
     duration_match: bool = None
     orig_text: str = None
+    audio_lang: str = None
+    text_lang: str = None
+    source_audio: str = None
 
     def to_dataentry(self):
-        return DataEntry(data = self.__dict__)
+        return DataEntry(data=self.__dict__)
 
 
 class AggregatedSegment(RawSegment):
-    def __init__(self, segment: dict, segment_id: int, sample_id: str, output_audio_dir: str):
+    def __init__(
+        self,
+        segment: dict,
+        segment_id: int,
+        sample_id: str,
+        output_audio_dir: str,
+        audio_lang: str,
+        text_lang: str,
+        source_audio: str,
+    ):
         super().__init__(**segment.__dict__)
         self.segment_id = f"{sample_id}_{str(segment_id).zfill(4)}"
-        self.audio_filepath = os.path.join(output_audio_dir, f'{self.segment_id}.wav') if output_audio_dir is not None else None
-    
+        self.audio_lang = audio_lang
+        self.text_lang = text_lang
+        self.source_audio = source_audio
+        self.audio_filepath = (
+            os.path.join(output_audio_dir, f'{self.segment_id}.wav') if output_audio_dir is not None else None
+        )
+
     def aggregate(self, segment):
         self.end_time = segment.end_time
         self.duration = self.end_time - self.start_time
@@ -53,16 +72,18 @@ class Sample:
     segments: list[RawSegment | AggregatedSegment] = None
 
     def to_dataentry(self):
-         data = self.__dict__
-         data['segments'] = [segment.data.__dict__ for segment in  data['segments']] if data['segments'] is not None else []
-         return DataEntry(data = data)
-    
+        data = self.__dict__
+        data['segments'] = (
+            [segment.data.__dict__ for segment in data['segments']] if data['segments'] is not None else []
+        )
+        return DataEntry(data=data)
+
 
 def get_audio_segment(audio, start_time: float, end_time: float, output_audio_filepath: str = None):
     start_time = start_time * 1000
     end_time = end_time * 1000
-    audio_segment = audio[start_time : end_time]
-    
+    audio_segment = audio[start_time:end_time]
+
     if output_audio_filepath:
         audio_segment.export(output_audio_filepath, format="wav")
     return audio_segment
@@ -85,19 +106,21 @@ def parse_srt(srt_filepath, verify_duration: bool = True, wav_filepath: str = No
     epsilon = 1e-2
 
     for sub in subs:
-        segment = RawSegment(segment_id = sub.index,
-                             start_time = sub.start.ordinal / 1000,
-                             end_time = sub.end.ordinal / 1000,
-                             orig_text = sub.text_without_tags)
-        
+        segment = RawSegment(
+            segment_id=sub.index,
+            start_time=sub.start.ordinal / 1000,
+            end_time=sub.end.ordinal / 1000,
+            orig_text=sub.text_without_tags,
+        )
+
         duration_by_timestemps = segment.end_time - segment.start_time
 
         if audio:
             segment.duration = get_audio_segment_duration(audio, segment.start_time, segment.end_time)
-            segment.duration_match = abs(segment.duration - duration_by_timestemps) < epsilon   
-        else: 
+            segment.duration_match = abs(segment.duration - duration_by_timestemps) < epsilon
+        else:
             segment.duration = duration_by_timestemps
 
         srt_segments.append(segment)
-    
+
     return srt_segments

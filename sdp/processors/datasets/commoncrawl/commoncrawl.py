@@ -4,7 +4,6 @@ import os
 import re
 import shutil
 import subprocess
-from operator import eq, ge, gt, le, lt, ne
 from pathlib import Path
 from typing import Dict, List, Union
 
@@ -28,11 +27,13 @@ from sdp.processors.datasets.commoncrawl.harv_utils import (
     load_manifest,
     make_trans_list,
     read_jsonl,
+    split_by_vtt,
     split_by_vtt_new,
     text2lid,
     txt2vtt,
     write_jsonl,
 )
+from sdp.processors.datasets.youtube.utils import Sample, parse_srt
 
 
 class ManifestToUtf8(BaseProcessor):
@@ -1111,6 +1112,33 @@ class Lang2Iso(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
+class SplitByVtt(BaseParallelProcessor):
+    def __init__(
+        self,
+        source_audio_key: str,
+        caption_file_key: str,
+        duration_key: str = "duration",
+        output_text_key: str = "orig_text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.source_audio_key = source_audio_key
+        self.duration_key = duration_key
+        self.output_text_key = output_text_key
+        self.caption_file_key = caption_file_key
+
+    def process_dataset_entry(self, data_entry):
+        caption_file = data_entry[self.caption_file_key]
+        audio_file = data_entry[self.source_audio_key]
+        if not os.path.exists(audio_file):
+            return []
+        segments = parse_srt(caption_file, verify_duration=True, wav_filepath=audio_file)
+
+        if len(segments) > 0:
+            data_entry['segments'] = [segment.__dict__ for segment in segments]
+        return [DataEntry(data=data_entry)]
+
+
 class SplitByVttSentence(BaseParallelProcessor):
     """
     A class for splitting audio files based on VTT (WebVTT) sentence-level segmentation in a dataset.
@@ -1537,48 +1565,4 @@ class CreateInitialManifestCC(BaseParallelProcessor):
         (video, key, text) = data_entry
 
         data = {self.video_key: video, self.id_key: key, self.text_key: text}
-        return [DataEntry(data=data)]
-
-
-class CreateInitialManifestExt(BaseParallelProcessor):
-    """
-    A class for creating an initial dataset manifest from audio files with a specified extension.
-
-    Args:
-        raw_data_dir (str): The directory containing audio files to include in the initial dataset manifest.
-        output_field (str, optional): The field to store the audio file paths in the dataset. Defaults to "audio_filepath".
-        extention (str, optional): The file extension of the audio files to include in the manifest. Defaults to "mp3".
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
-
-    Methods:
-        prepare(): Creates the directory for saving the initial dataset manifest.
-        read_manifest(): Reads the audio files with the specified extension and creates a DataFrame with the specified output field.
-        process_dataset_entry(data_entry): Processes a single dataset entry, creating a DataEntry object with the audio file path, and updates the dataset.
-
-    """
-
-    def __init__(
-        self,
-        raw_data_dir: str,
-        output_field: str = "audio_filepath",
-        extention: str = "mp3",
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.raw_data_dir = Path(raw_data_dir)
-        self.output_field = output_field
-        self.extention = extention
-
-    def prepare(self):
-        os.makedirs(self.raw_data_dir, exist_ok=True)
-
-    def read_manifest(self):
-        input_files = [str(self.raw_data_dir / video) for video in self.raw_data_dir.rglob('*.' + self.extention)]
-        v_df = pd.DataFrame({self.output_field: input_files})
-        return v_df.values
-
-    def process_dataset_entry(self, data_entry):
-        (inputf) = data_entry
-
-        data = {self.output_field: inputf[0]}
         return [DataEntry(data=data)]
