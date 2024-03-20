@@ -9,7 +9,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import os
 
 from pydub import AudioSegment
@@ -93,5 +92,4 @@ class AggregateSegments(BaseParallelProcessor):
                     end_time=agg_segment.data['end_time'],
                     output_audio_filepath=agg_segment.data[self.splited_audio_key],
                 )
-
         return agg_segments
