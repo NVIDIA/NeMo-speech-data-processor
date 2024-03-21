@@ -48,25 +48,25 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
 
     Dataset link: https://openslr.org/12
 
-    Will download all files, extract tars and create manifest file with the
-    "audio_filepath" and "text" fields
+    Will download all files, extract tars, and create a manifest file with the
+    "audio_filepath" and "text" fields.
 
     Args:
-        splits (list[str]): Which data sets or their combinations shoudld be processed
-            - options are:
-            ["dev-clean"],
-            ["dev-other"],
-            ["test-clean"],
-            ["test-other"],
-            ["train-clean-100"],
-            ["train-clean-360"],
-            ["train-other-500"],
-            ["all"] (for all datasets avalable)
+        splits (list[str]): Which datasets or their combinations should be processed.
+            Options are:
+            - ``["dev-clean"]``
+            - ``["dev-other"]``
+            - ``["test-clean"]``
+            - ``["test-other"]``
+            - ``["train-clean-100"]``
+            - ``["train-clean-360"]``
+            - ``["train-other-500"]``
+            - ``["all"]`` (for all datasets available)
 
-        raw_data_dir (str): Path to folder where should the data archive be donwloaded and extracted
+        raw_data_dir (str): Path to the folder where the data archive should be downloaded and extracted.
 
     Returns:
-       This processor generates an initial manifest file with the following fields::
+    This processor generates an initial manifest file with the following fields::
 
             {
                 "audio_filepath": <path to the audio file>,
