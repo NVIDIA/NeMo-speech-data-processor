@@ -1,0 +1,15 @@
+documentation: |
+  Seamless Armenian
+
+processors_to_run: all
+workspace_dir: ???
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestMCVNew  # apt-get update # apt-get upgrade # apt-get install sox libsox-fmt-all
+    output_manifest_file: ${workspace_dir}/manifest0.json
+    # language_id: cv-corpus-15.0-2023-09-08-hy-AM
+    language_id: cv-corpus-16.1-delta-2023-12-06-ru
+    extract_archive_dir: ${workspace_dir}/raw
+    resampled_audio_dir: ${workspace_dir}/16k
+    data_split: validated
+    raw_data_dir: ${workspace_dir}/mcv_data_rus

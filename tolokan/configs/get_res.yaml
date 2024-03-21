@@ -17,7 +17,7 @@ processors:
     input_manifest_file: ${workspace_dir}/result_manifest.json
     input_field: audio_path
     output_manifest_file: ${workspace_dir}/result_manifest_pred.json
-    limit: 10
+    limit: 100
 
   - _target_: sdp.processors.SubRegex
     input_manifest_file: ${workspace_dir}/result_manifest_pred.json

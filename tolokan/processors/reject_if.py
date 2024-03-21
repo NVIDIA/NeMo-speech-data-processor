@@ -17,6 +17,7 @@ import json
 import toloka.client
 import toloka.client.project.template_builder
 from docx import Document
+from tqdm import tqdm
 
 from sdp.processors.base_processor import BaseProcessor
 
@@ -66,7 +67,7 @@ class RejectIfBanned(BaseProcessor):
         list_of_banned = [
             restriction.user_id for restriction in self.toloka_client.get_user_restrictions(scope='ALL_PROJECTS')
         ]
-        print(list_of_banned)
+        print("LIST OF BANNED -------------------------", list_of_banned)
         with open(self.input_manifest_file, 'r') as file:
             for line in file:
                 data_entry = json.loads(line)
@@ -76,7 +77,7 @@ class RejectIfBanned(BaseProcessor):
                             reject_list.append(data_entry['assignment_id'])
 
         print("REJECTION LIST -------------------------", reject_list)
-        for assignment_id in reject_list:
+        for assignment_id in tqdm(reject_list, desc="Rejecting assignments"):
             self.toloka_client.reject_assignment(assignment_id=assignment_id, public_comment='Bad quality of audio.')
 
 
