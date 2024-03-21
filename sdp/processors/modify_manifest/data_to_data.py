@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,13 +13,225 @@
 # limitations under the License.
 
 import collections
+import os
 import re
 from typing import Dict, List
+import jiwer
+import editdistance
+import itertools
+from tqdm.contrib.concurrent import process_map
+from tqdm import tqdm
+import json
+
+import soundfile as sf
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
+
+
+class GetAudioDuration(BaseParallelProcessor):
+    """
+    Processor that computes the duration of the file in audio_filepath_field (using soundfile)
+    and saves the duration in duration_field. If there is an error computing the duration,
+    the duration_field will be updated with the value -1.0.
+
+    Args:
+        audio_file_key (str): Key to get path to wav file.
+        duration_key (str): Key to put to audio duration.
+    Returns:
+        All the same fields as in the input manifest plus duration_field
+    """
+
+    def __init__(
+        self,
+        audio_file_key: str,
+        duration_key: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.audio_file_key = audio_file_key
+        self.duration_key = duration_key
+
+    def process_dataset_entry(self, data_entry):
+        audio_filepath = data_entry[self.audio_file_key]
+        try:
+            data, samplerate = sf.read(audio_filepath)
+            data_entry[self.duration_key] = data.shape[0] / samplerate
+        except Exception as e:
+            logger.warning(str(e) + " file: " + audio_filepath)
+            data_entry[self.duration_key] = -1.0
+        return [DataEntry(data=data_entry)]
+
+
+class FfmpegConvert(BaseParallelProcessor):
+    """
+    Processor for converting video or audio files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
+    If id_key is not None it is used as an output file name. If id_key is None the output file name is the same as input file name with different extention
+    and input file name saves to id_key back.
+    Args:
+        resampled_audio_dir (str): The directory to store the resampled audio files.
+        input_file_key (str): The field in the dataset representing the path to the input video or audio files.
+        output_file_key (str): The field to store the path to the resampled audio files in the dataset.
+        id_key (str): The field in the dataset representing the unique ID or identifier for each entry. Defaults to None.
+        target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
+        target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        resampled_audio_dir: str,
+        input_file_key: str,
+        output_file_key: str,
+        id_key: str = None,
+        target_samplerate: int = 16000,
+        target_nchannels: int = 1,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_file_key = input_file_key
+        self.output_file_key = output_file_key
+        self.id_key = id_key
+        self.resampled_audio_dir = resampled_audio_dir
+        self.target_samplerate = target_samplerate
+        self.target_nchannels = target_nchannels
+
+    def prepare(self):
+        os.makedirs(self.resampled_audio_dir, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        input_file = data_entry[self.input_file_key]
+        if self.id_key:
+            key = data_entry[self.id_key]
+            os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
+        else:
+            key = os.path.splitext(input_file)[0].split("/")[-1]
+        audio = os.path.join(self.resampled_audio_dir, key) + ".wav"
+
+        if not os.path.isfile(audio):
+            ffmpeg_convert(input_file, audio, self.target_samplerate, self.target_nchannels)
+
+        data_entry[self.output_file_key] = audio
+        if self.id_key:
+            data_entry[self.id_key] = key
+        return [DataEntry(data=data_entry)]
+
+
+class ReadTxtLines(BaseParallelProcessor):
+    """
+    The text file specified in source_filepath will be read, and each line in it will be added as a line in the output manifest,
+    saved in the field text_key.
+
+    Args:
+        input_file_key (str): The key in the manifest containing the input txt file path .
+        text_key (str): The key to store the read text lines in the manifest.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        input_file_key: str,
+        text_key: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_file_key = input_file_key
+        self.text_key = text_key
+
+    def process_dataset_entry(self, data_entry):
+        fname = data_entry[self.input_file_key]
+        data_list = []
+        with open(fname, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    data = data_entry.copy()
+                    data[self.text_key] = line
+                    data_list.append(DataEntry(data=data))
+        return data_list
+
+
+class SplitLineBySentence(BaseParallelProcessor):
+    """
+    Processor for splitting lines of text into sentences based on a specified pattern.
+    One line containing N sentences will be transformed into N lines containing one sentence.
+
+    Args:
+        text_key (str): The field containing the text lines in the dataset.
+        end_pattern (str): The regular expression pattern to identify sentence boundaries.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        text_key: str,
+        end_pattern: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.text_key = text_key
+        self.pattern = re.compile(end_pattern)
+
+    def process_dataset_entry(self, data_entry):
+        line = data_entry[self.text_key]
+        data_list = []
+        start = 0
+        ends = [m.start() for m in self.pattern.finditer(line)]
+        if ends:
+            for end in ends:
+                sent = line[start : end + 1].strip()
+                # if sent and sent[0].isupper():
+                data = data_entry.copy()
+                data[self.text_key] = sent
+                data_list.append(DataEntry(data=data))
+                start = end + 1
+            if start < len(line):
+                pass
+        else:
+            data = data_entry.copy()
+            data[self.text_key] = line.strip()
+            data_list.append(DataEntry(data=data))
+        return data_list
+
+
+class CountNumWords(BaseParallelProcessor):
+    """
+    Processor for counting the number of words in the text_key field saving the number in num_words_key.
+
+    Args:
+        text_key (str): The field containing the input text in the dataset.
+        num_words_key (str): The field to store the number of words in the dataset.
+        alphabet (str): Characters to be used to count words. Any other characters are substituted by whitespace and not take into account.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        text_key: str,
+        num_words_key: str,
+        alphabet: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.text_key = text_key
+        self.num_words_key = num_words_key
+        self.pattern = re.compile("[^" + alphabet + "]")
+
+    def process_dataset_entry(self, data_entry):
+        text = data_entry[self.text_key]
+        cleaned_string = self.pattern.sub('', text).strip()
+        cleaned_string = re.sub('\\s+', ' ', cleaned_string).strip()
+        words = cleaned_string.split()
+        num_words = len(words)
+        data_entry[self.num_words_key] = num_words
+        return [DataEntry(data=data_entry)]
 
 
 class InsIfASRInsertion(BaseParallelProcessor):
@@ -49,7 +261,11 @@ class InsIfASRInsertion(BaseParallelProcessor):
     """
 
     def __init__(
-        self, insert_words: List[str], text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        insert_words: List[str],
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.insert_words = insert_words
@@ -138,7 +354,11 @@ class SubIfASRSubstitution(BaseParallelProcessor):
     """
 
     def __init__(
-        self, sub_words: Dict, text_key: str = "text", pred_text_key: str = "pred_text", **kwargs,
+        self,
+        sub_words: Dict,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.sub_words = sub_words
@@ -214,7 +434,9 @@ class SubMakeLowercase(BaseParallelProcessor):
     """
 
     def __init__(
-        self, text_key: str = "text", **kwargs,
+        self,
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.text_key = text_key
@@ -252,7 +474,10 @@ class SubRegex(BaseParallelProcessor):
     """
 
     def __init__(
-        self, regex_params_list: List[Dict], text_key: str = "text", **kwargs,
+        self,
+        regex_params_list: List[Dict],
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.regex_params_list = regex_params_list
@@ -306,3 +531,353 @@ class SubRegex(BaseParallelProcessor):
         for word, count in total_counter_sorted.items():
             logger.info(f"{word} {count}")
         super().finalize(metrics)
+    
+class GetWER(BaseParallelProcessor):
+    """
+    Processor that computes the Word Error Rate (WER) between reference text and hypothesis text.
+    The WER is computed as the Levenshtein distance between the two texts normalized by the
+    number of words in the reference text.
+
+    Args:
+        reference_text_field (str): Key to get the reference text from the data.
+        hypothesis_text_field (str): Key to get the hypothesis text from the data.
+        output_metric_field (str): Key to put the computed WER value.
+    
+    Returns:
+        All the same fields as in the input manifest plus the output_metric_field containing
+        the computed WER value.
+    """
+
+    def __init__(
+        self,
+        reference_text_field: str = "text",
+        hypothesis_text_field: str = "pred_text",
+        output_metric_field: str = "wer",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.reference_text_field = reference_text_field
+        self.hypothesis_text_field = hypothesis_text_field
+        self.output_metric_field = output_metric_field
+        self.word_dist = 0
+        self.num_words = 0
+
+    def process(self):
+        self.prepare()
+        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
+        metrics = []
+
+        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
+            for manifest_chunk in self._chunk_manifest():
+                # this will unroll all inner lists
+                data = itertools.chain(
+                    *process_map(
+                        self.process_dataset_entry,
+                        manifest_chunk,
+                        max_workers=self.max_workers,
+                        chunksize=self.chunksize,
+                    )
+                )
+                for data_entry in tqdm(data):
+                    metrics.append(data_entry.metrics)
+                    if data_entry.data is None:
+                        continue
+                    json.dump(data_entry.data, fout, ensure_ascii=False)
+                    self.number_of_entries += 1
+                    self.total_duration += data_entry.data.get("duration", 0)
+                    self.word_dist += data_entry.metrics.get("word_dist", 0)
+                    self.num_words += data_entry.metrics.get("num_words", 0)
+                    fout.write("\n")
+
+        self.finalize(metrics)
+
+    def process_dataset_entry(self, data_entry):
+        reference_text = data_entry[self.reference_text_field]
+        hypothesis_text = data_entry[self.hypothesis_text_field]
+        
+        ref_words_amount = len(reference_text.split())
+        hyp_words_amount = len(hypothesis_text.split())
+
+        if ref_words_amount == 0 or hyp_words_amount == 0:
+            if ref_words_amount == hyp_words_amount:
+                word_dist = 0
+            else:
+                word_dist = ref_words_amount
+        else:
+            word_dist_measures = jiwer.compute_measures(reference_text, hypothesis_text)
+            word_dist = word_dist_measures['substitutions'] + word_dist_measures['insertions'] + word_dist_measures['deletions']
+        
+        wer_value = word_dist / ref_words_amount
+        data_entry[self.output_metric_field] = round(wer_value * 100, 2)
+        
+        return [DataEntry(data=data_entry, metrics = {'word_dist' : word_dist, 'num_words' : ref_words_amount})]
+
+    def finalize(self, metrics: List):
+        logger.info("Total number of entries after processing: %d", self.number_of_entries)
+        if self.total_duration != 0:
+            logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
+
+        logger.info("Overall Word Error Rate (WER): %.2f%%", self.word_dist / self.num_words * 100)    
+
+
+class GetCER(BaseParallelProcessor):
+    """
+    Processor that computes the Character Error Rate (CER) between reference text and hypothesis text.
+    The CER is computed as the Levenshtein distance between the two texts normalized by the
+    number of characters in the reference text.
+
+    Args:
+        reference_text_field (str): Key to get the reference text from the data.
+        hypothesis_text_field (str): Key to get the hypothesis text from the data.
+        output_metric_field (str): Key to put the computed CER value.
+    
+    Returns:
+        All the same fields as in the input manifest plus the output_metric_field containing
+        the computed CER value.
+    """
+
+    def __init__(
+        self,
+        reference_text_field: str = "text",
+        hypothesis_text_field: str = "pred_text",
+        output_metric_field: str = "cer",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.reference_text_field = reference_text_field
+        self.hypothesis_text_field = hypothesis_text_field
+        self.output_metric_field = output_metric_field
+        self.char_dist = 0
+        self.num_chars = 0
+
+    def process(self):
+        self.prepare()
+        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
+        metrics = []
+
+        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
+            for manifest_chunk in self._chunk_manifest():
+                # this will unroll all inner lists
+                data = itertools.chain(
+                    *process_map(
+                        self.process_dataset_entry,
+                        manifest_chunk,
+                        max_workers=self.max_workers,
+                        chunksize=self.chunksize,
+                    )
+                )
+                for data_entry in tqdm(data):
+                    metrics.append(data_entry.metrics)
+                    if data_entry.data is None:
+                        continue
+                    json.dump(data_entry.data, fout, ensure_ascii=False)
+                    self.number_of_entries += 1
+                    self.total_duration += data_entry.data.get("duration", 0)
+                    self.char_dist += data_entry.metrics.get("char_dist", 0)
+                    self.num_chars += data_entry.metrics.get("num_chars", 0)
+                    fout.write("\n")
+
+        self.finalize(metrics)
+
+    def process_dataset_entry(self, data_entry):
+        reference_text = data_entry[self.reference_text_field]
+        hypothesis_text = data_entry[self.hypothesis_text_field]
+        
+        ref_chars_amount = len(reference_text)
+        hyp_chars_amount = len(hypothesis_text)
+
+        if ref_chars_amount == 0 or hyp_chars_amount == 0:
+            if ref_chars_amount == hyp_chars_amount:
+                char_dist = 0
+            else:
+                char_dist = ref_chars_amount
+        else:
+            char_dist = editdistance.eval(reference_text, hypothesis_text)
+        
+        cer_value = char_dist / ref_chars_amount
+        data_entry[self.output_metric_field] = round(cer_value * 100, 2)
+        
+        return [DataEntry(data=data_entry, metrics = {'char_dist' : char_dist, 'num_chars' : ref_chars_amount})]
+
+    def finalize(self, metrics: List):
+        logger.info("Total number of entries after processing: %d", self.number_of_entries)
+        if self.total_duration != 0:
+            logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
+
+        logger.info("Overall Character Error Rate (CER): %.2f%%", self.char_dist / self.num_chars * 100) 
+
+
+class GetEdgeCER(BaseParallelProcessor):
+    """
+    Processor that computes the Character Error Rate (CER) for a specified edge of reference
+    and hypothesis texts.
+
+    Args:
+        reference_text_field (str): Key to get the reference text from the data.
+        hypothesis_text_field (str): Key to get the hypothesis text from the data.
+        edge (str): Specifies whether to compute CER for the 'start' or 'end' edge of the texts.
+        edge_len (int): Length of the edge window.
+        output_metric_field (str): Key to put the computed edge CER value.
+
+    Returns:
+        All the same fields as in the input manifest plus the output_metric_field containing
+        the computed edge CER value.
+    """
+
+    def __init__(
+        self,
+        reference_text_field: str = "text",
+        hypothesis_text_field: str = "pred_text",
+        edge: str = "start",
+        edge_len: int = 10,
+        output_metric_field: str = "start_cer",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.reference_text_field = reference_text_field
+        self.hypothesis_text_field = hypothesis_text_field
+        self.edge = edge
+        self.edge_len = edge_len
+        self.output_metric_field = output_metric_field
+        self.edge_cer_sum = 0
+
+    def process(self):
+        self.prepare()
+        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
+        metrics = []
+
+        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
+            for manifest_chunk in self._chunk_manifest():
+                # this will unroll all inner lists
+                data = itertools.chain(
+                    *process_map(
+                        self.process_dataset_entry,
+                        manifest_chunk,
+                        max_workers=self.max_workers,
+                        chunksize=self.chunksize,
+                    )
+                )
+                for data_entry in tqdm(data):
+                    metrics.append(data_entry.metrics)
+                    if data_entry.data is None:
+                        continue
+                    json.dump(data_entry.data, fout, ensure_ascii=False)
+                    self.number_of_entries += 1
+                    self.total_duration += data_entry.data.get("duration", 0)
+                    self.edge_cer_sum += data_entry.data.get(self.output_metric_field, 0)
+                    fout.write("\n")
+
+        self.finalize(metrics)
+
+    def process_dataset_entry(self, data_entry):
+        if self.edge == "start":
+            start_idx = 0
+            end_idx = self.edge_len
+        elif self.edge == "end":
+            start_idx = -self.edge_len
+            end_idx = -1
+        else:
+            raise ValueError(f"Current `Edge` parameter value ({self.edge}) is incorrect. Please select `start` or `end` edge.")
+        
+        reference_text_edge = data_entry[self.reference_text_field][start_idx : end_idx]
+        hypothesis_text_edge = data_entry[self.hypothesis_text_field][start_idx : end_idx]
+        
+        ref_chars_amount = len(reference_text_edge)
+        hyp_chars_amount = len(hypothesis_text_edge)
+
+        if ref_chars_amount == 0 or hyp_chars_amount == 0:
+            if ref_chars_amount == hyp_chars_amount:
+                char_dist = 0
+            else:
+                char_dist = ref_chars_amount
+        else:
+            char_dist = editdistance.eval(reference_text_edge, hypothesis_text_edge)
+        
+        edge_cer_value = char_dist / ref_chars_amount
+        data_entry[self.output_metric_field] = round(edge_cer_value * 100, 2)
+        
+        return [DataEntry(data=data_entry)]
+
+    def finalize(self, metrics: List):
+        logger.info("Total number of entries after processing: %d", self.number_of_entries)
+        if self.total_duration != 0:
+            logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
+
+        logger.info(f"Mean {self.edge} Character Error Rate (CER): {round(self.edge_cer_sum / self.number_of_entries, 2)}%") 
+
+
+class GetLenDiffRatio(BaseParallelProcessor):
+    """
+    Processor that computes the length difference ratio between reference and hypothesis texts.
+
+    Args:
+        reference_text_field (str): Key to get the reference text from the data.
+        hypothesis_text_field (str): Key to get the hypothesis text from the data.
+        output_metric_field (str): Key to put the computed length difference ratio.
+
+    Returns:
+        All the same fields as in the input manifest plus the output_metric_field containing
+        the computed length difference ratio.
+    """
+
+    def __init__(
+        self,
+        reference_text_field: str = "text",
+        hypothesis_text_field: str = "pred_text",
+        output_metric_field: str = "len_diff_ratio",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.reference_text_field = reference_text_field
+        self.hypothesis_text_field = hypothesis_text_field
+        self.output_metric_field = output_metric_field
+        self.words_len_diff_ratio_sum = 0
+
+    def process(self):
+        self.prepare()
+        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
+        metrics = []
+
+        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
+            for manifest_chunk in self._chunk_manifest():
+                # this will unroll all inner lists
+                data = itertools.chain(
+                    *process_map(
+                        self.process_dataset_entry,
+                        manifest_chunk,
+                        max_workers=self.max_workers,
+                        chunksize=self.chunksize,
+                    )
+                )
+                for data_entry in tqdm(data):
+                    metrics.append(data_entry.metrics)
+                    if data_entry.data is None:
+                        continue
+                    json.dump(data_entry.data, fout, ensure_ascii=False)
+                    self.number_of_entries += 1
+                    self.total_duration += data_entry.data.get("duration", 0)
+                    self.words_len_diff_ratio_sum += data_entry.data.get(self.output_metric_field, 0)
+                    fout.write("\n")
+
+        self.finalize(metrics)
+
+    def process_dataset_entry(self, data_entry): 
+        reference_text = data_entry[self.reference_text_field]
+        hypothesis_text = data_entry[self.hypothesis_text_field]
+        
+        ref_words_amount = len(reference_text.split())
+        hyp_words_amount = len(hypothesis_text.split())
+
+        eps = 1e-9
+        len_diff_ratio = 1.0 * abs(ref_words_amount - hyp_words_amount) / max(ref_words_amount, eps)
+
+        data_entry[self.output_metric_field] = round(len_diff_ratio * 100, 2)
+        
+        return [DataEntry(data=data_entry)]
+
+    def finalize(self, metrics: List):
+        logger.info("Total number of entries after processing: %d", self.number_of_entries)
+        if self.total_duration != 0:
+            logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
+
+        logger.info(f"Mean Text Length Difference Ratio (in words): {round(self.words_len_diff_ratio_sum / self.number_of_entries, 2)}%")
