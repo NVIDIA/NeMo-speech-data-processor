@@ -54,6 +54,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     CopyManifestData,
     CountNumWords,
     ExtractFromBrackets,
+    GetAudioDuration,
     GetWER,
     InsIfASRInsertion,
     ReadDocxLines,

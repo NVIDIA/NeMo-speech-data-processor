@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import re
 import shutil
 from typing import Dict, List
 
+import soundfile
 from docx import Document
 
 from sdp.logging import logger
@@ -31,6 +32,38 @@ from sdp.utils.metrics_computation import (
     get_wmr,
     get_wordrate,
 )
+
+
+class GetAudioDuration(BaseParallelProcessor):
+    """
+    Processor to count audio duration using audio file path from input_field
+
+    Args:
+        audio_filepath_field (str): where to get path to wav file.
+        duration_field (str): where to put to audio duration.
+    Returns:
+        All the same fields as in the input manifest plus output_field
+    """
+
+    def __init__(
+        self,
+        audio_filepath_field: str,
+        duration_field: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.audio_filepath_field = audio_filepath_field
+        self.duration_field = duration_field
+
+    def process_dataset_entry(self, data_entry):
+        audio_filepath = data_entry[self.audio_filepath_field]
+        try:
+            data, samplerate = soundfile.read(audio_filepath)
+            data_entry[self.duration_field] = data.shape[0] / samplerate
+        except Exception as e:
+            logger.warning(str(e) + " file: " + audio_filepath)
+            data_entry[self.duration_field] = -1.0
+        return [DataEntry(data=data_entry)]
 
 
 class CopyManifestData(BaseParallelProcessor):
