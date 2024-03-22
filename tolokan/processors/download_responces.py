@@ -112,7 +112,7 @@ class GetTolokaResults(BaseParallelProcessor):
             'text': text,
             'attachment_id': attachment_id,
             'status': status,
-            'audio_path': output_path,
+            'audio_filepath': output_path,
             'suit_id': suit_id,
             'assignment_id': assignment_id,
             'user_id': user_id,

@@ -146,7 +146,7 @@ class ASRSeamless(BaseProcessor):
 
                 transcribed_text = processor.batch_decode(outputs, skip_special_tokens=True)
 
-                entry[self.output_field] = str(transcribed_text)
+                entry[self.output_field] = str(transcribed_text[0]).strip()
                 entries.append(entry)
 
             with open(self.output_manifest_file, 'w', encoding='utf-8') as f_out:

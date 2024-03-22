@@ -23,9 +23,33 @@ processors:
     output_manifest_file: ${workspace_dir}/result_manifest_pred.json
     limit: 100
 
+  - _target_: sdp.processors.DropIfRegexMatch
+    input_manifest_file: ${workspace_dir}/result_manifest_pred.json
+    output_manifest_file: ${workspace_dir}/result_manifest_clean.json
+    text_key: "user_id"
+    regex_patterns:
+      - "f00a521ecdfae90d3749db2bc94ba47a"
+      - "ca29f958eb3aaaf76a91b35b252c2600"
+      - "93ff8ebc07a045af2f3d0d9eeaf8cf16"
+      - "7d983bd8f5a33ed5fc6402f3b4fb07ae"
+      - "8c63c2fbbe67f8863b1153a0d26fcfbc"
+      - "975498979917c2475f1b500ecec07364"
+      - "725dbe25e01fc14d255e7c59aaa41313"
+      - "0a9b8cc44c7f3f18dcae8ae0ab224fb2"
+      - "408621c64ddf415f8f17822de91e41f5"
+      - "1336f10071ff290c35f0b2ef3cc6d185"
+      - "88319c47b41e5977293743cb8a841572"
+      - "612bdd7ff7d6c95357d661032cb819a3"
+      - "807a2e89c64fd815d3753edd41b8754d"
+      - "c1a8633196fabb27454899ea4a88916d"
+      - "e3be16058c9898084bbad5282167c7ff"
+      - "2b97303bb6dc587988016e130c71bbb5"
+      - "86e79eda49665b1810ed07084ca5fe2c"
+
   - _target_: sdp.processors.GetAudioDuration
     audio_filepath_field: audio_filepath
     duration_field: duration
-    input_manifest_file: ${workspace_dir}/result_manifest_pred.json
+    input_manifest_file: ${workspace_dir}/result_manifest_clean.json
     output_manifest_file: ${workspace_dir}/evn_mag_manifest.json
+
 
