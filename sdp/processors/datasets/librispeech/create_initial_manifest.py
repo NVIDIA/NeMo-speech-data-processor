@@ -54,6 +54,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
     Args:
         splits (list[str]): Which datasets or their combinations should be processed.
             Options are:
+
             - ``["dev-clean"]``
             - ``["dev-other"]``
             - ``["test-clean"]``
@@ -66,7 +67,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
         raw_data_dir (str): Path to the folder where the data archive should be downloaded and extracted.
 
     Returns:
-    This processor generates an initial manifest file with the following fields::
+        This processor generates an initial manifest file with the following fields::
 
             {
                 "audio_filepath": <path to the audio file>,
@@ -84,8 +85,8 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
         self.splits = splits
         self.raw_data_dir = raw_data_dir
 
-    def process_transcrip(self, file_path: str) -> list[dict[str, typing.Any]]:
-        """Parse transcript file and put it inside manyfest
+    def process_transcript(self, file_path: str) -> list[dict[str, typing.Any]]:
+        """Parse transcript file and put it inside manifest
         We assume that flac files are located in the same directory as transcript file.
         """
 
@@ -114,7 +115,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
                 files.append(os.path.join(root, filename))
 
         for file in files:
-            result = self.process_transcrip(file)
+            result = self.process_transcript(file)
             entries.extend(result)
 
         with open(manifest_file, "w") as fout:

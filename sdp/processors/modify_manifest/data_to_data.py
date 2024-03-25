@@ -28,33 +28,33 @@ from sdp.utils.get_diff import get_diff_with_subs_grouped
 
 class GetAudioDuration(BaseParallelProcessor):
     """
-    Processor to count audio duration using audio file path from audio_filepath_field
+    Processor to count audio duration using audio file path from audio_filepath_key
 
     Args:
-        audio_filepath_field (str): where to get path to wav file.
-        duration_field (str): where to put to audio duration.
+        audio_filepath_key (str): where to get path to wav file.
+        duration_key (str): where to put to audio duration.
     Returns:
-        All the same fields as in the input manifest plus duration_field
+        All the same fields as in the input manifest plus duration_key
     """
 
     def __init__(
         self,
-        audio_filepath_field: str,
-        duration_field: str,
+        audio_filepath_key: str,
+        duration_key: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.audio_filepath_field = audio_filepath_field
-        self.duration_field = duration_field
+        self.audio_filepath_key = audio_filepath_key
+        self.duration_key = duration_key
 
     def process_dataset_entry(self, data_entry):
-        audio_filepath = data_entry[self.audio_filepath_field]
+        audio_filepath = data_entry[self.audio_filepath_key]
         try:
             data, samplerate = soundfile.read(audio_filepath)
-            data_entry[self.duration_field] = data.shape[0] / samplerate
+            data_entry[self.duration_key] = data.shape[0] / samplerate
         except Exception as e:
             logger.warning(str(e) + " file: " + audio_filepath)
-            data_entry[self.duration_field] = -1.0
+            data_entry[self.duration_key] = -1.0
         return [DataEntry(data=data_entry)]
 
 
@@ -64,34 +64,33 @@ class SoxConvert(BaseParallelProcessor):
     and updating the dataset with the path to the converted audio files.
 
     Args:
+
         converted_audio_dir (str): Directory to store the converted audio files.
-        input_field (str): Field in the dataset representing the path to input audio files.
-        output_field (str): Field to store the path to the converted audio files in the dataset.        output_format (str): Format of the output audio files (e.g., 'wav', 'mp3').
-        conversion_parameters (dict, optional): Additional parameters for audio conversion.
+        input_audio_file_key (str): Field in the dataset representing the path to input audio files.
+        output_audio_file_key (str): Field to store the path to the converted audio files in the dataset.
+        output_format (str): Format of the output audio files (e.g., 'wav', 'mp3').
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
     """
 
     def __init__(
         self,
         converted_audio_dir: str,
-        input_field: str,
-        output_field: str,
+        input_audio_file_key: str,
+        output_audio_file_key: str,
         output_format: str,
-        conversion_parameters: dict = {},
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = input_field
-        self.output_field = output_field
+        self.input_audio_file_key = input_audio_file_key
+        self.output_audio_file_key = output_audio_file_key
         self.converted_audio_dir = converted_audio_dir
         self.output_format = output_format
-        self.conversion_parameters = conversion_parameters
 
     def prepare(self):
         os.makedirs(self.converted_audio_dir, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        audio_file = data_entry[self.input_field]
+        audio_file = data_entry[self.input_audio_file_key]
 
         key = os.path.splitext(audio_file)[0].split("/")[-1]
         converted_file = os.path.join(self.converted_audio_dir, key) + f".{self.output_format}"
@@ -100,7 +99,7 @@ class SoxConvert(BaseParallelProcessor):
             transformer = Transformer()
             transformer.build(audio_file, converted_file)
 
-        data_entry[self.output_field] = converted_file
+        data_entry[self.output_audio_file_key] = converted_file
         return [DataEntry(data=data_entry)]
 
 

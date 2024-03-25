@@ -61,11 +61,10 @@ def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
 
 
 def data_check_fn_librispeech(raw_data_dir: str) -> None:
-    if (Path(raw_data_dir) / "train-clean-360.tar.gz").exists():
-        return
-
     expected_file = Path(raw_data_dir) / "train-clean-360.tar.gz"
-    if not expected_file.exists():
+    if expected_file.exists():
+        return
+    else:
         raise ValueError(f"No such file {str(expected_file)}")
 
 
@@ -135,6 +134,15 @@ def get_e2e_test_data_path() -> str:
     bucket = s3_resource.Bucket("sdp-test-data")
     print("Downloading test data from s3")
     for obj in bucket.objects.all():
+        if not obj.key.endswith("/"):  # do not try to "download_file" on objects which are actually directories
+            continue
+        if not os.path.exists(os.path.dirname(obj.key)):
+            os.makedirs(os.path.dirname(obj.key))
+        bucket.download_file(obj.key, obj.key)
+    print("Test data downloaded to 'test_data' folder.")
+    os.environ["TEST_DATA_ROOT"] = os.path.abspath("test_data")
+
+    for obj in bucket.objects.all():
         if not os.path.exists(os.path.dirname(obj.key)):
             os.makedirs(os.path.dirname(obj.key))
         bucket.download_file(obj.key, obj.key)
@@ -167,8 +175,7 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
     assert "processors" in cfg
     cfg["processors_to_run"] = "all"
     cfg["workspace_dir"] = str(tmp_path)
-    if "final_manifest" not in cfg:
-        cfg["final_manifest"] = str(tmp_path / "final_manifest.json")
+    cfg["final_manifest"] = str(tmp_path / "final_manifest.json")
     if "data_split" not in cfg:
         cfg["data_split"] = "train"
     cfg["processors"][0]["raw_data_dir"] = str(Path(test_data_root) / rel_path_from_root)

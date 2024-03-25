@@ -60,13 +60,13 @@ processors:
 
   - _target_: sdp.processors.SoxConvert
     converted_audio_dir: ${workspace_dir}/audio
-    input_field: "audio_filepath"
-    output_field: "audio_filepath"
+    input_audio_file_key: "audio_filepath"
+    output_audio_file_key: "audio_filepath"
     output_format: "wav"
 
   - _target_: sdp.processors.GetAudioDuration
-    audio_filepath_field: audio_filepath
-    duration_field: duration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
 
   - _target_: sdp.processors.SubMakeLowercase
     output_manifest_file: ${final_manifest}
