@@ -135,7 +135,7 @@ def get_e2e_test_data_path() -> str:
     print("Downloading test data from s3")
     for obj in bucket.objects.all():
         if (
-            not obj.key.endswith("/") and obj.size > 0
+            not obj.key.endswith("/") or obj.size == 0
         ):  # do not try to "download_file" on objects which are actually directories
             continue
         if not os.path.exists(os.path.dirname(obj.key)):
