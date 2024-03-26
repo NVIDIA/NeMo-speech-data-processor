@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
 
 import json
 import os
+import shutil
 import tarfile
 from functools import partial
 from pathlib import Path
-import shutil
 from typing import Callable
 from unittest import mock
 
@@ -60,6 +60,14 @@ def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
         tar.extractall(path=raw_data_dir)
 
 
+def data_check_fn_librispeech(raw_data_dir: str) -> None:
+    expected_file = Path(raw_data_dir) / "dev-clean.tar.gz"
+    if expected_file.exists():
+        return
+    else:
+        raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
+
+
 coraal_processor.get_coraal_url_list = mock.Mock(
     return_value=[
         'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_metadata_2021.07.txt',
@@ -88,6 +96,7 @@ def get_test_cases():
         # audio will be downloaded on the fly from a subset of files.
         # No checks, but need to mock the url list function (done above)
         (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
+        (f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", data_check_fn_librispeech),
     ]
 
 
@@ -125,6 +134,8 @@ def get_e2e_test_data_path() -> str:
     bucket = s3_resource.Bucket("sdp-test-data")
     print("Downloading test data from s3")
     for obj in bucket.objects.all():
+        if obj.key.endswith("/"):  # do not try to "download_file" on objects which are actually directories
+            continue
         if not os.path.exists(os.path.dirname(obj.key)):
             os.makedirs(os.path.dirname(obj.key))
         bucket.download_file(obj.key, obj.key)
@@ -158,7 +169,8 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
     cfg["processors_to_run"] = "all"
     cfg["workspace_dir"] = str(tmp_path)
     cfg["final_manifest"] = str(tmp_path / "final_manifest.json")
-    cfg["data_split"] = "train"
+    if "data_split" not in cfg:
+        cfg["data_split"] = "train"
     cfg["processors"][0]["raw_data_dir"] = str(Path(test_data_root) / rel_path_from_root)
 
     run_processors(cfg)
@@ -171,6 +183,7 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
         reference_lines = sorted(reference_fin.readlines())
         generated_lines = sorted(generated_fin.readlines())
         assert len(reference_lines) == len(generated_lines)
+
         for reference_line, generated_line in zip(reference_lines, generated_lines):
             reference_data = json.loads(reference_line)
             generated_data = json.loads(generated_line)

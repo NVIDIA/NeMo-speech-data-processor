@@ -52,6 +52,14 @@ CORAAL
 .. autodata:: sdp.processors.TrainDevTestSplitCORAAL
    :annotation:
 
+
+Librispeech
+'''''''''''
+
+.. autodata:: sdp.processors.CreateInitialManifestLibrispeech
+   :annotation:
+   
+
 SLR83
 '''''
 
@@ -146,6 +154,12 @@ ASR-based processors
 
 Data modifications
 ''''''''''''''''''
+
+.. autodata:: sdp.processors.GetAudioDuration
+   :annotation:
+   
+.. autodata:: sdp.processors.SoxConvert
+   :annotation:
 
 .. autodata:: sdp.processors.InsIfASRInsertion
    :annotation:
