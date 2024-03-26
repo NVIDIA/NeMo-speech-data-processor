@@ -1,0 +1,107 @@
+[33mcommit 898e70783143c7ccb7af0c1de240236fa3756f1d[m[33m ([m[1;36mHEAD -> [m[1;32mfleurs[m[33m)[m
+Author: Alexan <hayrapetyan.alexan@gmail.com>
+Date:   Mon Mar 18 16:12:02 2024 +0400
+
+    Added documentation and updated other files
+    
+    Signed-off-by: Alexan <hayrapetyan.alexan@gmail.com>
+
+[1mdiff --git a/dataset_configs/armenian/fleurs/config.yaml b/dataset_configs/armenian/fleurs/config.yaml[m
+[1mindex 11f27b4..61d4378 100644[m
+[1m--- a/dataset_configs/armenian/fleurs/config.yaml[m
+[1m+++ b/dataset_configs/armenian/fleurs/config.yaml[m
+[36m@@ -6,22 +6,29 @@[m [mdocumentation: |[m
+   dataset in the NeMo format.[m
+   It produces manifest for dev split of armenian language.[m
+   This config performs the following data processing.[m
+[32m+[m
+   1. Downloads FLEURS data[m
+   2. Calculates the length of wav files[m
+[32m+[m
+   **Required arguments**.[m
+[32m+[m[41m  [m
+   * **workspace_dir**: specify the workspace folder where all audio files will be stored.[m
+   Note that you can customize any part of this config either directly or from command-line.[m
+  [m
+[31m-  **Output format**.[m
+[32m+[m[32m  **Output format**[m
+[32m+[m
+   This config generates output manifest files:[m
+[31m-  * ``${workspace_dir}/manifest.json`` - dev subset of the data.[m
+[32m+[m
+[32m+[m[32m  * ``${workspace_dir}/${final_manifest}`` - dev subset of the data.[m
+[32m+[m
+   Output manifest contains the following fields:[m
+[32m+[m
+   * **audio_filepath (str)**: relative path to the audio files.[m
+   * **text (str)**: transcription (lower-case without punctuation).[m
+   * **duration (float)**: audio duration in seconds.[m
+ processors_to_run: all[m
+ workspace_dir: ???[m
+[31m-final_manifest: ${workspace_dir}/manifest.json[m
+[32m+[m[32mfinal_manifest: manifest.json[m
+ [m
+ processors:[m
+   # creating manifest for armenian test set[m
+[36m@@ -33,4 +40,4 @@[m [mprocessors:[m
+   - _target_: sdp.processors.GetAudioDuration[m
+     audio_filepath_field: audio_filepath[m
+     duration_field: duration[m
+[31m-    output_manifest_file: ${final_manifest}[m
+[32m+[m[32m    output_manifest_file: ${workspace_dir}/${final_manifest}[m
+[1mdiff --git a/sdp/processors/datasets/fleurs/create_initial_manifest.py b/sdp/processors/datasets/fleurs/create_initial_manifest.py[m
+[1mindex 52e7613..2b862c0 100644[m
+[1m--- a/sdp/processors/datasets/fleurs/create_initial_manifest.py[m
+[1m+++ b/sdp/processors/datasets/fleurs/create_initial_manifest.py[m
+[36m@@ -43,29 +43,30 @@[m [mdef get_fleurs_url_list(lang: str, split: list[str]) -> list[str]:[m
+ [m
+ [m
+ class CreateInitialManifestFleurs(BaseProcessor):[m
+[31m-    """Processor to create initial manifest for the fleurs dataset.[m
+[32m+[m[32m    """[m
+[32m+[m[32m    Processor to create initial manifest for the FLEURS dataset.[m
+[32m+[m
+     Dataset link: https://huggingface.co/datasets/google/fleurs[m
+[31m-    Will download all files in parallel and create manifest file with the[m
+[31m-    'audio_filepath' and 'text' fields[m
+[31m-    Args:[m
+[31m-        config (str): Which data set shoudld be processed[m
+[31m-            - options are:[m
+[31m-            TODO: Add all language options in the format[m
+[31m-            "hy_am": armenian[m
+[31m-            "ko_kr": korean[m
+[31m-            ["all"] (for all datasets avalable)[m
+[31m-        split (str): Which data split should be processed[m
+[31m-            - options are:[m
+[31m-            "test",[m
+[31m-            "train",[m
+[31m-            "dev"[m
+[31m-        audio_dir (str): Path to folder where should the filed be donwloaded and extracted[m
+[32m+[m
+[32m+[m[32m    Will download all audio files from the FLEURS dataset, and create a manifest file with[m
+[32m+[m[32m    the "audio_filepath" and "text" fields.[m
+[32m+[m
+[32m+[m[32m    Attributes:[m
+[32m+[m[32m        lang (str): Language to be processed, identified by a combination of ISO 639-1 and ISO 3166-1 alpha-2 codes.[m
+[32m+[m[32m                    Examples include:[m
+[32m+[m[32m                    - ``"hy_am"`` for Armenian[m
+[32m+[m[32m                    - ``"ko_kr"`` for Korean[m
+[32m+[m[32m        split (str): Which dataset splits to process. Options are:[m
+[32m+[m[32m                    - ``"test"``[m
+[32m+[m[32m                    - ``"train"``[m
+[32m+[m[32m                    - ``"dev"``[m
+[32m+[m[32m        audio_dir (str): Path to the directory where audio files will be downloaded and extracted.[m
+     Returns:[m
+[31m-       This processor generates an initial manifest file with the following fields::[m
+[31m-            {[m
+[31m-                "audio_filepath": <path to the audio file>,[m
+[31m-                "text": <transcription>,[m
+[31m-            }[m
+[32m+[m[32m        This processor generates an initial manifest file with the following fields:[m
+[32m+[m[32m        {[m
+[32m+[m[32m            "audio_filepath": <path to the audio file>,[m
+[32m+[m[32m            "text": <transcription>,[m
+[32m+[m[32m        }[m
+     """[m
+ [m
+     def __init__([m
