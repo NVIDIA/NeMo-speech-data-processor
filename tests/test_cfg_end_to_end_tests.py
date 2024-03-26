@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -61,11 +61,11 @@ def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
 
 
 def data_check_fn_librispeech(raw_data_dir: str) -> None:
-    expected_file = Path(raw_data_dir) / "train-clean-360.tar.gz"
+    expected_file = Path(raw_data_dir) / "dev-clean.tar.gz"
     if expected_file.exists():
         return
     else:
-        raise ValueError(f"No such file {str(expected_file)}")
+        raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
 
 
 coraal_processor.get_coraal_url_list = mock.Mock(
@@ -134,17 +134,8 @@ def get_e2e_test_data_path() -> str:
     bucket = s3_resource.Bucket("sdp-test-data")
     print("Downloading test data from s3")
     for obj in bucket.objects.all():
-        if (
-            not obj.key.endswith("/") or obj.size == 0
-        ):  # do not try to "download_file" on objects which are actually directories
+        if obj.key.endswith("/"):  # do not try to "download_file" on objects which are actually directories
             continue
-        if not os.path.exists(os.path.dirname(obj.key)):
-            os.makedirs(os.path.dirname(obj.key))
-        bucket.download_file(obj.key, obj.key)
-    print("Test data downloaded to 'test_data' folder.")
-    os.environ["TEST_DATA_ROOT"] = os.path.abspath("test_data")
-
-    for obj in bucket.objects.all():
         if not os.path.exists(os.path.dirname(obj.key)):
             os.makedirs(os.path.dirname(obj.key))
         bucket.download_file(obj.key, obj.key)
