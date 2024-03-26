@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -76,9 +76,6 @@ def data_check_fn_fleurs(raw_data_dir: str) -> None:
     expected_file = Path(raw_data_dir) / f"dev.tar.gz"
     if not expected_file.exists():
         raise ValueError(f"No such file {str(expected_file)}")
-    # expected_file = Path(raw_data_dir) / f"dev.tsv"
-    # if not expected_file.exists():
-    #     raise ValueError(f"No such file {str(expected_file)}")
 
 
 def get_test_cases():
@@ -98,7 +95,7 @@ def get_test_cases():
         # audio will be downloaded on the fly from a subset of files.
         # No checks, but need to mock the url list function (done above)
         (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
-        # (f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", lambda raw_data_dir: True),
+        (f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", data_check_fn_fleurs),
     ]
 
 
@@ -136,9 +133,10 @@ def get_e2e_test_data_path() -> str:
     bucket = s3_resource.Bucket("sdp-test-data")
     print("Downloading test data from s3")
     for obj in bucket.objects.all():
-        if not os.path.exists(os.path.dirname(obj.key)):
-            os.makedirs(os.path.dirname(obj.key))
-        bucket.download_file(obj.key, obj.key)
+        if not obj.key.endswith("/"):  # do not try to "download_file" on objects which are actually directories
+            if not os.path.exists(os.path.dirname(obj.key)):
+                os.makedirs(os.path.dirname(obj.key))
+            bucket.download_file(obj.key, obj.key)
     print("Test data downloaded to 'test_data' folder.")
     os.environ["TEST_DATA_ROOT"] = os.path.abspath("test_data")
 
