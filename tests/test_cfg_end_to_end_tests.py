@@ -125,6 +125,8 @@ def get_e2e_test_data_path() -> str:
     bucket = s3_resource.Bucket("sdp-test-data")
     print("Downloading test data from s3")
     for obj in bucket.objects.all():
+        if obj.key.endswith("/"):  # do not try to "download_file" on objects which are actually directories
+            continue
         if not os.path.exists(os.path.dirname(obj.key)):
             os.makedirs(os.path.dirname(obj.key))
         bucket.download_file(obj.key, obj.key)
