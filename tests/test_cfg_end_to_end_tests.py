@@ -64,8 +64,6 @@ coraal_processor.get_coraal_url_list = mock.Mock(
     return_value=[
         'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_metadata_2021.07.txt',
         'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_audio_part01_2021.07.tar.gz',
-        'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_audio_part02_2021.07.tar.gz',
-        'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_audio_part03_2021.07.tar.gz',
         'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_textfiles_2021.07.tar.gz',
     ]
 )
