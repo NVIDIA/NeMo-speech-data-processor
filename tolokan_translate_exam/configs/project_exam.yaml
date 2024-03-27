@@ -3,14 +3,14 @@ documentation: |
 
 processors_to_run: all
 workspace_dir: ???
-API_KEY: "QBiiuByvLaYu1llgZjDFXw.045e.f1bcUbqp_4Q5ENwt9-_NdCNjZpQspNFAwnm1qXPj-Y24DyjVuxPhP4nu7DKoxuZgiZvvfWalAZ4uIb3o4ztD0kt8jNP4sW4k8tp_8m3JwUQ"
-# API_KEY: "1V0v8tbFtwPhDVMbN3cvcQ.045e.k93FVRUudCOHplT6OHcDNjc-k8V_rSFr8l5_jLyo4rLT9W4fgabM40EyompNakPZ0uU-_sgc0hKHzrEge5AJNy5MwZCu93BHoTJGOS1lwqE"
+API_KEY: "QBiiuByvLaYu1llgZjDFXw.045e.f1bcUbqp_4Q5ENwt9-_NdCNjZpQspNFAwnm1qXPj-Y24DyjVuxPhP4nu7DKoxuZgiZvvfWalAZ4uIb3o4ztD0kt8jNP4sW4k8tp_8m3JwUQ" # SANDBOX
+# API_KEY: "1V0v8tbFtwPhDVMbN3cvcQ.045e.k93FVRUudCOHplT6OHcDNjc-k8V_rSFr8l5_jLyo4rLT9W4fgabM40EyompNakPZ0uU-_sgc0hKHzrEge5AJNy5MwZCu93BHoTJGOS1lwqE" # PRODUCTION
 
 processors:
   - _target_: tolokan_translate_exam.processors.CreateTolokaProjectTranslationExam
     API_KEY: ${API_KEY}
     platform: "SANDBOX"
-    project_name: "Переводы с русского на армянский данетка final test"
+    project_name: "Переводы с русского на армянский данетка new test"
     project_description: "Без машинного перевода, грамотно перевести текст с русского на армянский язык."
     project_instructions: 'Не используйте машинный перевод. Переводите соблюдая грамматику и пунктуацию.'
     output_manifest_file: ${workspace_dir}/data_file.json
