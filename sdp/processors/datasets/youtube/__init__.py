@@ -16,3 +16,4 @@ from .create_initial_manifest import CreateInitialManifest
 from .utils import parse_srt
 from .aggregate_segments import *
 from .merge_manifests import MergeManifests
+from .download_data import DownloadData
