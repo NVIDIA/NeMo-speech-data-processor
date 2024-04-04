@@ -2,6 +2,7 @@ import wget
 import os
 import json
 import shutil
+from glob import glob
 
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
 
@@ -50,3 +51,18 @@ class ExtractData(BaseParallelProcessor):
         data_entry["subset_path"] = os.path.join(output_dir, 'ssl')
         return [DataEntry(data=data_entry)]
 
+
+class GetSourceAudioFilepaths(BaseParallelProcessor):
+    def __init__(
+        self,
+        extension: str = "opus",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.extension = extension
+    
+    def process_dataset_entry(self, data_entry):
+        opus_filepaths = glob(f"{data_entry['subset_path']}/*.{self.extension}")
+        samples = [{"source_audio_path" : os.path.abspath(opus_filepath)} for opus_filepath in opus_filepaths]
+        data_entries = [DataEntry(data = sample) for sample in samples]
+        return data_entries
