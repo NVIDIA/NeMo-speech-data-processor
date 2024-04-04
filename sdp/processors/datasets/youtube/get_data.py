@@ -2,6 +2,7 @@ import wget
 import os
 import json
 import shutil
+import urllib
 
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
 
@@ -23,7 +24,10 @@ class DownloadData(BaseProcessor):
 
         with open(self.output_manifest_file, 'w') as manifest:
             for url in self.urls:
-                subset_path = wget.download(url, out=self.output_dir)
+                try:
+                    subset_path = wget.download(url, out=self.output_dir)
+                except urllib.error.HTTPError:
+                    subset_path = None
                 sample = {"subset_path" : subset_path}
                 manifest_line = json.dumps(sample)
                 manifest.writelines(f'{manifest_line}\n')
