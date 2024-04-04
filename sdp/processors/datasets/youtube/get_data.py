@@ -3,8 +3,10 @@ import os
 import json
 import shutil
 from glob import glob
+from pydub import AudioSegment
 
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
+from sdp.utils.common import ffmpeg_convert
 
 
 class DownloadData(BaseProcessor):
@@ -66,3 +68,47 @@ class GetSourceAudioFilepaths(BaseParallelProcessor):
         samples = [{"source_audio_path" : os.path.abspath(opus_filepath)} for opus_filepath in opus_filepaths]
         data_entries = [DataEntry(data = sample) for sample in samples]
         return data_entries
+
+
+class ConvertToWav(BaseParallelProcessor):
+    def __init__(
+        self,
+        output_audio_dir: str,
+        audio_file_extenstion: str = "opus",
+        target_samplerate: int = 16000,
+        target_nchannels: int = 1,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.output_audio_dir = output_audio_dir
+        self.audio_file_extenstion = audio_file_extenstion
+        self.target_samplerate = target_samplerate
+        self.target_nchannels = target_nchannels
+    
+    def prepare(self):
+        os.makedirs(self.output_audio_dir, exist_ok=True)
+    
+    def process_dataset_entry(self, data_entry):
+        data_entry['audio_filepath'] = os.path.abspath(
+            os.path.join(self.output_audio_dir, 
+                         os.path.basename(data_entry['source_audio_path']).replace(f".{self.audio_file_extenstion}", ".wav")))
+
+        ffmpeg_convert(input_file=data_entry['source_audio_path'], 
+                       output_wav=data_entry['audio_filepath'], 
+                       sample_rate=self.target_samplerate, 
+                       num_channels=self.target_nchannels)
+
+        return [DataEntry(data=data_entry)]
+
+
+class GetAudioDuration(BaseParallelProcessor):
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+    
+    def process_dataset_entry(self, data_entry):
+        audio_file = AudioSegment.from_file(data_entry['audio_filepath'])
+        data_entry['duration'] = round(audio_file.duration_seconds, 2)
+        return [DataEntry(data=data_entry)]
