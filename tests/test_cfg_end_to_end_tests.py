@@ -163,9 +163,10 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
     assert "processors" in cfg
     cfg["processors_to_run"] = "all"
     cfg["workspace_dir"] = str(tmp_path)
-    if "final_manifest" not in cfg:
-        cfg["final_manifest"] = str(tmp_path / "final_manifest.json")
-    cfg["data_split"] = "train"
+    # if "final_manifest" not in cfg:
+    cfg["final_manifest"] = str(tmp_path / "final_manifest.json")
+    if "data_split" not in cfg:
+        cfg["data_split"] = "train"
     cfg["processors"][0]["raw_data_dir"] = str(Path(test_data_root) / rel_path_from_root)
 
     run_processors(cfg)
