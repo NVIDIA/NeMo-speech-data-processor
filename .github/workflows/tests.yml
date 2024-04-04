@@ -65,6 +65,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements/main.txt
         pip install -r requirements/tests.txt
+        pip install -r requirements/huggingface.txt
         sudo apt-get update
         sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
         pip install Cython wheel  # need to pre-install to avoid error in nemo installation
