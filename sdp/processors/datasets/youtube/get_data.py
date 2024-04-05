@@ -29,7 +29,7 @@ class DownloadData(BaseProcessor):
             for url in self.urls:
                 try:
                     subset_path = wget.download(url, out=self.output_dir)
-                except urllib.error.HTTPError or urllib.error.ContentTooShortError:
+                except (urllib.error.HTTPError, urllib.error.ContentTooShortError):
                     subset_path = None
                 sample = {"subset_path" : subset_path}
                 manifest_line = json.dumps(sample)
