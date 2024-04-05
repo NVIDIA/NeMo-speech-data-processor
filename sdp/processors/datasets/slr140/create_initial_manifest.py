@@ -78,14 +78,14 @@ class CreateInitialManifestSLR140(BaseParallelProcessor):
         if self.audios == "all":
             self.audios = AVAILABLE_AUDIOS
 
-        if not any([audio not in AVAILABLE_AUDIOS for audio in audios]):
+        if any([audio not in AVAILABLE_AUDIOS for audio in self.audios]):
             raise ValueError(f"audios have to be one of {AVAILABLE_AUDIOS}")
 
     def prepare(self):
         """Downloading and extracting data (unless already done)."""
         os.makedirs(self.raw_data_dir, exist_ok=True)
 
-        audio_urls = [DATASET_URL.format(dialect=audio) for audio in self.audios]
+        audio_urls = [DATASET_URL.format(audio=audio) for audio in self.audios]
 
         thread_map(
             download_file,
