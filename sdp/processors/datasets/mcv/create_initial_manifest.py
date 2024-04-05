@@ -102,9 +102,11 @@ class CreateInitialManifestMCV(BaseParallelProcessor):
                 )
 
             data_folder = extract_archive(tar_gz_files[0], self.extract_archive_dir)
+
             self.transcription_file = Path(data_folder)
         else:
             self.transcription_file = Path(self.extract_archive_dir) / self.language_id
+
         self.audio_path_prefix = str(self.transcription_file / "clips")
         self.transcription_file = str(self.transcription_file / (self.data_split + ".tsv"))
         os.makedirs(self.resampled_audio_dir, exist_ok=True)

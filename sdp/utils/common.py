@@ -20,8 +20,9 @@ import urllib
 import zipfile
 from pathlib import Path
 from typing import Dict, List, Union
+
 import wget
-import subprocess
+
 from sdp.logging import logger
 
 
@@ -67,7 +68,7 @@ def extract_archive(archive_path: str, extract_path: str, force_extract: bool = 
     if not force_extract:
         if tarfile.is_tarfile(archive_path):
             with tarfile.open(archive_path, "r") as archive:
-                archive_extracted_dir = archive.getnames()[0]
+                archive_extracted_dir = os.path.dirname(archive.getnames()[0])
         elif zipfile.is_zipfile(archive_path):
             with zipfile.ZipFile(archive_path, "r") as archive:
                 archive_extracted_dir = archive.namelist()[0]
@@ -97,4 +98,4 @@ def ffmpeg_convert(jpg: str, wav: str, ar: int = 0, ac: int = 1):
     if ar:
         process_args = process_args[:-1]
         process_args.extend(["-ar", str(ar), wav])
-    return subprocess.run(process_args, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
+    return subprocess.run(process_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

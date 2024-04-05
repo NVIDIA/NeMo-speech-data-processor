@@ -6,89 +6,16 @@ documentation: |
 processors_to_run: all
 data_split: ???
 workspace_dir: ???
-audios: all
+audios: ???
 final_manifest: ${workspace_dir}/${data_split}_manifest.json
-remove_pc: False
-remove_hyphen: False
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestSLR140
     audios: ${audios}
     raw_data_dir: ${workspace_dir}/raw_data
 
-  - _target_: sdp.processors.FfmpegConvert
-    converted_audio_dir: ${workspace_dir}/audios
-    base_dir: ${workspace_dir}/raw_data
-    target_samplerate: 16000
-    target_nchannels: 1
-    input_file_key: "audio_filepath"
-    output_file_key: "audio_filepath"
-
-  - _target_: sdp.processors.GetAudioDuration
-    audio_filepath_key: audio_filepath
-    duration_key: duration
-
-  - _target_: sdp.processors.PreserveByValue
-    input_value_key: duration
-    target_value: 0
-    operator: gt
-  
-  - _target_: sdp.processors.SubRegex
-    regex_params_list:
-      - { "pattern": "!", "repl": "." }
-      - { "pattern": ":", "repl": "," }
-      - { "pattern": "‚", "repl": "," } # single low quotation mark to comma
-      - { "pattern": '[»«""]', "repl": '' }
-      - { "pattern": "[»«'']", "repl": '' }
-      - { "pattern": '[\(\{\[].*?[\)\}\]]', "repl": '' }
-      - { "pattern": "[/]", "repl": " " }
-      - { "pattern": "[-—–]", "repl": "-" }
-    test_cases:
-      - { input: { text: "Wow!" }, output: { text: "Wow." } }
-      - { input: { text: "«Өзімнен артық жоқ»" }, output: { text: "Өзімнен артық жоқ" } }
-
-  - _target_: sdp.processors.SubRegex
-    regex_params_list:
-      - { "pattern": "т б", "repl": "тағы басқа" }
-      - { "pattern": "т.б", "repl": "тағы басқа" }
-    test_cases:
-      - { input: { text: "жүйелері және т б" }, output: { text: "жүйелері және тағы басқа" } }
-
-  - _target_: sdp.processors.langs.kazakh.LatinToCyrillic
-    test_cases:
-      - { input: { text: "зерттеулерi қазақ" }, output: { text: "зерттеулері қазақ" } }
-
-  - _target_: sdp.processors.DropNonAlphabet
-    alphabet: "-.,? АаӘәБбВвГгҒғДдЕеЁёЖжЗзИиЙйКкҚқЛлМмНнҢңОоӨөПпРрСсТтУуҰұҮүФфХхҺһЦцЧчШшЩщЪъЫыІіЬьЭэЮюЯя"
-    test_cases:
-      - { input: { text: "t қсағанда а" }, output: null }
-      - { input: { text: "жөргем" }, output: { text: "жөргем" } }
-
-
-  # ------------------------ if P&C is not needed ------------------------
-
-  - _target_: sdp.processors.SubMakeLowercase
-    should_run: ${remove_pc}
-
-  - _target_: sdp.processors.SubRegex
-    should_run: ${remove_pc}
-    regex_params_list:
-      - { "pattern": '[\?\.,]', "repl": "" }
-
-  # ----------------------------------------------------------------------
-
-  # ------------------------ if hyphens not needed ------------------------
-
-  - _target_: sdp.processors.SubRegex
-    should_run: ${remove_hyphen}
-    regex_params_list:
-      - { "pattern": '-', "repl": "" }
-
-  # ----------------------------------------------------------------------
-
   - _target_: sdp.processors.CustomDataSplitSLR140
     data_split: ${data_split}
-    split_audio_dir: ${workspace_dir}
 
   - _target_: sdp.processors.ChangeToRelativePath
     base_dir: ${workspace_dir}
