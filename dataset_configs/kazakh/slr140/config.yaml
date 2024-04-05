@@ -8,6 +8,8 @@ data_split: ???
 workspace_dir: ???
 audios: ???
 final_manifest: ${workspace_dir}/${data_split}_manifest.json
+remove_pc: False
+remove_hyphen: False
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestSLR140
@@ -16,6 +18,66 @@ processors:
 
   - _target_: sdp.processors.CustomDataSplitSLR140
     data_split: ${data_split}
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_file_key: audio_filepath
+    duration_key: duration
+
+  - _target_: sdp.processors.PreserveByValue
+    input_value_key: duration
+    target_value: 0
+    operator: gt
+  
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      - { "pattern": "!", "repl": "." }
+      - { "pattern": "‚", "repl": "," } # single low quotation mark to comma
+      - { "pattern": "[»«]", "repl": '' }
+      - { "pattern": '[\(\{\[].*?[\)\}\]]', "repl": '' }
+      - { "pattern": "[/]", "repl": " " }
+      - { "pattern": "[-—–]", "repl": "-" }
+    test_cases:
+      - { input: { text: "Wow!" }, output: { text: "Wow." } }
+      - { input: { text: "«Өзімнен артық жоқ»" }, output: { text: "Өзімнен артық жоқ" } }
+
+    - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      - { "pattern": "ə", "repl": "ә" } # Latin Schwa to Cyrillic Schwa
+      - { "pattern": "A", "repl": "А" }
+      - { "pattern": "i", "repl": "і" } 
+      - { "pattern": "c", "repl": "с" }
+      - { "pattern": "o", "repl": "о" }
+    test_cases:
+      - { input: { text: "Wow!" }, output: { text: "Wow." } }
+      - { input: { text: "«Өзімнен артық жоқ»" }, output: { text: "Өзімнен артық жоқ" } }
+
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: "-.,? АаӘәБбВвГгҒғДдЕеЁёЖжЗзИиЙйКкҚқЛлМмНнҢңОоӨөПпРрСсТтУуҰұҮүФфХхҺһЦцЧчШшЩщЪъЫыІіЬьЭэЮюЯя"
+    test_cases:
+      - { input: { text: "t қсағанда а" }, output: null }
+      - { input: { text: "жөргем" }, output: { text: "жөргем" } }
+
+
+  # ------------------------ if P&C is not needed ------------------------
+
+  - _target_: sdp.processors.SubMakeLowercase
+    should_run: ${remove_pc}
+
+  - _target_: sdp.processors.SubRegex
+    should_run: ${remove_pc}
+    regex_params_list:
+      - { "pattern": '[\?\.,]', "repl": "" }
+
+  # ----------------------------------------------------------------------
+
+  # ------------------------ if hyphens not needed ------------------------
+
+  - _target_: sdp.processors.SubRegex
+    should_run: ${remove_hyphen}
+    regex_params_list:
+      - { "pattern": '-', "repl": "" }
+
+  # ----------------------------------------------------------------------
 
   - _target_: sdp.processors.ChangeToRelativePath
     base_dir: ${workspace_dir}

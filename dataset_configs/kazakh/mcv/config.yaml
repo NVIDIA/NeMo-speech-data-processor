@@ -3,6 +3,7 @@ data_split: ???
 workspace_dir: ???
 final_manifest: ${workspace_dir}/${data_split}_manifest.json
 remove_pc: False
+remove_hyphen: False
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestMCV
