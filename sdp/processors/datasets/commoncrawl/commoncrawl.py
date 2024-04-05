@@ -1247,7 +1247,7 @@ class AudioLid(BaseProcessor):
         output_lang_key (str): The field to store the identified language for each audio file.
         device (str): The device to run the ASR model on (e.g., 'cuda', 'cpu'). If None, it automatically selects the available GPU if present; otherwise, it uses the CPU.
         segment_duration (float): Random sample duration in seconds. Delault is np.inf.
-        num_segments (int): Number of segments of file to use for majority vote. Delault is 1.
+        max_num_segments (int): Max number of segments of file to use for majority vote. Delault is 1.
         random_seed (int): Seed for generating the starting position of the segment. Delault is None.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
@@ -1260,7 +1260,7 @@ class AudioLid(BaseProcessor):
         output_lang_key: str,
         device: str,
         segment_duration: float = np.inf,
-        num_segments: int = 1,
+        max_num_segments: int = 1,
         random_seed: int = None,
         **kwargs,
     ):
@@ -1269,7 +1269,7 @@ class AudioLid(BaseProcessor):
         self.pretrained_model = pretrained_model
         self.output_lang_key = output_lang_key
         self.segment_duration = segment_duration
-        self.num_segments = num_segments
+        self.max_num_segments = max_num_segments
         self.random_seed = random_seed
         self.device = device
 
@@ -1295,7 +1295,7 @@ class AudioLid(BaseProcessor):
                 audio_file = item[self.input_audio_key]
 
                 try:
-                    lang = model.get_label(audio_file, self.segment_duration, self.num_segments)
+                    lang = model.get_label(audio_file, self.segment_duration, self.max_num_segments)
                 except Exception as e:
                     logger.warning("AudioLid " + audio_file + " " + str(e))
                     lang = None
