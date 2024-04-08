@@ -17,13 +17,27 @@ processors:
   - _target_: sdp.processors.SubRegex
     regex_params_list:
       - { "pattern": "!", "repl": "." }
-      - { "pattern": "[»«]", "repl": '' }
+      - { "pattern": ":", "repl": "," }
+      - { "pattern": "‚", "repl": "," } # single low quotation mark to comma
+      - { "pattern": '[»«""]', "repl": '' }
+      - { "pattern": "[»«'']", "repl": '' }
       - { "pattern": '[\(\{\[].*?[\)\}\]]', "repl": '' }
       - { "pattern": "[/]", "repl": " " }
       - { "pattern": "[-—–]", "repl": "-" }
     test_cases:
       - { input: { text: "Wow!" }, output: { text: "Wow." } }
       - { input: { text: "«Өзімнен артық жоқ»" }, output: { text: "Өзімнен артық жоқ" } }
+
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      - { "pattern": "т б", "repl": "тағы басқа" }
+      - { "pattern": "т.б", "repl": "тағы басқа" }
+    test_cases:
+      - { input: { text: "жүйелері және т б" }, output: { text: "жүйелері және тағы басқа" } }
+
+  - _target_: sdp.processors.langs.kazakh.LatinToCyrillic
+    test_cases:
+      - { input: { text: "зерттеулерi қазақ" }, output: { text: "зерттеулері қазақ" } }
 
   - _target_: sdp.processors.DropNonAlphabet
     alphabet: "-.,? АаӘәБбВвГгҒғДдЕеЁёЖжЗзИиЙйКкҚқЛлМмНнҢңОоӨөПпРрСсТтУуҰұҮүФфХхҺһЦцЧчШшЩщЪъЫыІіЬьЭэЮюЯя"
