@@ -68,7 +68,7 @@ def extract_archive(archive_path: str, extract_path: str, force_extract: bool = 
     if not force_extract:
         if tarfile.is_tarfile(archive_path):
             with tarfile.open(archive_path, "r") as archive:
-                archive_extracted_dir = os.path.dirname(archive.getnames()[0])
+                archive_extracted_dir = os.path.commonprefix(archive.getnames()[1:])
         elif zipfile.is_zipfile(archive_path):
             with zipfile.ZipFile(archive_path, "r") as archive:
                 archive_extracted_dir = archive.namelist()[0]

@@ -50,6 +50,8 @@ if __name__ == "__main__":
                     fout.write(line)
                     tgt_mp3_path = os.path.join(tmpdir_path, "clips", utt_id)
                     shutil.copy(src_mp3_path, tgt_mp3_path)
+
+        os.makedirs(args.test_data_folder, exist_ok=True)
         with tarfile.open(os.path.join(args.test_data_folder, f"{args.archive_file_stem}.tar.gz"), "w:gz") as tar:
             # has to be the same as what's before .tar.gz
             tar.add(tmpdir, arcname=args.archive_file_stem)
