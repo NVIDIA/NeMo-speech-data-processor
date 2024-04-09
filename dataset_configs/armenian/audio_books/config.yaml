@@ -77,32 +77,23 @@ processors:
     
   - _target_: sdp.processors.ASRWhisper # pip install -U openai-whisper
     output_manifest_file: ${workspace_dir}/manifest4.json
-    pretrained_model: "large-v2"
+    pretrained_model: "small"
     output_text_key: text
     output_lang_key: lid
 
-  - _target_: sdp.processors.ASRTransformers #pip install accelerate transformers
+  - _target_: sdp.processors.ASRTransformers # pip install accelerate transformers
     output_manifest_file: ${workspace_dir}/manifest5.json
-    pretrained_model: "distil-whisper/distil-large-v2" #"openai/whisper-large-v3"
+    pretrained_model: "distil-whisper/distil-large-v2" # openai/whisper-large-v3 
     output_text_key: pred_text
-
-  - _target_: sdp.processors.DropNonAlphabet
-    output_manifest_file: ${workspace_dir}/manifest6.json
-    alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև.,!?"
-    test_cases:
-      - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
-      - {input: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
-
-  - _target_: sdp.processors.SubMakeLowercase
-    output_manifest_file: ${workspace_dir}/manifest7.json
-    text_key: "text"
 
   - _target_: sdp.processors.SubRegex
     output_manifest_file: ${final_manifest}
     regex_params_list:
       - {"pattern": '\[(.*?)\]', "repl": ' '}
-      - {"pattern": 'a', "repl": "ա"}
-      
+      - {"pattern": '�', "repl": ' '}
+      - {"pattern": 'n', "repl": "ո"}
+      - {"pattern": '1', "repl": "մեկ"} # dummy text normalization
+
       - {"pattern": 'անտար', "repl": "անտառ"}
       - {"pattern": 'թնակ', "repl": "տնակ"}
       - {"pattern": 'Ռուսերենիս', "repl": "Ռուսերենից"}
@@ -116,3 +107,14 @@ processors:
     test_cases:
       - {input: {text: "Գրիմ եղբայրներ, անտարի թնակը, Ռուսերենիս թարգմանեց, ամալիահ Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
       - {input: {text: "Էտկարպո, Մատնիչ սիրտը, թարգմանություն արտաշ է սեմինի."}, output: {text: "Էդգար Պո, Մատնիչ սիրտը, թարգմանությունը Արտաշես Էմինի."}}
+
+  - _target_: sdp.processors.DropNonAlphabet
+    output_manifest_file: ${workspace_dir}/manifest6.json
+    alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև.,!?"
+    test_cases:
+      - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
+      - {input: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/manifest7.json
+    text_key: "text"
