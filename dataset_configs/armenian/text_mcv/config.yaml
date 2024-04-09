@@ -28,7 +28,8 @@ documentation: |
 
   **Output format**.
 
-  Output manifest manifest12.json contain the following fields:
+  Output manifest `manifest12.json` contain the following fields:
+  
   * **Sentence (str)**: text of sentence to vocalise.
   * **Source (str)**: source book.
   
