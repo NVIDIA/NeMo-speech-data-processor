@@ -24,7 +24,8 @@ documentation: |
   
   8. Normalise some text examples with SubRegex.
 
-  **Required arguments**.
+  **Required arguments**:
+  
   * **workspace_dir**: specify the workspace folder where all audio files will be stored.
 
   Note that you can customize any part of this config either directly or from command-line.
