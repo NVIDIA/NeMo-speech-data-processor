@@ -52,7 +52,7 @@ processors:
   - _target_: sdp.processors.CreateInitialManifestByExt
     raw_data_dir: ${workspace_dir}/mp3
     extension: mp3
-    output_file_key: source_filepath
+    output_file_key: audio_filepath
     output_manifest_file: ${workspace_dir}/manifest0.json
 
   - _target_: sdp.processors.FfmpegConvert
@@ -60,8 +60,7 @@ processors:
     resampled_audio_dir: ${workspace_dir}/audio
     target_samplerate: 16000
     target_nchannels: 1
-    input_file_key: "source_filepath"
-    output_file_key: "audio_filepath"
+    media_file_key: "audio_filepath"
     id_key: null
 
   - _target_: sdp.processors.GetAudioDuration

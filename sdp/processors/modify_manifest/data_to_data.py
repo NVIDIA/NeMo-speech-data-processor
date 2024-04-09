@@ -67,8 +67,7 @@ class FfmpegConvert(BaseParallelProcessor):
     and input file name saves to id_key back.
     Args:
         resampled_audio_dir (str): The directory to store the resampled audio files.
-        input_file_key (str): The field in the dataset representing the path to the input video or audio files.
-        output_file_key (str): The field to store the path to the resampled audio files in the dataset.
+        media_file_key (str): The field in the dataset representing the path to the input video or audio files and store the path to the resampled audio files in the dataset.
         id_key (str): The field in the dataset representing the unique ID or identifier for each entry. Defaults to None.
         target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
         target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
@@ -79,16 +78,14 @@ class FfmpegConvert(BaseParallelProcessor):
     def __init__(
         self,
         resampled_audio_dir: str,
-        input_file_key: str,
-        output_file_key: str,
+        media_file_key: str,
         id_key: str = None,
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_file_key = input_file_key
-        self.output_file_key = output_file_key
+        self.media_file_key = media_file_key
         self.id_key = id_key
         self.resampled_audio_dir = resampled_audio_dir
         self.target_samplerate = target_samplerate
@@ -98,7 +95,7 @@ class FfmpegConvert(BaseParallelProcessor):
         os.makedirs(self.resampled_audio_dir, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        input_file = data_entry[self.input_file_key]
+        input_file = data_entry[self.media_file_key]
         if self.id_key:
             key = data_entry[self.id_key]
             os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
@@ -109,7 +106,7 @@ class FfmpegConvert(BaseParallelProcessor):
         if not os.path.isfile(audio):
             ffmpeg_convert(input_file, audio, self.target_samplerate, self.target_nchannels)
 
-        data_entry[self.output_file_key] = audio
+        data_entry[self.media_file_key] = audio
         if self.id_key:
             data_entry[self.id_key] = key
         return [DataEntry(data=data_entry)]
