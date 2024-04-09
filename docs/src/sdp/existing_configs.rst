@@ -141,7 +141,7 @@ Corpus of Armenian Text to Upload into Common Voice (MCV)
    config-docs/armenian/text_mcv/config
 
 Corpus based on Armenian audiobooks 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/audio_books/config.yaml>`__ |
