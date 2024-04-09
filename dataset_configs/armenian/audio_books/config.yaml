@@ -1,6 +1,6 @@
 documentation: |
   Audio books
-  ######
+  ###########
 
   This config can be used as example to process audiobooks in Armenian language and prepare 
   dataset in the NeMo format.
