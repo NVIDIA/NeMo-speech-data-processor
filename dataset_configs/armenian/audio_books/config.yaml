@@ -35,9 +35,13 @@ documentation: |
   * ``${workspace_dir}/final_manifest.json`` - final_manifest manifest with all the data.
 
   Output manifest contain the following fields:
+  
   * **audio_filepath (str)**: relative path to the audio files.
+  
   * **text (str)**: transcription predicted by Whisper (Upper-case with punctuation).
+  
   * **pred_text (str)**: transcription predicted by Transformers (Upper-case without punctuation).
+  
   * **duration (float)**: audio duration in seconds.
 
 processors_to_run: "0:"
