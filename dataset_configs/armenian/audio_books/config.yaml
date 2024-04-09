@@ -7,16 +7,21 @@ documentation: |
 
   This config performs the following data processing.
 
-  1. Create initial manifest by collecling all avalible files with mp3 expention in raw_data_dir folder.
+  1. Create initial manifest by collecting all avalible files with mp3 extension in raw_data_dir folder.
      
   2. Convert mp3 into wav format using the Ffmpeg suite, with a downsampling to a 16000 Hz sample rate 
   and a unification of all audio channels into a mono track.
+
   3. Count duration for audio files in seconds and save it into duration field.
-  4. Filter out broken files with duration shorter than 0 seconds.
-     You can directly change the config file to control this.
+
+  4. Filter out broken files with duration shorter than 0 seconds. You can directly change the config file to control this.
+
   5. Predict transcription using large-v2 Whisper ASR model into text field.
+
   6. Predict transcription using distil-whisper/distil-large-v2 transformers ASR model into pred_text field.
-  7. Drops everything with non-armenean characters.
+
+  7. Drops everything with non-Armenean characters.
+  
   8. Normalise some text examples with SubRegex.
 
   **Required arguments**.

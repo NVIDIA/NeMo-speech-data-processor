@@ -129,7 +129,7 @@ processors:
     rename_fields: {"text": "Sentence"}
     
   - _target_: sdp.processors.KeepOnlySpecifiedFields
-    output_manifest_file: ${workspace_dir}/final_manifest.json
+    output_manifest_file: ${final_manifest}
     fields_to_keep: ["Sentence", "Source"]
 
   - _target_: sdp.processors.langs.armenian.MakeTsv
