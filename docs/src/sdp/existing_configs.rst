@@ -128,7 +128,7 @@ Corpus of Regional African American Language (CORAAL)
    config-docs/english/coraal/config
 
 Corpus of Armenian Text to Upload into Common Voice (MCV)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Dataset link:** https://commonvoice.mozilla.org/
 
