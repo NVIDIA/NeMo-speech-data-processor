@@ -33,9 +33,9 @@ documentation: |
   * **Sentence (str)**: text of sentence to vocalise.
   * **Source (str)**: source book.
   
-  Output manifest manifest13.tsv contain the same data as manifest12.json but in tsv format.
+  Output manifest ``manifest13.tsv`` contain the same data as ``manifest12.json`` but in tsv format.
 
-  Output manifest manifest14.tsv contain random subset of data from manifest13.json. 
+  Output manifest ``manifest14.tsv`` contain random subset of data from ``manifest13.json``. 
 
 processors_to_run: "0:"
 workspace_dir: ???
