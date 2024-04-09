@@ -30,7 +30,8 @@ documentation: |
 
   Note that you can customize any part of this config either directly or from command-line.
 
-  **Output format**.
+  **Output format**:
+  
   * ``${workspace_dir}/final_manifest.json`` - final_manifest manifest with all the data.
 
   Output manifest contain the following fields:
