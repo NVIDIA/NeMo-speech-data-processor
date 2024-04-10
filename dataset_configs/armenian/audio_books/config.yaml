@@ -79,10 +79,13 @@ processors:
     pretrained_model: "small"
     output_text_key: text
     output_lang_key: lid
+    pad_or_trim_length: 480000
 
   - _target_: sdp.processors.ASRTransformers # pip install accelerate transformers
     output_manifest_file: ${workspace_dir}/manifest5.json
-    pretrained_model: "distil-whisper/distil-large-v2" # openai/whisper-large-v3 
+    pretrained_model: "openai/whisper-small" #  distil-whisper/distil-large-v2 openai/whisper-large-v2
+    generate_language: armenian
+    generate_task: transcribe
     output_text_key: pred_text
 
   - _target_: sdp.processors.SubRegex
