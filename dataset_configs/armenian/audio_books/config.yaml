@@ -80,6 +80,7 @@ processors:
     output_text_key: text
     output_lang_key: lid
     pad_or_trim_length: 480000
+    device: cpu
 
   - _target_: sdp.processors.ASRTransformers # pip install accelerate transformers
     output_manifest_file: ${workspace_dir}/manifest5.json
@@ -87,6 +88,7 @@ processors:
     generate_language: armenian
     generate_task: transcribe
     output_text_key: pred_text
+    device: cpu
 
   - _target_: sdp.processors.SubRegex
     output_manifest_file: ${final_manifest}

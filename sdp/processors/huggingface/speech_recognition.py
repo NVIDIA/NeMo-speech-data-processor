@@ -62,6 +62,7 @@ class ASRWhisper(BaseProcessor):
             else:
                 self.device = "cpu"
         self.model = whisper.load_model(self.pretrained_model)
+        self.model.to(self.device)
 
     def process(self):
         json_list = load_manifest(Path(self.input_manifest_file))
@@ -86,7 +87,7 @@ class ASRWhisper(BaseProcessor):
         _, probs = self.model.detect_language(mel)
         lang = max(probs, key=probs.get)
 
-        options = self.whisper.DecodingOptions()
+        options = self.whisper.DecodingOptions(fp16=False)
         result = self.whisper.decode(self.model, mel, options)
         return result.text, lang
 
