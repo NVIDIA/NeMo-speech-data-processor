@@ -16,7 +16,7 @@ documentation: |
 
   5. Replaces common transcription errors as well as "non-linguistic", "unintelligible" and "redacted" flags. 
 
-  6. Drops everything with non-armenean characters. 
+  6. Drops everything with non-Armenian characters. 
 
   7. Drops all utterances that are shorter than 3 words or longer than 15 words. 
 

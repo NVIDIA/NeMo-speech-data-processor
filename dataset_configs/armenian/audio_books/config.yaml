@@ -20,7 +20,7 @@ documentation: |
 
   6. Predict transcription using distil-whisper/distil-large-v2 transformers ASR model into pred_text field.
 
-  7. Drops everything with non-Armenean characters.
+  7. Drops everything with non-Armenian characters.
   
   8. Normalise some text examples with SubRegex.
 
