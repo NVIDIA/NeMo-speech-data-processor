@@ -25,6 +25,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements/main.txt
         pip install -r requirements/docs.txt
+        pip install -r requirements/huggingface.txt
     # we are being quite strict here, but hopefully that will not be too inconvenient
     - name: Checking that documentation builds with no warnings and all links are working
       run: |
