@@ -24,7 +24,7 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
     Args:
         raw_data_dir (str): The root directory of the files to be added to the initial manifest. This processor will recursively look for files with the extension 'extension' inside this directory.
         output_file_key (str): The key to store the paths to the files in the dataset.
-        extension (str): The key to stecify extension of the files to use them in the dataset.
+        extension (str): The file extension of the of the files to be added to the manifest.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     """
