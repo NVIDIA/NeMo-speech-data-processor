@@ -236,9 +236,6 @@ Miscellaneous
 .. autodata:: sdp.processors.FfmpegConvert
    :annotation:
 
-.. autodata:: sdp.processors.Subprocess
-   :annotation:
-
 .. autodata:: sdp.processors.CreateInitialManifestByExt
    :annotation:
 
