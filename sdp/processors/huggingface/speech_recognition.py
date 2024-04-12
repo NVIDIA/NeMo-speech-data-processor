@@ -30,6 +30,7 @@ class ASRWhisper(BaseProcessor):
     Args:
         pretrained_model (str): name of pretrained model on HuggingFace.
         output_text_field (str): field to save transcription result.
+        pad_or_trim_length (int): Audio duration to pad or trim (number of samples). Counted as sample_rate * n_seconds i.e.: 16000*30=480000
         device (str): Inference device.
     """
 
