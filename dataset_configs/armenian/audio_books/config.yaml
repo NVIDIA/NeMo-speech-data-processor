@@ -21,7 +21,7 @@ documentation: |
   6. Predict transcription using distil-whisper/distil-large-v2 transformers ASR model into pred_text field.
 
   7. Drops everything with non-Armenian characters.
-  
+
   8. Normalise some text examples with SubRegex.
 
   **Required arguments**:
@@ -35,13 +35,13 @@ documentation: |
   * ``${workspace_dir}/final_manifest.json`` - final_manifest manifest with all the data.
 
   Output manifest contain the following fields:
-  
+
   * **audio_filepath (str)**: relative path to the audio files.
-  
+
   * **text (str)**: transcription predicted by Whisper (Upper-case with punctuation).
-  
+
   * **pred_text (str)**: transcription predicted by Transformers (Upper-case without punctuation).
-  
+
   * **duration (float)**: audio duration in seconds.
 
 processors_to_run: "0:"

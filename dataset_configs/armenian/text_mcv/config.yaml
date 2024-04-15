@@ -32,17 +32,17 @@ documentation: |
   * **workspace_dir**: specify the workspace folder where all audio files will be stored.
 
   Note that you can customize any part of this config either directly or from command-line.
-  
+
   Here are some common customizations to consider:
 
   **Output format**.
 
   Output manifest `final_manifest.json` contain the following fields:
-  
+
   * **Sentence (str)**: text of sentence to vocalise.
-  
+
   * **Source (str)**: source book.
-  
+
   Output manifest ``manifest13.tsv`` contain the same data as ``final_manifest.json`` but in tsv format.
 
   Output manifest ``manifest14.tsv`` contain random subset of data from ``manifest13.json``. 
