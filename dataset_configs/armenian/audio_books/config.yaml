@@ -1,6 +1,6 @@
 documentation: |
-  Audio books
-  ###########
+  Audio books (Armenian)
+  ######################
 
   This config can be used as example to process audiobooks in Armenian language and prepare 
   dataset in the NeMo format.
@@ -8,7 +8,7 @@ documentation: |
   This config performs the following data processing.
 
   1. Create initial manifest by collecting all avalible files with mp3 extension in raw_data_dir folder.
-     
+
   2. Convert mp3 into wav format using the Ffmpeg suite, with a downsampling to a 16000 Hz sample rate 
   and a unification of all audio channels into a mono track.
 
