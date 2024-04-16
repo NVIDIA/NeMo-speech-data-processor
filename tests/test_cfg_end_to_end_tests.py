@@ -68,12 +68,14 @@ def data_check_fn_librispeech(raw_data_dir: str) -> None:
         raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
 
 
+# using Mock so coraal_processor will only try to use the files listed.
+# To reduce the amount of storage required by the test data, the S3 bucket contains
+# modified versions of LES_audio_part01_2021.07.tar.gz and
+# LES_textfiles_2021.07.tar.gz which only contain data from 2 recordings
 coraal_processor.get_coraal_url_list = mock.Mock(
     return_value=[
         'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_metadata_2021.07.txt',
         'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_audio_part01_2021.07.tar.gz',
-        'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_audio_part02_2021.07.tar.gz',
-        'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_audio_part03_2021.07.tar.gz',
         'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_textfiles_2021.07.tar.gz',
     ]
 )
