@@ -6,6 +6,7 @@ import urllib
 from glob import glob
 from pydub import AudioSegment
 
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
 from sdp.utils.common import ffmpeg_convert
 
@@ -93,14 +94,24 @@ class ConvertToWav(BaseParallelProcessor):
         os.makedirs(self.output_audio_dir, exist_ok=True)
     
     def process_dataset_entry(self, data_entry):
-        data_entry['audio_filepath'] = os.path.abspath(
+        output_audio_filepath = os.path.abspath(
             os.path.join(self.output_audio_dir, 
                          os.path.basename(data_entry['source_audio_path']).replace(f".{self.audio_file_extenstion}", ".wav")))
-
+        
+        if os.path.exists(output_audio_filepath):
+            logger.warning(f"{output_audio_filepath} is already exists. Skipping.")
+            return []
+        
         ffmpeg_convert(input_file=data_entry['source_audio_path'], 
-                       output_wav=data_entry['audio_filepath'], 
+                       output_wav=output_audio_filepath, 
                        sample_rate=self.target_samplerate, 
                        num_channels=self.target_nchannels)
+
+        if not os.path.exists(output_audio_filepath):
+            logger.warning(f"Conversion error: {data_entry['source_audio_path']}. File {output_audio_filepath} has not been created.")
+            return []
+
+        data_entry['audio_filepath'] = output_audio_filepath
 
         return [DataEntry(data=data_entry)]
 
