@@ -60,12 +60,14 @@ def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
         tar.extractall(path=raw_data_dir)
 
 
+# using Mock so coraal_processor will only try to use the files listed.
+# To reduce the amount of storage required by the test data, the S3 bucket contains
+# modified versions of LES_audio_part01_2021.07.tar.gz and
+# LES_textfiles_2021.07.tar.gz which only contain data from 2 recordings
 coraal_processor.get_coraal_url_list = mock.Mock(
     return_value=[
         'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_metadata_2021.07.txt',
         'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_audio_part01_2021.07.tar.gz',
-        'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_audio_part02_2021.07.tar.gz',
-        'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_audio_part03_2021.07.tar.gz',
         'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_textfiles_2021.07.tar.gz',
     ]
 )
@@ -133,10 +135,11 @@ def get_e2e_test_data_path() -> str:
     bucket = s3_resource.Bucket("sdp-test-data")
     print("Downloading test data from s3")
     for obj in bucket.objects.all():
-        if not obj.key.endswith("/"):  # do not try to "download_file" on objects which are actually directories
-            if not os.path.exists(os.path.dirname(obj.key)):
-                os.makedirs(os.path.dirname(obj.key))
-            bucket.download_file(obj.key, obj.key)
+        if obj.key.endswith("/"):  # do not try to "download_file" on objects which are actually directories
+            continue
+        if not os.path.exists(os.path.dirname(obj.key)):
+            os.makedirs(os.path.dirname(obj.key))
+        bucket.download_file(obj.key, obj.key)
     print("Test data downloaded to 'test_data' folder.")
     os.environ["TEST_DATA_ROOT"] = os.path.abspath("test_data")
 
