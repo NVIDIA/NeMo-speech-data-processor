@@ -1,0 +1,68 @@
+documentation: |
+  Librispeech
+  ###########
+  
+  This config can be used to prepare
+  `Librispeech <https://openslr.org/12>`_
+  dataset in the NeMo format.
+
+  It produces manifests for the dev-clean split (for other splits, please configure, change, or combine). 
+  The options are:
+
+  - ``["dev-clean"]``,
+  - ``["dev-other"]``,
+  - ``["test-clean"]``,
+  - ``["test-other"]``,
+  - ``["train-clean-100"]``,
+  - ``["train-clean-360"]``,
+  - ``["train-other-500"]``,
+  - ``["all"]`` (for all datasets available)
+
+  This config performs the following data processing.
+
+  1. Downloads Librispeech data
+  2. Converts flac files to wav file
+  3. Calculates the length of wav files
+  4. Makes capitalization lowercase
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+
+  Note that you can customize any part of this config either directly or from command-line.
+ 
+  **Output format**.
+
+  This config generates output manifest file:
+
+  * ``${workspace_dir}/manifest.json`` - dev-clean subset of the data.
+
+  Output manifest contains the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription (lower-case without punctuation).
+  * **duration (float)**: audio duration in seconds.
+
+processors_to_run: all
+workspace_dir: ???
+data_split: ["dev-clean"]
+final_manifest: ${workspace_dir}/manifest.json
+
+processors:
+  # creating manifest for dev-clean set
+  - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    splits: ${data_split}
+    raw_data_dir: ${workspace_dir}/raw_data
+
+  - _target_: sdp.processors.SoxConvert
+    converted_audio_dir: ${workspace_dir}/audio
+    input_audio_file_key: "audio_filepath"
+    output_audio_file_key: "audio_filepath"
+    output_format: "wav"
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${final_manifest}
