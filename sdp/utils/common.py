@@ -40,6 +40,7 @@ def download_file(source_url: str, target_directory: str, verbose=True, target_f
         if verbose:
             logger.info(f"Found file {target_filepath} => will not be attempting download from {source_url}")
     else:
+        logger.info(f"Not found file {target_filepath}")
         # Download the file
         try:
             wget.download(source_url, target_filepath)  # Save file with the target filepath

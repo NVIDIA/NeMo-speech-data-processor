@@ -60,6 +60,14 @@ def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
         tar.extractall(path=raw_data_dir)
 
 
+def data_check_fn_librispeech(raw_data_dir: str) -> None:
+    expected_file = Path(raw_data_dir) / "dev-clean.tar.gz"
+    if expected_file.exists():
+        return
+    else:
+        raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
+
+
 # using Mock so coraal_processor will only try to use the files listed.
 # To reduce the amount of storage required by the test data, the S3 bucket contains
 # modified versions of LES_audio_part01_2021.07.tar.gz and
@@ -98,6 +106,7 @@ def get_test_cases():
         # No checks, but need to mock the url list function (done above)
         (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
         (f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", data_check_fn_fleurs),
+        (f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", data_check_fn_librispeech),
     ]
 
 
@@ -184,6 +193,7 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
         reference_lines = sorted(reference_fin.readlines())
         generated_lines = sorted(generated_fin.readlines())
         assert len(reference_lines) == len(generated_lines)
+
         for reference_line, generated_line in zip(reference_lines, generated_lines):
             reference_data = json.loads(reference_line)
             generated_data = json.loads(generated_line)

@@ -21,6 +21,9 @@ from sdp.processors.datasets.coraal import (
 from sdp.processors.datasets.fleurs.create_initial_manifest import (
     CreateInitialManifestFleurs,
 )
+from sdp.processors.datasets.librispeech.create_initial_manifest import (
+    CreateInitialManifestLibrispeech,
+)
 from sdp.processors.datasets.mcv.create_initial_manifest import CreateInitialManifestMCV
 from sdp.processors.datasets.mls.create_initial_manifest import CreateInitialManifestMLS
 from sdp.processors.datasets.mls.restore_pc import RestorePCForMLS

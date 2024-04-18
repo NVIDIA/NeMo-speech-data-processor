@@ -140,3 +140,16 @@ Few-shot Learning Evaluation of Universal Representations of Speech (FLEURS)
    :hidden:
 
    config-docs/armenian/fleurs/config
+
+English LibriSpeech (ELS)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://openslr.org/12
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/librispeech/config.yaml>`__ |
+:doc:`documentation <config-docs/english/librispeech/config>`
+
+.. toctree::
+   :hidden:
+   
+   config-docs/english/librispeech/config
