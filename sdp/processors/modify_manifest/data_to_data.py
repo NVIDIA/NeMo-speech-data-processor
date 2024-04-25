@@ -17,7 +17,8 @@ import os
 import re
 from typing import Dict, List
 
-import soundfile as sf
+import soundfile
+from sox import Transformer
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
@@ -28,31 +29,31 @@ from sdp.utils.get_diff import get_diff_with_subs_grouped
 
 class GetAudioDuration(BaseParallelProcessor):
     """
-    Processor that computes the duration of the file in audio_filepath_field (using soundfile)
-    and saves the duration in duration_field. If there is an error computing the duration,
-    the duration_field will be updated with the value -1.0.
+    Processor that computes the duration of the file in ``audio_filepath_key`` (using soundfile)
+    and saves the duration in ``duration_key``. If there is an error computing the duration,
+    the value at ``duration_key`` will be updated with the value -1.0.
 
     Args:
-        audio_file_key (str): Key to get path to wav file.
+        audio_filepath_key (str): Key to get path to wav file.
         duration_key (str): Key to put to audio duration.
     Returns:
-        All the same fields as in the input manifest plus duration_field
+        All the same fields as in the input manifest plus duration_key
     """
 
     def __init__(
         self,
-        audio_file_key: str,
+        audio_filepath_key: str,
         duration_key: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.audio_file_key = audio_file_key
+        self.audio_filepath_key = audio_filepath_key
         self.duration_key = duration_key
 
     def process_dataset_entry(self, data_entry):
-        audio_filepath = data_entry[self.audio_file_key]
+        audio_filepath = data_entry[self.audio_filepath_key]
         try:
-            data, samplerate = sf.read(audio_filepath)
+            data, samplerate = soundfile.read(audio_filepath)
             data_entry[self.duration_key] = data.shape[0] / samplerate
         except Exception as e:
             logger.warning(str(e) + " file: " + audio_filepath)
@@ -63,12 +64,20 @@ class GetAudioDuration(BaseParallelProcessor):
 class FfmpegConvert(BaseParallelProcessor):
     """
     Processor for converting video or audio files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
-    If id_key is not None it is used as an output file name. If id_key is None the output file name is the same as input file name with different extension
-    and input file name saves to id_key back.
+    If ``id_key`` is not None, the output file path will be ``<resampled_audio_dir>/<id_key>.wav``.
+    If ``id_key`` is None, the output file path will be ``<resampled_audio_dir>/<input file name without extension>.wav``.
+
+    .. note:: ``id_key`` can be used to create subdirectories inside ``resampled_audio_dir`` (by using forward slashes ``/``).
+        e.g. if ``id_key`` takes the form ``dir_name1/dir_name2/filename``, the output file path will be
+
+        ``<resampled_audio_dir>/dir_name1/dirname2/filename.wav``.
+
     Args:
-        resampled_audio_dir (str): The directory to store the resampled audio files.
-        media_file_key (str): The field in the dataset representing the path to the input video or audio files and store the path to the resampled audio files with .wav extension.
-        id_key (str): The field in the dataset representing the unique ID or identifier for each entry. Defaults to None.
+        converted_audio_dir (str): The directory to store the resampled audio files.
+        input_file_key (str): The field in the dataset representing the path to the input video or audio files.
+        output_file_key (str): The field in the dataset representing the path to the resampled audio files with ``output_format``. If ``id_key`` is None, the output file path will be ``<resampled_audio_dir>/<input file name without extension>.wav``.
+        id_key (str, optional): The field in the dataset representing the unique ID or identifier for each entry. If ``id_key`` is not None, the output file path will be ``<resampled_audio_dir>/<id_key>.wav``. Defaults to None.
+        output_format (str, optional): output_format (str): Format of the output audio files. Defaults to `wav`.
         target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
         target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
@@ -77,36 +86,41 @@ class FfmpegConvert(BaseParallelProcessor):
 
     def __init__(
         self,
-        resampled_audio_dir: str,
-        media_file_key: str,
+        converted_audio_dir: str,
+        input_file_key: str,
+        output_file_key: str,
         id_key: str = None,
+        output_format: str = "wav",
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.media_file_key = media_file_key
+        self.converted_audio_dir = converted_audio_dir
+        self.input_file_key = input_file_key
+        self.output_file_key = output_file_key
+        self.output_format = output_format
         self.id_key = id_key
-        self.resampled_audio_dir = resampled_audio_dir
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
 
     def prepare(self):
-        os.makedirs(self.resampled_audio_dir, exist_ok=True)
+        assert self.output_format == "wav", "Currently only wav format is supported"
+        os.makedirs(self.converted_audio_dir, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        input_file = data_entry[self.media_file_key]
+        input_file = data_entry[self.input_file_key]
         if self.id_key:
             key = data_entry[self.id_key]
-            os.makedirs(os.path.join(self.resampled_audio_dir, key.split("/")[0]), exist_ok=True)
+            os.makedirs(os.path.join(self.converted_audio_dir, *key.split("/")[:-1]), exist_ok=True)
         else:
             key = os.path.splitext(input_file)[0].split("/")[-1]
-        audio = os.path.join(self.resampled_audio_dir, key) + ".wav"
+        audio = os.path.join(self.converted_audio_dir, key) + "." + self.output_format
 
         if not os.path.isfile(audio):
             ffmpeg_convert(input_file, audio, self.target_samplerate, self.target_nchannels)
 
-        data_entry[self.media_file_key] = audio
+        data_entry[self.output_file_key] = audio
         if self.id_key:
             data_entry[self.id_key] = key
         return [DataEntry(data=data_entry)]
@@ -147,48 +161,49 @@ class ReadTxtLines(BaseParallelProcessor):
         return data_list
 
 
-class SplitLineBySentence(BaseParallelProcessor):
+class SoxConvert(BaseParallelProcessor):
     """
-    Processor for splitting lines of text into sentences based on a specified pattern.
-    One line containing N sentences will be transformed into N lines containing one sentence.
+    Processor for converting audio files from one format to another using Sox,
+    and updating the dataset with the path to the converted audio files.
 
     Args:
-        text_key (str): The field containing the text lines in the dataset.
-        end_pattern (str): The regular expression pattern to identify sentence boundaries.
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
+        converted_audio_dir (str): Directory to store the converted audio files.
+        input_audio_file_key (str): Field in the dataset representing the path to input audio files.
+        output_audio_file_key (str): Field to store the path to the converted audio files in the dataset.
+        output_format (str): Format of the output audio files (e.g., 'wav', 'mp3').
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
     """
 
     def __init__(
         self,
-        text_key: str,
-        end_pattern: str,
+        converted_audio_dir: str,
+        input_audio_file_key: str,
+        output_audio_file_key: str,
+        output_format: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.text_key = text_key
-        self.pattern = re.compile(end_pattern)
+        self.input_audio_file_key = input_audio_file_key
+        self.output_audio_file_key = output_audio_file_key
+        self.converted_audio_dir = converted_audio_dir
+        self.output_format = output_format
+
+    def prepare(self):
+        os.makedirs(self.converted_audio_dir, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        line = data_entry[self.text_key]
-        data_list = []
-        start = 0
-        ends = [m.start() for m in self.pattern.finditer(line)]
-        if ends:
-            for end in ends:
-                sent = line[start : end + 1].strip()
-                # if sent and sent[0].isupper():
-                data = data_entry.copy()
-                data[self.text_key] = sent
-                data_list.append(DataEntry(data=data))
-                start = end + 1
-            if start < len(line):
-                pass
-        else:
-            data = data_entry.copy()
-            data[self.text_key] = line.strip()
-            data_list.append(DataEntry(data=data))
-        return data_list
+        audio_file = data_entry[self.input_audio_file_key]
+
+        key = os.path.splitext(audio_file)[0].split("/")[-1]
+        converted_file = os.path.join(self.converted_audio_dir, key) + f".{self.output_format}"
+
+        if not os.path.isfile(converted_file):
+            transformer = Transformer()
+            transformer.build(audio_file, converted_file)
+
+        data_entry[self.output_audio_file_key] = converted_file
+        return [DataEntry(data=data_entry)]
 
 
 class CountNumWords(BaseParallelProcessor):
@@ -222,7 +237,49 @@ class CountNumWords(BaseParallelProcessor):
         words = cleaned_string.split()
         num_words = len(words)
         data_entry[self.num_words_key] = num_words
-        return [DataEntry(data=data_entry)]
+
+
+class SplitLineBySentence(BaseParallelProcessor):
+    """
+    Processor for splitting lines of text into sentences based on a specified pattern.
+    One line containing N sentences will be transformed into N lines containing one sentence.
+
+    Args:
+        text_key (str): The field containing the text lines in the dataset.
+        end_pattern (str): The regular expression pattern to identify sentence boundaries.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+    """
+
+    def __init__(
+        self,
+        text_key: str,
+        end_pattern: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.text_key = text_key
+        self.pattern = re.compile(end_pattern)
+
+    def process_dataset_entry(self, data_entry):
+        line = data_entry[self.text_key]
+        data_list = []
+        start = 0
+        ends = [m.start() for m in self.pattern.finditer(line)]
+        if ends:
+            for end in ends:
+                sent = line[start : end + 1].strip()
+                # if sent and sent[0].isupper():
+                data = data_entry.copy()
+                data[self.text_key] = sent
+                data_list.append(DataEntry(data=data))
+                start = end + 1
+            if start < len(line):
+                pass
+        else:
+            data = data_entry.copy()
+            data[self.text_key] = line.strip()
+            data_list.append(DataEntry(data=data))
+        return data_list
 
 
 class InsIfASRInsertion(BaseParallelProcessor):

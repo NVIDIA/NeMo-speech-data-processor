@@ -151,3 +151,16 @@ Corpus based on Armenian audiobooks
    :hidden:
 
    config-docs/armenian/audio_books/config
+
+English LibriSpeech (ELS)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://openslr.org/12
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/librispeech/config.yaml>`__ |
+:doc:`documentation <config-docs/english/librispeech/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/english/librispeech/config

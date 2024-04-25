@@ -9,16 +9,15 @@ documentation: |
 
   1. Create initial manifest by collecting all avalible files with mp3 extension in raw_data_dir folder.
 
-  2. Convert mp3 into wav format using the Ffmpeg suite, with a downsampling to a 16000 Hz sample rate 
-  and a unification of all audio channels into a mono track.
+  2. Convert mp3 into wav format using the Ffmpeg suite, with a downsampling to a 16000 Hz sample rate and a unification of all audio channels into a mono track.
 
   3. Count duration for audio files in seconds and save it into duration field.
 
   4. Filter out broken files with duration shorter than 0 seconds. You can directly change the config file to control this.
 
-  5. Predict transcription using large-v2 Whisper ASR model into text field.
+  5. Predict transcription using a Whisper ASR model and save results into text field.
 
-  6. Predict transcription using distil-whisper/distil-large-v2 transformers ASR model into pred_text field.
+  6. Predict transcription using a ``distil-whisper`` ASR model and save results into pred_text field.
 
   7. Drops everything with non-Armenian characters.
 
@@ -57,10 +56,11 @@ processors:
 
   - _target_: sdp.processors.FfmpegConvert
     output_manifest_file: ${workspace_dir}/manifest1.json
-    resampled_audio_dir: ${workspace_dir}/audio
+    converted_audio_dir: ${workspace_dir}/audio
     target_samplerate: 16000
     target_nchannels: 1
-    media_file_key: "audio_filepath"
+    input_file_key: "audio_filepath"
+    output_file_key: "audio_filepath"
     id_key: null
 
   - _target_: sdp.processors.GetAudioDuration
