@@ -237,6 +237,7 @@ class CountNumWords(BaseParallelProcessor):
         words = cleaned_string.split()
         num_words = len(words)
         data_entry[self.num_words_key] = num_words
+        return [DataEntry(data=data_entry)]
 
 
 class SplitLineBySentence(BaseParallelProcessor):
