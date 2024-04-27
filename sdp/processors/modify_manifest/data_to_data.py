@@ -115,14 +115,12 @@ class FfmpegConvert(BaseParallelProcessor):
             os.makedirs(os.path.join(self.converted_audio_dir, *key.split("/")[:-1]), exist_ok=True)
         else:
             key = os.path.splitext(input_file)[0].split("/")[-1]
-        audio = os.path.join(self.converted_audio_dir, key) + "." + self.output_format
+        audio_file = os.path.join(self.converted_audio_dir, key) + "." + self.output_format
 
-        if not os.path.isfile(audio):
-            ffmpeg_convert(input_file, audio, self.target_samplerate, self.target_nchannels)
+        if not os.path.isfile(audio_file):
+            ffmpeg_convert(input_file, audio_file, self.target_samplerate, self.target_nchannels)
 
-        data_entry[self.output_file_key] = audio
-        if self.id_key:
-            data_entry[self.id_key] = key
+        data_entry[self.output_file_key] = audio_file
         return [DataEntry(data=data_entry)]
 
 
