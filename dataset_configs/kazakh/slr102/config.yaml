@@ -16,7 +16,7 @@ processors:
     target_nchannels: 1
 
   - _target_: sdp.processors.GetAudioDuration
-    audio_filepath_key: audio_filepath
+    audio_file_key: audio_filepath
     duration_key: duration
 
   - _target_: sdp.processors.PreserveByValue

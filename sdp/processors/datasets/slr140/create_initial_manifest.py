@@ -141,9 +141,10 @@ class CustomDataSplitSLR140(BaseProcessor):
         the data is retained.
     """
 
-    def __init__(self, data_split, **kwargs):
+    def __init__(self, data_split: str, split_audio_dir: str, **kwargs):
         super().__init__(**kwargs)
         self.data_split = data_split
+        self.split_audio_dir = split_audio_dir
 
     def process(self):
         with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
@@ -168,9 +169,21 @@ class CustomDataSplitSLR140(BaseProcessor):
 
         number_of_entries = 0
         total_duration = 0
+
+        split_audio_dir = os.path.join(self.split_audio_dir, self.data_split)
+        os.makedirs(split_audio_dir, exist_ok=True)
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
+
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for data_entry in tqdm(split_data[self.data_split][0]):
+                audio_rel_path = os.path.relpath(
+                    data_entry['audio_filepath'], os.path.join(self.split_audio_dir, "audios")
+                )
+                split_filepath = os.path.join(split_audio_dir, audio_rel_path)
+                os.makedirs(os.path.dirname(split_filepath), exist_ok=True)
+                os.rename(data_entry['audio_filepath'], split_filepath)
+                data_entry['audio_filepath'] = split_filepath
+
                 json.dump(data_entry, fout, ensure_ascii=False)
                 number_of_entries += 1
                 total_duration += data_entry["duration"]

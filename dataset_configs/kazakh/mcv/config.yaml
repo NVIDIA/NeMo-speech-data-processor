@@ -2,8 +2,8 @@ processors_to_run: all
 data_split: ???
 workspace_dir: ???
 final_manifest: ${workspace_dir}/${data_split}_manifest.json
-remove_pc: False
-remove_hyphen: False
+remove_pc: True
+remove_hyphen: True
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestMCV
@@ -63,7 +63,7 @@ processors:
   - _target_: sdp.processors.SubRegex
     should_run: ${remove_hyphen}
     regex_params_list:
-      - { "pattern": '-', "repl": "" }
+      - { "pattern": ' - ', "repl": "" }
 
   # ----------------------------------------------------------------------
 

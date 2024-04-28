@@ -92,7 +92,6 @@ class FfmpegConvert(BaseParallelProcessor):
         id_key: str = None,
         output_format: str = "wav",
         base_dir: str = None,
-        output_format: str = "wav",
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
         **kwargs,
@@ -103,6 +102,7 @@ class FfmpegConvert(BaseParallelProcessor):
         self.output_file_key = output_file_key
         self.output_format = output_format
         self.id_key = id_key
+        self.resampled_audio_dir = resampled_audio_dir
         self.base_dir = base_dir
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
@@ -118,6 +118,14 @@ class FfmpegConvert(BaseParallelProcessor):
             os.makedirs(os.path.join(self.converted_audio_dir, *key.split("/")[:-1]), exist_ok=True)
         else:
             key = os.path.splitext(input_file)[0].split("/")[-1]
+
+        if self.base_dir:
+            new_dir = os.path.dirname(os.path.relpath(input_file, self.base_dir))
+            os.makedirs(os.path.join(self.resampled_audio_dir, new_dir), exist_ok=True)
+
+            key = os.path.join(new_dir, key)
+
+        audio = os.path.join(self.resampled_audio_dir, key) + ".wav"
 
         if self.base_dir:
             new_dir = os.path.dirname(os.path.relpath(input_file, self.base_dir))

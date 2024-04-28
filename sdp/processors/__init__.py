@@ -24,6 +24,9 @@ from sdp.processors.datasets.coraal import (
 from sdp.processors.datasets.fleurs.create_initial_manifest import (
     CreateInitialManifestFleurs,
 )
+from sdp.processors.datasets.ksc2.create_initial_manifest import (
+    CreateInitialManifestKSC2,
+)
 from sdp.processors.datasets.lhotse import LhotseImport
 from sdp.processors.datasets.librispeech.create_initial_manifest import (
     CreateInitialManifestLibrispeech,
@@ -37,6 +40,9 @@ from sdp.processors.datasets.mtedx.create_initial_manifest import (
 from sdp.processors.datasets.slr83.create_initial_manifest import (
     CreateInitialManifestSLR83,
     CustomDataSplitSLR83,
+)
+from sdp.processors.datasets.slr102.create_initial_manifest import (
+    CreateInitialManifestSLR102,
 )
 from sdp.processors.datasets.slr140.create_initial_manifest import (
     CreateInitialManifestSLR140,
