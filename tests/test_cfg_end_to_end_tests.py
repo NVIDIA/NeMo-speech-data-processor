@@ -98,6 +98,8 @@ def get_test_cases():
         # audio will be downloaded on the fly from a subset of files.
         # No checks, but need to mock the url list function (done above)
         (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
+        (f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", lambda raw_data_dir: True),
+        (f"{DATASET_CONFIGS_ROOT}/armenian/audio_books/config.yaml", lambda raw_data_dir: True),
         (f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", data_check_fn_librispeech),
     ]
 
@@ -189,8 +191,9 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
         for reference_line, generated_line in zip(reference_lines, generated_lines):
             reference_data = json.loads(reference_line)
             generated_data = json.loads(generated_line)
-            reference_data.pop("audio_filepath")
-            generated_data.pop("audio_filepath")
+            if "audio_filepath" in reference_data:
+                reference_data.pop("audio_filepath")
+                generated_data.pop("audio_filepath")
             assert reference_data == generated_data
 
     # if CLEAN_UP_TMP_PATH is set to non-0 value, we will delete tmp_path
