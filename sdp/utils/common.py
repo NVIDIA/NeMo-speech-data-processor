@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,48 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
+import subprocess
 import tarfile
 import urllib
 import zipfile
+from pathlib import Path
+from typing import Dict, List, Union
 
 import wget
 
 from sdp.logging import logger
+
+
+def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
+    # read NeMo manifest as a list of dicts
+    result = []
+    with manifest.open() as f:
+        for line in f:
+            data = json.loads(line)
+            result.append(data)
+    return result
+
+
+def ffmpeg_convert(input_file: str, output_wav: str, sample_rate: int = 0, num_channels: int = 1):
+    process_args = [
+        "ffmpeg",
+        "-i",
+        input_file,
+        '-ac',
+        str(num_channels),
+        "-map",
+        "0:a",
+        "-c:a",
+        "pcm_s16le",
+        "-y",
+        output_wav,
+    ]
+    if sample_rate:
+        process_args = process_args[:-1]
+        process_args.extend(["-ar", str(sample_rate), output_wav])
+    return subprocess.run(process_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def download_file(source_url: str, target_directory: str, verbose=True):
