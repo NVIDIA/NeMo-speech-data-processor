@@ -52,6 +52,14 @@ CORAAL
 .. autodata:: sdp.processors.TrainDevTestSplitCORAAL
    :annotation:
 
+
+Librispeech
+'''''''''''
+
+.. autodata:: sdp.processors.CreateInitialManifestLibrispeech
+   :annotation:
+   
+
 SLR83
 '''''
 
@@ -64,6 +72,19 @@ SLR83
 .. TODO: Fisher config is not accessible - should we require moving everything to SDP
 ..       Probably need some policy on shat lives in main folder vs configs.
 ..       To control the number of processors we support.
+
+Lhotse processors
+#################
+
+The following processors leverage `Lhotse`_, a speech data handling library that contains
+data preparation recipes for 80+ publicly available datasets.
+Lhotse has its own data manifest format that can be largely mapped into NeMo's format.
+
+.. autodata:: sdp.processors.LhotseImport
+    :annotation:
+
+
+.. _Lhotse: https://github.com/lhotse-speech/lhotse
 
 Data enrichment
 ###############
@@ -78,6 +99,11 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.PCInference
    :annotation:
 
+.. autodata:: sdp.processors.ASRWhisper
+   :annotation:
+
+.. autodata:: sdp.processors.ASRTransformers
+   :annotation:
 
 Text-only processors
 ####################
@@ -86,6 +112,9 @@ Text-only processors
     All processors in this section accept additional parameter
     ``text_key`` (defaults to "text") to control which field is used
     for modifications/filtering.
+
+.. autodata:: sdp.processors.ReadTxtLines
+   :annotation:
 
 Data modifications
 ''''''''''''''''''
@@ -100,6 +129,12 @@ Data modifications
    :annotation:
 
 .. autodata:: sdp.processors.MakeLettersUppercaseAfterPeriod
+   :annotation:
+
+.. autodata:: sdp.processors.SplitLineBySentence
+   :annotation:
+
+.. autodata:: sdp.processors.CountNumWords
    :annotation:
 
 Data filtering
@@ -134,6 +169,12 @@ ASR-based processors
 Data modifications
 ''''''''''''''''''
 
+.. autodata:: sdp.processors.GetAudioDuration
+   :annotation:
+   
+.. autodata:: sdp.processors.SoxConvert
+   :annotation:
+
 .. autodata:: sdp.processors.InsIfASRInsertion
    :annotation:
 
@@ -142,6 +183,9 @@ Data modifications
 
 Data filtering
 ''''''''''''''
+
+.. autodata:: sdp.processors.PreserveByValue
+   :annotation:
 
 .. autodata:: sdp.processors.DropASRError
    :annotation:
@@ -200,6 +244,14 @@ Miscellaneous
 .. autodata:: sdp.processors.KeepOnlySpecifiedFields
    :annotation:
 
+.. autodata:: sdp.processors.GetAudioDuration
+   :annotation:
+
+.. autodata:: sdp.processors.FfmpegConvert
+   :annotation:
+
+.. autodata:: sdp.processors.CreateInitialManifestByExt
+   :annotation:
 
 .. _sdp-base-classes:
 

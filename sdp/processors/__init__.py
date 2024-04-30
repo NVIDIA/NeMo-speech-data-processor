@@ -18,6 +18,10 @@ from sdp.processors.datasets.coraal import (
     CreateInitialManifestCORAAL,
     TrainDevTestSplitCORAAL,
 )
+from sdp.processors.datasets.lhotse import LhotseImport
+from sdp.processors.datasets.librispeech.create_initial_manifest import (
+    CreateInitialManifestLibrispeech,
+)
 from sdp.processors.datasets.mcv.create_initial_manifest import CreateInitialManifestMCV
 from sdp.processors.datasets.mls.create_initial_manifest import CreateInitialManifestMLS
 from sdp.processors.datasets.mtedx.create_initial_manifest import CreateInitialManifestMTEDX
@@ -33,18 +37,26 @@ from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
 from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
+from sdp.processors.huggingface.speech_recognition import ASRTransformers, ASRWhisper
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ChangeToRelativePath,
     CombineSources,
     DuplicateFields,
+    KeepOnlySpecifiedFields,
     RenameFields,
     SortManifest,
     SplitOnFixedDuration,
-    KeepOnlySpecifiedFields,
 )
+from sdp.processors.modify_manifest.create_manifest import CreateInitialManifestByExt
 from sdp.processors.modify_manifest.data_to_data import (
+    CountNumWords,
+    FfmpegConvert,
+    GetAudioDuration,
     InsIfASRInsertion,
+    ReadTxtLines,
+    SoxConvert,
+    SplitLineBySentence,
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
@@ -64,6 +76,7 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropLowWordMatchRate,
     DropNonAlphabet,
     DropOnAttribute,
+    PreserveByValue,
 )
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
