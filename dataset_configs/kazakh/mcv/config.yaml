@@ -14,6 +14,15 @@ processors:
     data_split: ${data_split}
     raw_data_dir: ${workspace_dir}
 
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+
+  - _target_: sdp.processors.PreserveByValue
+    input_value_key: duration
+    target_value: 0
+    operator: gt
+
   - _target_: sdp.processors.SubRegex
     regex_params_list:
       - { "pattern": "!", "repl": "." }

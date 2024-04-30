@@ -17,14 +17,15 @@ processors:
     raw_data_dir: ${workspace_dir}/raw_data
 
   - _target_: sdp.processors.FfmpegConvert
-    resampled_audio_dir: ${workspace_dir}/audios
+    converted_audio_dir: ${workspace_dir}/audios
     base_dir: ${workspace_dir}/raw_data
     target_samplerate: 16000
     target_nchannels: 1
-    media_file_key: "audio_filepath"
+    input_file_key: "audio_filepath"
+    output_file_key: "audio_filepath"
 
   - _target_: sdp.processors.GetAudioDuration
-    audio_file_key: audio_filepath
+    audio_filepath_key: audio_filepath
     duration_key: duration
 
   - _target_: sdp.processors.PreserveByValue
