@@ -21,7 +21,7 @@ documentation: |
 
   * ``${workspace_dir}/${final_manifest}`` - dev subset of the data.
 
-  Output manifest contains the following fields:
+  Output manifest contains the following keys:
 
   * **audio_filepath (str)**: relative path to the audio files.
   * **text (str)**: transcription (lower-case without punctuation).
@@ -39,6 +39,6 @@ processors:
     raw_data_dir: ${workspace_dir}/raw_data
 
   - _target_: sdp.processors.GetAudioDuration
-    audio_filepath_field: audio_filepath
-    duration_field: duration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
     output_manifest_file: ${final_manifest}
