@@ -28,8 +28,11 @@ download the data archive and specify its location with the ``raw_data_dir`` par
 * **Spanish**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/mcv12/config.yaml>`__ |
   :doc:`documentation <config-docs/spanish_pc/mcv12/config>`
+* **Portuguese**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/portuguese/mcv/config.yaml>`__ |
+  :doc:`documentation <config-docs/portuguese/mcv/config>`
 
-.. toctree::
+.. toctree:: 
    :hidden:
 
    config-docs/italian/mcv/config
@@ -54,6 +57,9 @@ Multilingual LibriSpeech (MLS)
 * **Spanish (no punctuation and capitalization)**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish/mls/config.yaml>`__ |
   :doc:`documentation <config-docs/spanish/mls/config>`
+* **Portuguese (with punctuation and capitalization)**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/portuguese/mls/config.yaml>`__ |
+  :doc:`documentation <config-docs/portuguese/mls/config>`
 
 .. toctree::
    :hidden:
@@ -164,3 +170,32 @@ English LibriSpeech (ELS)
    :hidden:
 
    config-docs/english/librispeech/config
+
+Coraa Brazilian Portuguese dataset
+~~~~~~
+
+**Dataset link:** https://github.com/nilc-nlp/CORAA
+
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/portuguese/coraa/config.yaml>`__ |
+  :doc:`documentation <config-docs/portuguese/coraa/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/portuguese/coraa/config
+
+MTEDx
+~~~~~~
+
+**Dataset link:** https://www.openslr.org/100/
+
+**Supported configs**.
+
+* **Portuguese**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/portuguese/mtedx/config.yaml>`__ |
+  :doc:`documentation <config-docs/portuguese/mtedx/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/portuguese/mtedx/config
