@@ -15,7 +15,7 @@ processors:
 
   - _target_: sdp.processors.ASRSeamless
     input_manifest_file: ${workspace_dir}/result_manifest.json
-    input_field: audio_path
+    input_field: audio_filepath
     output_manifest_file: ${workspace_dir}/result_manifest_pred.json
     limit: 100
 

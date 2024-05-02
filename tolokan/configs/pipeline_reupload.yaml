@@ -3,10 +3,73 @@ documentation: |
 
 processors_to_run: all
 workspace_dir: ???
-# API_KEY: "QBiiuByvLaYu1llgZjDFXw.045e.f1bcUbqp_4Q5ENwt9-_NdCNjZpQspNFAwnm1qXPj-Y24DyjVuxPhP4nu7DKoxuZgiZvvfWalAZ4uIb3o4ztD0kt8jNP4sW4k8tp_8m3JwUQ"
-API_KEY: "1V0v8tbFtwPhDVMbN3cvcQ.045e.k93FVRUudCOHplT6OHcDNjc-k8V_rSFr8l5_jLyo4rLT9W4fgabM40EyompNakPZ0uU-_sgc0hKHzrEge5AJNy5MwZCu93BHoTJGOS1lwqE"
+API_KEY: "1V0v8tbFtwPhDVMbN3cvcQ.045e.k93FVRUudCOHplT6OHcDNjc-k8V_rSFr8l5_jLyo4rLT9W4fgabM40EyompNakPZ0uU-_sgc0hKHzrEge5AJNy5MwZCu93BHoTJGOS1lwqE"  # PRODUCTION
 
 processors:
+  - _target_: tolokan.processors.GetTolokaResults
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    status: REJECTED
+    output_dir: ${workspace_dir}/results
+    output_manifest_file: ${workspace_dir}/rejected1.json
+    API_KEY: ${API_KEY}
+    platform: "PRODUCTION"
+    pool_id: 42824822
+
+  - _target_: tolokan.processors.GetTolokaResults
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    status: EXPIRED
+    output_dir: ${workspace_dir}/results
+    output_manifest_file: ${workspace_dir}/expired1.json
+    API_KEY: ${API_KEY}
+    platform: "PRODUCTION"
+    pool_id: 42824822
+  
+  - _target_: tolokan.processors.GetTolokaResults
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    status: SKIPPED
+    output_dir: ${workspace_dir}/results
+    output_manifest_file: ${workspace_dir}/skipped1.json
+    API_KEY: ${API_KEY}
+    platform: "PRODUCTION"
+    pool_id: 42824822
+
+  - _target_: tolokan.processors.GetTolokaResults
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    status: REJECTED
+    output_dir: ${workspace_dir}/results
+    output_manifest_file: ${workspace_dir}/rejected2.json
+    API_KEY: ${API_KEY}
+    platform: "PRODUCTION"
+    pool_id: 42939416
+
+  - _target_: tolokan.processors.GetTolokaResults
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    status: EXPIRED
+    output_dir: ${workspace_dir}/results
+    output_manifest_file: ${workspace_dir}/expired2.json
+    API_KEY: ${API_KEY}
+    platform: "PRODUCTION"
+    pool_id: 42939416
+
+  - _target_: tolokan.processors.GetTolokaResults
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    status: SKIPPED
+    output_dir: ${workspace_dir}/results
+    output_manifest_file: ${workspace_dir}/skipped2.json
+    API_KEY: ${API_KEY}
+    platform: "PRODUCTION"
+    pool_id: 42939416
+
+  - _target_: sdp.processors.CreateCombinedManifests
+    manifest_list: ["${workspace_dir}/rejected1.json", "${workspace_dir}/rejected2.json", "${workspace_dir}/expired1.json", "${workspace_dir}/expired2.json", "${workspace_dir}/skipped1.json", "${workspace_dir}/skipped2.json"]
+    output_manifest_file: ${workspace_dir}/tasks_combined.json
+
   - _target_: tolokan.processors.CreateTolokaProject
     API_KEY: ${API_KEY}
     platform: "PRODUCTION"
@@ -19,128 +82,8 @@ processors:
     input_manifest_file: ${workspace_dir}/data_file.json
     output_manifest_file: ${workspace_dir}/taskpool.json
 
-  - _target_: sdp.processors.CreateInitialManifestByExt
-    raw_data_dir: ${workspace_dir}/arm_docs
-    extension: docx
-    output_field: source_filepath
-    output_manifest_file: ${workspace_dir}/docfiles.json
-
-  - _target_: sdp.processors.ReadDocxLines
-    source_filepath: source_filepath
-    text_key: text
-    output_manifest_file: ${workspace_dir}/lines.json
-
-  - _target_: sdp.processors.SubRegex
-    input_manifest_file: ${workspace_dir}/lines.json
-    output_manifest_file: ${workspace_dir}/lines1.json
-    text_key: text
-    regex_params_list:
-      - {"pattern": '։', "repl": ':'}
-      - {"pattern": '․', "repl": "."}
-      - {"pattern": '—', "repl": "-"}
-      - {"pattern": '–', "repl": "-"}
-      - {"pattern": '―', "repl": "-"} 
-      - {"pattern": '\.\.\.', "repl": "…"}
-      - {"pattern": "\\s+", "repl": " "}
-
-  - _target_: sdp.processors.ExtractFromBrackets # 6
-    text_key: text
-    brackets: ["«»", "()", "[]"]
-    input_manifest_file: ${workspace_dir}/lines1.json
-    output_manifest_file: ${workspace_dir}/inbrackets.json
-
-  # - _target_: sdp.processors.SplitLineBySentence
-  #   text_key: text
-  #   end_pattern: ':|\.|…'
-  #   input_manifest_file: ${workspace_dir}/lines1.json
-  #   output_manifest_file: ${workspace_dir}/para0.json
-
-  # - _target_: sdp.processors.DropIfRegexMatch
-  #   input_manifest_file: ${workspace_dir}/para0.json
-  #   output_manifest_file: ${workspace_dir}/para1.json
-  #   regex_patterns:
-  #     - '^(?!.*(\(|\)|«|»|\[|\])).*$'
-
-  # - _target_: sdp.processors.SubRegex
-  #   input_manifest_file: ${workspace_dir}/para1.json
-  #   output_manifest_file: ${workspace_dir}/para2.json
-  #   text_key: text
-  #   regex_params_list:
-  #     # - {"pattern": "[^.!?]*\\(([^)]*)\\)[^.!?]*", "repl": "\\1"}
-  #     # - {"pattern": "[^.!?]*\\[([^\\]]*)\\][^.!?]*", "repl": "\\1"}
-  #     # - {"pattern": "[^.!?]*«([^»]*)»[^.!?]*", "repl": "\\1"}
-  #     - {"pattern": "\\(([^)]*)\\)", "repl": "\\1"}
-  #     - {"pattern": "\\[([^\\]]*)\\]", "repl": "\\1"}
-  #     - {"pattern": "«([^»]*)»", "repl": "\\1"}
-  
-  - _target_: sdp.processors.SplitLineBySentence
-    text_key: text
-    end_pattern: ':|\.|…'
-    input_manifest_file: ${workspace_dir}/lines1.json
-    output_manifest_file: ${workspace_dir}/sentences0.json
-
-  - _target_: sdp.processors.CreateCombinedManifests
-    manifest_list: ["${workspace_dir}/inbrackets.json", "${workspace_dir}/sentences0.json"]
-    output_manifest_file: ${workspace_dir}/sentences_combined.json
-
-  - _target_: sdp.processors.DropIfRegexMatch
-    input_manifest_file: ${workspace_dir}/sentences_combined.json
-    # input_manifest_file: ${workspace_dir}/sentences0.json
-    output_manifest_file: ${workspace_dir}/sentences1.json
-    regex_patterns:
-      - '[0-9]'
-      # - '\('
-      # - '\)'
-      - '\['
-      - '\]'
-      - '\*'
-      - '"'
-      - '[А-Яа-я]'
-      - '[A-Za-z]'
-      - '\+'
-      - '='
-      - '¬'
-      - '&'
-      # - '«'
-      # - '»'
-
-  - _target_: sdp.processors.CountNumWords
-    input_manifest_file: ${workspace_dir}/sentences1.json
-    output_manifest_file: ${workspace_dir}/sentences2.json
-    alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև"
-    text_key: text
-    num_words_key: num_words
-
-  - _target_: sdp.processors.PreserveByValue
-    input_manifest_file: ${workspace_dir}/sentences2.json
-    output_manifest_file: ${workspace_dir}/sentences3.json
-    input_field: num_words
-    target_value: 20
-    operator: le
-
-  - _target_: sdp.processors.PreserveByValue
-    input_manifest_file: ${workspace_dir}/sentences3.json
-    output_manifest_file: ${workspace_dir}/sentences4.json
-    input_field: num_words
-    target_value: 3
-    operator: ge
-
-  # - _target_: sdp.processors.SubRegex
-  #   input_manifest_file: ${workspace_dir}/sentences4.json
-  #   output_manifest_file: ${workspace_dir}/tasks.json
-  #   text_key: text
-  #   regex_params_list:
-  #     - {"pattern": '«', "repl": ''}
-  #     - {"pattern": '»', "repl": ''}
-
-  - _target_: sdp.processors.DropDublicates
-    drop_key: "text"
-    # input_manifest_file: ${workspace_dir}/tasks.json
-    input_manifest_file: ${workspace_dir}/sentences4.json
-    output_manifest_file: ${workspace_dir}/tasks_clear.json
-
   - _target_: tolokan.processors.CreateTolokaTaskSet
-    input_manifest_file: ${workspace_dir}/tasks_clear.json
+    input_manifest_file: ${workspace_dir}/tasks_combined.json
     input_pool_file: ${workspace_dir}/taskpool.json
     input_data_file: ${workspace_dir}/data_file.json
     limit: 100

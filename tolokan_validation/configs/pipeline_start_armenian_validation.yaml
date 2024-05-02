@@ -1,0 +1,118 @@
+documentation: |
+  Toloka Armenian
+
+processors_to_run: all
+workspace_dir: ???
+API_KEY: "QBiiuByvLaYu1llgZjDFXw.045e.f1bcUbqp_4Q5ENwt9-_NdCNjZpQspNFAwnm1qXPj-Y24DyjVuxPhP4nu7DKoxuZgiZvvfWalAZ4uIb3o4ztD0kt8jNP4sW4k8tp_8m3JwUQ" # SANDBOX
+# API_KEY: "1V0v8tbFtwPhDVMbN3cvcQ.045e.k93FVRUudCOHplT6OHcDNjc-k8V_rSFr8l5_jLyo4rLT9W4fgabM40EyompNakPZ0uU-_sgc0hKHzrEge5AJNy5MwZCu93BHoTJGOS1lwqE"  # PRODUCTION
+
+processors:
+  - _target_: tolokan_validation.processors.CreateTolokaProject
+    API_KEY: ${API_KEY}
+    platform: "SANDBOX"
+    project_name: "Ձայնագրությունների վավերացում"
+    project_description: "Ստուգել արդյոք տեքստը համապատասխանում է խոսքին։"
+    project_instructions: '<div><strong style="font-family: var(--font-family-primary);">Այս առաջադրանքի մեջ դուք կարդալու եք տեքստ հայերեն լեզվով, ապա լսելու եք համապատասխան ձայնագրությունը և պատասխանելու արդյոք լսված ձայնագրությունը համապատասխանում է տեքստին։&nbsp;</strong><br></div><div><strong>Արդյունավետությունը բարձրացնելու և խոսքը մաքուր լսելու համար օգտագործեք ականջակալներ։&nbsp;&nbsp;</strong></div> <div><strong>Ինչխպես կատարել առաջադֆրանքը</strong><strong>:</strong></div><div><ol><li>Կարդացեք տրված տեքստը։&nbsp;</li><li>Միացրեք ձայնագրությունը և փորձեք հասկանալ ինչ է ասում խոսացողը։ Եթե առաջին անգամից անհասկանալի է լսեք նորից։&nbsp;</li><li>Նշեք արդյոք ձայնը համապատասխանում է տեքստին</li><li style="list-style-type:none"></li><li><ul style="list-style-type:disc"><li>Ընտրեք&nbsp;"Համապատասխանում է",&nbsp;եթե.<br>&gt; Ձայնագրությունը իր մեջ պատրունակում է նախադասությունը ամբողջությամբ, ճիշտ վերջավորություններով<br>&gt; Ձայնագրությունը չի պարունակում իր մեջ բառեր, վերջավորություններ, որոնք առկա չեն տեքստում<br>&gt; Ձայնագրության մեջ խոսքը կեսից չի ընդհատվում և նորից սկսում</li><li>Ընտրեք&nbsp;"Չի համապատասխանում", եթե.<br>&gt; Ձայնագրությունը իր մեջ չի պարունակում որոշ բառեր<br>&gt; Ձայնագրությունը արված է ռոբոտանման ձայնով<br>&gt; Ձայնագրությունը չի արունակում առաջին բառի սկիզբը և/կամ վերջին բառի վերջը<br>&gt; Ձայնագրությունը ընդհանրապես չի պարունակում խոսք<br>&gt; Ձայնագրողը կմկմում է, չի արտասանում վերջավորություններ<br>&gt; Ձայնագրողը սխալ է կարդում բառերը, ներառյալ սխալ վերջավորություններ</li></ul></li></ol><div><br></div><div><br>Եթե ձայնագրությունը խոսքից բացի իր մեջ պարունակում է աղմուկ, սակայն համապատասխանում է պայմաններին ընտրեք <b>"Համապատասխանում է"</b></div><div>Եթե խոսքից բացի առկա է այլ անձանց խոսք, որը հստակ հասկանալի է, նշեք նաև <b>"Կողմնակի խոսք" </b>կոճակը</div><div><br></div><div><br></div> </div>'
+    output_manifest_file: ${workspace_dir}/data_file.json
+
+  - _target_: tolokan_validation.processors.CreateTolokaPool
+    input_manifest_file: ${workspace_dir}/data_file.json
+    output_manifest_file: ${workspace_dir}/taskpool.json
+
+  # - _target_: sdp.processors.CreateInitialManifestByExt
+  #   raw_data_dir: ${workspace_dir}/arm_docs
+  #   extension: docx
+  #   output_field: source_filepath
+  #   output_manifest_file: ${workspace_dir}/docfiles.json
+
+  # - _target_: sdp.processors.ReadDocxLines
+  #   source_filepath: source_filepath
+  #   text_key: text
+  #   output_manifest_file: ${workspace_dir}/lines.json
+
+  # - _target_: sdp.processors.SubRegex
+  #   input_manifest_file: ${workspace_dir}/lines.json
+  #   output_manifest_file: ${workspace_dir}/lines1.json
+  #   text_key: text
+  #   regex_params_list:
+  #     - {"pattern": '։', "repl": ':'}
+  #     - {"pattern": '․', "repl": "."}
+  #     - {"pattern": '—', "repl": "-"}
+  #     - {"pattern": '–', "repl": "-"}
+  #     - {"pattern": '―', "repl": "-"} 
+  #     - {"pattern": '\.\.\.', "repl": "…"}
+  #     - {"pattern": "\\s+", "repl": " "}
+
+  # - _target_: sdp.processors.ExtractFromBrackets
+  #   text_key: text
+  #   brackets: ["«»", "()", "[]"]
+  #   input_manifest_file: ${workspace_dir}/lines1.json
+  #   output_manifest_file: ${workspace_dir}/inbrackets.json
+
+  # - _target_: sdp.processors.SplitLineBySentence
+  #   text_key: text
+  #   end_pattern: ':|\.|…'
+  #   input_manifest_file: ${workspace_dir}/inbrackets.json
+  #   output_manifest_file: ${workspace_dir}/inbrackets_splited.json
+  
+  # - _target_: sdp.processors.SplitLineBySentence
+  #   text_key: text
+  #   end_pattern: ':|\.|…'
+  #   input_manifest_file: ${workspace_dir}/lines1.json
+  #   output_manifest_file: ${workspace_dir}/sentences0.json
+
+  # - _target_: sdp.processors.CreateCombinedManifests
+  #   manifest_list: ["${workspace_dir}/inbrackets_splited.json", "${workspace_dir}/sentences0.json"]
+  #   output_manifest_file: ${workspace_dir}/sentences_combined.json
+
+  # - _target_: sdp.processors.DropIfRegexMatch
+  #   input_manifest_file: ${workspace_dir}/sentences_combined.json
+  #   output_manifest_file: ${workspace_dir}/sentences1.json
+  #   regex_patterns:
+  #     - '[0-9]'
+  #     - '\('
+  #     - '\)'
+  #     - '\['
+  #     - '\]'
+  #     - '\*'
+  #     - '"'
+  #     - '[А-Яа-я]'
+  #     - '[A-Za-z]'
+  #     - '\+'
+  #     - '='
+  #     - '¬'
+  #     - '&'
+  #     - '«'
+  #     - '»'
+
+  # - _target_: sdp.processors.CountNumWords
+  #   input_manifest_file: ${workspace_dir}/sentences1.json
+  #   output_manifest_file: ${workspace_dir}/sentences2.json
+  #   alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև"
+  #   text_key: text
+  #   num_words_key: num_words
+
+  # - _target_: sdp.processors.PreserveByValue
+  #   input_manifest_file: ${workspace_dir}/sentences2.json
+  #   output_manifest_file: ${workspace_dir}/sentences3.json
+  #   input_field: num_words
+  #   target_value: 20
+  #   operator: le
+
+  # - _target_: sdp.processors.PreserveByValue
+  #   input_manifest_file: ${workspace_dir}/sentences3.json
+  #   output_manifest_file: ${workspace_dir}/sentences4.json
+  #   input_field: num_words
+  #   target_value: 3
+  #   operator: ge
+
+  # - _target_: sdp.processors.DropDublicates
+  #   drop_key: "text"
+  #   input_manifest_file: ${workspace_dir}/sentences4.json
+  #   output_manifest_file: ${workspace_dir}/tasks_clear.json
+
+  # - _target_: tolokan.processors.CreateTolokaTaskSet
+  #   input_manifest_file: ${workspace_dir}/tasks_clear.json
+  #   input_pool_file: ${workspace_dir}/taskpool.json
+  #   input_data_file: ${workspace_dir}/data_file.json
+  #   limit: 100

@@ -32,16 +32,17 @@ class CreateTolokaPool(BaseParallelProcessor):
 
         new_pool = toloka.client.Pool(
             project_id=project_id,
-            private_name='Voice recording',
+            private_name='Recording Validation',
             may_contain_adult_content=False,
             will_expire=datetime.datetime.utcnow() + datetime.timedelta(days=365),
             reward_per_assignment=0.01,
+            defaults=toloka.client.Pool.Defaults(default_overlap_for_new_task_suites=3),
             assignment_max_duration_seconds=60 * 10,
             auto_accept_solutions=False,
             auto_accept_period_day=14,
-            filter=((toloka.client.filter.Languages.in_('HY')) & (toloka.client.filter.ClientType == 'TOLOKA_APP')),
+            filter=((toloka.client.filter.Languages.in_('HY'))),
         )
-        new_pool.set_mixer_config(real_tasks_count=5)
+        new_pool.set_mixer_config(real_tasks_count=9, golden_tasks_count=1)
         # Setting up quality control for skipped assignments
         new_pool.quality_control.add_action(
             collector=toloka.client.collectors.SkippedInRowAssignments(),
@@ -62,6 +63,17 @@ class CreateTolokaPool(BaseParallelProcessor):
                 duration_unit='PERMANENT',
                 private_comment='Fast responses',
             ),
+        )
+        # Majority vote
+        new_pool.quality_control.add_action(
+            collector=toloka.client.collectors.MajorityVote(answer_threshold=2),
+            conditions=[
+                toloka.client.conditions.TotalAnswersCount > 9,
+                toloka.client.conditions.CorrectAnswersRate < 60,
+            ],
+            action=toloka.client.actions.RejectAllAssignments(
+                public_comment='Too low quality'
+            ),  # Myabe we should ban?
         )
 
         new_pool = toloka_client.create_pool(new_pool)

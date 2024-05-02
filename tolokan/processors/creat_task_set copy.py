@@ -20,10 +20,10 @@ import toloka.client.project.template_builder
 from docx import Document
 
 from sdp.logging import logger
-from sdp.processors.base_processor import BaseProcessor
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
-class CreateTolokaTaskSet(BaseProcessor):
+class CreateTolokaTaskSet(BaseParallelProcessor):
     def __init__(
         self,
         input_data_file: str,
@@ -63,6 +63,8 @@ class CreateTolokaTaskSet(BaseProcessor):
 
         self.toloka_client = toloka.client.TolokaClient(self.API_KEY, self.platform)
 
+        return super().prepare()
+
     def read_manifest(self):
         with open(self.input_manifest_file, "rt") as fin:
             total_lines = sum(1 for line in fin)
@@ -72,24 +74,29 @@ class CreateTolokaTaskSet(BaseProcessor):
             fin.seek(0)
 
             # Read the specified percentage of lines
-            entries = []
             for _ in range(lines_to_read):
                 line = fin.readline()
-                entries.append(json.loads(line))
+                yield json.loads(line)
 
-        return entries
-
-    def process(self):
-        self.prepare()
-
-        entries = self.read_manifest()
-        tasks = [
-            toloka.client.Task(input_values={'text': data_entry["text"]}, pool_id=self.pool_id)
-            for data_entry in entries
-        ]
+    def process_dataset_entry(self, data_entry):
+        tasks = [toloka.client.Task(input_values={'text': data_entry["text"]}, pool_id=self.pool_id)]
 
         self.toloka_client.create_tasks(tasks, allow_defaults=True)
 
-        with open(self.output_manifest_file, "wt", encoding='utf-8') as fout:
-            for entry in entries:
-                fout.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        return [DataEntry(data=data_entry)]
+
+    def finalize(self, metrics: List):
+        """Can be used to output statistics about the processed data.
+
+        By default outputs new number of entries/hours.
+
+        Args:
+            metrics (list): a list containing all ``metrics`` keys from the
+                data entries returned from the :meth:`process_dataset_entry`
+                method.
+        """
+        print("Hurray!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
+        logger.info("Total number of entries after processing: %d", self.number_of_entries)
+        if self.total_duration != 0:
+            logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)

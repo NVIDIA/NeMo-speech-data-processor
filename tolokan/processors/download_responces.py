@@ -74,24 +74,48 @@ class GetTolokaResults(BaseParallelProcessor):
                 # REJECTED — Rejected by the requester.
                 # SKIPPED — Skipped by the Toloker.
                 # SUBMITTED — Completed but not checked.
-                for task, solution in zip(assignment.tasks, assignment.solutions):
-                    suit_id = assignment.task_suite_id
-                    assignment_id = assignment.id
-                    user_id = assignment.user_id
-                    task_id = task.id
-                    text = task.input_values['text']
-                    attachment_id = solution.output_values.get('audio_file', None)
-                    status = assignment.status
-                    task_info = {
-                        'task_id': task_id,
-                        'text': text,
-                        'attachment_id': attachment_id,
-                        'status': str(status),
-                        'suit_id': suit_id,
-                        'assignment_id': assignment_id,
-                        'user_id': user_id,
-                    }
-                    yield task_info
+                if (
+                    str(assignment.status) == 'Status.ACCEPTED'
+                    or str(assignment.status) == 'Status.REJECTED'
+                    or str(assignment.status) == 'Status.SUBMITTED'
+                ):
+                    for task, solution in zip(assignment.tasks, assignment.solutions):
+                        suit_id = assignment.task_suite_id
+                        assignment_id = assignment.id
+                        user_id = assignment.user_id
+                        task_id = task.id
+                        text = task.input_values['text']
+                        attachment_id = solution.output_values.get('audio_file', None)
+                        status = assignment.status
+                        task_info = {
+                            'task_id': task_id,
+                            'text': text,
+                            'attachment_id': attachment_id,
+                            'status': str(status),
+                            'suit_id': suit_id,
+                            'assignment_id': assignment_id,
+                            'user_id': user_id,
+                        }
+                        yield task_info
+                else:
+                    for task in assignment.tasks:
+                        suit_id = assignment.task_suite_id
+                        assignment_id = assignment.id
+                        user_id = assignment.user_id
+                        task_id = task.id
+                        text = task.input_values['text']
+                        attachment_id = ""
+                        status = assignment.status
+                        task_info = {
+                            'task_id': task_id,
+                            'text': text,
+                            'attachment_id': attachment_id,
+                            'status': str(status),
+                            'suit_id': suit_id,
+                            'assignment_id': assignment_id,
+                            'user_id': user_id,
+                        }
+                        yield task_info
 
     def process_dataset_entry(self, data_entry):
         user_id = data_entry["user_id"]
@@ -104,8 +128,9 @@ class GetTolokaResults(BaseParallelProcessor):
         output_path = os.path.join(self.output_dir, attachment_id + '.wav')
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-        with open(output_path, 'wb') as attachment_file:
-            self.toloka_client.download_attachment(attachment_id, out=attachment_file)
+        if attachment_id != "":
+            with open(output_path, 'wb') as attachment_file:
+                self.toloka_client.download_attachment(attachment_id, out=attachment_file)
 
         task_info = {
             'task_id': task_id,

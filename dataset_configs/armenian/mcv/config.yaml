@@ -1,0 +1,49 @@
+documentation: |
+  Seamless Armenian
+
+processors_to_run: all
+workspace_dir: ???
+data_split: train
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestMCVNew  # apt-get update # apt-get upgrade # apt-get install sox libsox-fmt-all
+    output_manifest_file: ${workspace_dir}/${data_split}_manifest0.json
+    language_id: cv-corpus-17.0-2024-03-15-hy-AM
+    extract_archive_dir: ${workspace_dir}/raw
+    resampled_audio_dir: ${workspace_dir}/16k
+    data_split: ${data_split}
+    raw_data_dir: ${workspace_dir}
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: ${workspace_dir}/${data_split}_manifest0.json
+    output_manifest_file: ${workspace_dir}/${data_split}_manifest1.json
+    text_key: text
+    regex_params_list:
+      - {"pattern": '։', "repl": ':'}
+      - {"pattern": '․', "repl": "."}
+      - {"pattern": '—', "repl": "-"}
+      - {"pattern": '–', "repl": "-"}
+      - {"pattern": '―', "repl": "-"} 
+      - {"pattern": '\.\.\.', "repl": "…"}
+      - {"pattern": "\\s+", "repl": " "}
+      - {"pattern": "եւ", "repl": "և"}
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    input_manifest_file: ${workspace_dir}/${data_split}_manifest1.json
+    output_manifest_file: ${workspace_dir}/${data_split}_manifest2.json
+    regex_patterns:
+      - '[0-9]'
+      - '\('
+      - '\)'
+      - '\['
+      - '\]'
+      - '\*'
+      - '"'
+      - '[А-Яа-я]'
+      - '[A-Za-z]'
+      - '\+'
+      - '='
+      - '¬'
+      - '&'
+      - '«'
+      - '»'

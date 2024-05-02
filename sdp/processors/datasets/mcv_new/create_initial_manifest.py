@@ -55,7 +55,7 @@ class CreateInitialManifestMCVNew(BaseParallelProcessor):
         This processor generates an initial manifest file with the following fields::
 
             {
-                "audio_filepath": <path to the audio file>,
+                "audio_path": <path to the audio file>,
                 "duration": <duration of the audio in seconds>,
                 "text": <transcription (with capitalization and punctuation)>,
             }
@@ -139,7 +139,7 @@ class CreateInitialManifestMCVNew(BaseParallelProcessor):
             tfm.build(input_filepath=audio_path, output_filepath=output_wav_path)
 
         data = {
-            "audio_filepath": output_wav_path,
+            "audio_path": output_wav_path,
             "duration": float(sox.file_info.duration(output_wav_path)),
             "text": transcript_text,
         }

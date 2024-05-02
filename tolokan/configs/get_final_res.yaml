@@ -14,7 +14,9 @@ processors:
     output_manifest_file: ${workspace_dir}/result_manifest.json
     API_KEY: ${API_KEY}
     platform: "PRODUCTION"
-    pool_id: 42824822
+    # pool_id: 42824822
+    # pool_id: 42939416
+    pool_id: 42949209
 
   - _target_: sdp.processors.ASRSeamless
     input_manifest_file: ${workspace_dir}/result_manifest.json

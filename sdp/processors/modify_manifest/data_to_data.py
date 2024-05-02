@@ -502,6 +502,16 @@ class SubRegex(BaseParallelProcessor):
 
 
 class ExtractFromBrackets(BaseParallelProcessor):
+    """
+    A class for extracting text contained within specified bracket types from strings,
+    handling nested brackets.
+
+    Attributes:
+        brackets (List[str]): A list where each element is a pair of strings representing
+                              the opening and closing brackets.
+        text_key (str): The key in the input data from which to extract text, defaults to "text".
+    """
+
     def __init__(
         self,
         brackets: List[str],
@@ -513,7 +523,17 @@ class ExtractFromBrackets(BaseParallelProcessor):
         self.text_key = text_key
 
     def extract_text_within_brackets(self, text, brackets):
-        """Extract text within the specified brackets. Handles nested brackets."""
+        """
+        Extracts text within the specified brackets, including handling nested brackets.
+
+        Args:
+            text (str): The string from which to extract text.
+            brackets (tuple[str, str]): A tuple containing the opening and closing bracket.
+
+        Returns:
+            List[str]: A list of strings, each representing a segment of text found within
+                       the outermost brackets, including any nested brackets content.
+        """
         open_bracket, close_bracket = brackets
         depth = 0
         buffer = ""
@@ -521,19 +541,19 @@ class ExtractFromBrackets(BaseParallelProcessor):
 
         for char in text:
             if char == open_bracket:
-                if depth > 0:  # Already inside brackets, add to buffer
-                    buffer += char
+                if depth > 0:
+                    buffer += char  # Add to buffer if already inside brackets
                 depth += 1
             elif char == close_bracket:
                 depth -= 1
-                if depth == 0:  # Exiting brackets, process buffer
+                if depth == 0:  # Exiting outermost brackets
                     if buffer:
                         sentences.append(buffer)
-                        buffer = ""  # Reset buffer for next sentence
-                elif depth > 0:  # Still inside nested brackets, add to buffer
-                    buffer += char
-            elif depth > 0:  # Inside brackets, collect char
-                buffer += char
+                        buffer = ""  # Reset buffer for next possible extraction
+                elif depth > 0:
+                    buffer += char  # Still inside nested brackets, continue adding
+            elif depth > 0:
+                buffer += char  # Add characters inside brackets to buffer
 
         return sentences
 
