@@ -29,7 +29,7 @@ documentation: |
 processors_to_run: all
 workspace_dir: ???
 data_split: dev
-final_manifest: ${workspace_dir}/test_data_reference.json
+final_manifest: ${workspace_dir}/manifest.json
 
 processors:
   # creating manifest for armenian test set
