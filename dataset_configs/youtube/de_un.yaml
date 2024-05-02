@@ -1,0 +1,112 @@
+processors_to_run: "16" 
+workspace_dir: "/ws/DE/"
+nemo_dir: "/workspace/NeMo"
+
+# filters
+lang: de
+#min_duration: 1.0
+#max_duration: 40.0
+#max_wer: 75.0
+#max_cer: 30.0
+
+
+processors:
+  # Create initial manifests based on pairs of .opus audio + .srt transcript (with ground-truth timestamps)
+  - _target_: sdp.processors.datasets.youtube.DownloadData
+    output_dir: ${workspace_dir}/raw_data/
+    output_manifest_file: ${workspace_dir}/steps/manifest_00.json
+    url_list: 
+      - https://pbss.s8k.io/v1/AUTH_team-jarvis-speech/asr_datasets_original/de/unsupervised_yt/yt_mixed_29_01_2024-01_47_33_ssl/yt_mixed_29_01_2024-01_47_33_ssl.zip?temp_url_sig=34f232f8d09f0a08156a8af73c83154c5361a89d&temp_url_expires=2024-07-01T15:43:49Z&temp_url_prefix=&inline
+  
+  - _target_: sdp.processors.datasets.youtube.ExtractData
+    output_manifest_file: ${workspace_dir}/steps/manifest_01.json
+    remove_archive: True
+    chunksize: 1
+    max_workers: 4
+  
+  - _target_: sdp.processors.datasets.youtube.GetSourceAudioFilepaths
+    output_manifest_file: ${workspace_dir}/steps/manifest_02.json
+    chunksize: 1
+  
+  - _target_: sdp.processors.datasets.youtube.ConvertToWav
+    output_audio_dir: ${workspace_dir}/wav_audios/
+    output_manifest_file: ${workspace_dir}/steps/manifest_03.json
+    remove_source_audio: True
+  
+  - _target_: sdp.processors.datasets.youtube.GetAudioDuration
+    output_manifest_file: ${workspace_dir}/steps/manifest_04.json
+  
+  - _target_: sdp.processors.datasets.commoncrawl.AudioLid
+    output_manifest_file: ${workspace_dir}/steps/manifest_05.json
+    input_audio_key: audio_filepath
+    output_lang_key: audio_lang
+    device: cuda
+    segment_duration: 11
+    max_num_segments: 7
+    pretrained_model: "langid_ambernet"
+  
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/steps/manifest_06.json
+    input_value_key: audio_lang
+    target_value: ${lang}
+    
+  - _target_: sdp.processors.DropHighLowDuration
+    output_manifest_file: ${workspace_dir}/steps/manifest_07.json
+    low_duration_threshold: 1
+    high_duration_threshold: 4000
+
+  - _target_: sdp.processors.datasets.youtube.GetSampleID
+    output_manifest_file: ${workspace_dir}/steps/manifest_08.json
+  
+  - _target_: sdp.processors.datasets.youtube.RunNFA
+    output_manifest_file: ${workspace_dir}/steps/manifest_09.json
+  
+  - _target_: sdp.processors.datasets.youtube.GetSentencesFromNFA
+    end_of_sentence_punctuation_marks: 
+      - "."
+      - "?"
+    output_manifest_file: ${workspace_dir}/steps/manifest_10.json
+  
+  - _target_: sdp.processors.datasets.youtube.MergeSegmentsToSamplesByDuration
+    max_duration: 40.0
+    max_gap_duration: 1.0
+    output_manifest_file: ${workspace_dir}/steps/manifest_11.json
+  
+  - _target_: sdp.processors.datasets.youtube.MergeManifests
+    input_manifest_file2: ${workspace_dir}/steps/manifest_08.json
+    fields_to_merge: 
+      - {"audio_filepath" : "audio_filepath"}
+    key_field: sample_id
+    output_manifest_file: ${workspace_dir}/steps/manifest_12.json
+
+  - _target_: sdp.processors.datasets.youtube.CropAudios
+    output_audio_dir: ${workspace_dir}/final/audio
+    output_manifest_file: ${workspace_dir}/steps/manifest_13.json
+    chunksize: 20
+  
+  - _target_: sdp.processors.datasets.youtube.TarDataset
+    nemo_dir: ${nemo_dir}
+    output_dir: ${workspace_dir}/final/tarred_data
+    output_manifest_file: ${workspace_dir}/steps/manifest_14.json
+    buckets_num: 4
+    num_shards: 512
+    min_duration: 0.1
+    max_duration: 40.0
+    shuffle: True
+    shuffle_seed: 1
+    sort_in_shards: True
+    workers: 20
+  
+  - _target_: sdp.processors.datasets.youtube.UploadToSwiftStack
+    bucket_name: youtube-unsupervised-de-2024-04-19
+    pbss_credentials_path: /workspace/pbss_credentials_default.secret
+    output_manifest_file: ${workspace_dir}/steps/manifest_15.json
+  
+  - _target_: sdp.processors.datasets.youtube.TarDataset
+    nemo_dir: ${nemo_dir}
+    input_manifest_file: ${workspace_dir}/steps/manifest_06.json
+    output_dir: ${workspace_dir}/final/raw_tarred_data
+    output_manifest_file: ${workspace_dir}/steps/manifest_16.json
+    num_shards: 1
+    sort_in_shards: True
+    max_duration: 1e+7

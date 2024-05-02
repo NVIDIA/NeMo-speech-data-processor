@@ -17,6 +17,7 @@ import re
 from dataclasses import dataclass
 
 import pysrt
+import re
 from pydub import AudioSegment
 
 from sdp.processors.base_processor import DataEntry
@@ -125,3 +126,80 @@ def parse_srt(srt_filepath, verify_duration: bool = True, wav_filepath: str = No
         srt_segments.append(segment)
 
     return srt_segments
+
+
+@dataclass
+class Word:
+    sample_id: str = None
+    text: str = None
+    start_time: float = None
+    duration: float = None
+
+    def __init__(self, ctm_str):
+        ctm_args = ctm_str.split()
+        self.sample_id = ctm_args[0]
+        self.start_time = float(ctm_args[2])
+        self.duration = float(ctm_args[3])
+        self.text = ctm_args[4]
+
+@dataclass
+class Sentence:
+    words: list[Word] = None
+    sample_id: str = None
+    text: str = None
+    start_time: float = None
+    duration: float = None
+
+    def add_word(self, word):
+        if self.words is None:
+            self.words = []
+
+        self.words.append(word)
+
+    def process(self):
+        self.sample_id = self.words[0].sample_id
+        self.text = ' '.join([word.text for word in self.words])
+        self.text = self.text[0].upper() + self.text[1 : ]
+        self.start_time = self.words[0].start_time
+        self.duration = round(self.words[-1].start_time + self.words[-1].duration - self.start_time, 2)
+    
+    def to_dict(self):
+        sample = self.__dict__
+        del sample['words']
+        return sample
+
+    def from_dict(sentence_dict: dict):
+        sentence_obj = Sentence() 
+        sentence_obj.__dict__.update(sentence_dict)
+        return sentence_obj
+
+def read_ctm(ctm_filepath):
+    with open(ctm_filepath, 'r') as ctm:
+        lines = ctm.readlines()
+        words = [Word(line) for line in lines]
+        return words
+
+@dataclass
+class Sample:
+    sample_id: str = None
+    text: str = None
+    start_time: float = None
+    duration: float = None
+
+    def add_segment(self, segment):
+        if self.sample_id is None:
+            self.text = ""
+            self.sample_id = segment.sample_id
+            self.start_time = segment.start_time
+            
+        self.text = re.sub("\s+", " ", self.text + " " + segment.text).strip()
+        self.duration = round(segment.start_time + segment.duration - self.start_time, 2)
+    
+    def to_dict(self):
+        sample = self.__dict__
+        return sample
+    
+    def from_dict(sample_dict: dict):
+        sample_obj = Sample() 
+        sample_obj.__dict__.update(sample_dict)
+        return sample_obj
