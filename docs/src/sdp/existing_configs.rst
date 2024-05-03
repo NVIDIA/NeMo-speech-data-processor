@@ -37,6 +37,7 @@ download the data archive and specify its location with the ``raw_data_dir`` par
 
    config-docs/italian/mcv/config
    config-docs/spanish_pc/mcv12/config
+   config-docs/portuguese/mcv/config
 
 Multilingual LibriSpeech (MLS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,6 +69,7 @@ Multilingual LibriSpeech (MLS)
    config-docs/italian/mls/config_nopc
    config-docs/spanish_pc/mls/config
    config-docs/spanish/mls/config
+   config-docs/portuguese/mls/config
 
 VoxPopuli
 ~~~~~~~~~
@@ -172,7 +174,7 @@ English LibriSpeech (ELS)
    config-docs/english/librispeech/config
 
 Coraa Brazilian Portuguese dataset
-~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Dataset link:** https://github.com/nilc-nlp/CORAA
 
@@ -199,3 +201,4 @@ MTEDx
    :hidden:
 
    config-docs/portuguese/mtedx/config
+
