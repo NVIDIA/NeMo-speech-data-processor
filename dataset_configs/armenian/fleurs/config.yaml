@@ -13,6 +13,7 @@ documentation: |
   **Required arguments**.
   
   * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+  
   Note that you can customize any part of this config either directly or from command-line.
  
   **Output format**
@@ -29,7 +30,7 @@ documentation: |
 processors_to_run: all
 workspace_dir: ???
 data_split: dev
-final_manifest: ${workspace_dir}/manifest.json
+final_manifest: ${workspace_dir}/${data_split}_manifest.json
 
 processors:
   # creating manifest for armenian test set

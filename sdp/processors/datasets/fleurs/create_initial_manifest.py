@@ -25,11 +25,11 @@ from sdp.utils.common import download_file, extract_archive
 
 
 def get_fleurs_url_list(lang: str, split: list[str]) -> list[str]:
-    urls = []
     # examples
     # "https://huggingface.co/datasets/google/fleurs/resolve/main/data/hy_am/audio/dev.tar.gz",
     # "https://huggingface.co/datasets/google/fleurs/resolve/main/data/hy_am/dev.tsv"
 
+    urls = []
     base_url = "https://huggingface.co/datasets/google/fleurs/resolve/main/data"
 
     base_lang_url = os.path.join(base_url, lang)
@@ -48,25 +48,32 @@ class CreateInitialManifestFleurs(BaseProcessor):
 
     Dataset link: https://huggingface.co/datasets/google/fleurs
 
-    Will download all audio files from the FLEURS dataset, and create a manifest file with
-    the "audio_filepath" and "text" fields.
+    Will download all files, extract them, and create a manifest file with the
+    "audio_filepath" and "text" fields.
 
-    Attributes:
+    Args:
         lang (str): Language to be processed, identified by a combination of ISO 639-1 and ISO 3166-1 alpha-2 codes.
-                    Examples include:
-                    - ``"hy_am"`` for Armenian
-                    - ``"ko_kr"`` for Korean
-        split (str): Which dataset splits to process. Options are:
-                    - ``"test"``
-                    - ``"train"``
-                    - ``"dev"``
-        audio_dir (str): Path to the directory where audio files will be downloaded and extracted.
+            Examples are:
+
+            - ``"hy_am"`` for Armenian
+            - ``"ko_kr"`` for Korean
+
+        split (str): Which dataset splits to process.
+            Options are:
+
+            - ``"test"``
+            - ``"train"``
+            - ``"dev"``
+
+        raw_data_dir (str): Path to the folder where the data archive should be downloaded and extracted.
+
     Returns:
-        This processor generates an initial manifest file with the following fields:
-        {
-            "audio_filepath": <path to the audio file>,
-            "text": <transcription>,
-        }
+        This processor generates an initial manifest file with the following fields::
+
+            {
+                "audio_filepath": <path to the audio file>,
+                "text": <transcription>,
+            }
     """
 
     def __init__(
@@ -83,7 +90,7 @@ class CreateInitialManifestFleurs(BaseProcessor):
 
     def process_transcript(self, file_path: str) -> list[dict[str, typing.Any]]:
         """
-        Parse transcript TSV file and put it inside manyfest.
+        Parse transcript TSV file and put it inside manifest.
         Assumes the TSV file has two columns: file name and text.
         """
 
