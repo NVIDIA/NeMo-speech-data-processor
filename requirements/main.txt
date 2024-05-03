@@ -12,5 +12,4 @@ tqdm
 wget
 ffmpeg
 rarfile
-huggingface_hub
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
