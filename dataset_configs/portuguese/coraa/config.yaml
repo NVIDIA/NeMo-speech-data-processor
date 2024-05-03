@@ -1,13 +1,13 @@
 documentation: |
   Coraa Portuguese
-  ###########
+  ################
 
   The config  performs the following data processing.
 
   1. Downloads and extracts all the data from the "https://huggingface.co/datasets/gabrielrstan/CORAA-v1.1/tree/main"
   2. Replaces certain non-supported characters, abbreviations and  punctuation marks with equivalent supported versions.
-  4. Drops any data that contains high/low character occurence.
-  5. Drops any data that contains symbols not in the supported alphabet.
+  3. Drops any data that contains high/low character occurence.
+  4. Drops any data that contains symbols not in the supported alphabet.
 
   **Required arguments**.
 
