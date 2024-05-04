@@ -140,27 +140,19 @@ class CreateInitialManifestFleurs(BaseProcessor):
             extract_archive(str(data_file), str(dst_folder), force_extract=True)
 
         # Organizing files into their respective folders
-        folder_mappings = {'test': '*test.tsv', 'train': '*train.tsv', 'dev': '*dev.tsv'}
+        target_folder = os.path.join(dst_folder, self.split)
 
-        for folder, file_pattern in folder_mappings.items():
-            target_folder = os.path.join(dst_folder, folder)
+        file_name = f"{self.split}.tsv"
 
-            if not os.path.exists(target_folder):
-                continue
+        file_path = os.path.join(dst_folder, file_name)
+        dest_file_path = os.path.join(target_folder, file_name)
 
-            all_files = os.listdir(dst_folder)
-
-            matching_files = fnmatch.filter(all_files, file_pattern)
-
-            for file_name in matching_files:
-                file_path = os.path.join(dst_folder, file_name)
-                dest_file_path = os.path.join(target_folder, file_name)
-                if not os.path.exists(dest_file_path):
-                    shutil.move(file_path, dest_file_path)
-                    print(f'Moved {file_path} to {dest_file_path}')
-                else:
-                    os.remove(file_path)
-                    print(f'File {file_name} already exists in {target_folder}, deleted from source.')
+        if not os.path.exists(dest_file_path):
+            shutil.move(file_path, dest_file_path)
+            print(f'Moved {file_path} to {dest_file_path}')
+        else:
+            os.remove(file_path)
+            print(f'File {file_name} already exists in {target_folder}, deleted from source.')
 
     def process(self):
         self.download_extract_files(self.raw_data_dir)
