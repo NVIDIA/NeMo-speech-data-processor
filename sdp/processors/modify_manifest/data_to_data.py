@@ -165,7 +165,6 @@ class SoxConvert(BaseParallelProcessor):
     and updating the dataset with the path to the converted audio files.
 
     Args:
-
         converted_audio_dir (str): Directory to store the converted audio files.
         input_audio_file_key (str): Field in the dataset representing the path to input audio files.
         output_audio_file_key (str): Field to store the path to the converted audio files in the dataset.

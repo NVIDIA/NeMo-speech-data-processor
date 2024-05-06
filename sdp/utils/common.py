@@ -26,6 +26,7 @@ import wget
 from sdp.logging import logger
 
 
+
 def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
     # read NeMo manifest as a list of dicts
     result = []
@@ -56,29 +57,33 @@ def ffmpeg_convert(input_file: str, output_wav: str, sample_rate: int = 0, num_c
     return subprocess.run(process_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def download_file(source_url: str, target_directory: str, verbose=True):
+def download_file(source_url: str, target_directory: str, verbose=True, target_filename=None):
     # make sure target_directory is an absolute path to avoid bugs when we change directories to download data later
     target_directory = os.path.abspath(target_directory)
 
     if verbose:
         logger.info(f"Trying to download data from {source_url} and save it in this directory: {target_directory}")
-    filename = os.path.basename(urllib.parse.urlparse(source_url).path)
-    target_filepath = os.path.join(target_directory, filename)
+
+    # Determine the target_filename
+    if target_filename is None:
+        target_filename = os.path.basename(urllib.parse.urlparse(source_url).path)
+    target_filepath = os.path.join(target_directory, target_filename)
+
+    # Check if the file already exists
 
     if os.path.exists(target_filepath):
         if verbose:
             logger.info(f"Found file {target_filepath} => will not be attempting download from {source_url}")
     else:
         logger.info(f"Not found file {target_filepath}")
-        original_dir = os.getcwd()  # record current working directory so can cd back to it
-        os.chdir(target_directory)  # cd to target dir so that temporary download file will be saved in target dir
-
-        wget.download(source_url, target_directory)
-
-        # change back to original directory as the rest of the code may assume that we are in that directory
-        os.chdir(original_dir)
-        if verbose:
-            logger.info("Download completed")
+        # Download the file
+        try:
+            wget.download(source_url, target_filepath)  # Save file with the target filepath
+            if verbose:
+                logger.info("Download completed")
+        except Exception as e:
+            if verbose:
+                logger.error(f"Error during download: {e}")
 
     return target_filepath
 
