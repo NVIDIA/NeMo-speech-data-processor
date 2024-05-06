@@ -1,6 +1,6 @@
 documentation: |
   MTEDX Portuguese
-  ######################
+  ################
   The config  performs the following data processing.
 
   1. Downloads and extracts the data from the "https://www.openslr.org/100/" in Portuguese
