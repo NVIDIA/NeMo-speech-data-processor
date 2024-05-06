@@ -43,7 +43,7 @@ final_manifest: ???
 processors:
   - _target_: sdp.processors.CreateInitialManifestMCV
     raw_data_dir: ${workspace_dir}/raw_data
-    extract_archive_dir: ${workspace_dir}/row
+    extract_archive_dir: ${workspace_dir}/raw
     resampled_audio_dir: ${workspace_dir}/${data_split}/audio
     data_split: ${data_split}
     language_id: pt
