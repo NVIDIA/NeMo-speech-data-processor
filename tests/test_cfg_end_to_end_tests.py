@@ -81,6 +81,13 @@ coraal_processor.get_coraal_url_list = mock.Mock(
 )
 
 
+def data_check_fn_fleurs(raw_data_dir: str) -> None:
+    """Raises error if do not find expected data"""
+    expected_file = Path(raw_data_dir) / f"dev.tar.gz"
+    if not expected_file.exists():
+        raise ValueError(f"No such file {str(expected_file)}")
+
+
 def get_test_cases():
     """Returns paths, and data check fn for all configs that we want to test."""
 
@@ -98,6 +105,7 @@ def get_test_cases():
         # audio will be downloaded on the fly from a subset of files.
         # No checks, but need to mock the url list function (done above)
         (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
+        (f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", data_check_fn_fleurs),
         (f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", lambda raw_data_dir: True),
         (f"{DATASET_CONFIGS_ROOT}/armenian/audio_books/config.yaml", lambda raw_data_dir: True),
         (f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", data_check_fn_librispeech),

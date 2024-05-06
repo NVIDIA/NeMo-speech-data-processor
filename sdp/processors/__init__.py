@@ -18,7 +18,12 @@ from sdp.processors.datasets.coraal import (
     CreateInitialManifestCORAAL,
     TrainDevTestSplitCORAAL,
 )
+
+from sdp.processors.datasets.fleurs.create_initial_manifest import (
+    CreateInitialManifestFleurs,
+)
 from sdp.processors.datasets.lhotse import LhotseImport
+
 from sdp.processors.datasets.librispeech.create_initial_manifest import (
     CreateInitialManifestLibrispeech,
 )
