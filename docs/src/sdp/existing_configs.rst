@@ -178,8 +178,8 @@ Coraa Brazilian Portuguese dataset
 
 **Dataset link:** https://github.com/nilc-nlp/CORAA
 
-  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/portuguese/coraa/config.yaml>`__ |
-  :doc:`documentation <config-docs/portuguese/coraa/config>`
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/portuguese/coraa/config.yaml>`__ |
+:doc:`documentation <config-docs/portuguese/coraa/config>`
 
 .. toctree::
    :hidden:
