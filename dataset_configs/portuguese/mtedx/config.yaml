@@ -16,9 +16,6 @@ documentation: |
   * **raw_data_dir**: specify in which folder the data will be downladed.
   * **data_split**: should be "train", "valid" or "test".
 
-  Note that you can customize any part of this config either directly or from command-line.
-  Here are some common customizations to consider:
-
   **Output format**.
 
   This config dumps the final manifest at ``${workspace_dir}/${data_split}_manifest.json``.

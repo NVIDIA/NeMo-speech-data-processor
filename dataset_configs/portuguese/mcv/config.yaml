@@ -20,9 +20,6 @@ documentation: |
     ``<workspace dir>/raw_data/`` subfolder.
   * **data_split**: should be "train", "dev" or "test".
 
-  Note that you can customize any part of this config either directly or from command-line.
-  Here are some common customizations to consider:
-
   **Output format**.
 
   This config dumps the final manifest at ``${workspace_dir}/${data_split}_manifest.json``.
