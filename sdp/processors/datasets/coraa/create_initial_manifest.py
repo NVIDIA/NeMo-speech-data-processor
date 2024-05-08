@@ -14,7 +14,7 @@ from sdp.utils.common import extract_archive
 
 class CreateInitialManifestCORAA(BaseParallelProcessor):
     """
-        Processor to creatie initial manifest file fo CORAA ASR dataset
+        Processor to create initial manifest file fo CORAA ASR dataset
 
          Dataset link: https://github.com/nilc-nlp/CORAA
 
@@ -22,9 +22,14 @@ class CreateInitialManifestCORAA(BaseParallelProcessor):
             raw_data_dir (str): the path to the directory in which all the data will be downloaded.
             extract_archive_dir (str): directory where the extracted data will be saved.
             data_split (str): "train", "dev" or "test".
+            resampled_audio_dir (str): the directory where the resampled wav files will be stored.
             already_extracted (bool): if True, we will not try to extract the raw data.
                 Defaults to False.
             already_downloaded (bool): if True, we will not try to download files.
+            target_samplerate (int): sample rate (Hz) to use for resampling. This parameter will
+                Defaults to 16000.
+            target_nchannels (int): number of channels to create during resampling process.
+                Defaults to 1.
             exclude_dataset: list: list of the dataset names that will be excluded when creating initial manifest.
                 Options 'SP2010', 'C-ORAL-BRASIL I', 'NURC-Recife', 'TEDx Talks', 'ALIP'
 
@@ -37,9 +42,9 @@ class CreateInitialManifestCORAA(BaseParallelProcessor):
             resampled_audio_dir: str,
             already_extracted: bool = False,
             already_downloaded: bool = False,
-            exclude_dataset: list = [],
             target_samplerate: int = 16000,
             target_nchannels: int = 1,
+            exclude_dataset: list = [],
             **kwargs,
     ):
         super().__init__(**kwargs)

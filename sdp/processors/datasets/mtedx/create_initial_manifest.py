@@ -21,6 +21,8 @@ class CreateInitialManifestMTEDX(BaseParallelProcessor):
             data_split (str): "train", "dev" or "test".
             language_id (str): the ID of the language of the data. E.g., "en", "es", "it", etc.
             target_samplerate (int): sample rate (Hz) to use for resampling.
+            already_extracted: (bool): if True, we will not try to extract the raw data.
+                Defaults to False.
 
         Returns:
             This processor generates an initial manifest file with the following fields::
