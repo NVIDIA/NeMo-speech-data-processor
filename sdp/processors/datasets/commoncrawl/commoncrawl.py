@@ -18,7 +18,8 @@ class SplitByVttSentence(BaseParallelProcessor):
             duration_key (str): The field to store the duration of each split audio segment.
             text_key (str): The field to store the transcriptions corresponding to each split audio segment.
             caption_file_key (str): The field in the dataset containing the path to the VTT (WebVTT) files for segmentation.
-            additional_fields (List[str], optional): List of additional fields to copy from the original data entry to the split entries. Defaults to an empty list.
+            additional_fields (List[str], optional): List of additional fields to copy from the original data entry to the split entries.
+                Defaults to an empty list.
             duration_threshold (float, optional): The duration threshold in seconds for each split audio segment. Defaults to 10.0.
     """
 
