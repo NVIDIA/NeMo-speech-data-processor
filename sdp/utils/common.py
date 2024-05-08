@@ -20,10 +20,8 @@ import urllib
 import zipfile
 from pathlib import Path
 from typing import Dict, List, Union
-
 import wget
 import subprocess
-
 from sdp.logging import logger
 
 

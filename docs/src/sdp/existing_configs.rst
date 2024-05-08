@@ -160,6 +160,19 @@ Corpus based on Armenian audiobooks
 
    config-docs/armenian/audio_books/config
 
+Few-shot Learning Evaluation of Universal Representations of Speech (FLEURS)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://huggingface.co/datasets/google/fleurs
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/fleurs/config.yaml>`__ |
+:doc:`documentation <config-docs/armenian/fleurs/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/armenian/fleurs/config
+
 English LibriSpeech (ELS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -170,7 +183,7 @@ English LibriSpeech (ELS)
 
 .. toctree::
    :hidden:
-
+   
    config-docs/english/librispeech/config
 
 Coraa Brazilian Portuguese dataset
