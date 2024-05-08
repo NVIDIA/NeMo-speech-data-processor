@@ -45,7 +45,7 @@ class CreateInitialManifestMTEDX(BaseParallelProcessor):
         self.raw_data_dir = Path(raw_data_dir)
         self.language_id = language_id
         self.data_split = data_split
-        self.already_extracted =already_extracted
+        self.already_extracted = already_extracted
 
     def prepare(self):
         """Downloading and extracting data (unless already done)."""
