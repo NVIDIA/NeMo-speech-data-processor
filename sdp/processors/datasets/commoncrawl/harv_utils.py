@@ -13,7 +13,6 @@ import pandas as pd
 from sdp.logging import logger
 
 
-
 def parse_hours(inp):
     inp_list = inp.split(":")
     if len(inp_list) == 3 and int(inp_list[0]) >= 24:
@@ -31,8 +30,7 @@ def parse_hours(inp):
         return datetime.strptime(inp, '%H:%M:%S.%f')
 
 
-
-def split_by_vtt_new(vtt_file, samplerate):
+def split_by_vtt(vtt_file, samplerate):
     try:
         _begin = datetime.strptime('00:00:00.000', '%H:%M:%S.%f')
         text_list, start_s, end_s = [], [], []

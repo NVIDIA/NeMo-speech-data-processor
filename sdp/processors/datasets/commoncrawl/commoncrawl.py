@@ -3,32 +3,23 @@ from typing import List
 
 import soundfile as sf
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
-from sdp.processors.datasets.commoncrawl.harv_utils import split_by_vtt_new
+from sdp.processors.datasets.commoncrawl.harv_utils import split_by_vtt
 
 
 
 class SplitByVttSentence(BaseParallelProcessor):
     """
-    A class for splitting audio files based on VTT (WebVTT) sentence-level segmentation in a dataset.
+        A class for splitting audio files based on VTT (WebVTT) sentence-level segmentation in a dataset.
 
-    Parameters:
-    - splited_audio_dir (str): The directory to store the split audio files.
-    - source_audio_field (str): The field in the dataset containing the path to the source audio files.
-    - target_audio_field (str): The field to store the paths of the split audio files.
-    - duration_field (str): The field to store the duration of each split audio segment.
-    - text_field (str): The field to store the transcriptions corresponding to each split audio segment.
-    - vtt_field (str): The field in the dataset containing the path to the VTT (WebVTT) files for segmentation.
-    - proxy_fields (List[str], optional): List of additional fields to proxy from the original data entry to the split entries. Defaults to an empty list.
-    - duration_threshold (float, optional): The duration threshold in seconds for each split audio segment. Defaults to 10.0.
-    - **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
-
-
-    Methods:
-    - prepare(): Creates the directory to store the split audio files.
-    - process_dataset_entry(data_entry): Processes a single dataset entry, splitting audio based on VTT sentence-level segmentation.
-
-    Note:
-    - This class inherits from the `BaseParallelProcessor` class and extends its functionality to split audio files based on VTT segmentation.
+        Args:
+            splited_audio_dir (str): The directory to store the split audio files.
+            source_audio_key (str): The field in the dataset containing the path to the source audio files.
+            target_audio_key (str): The field to store the paths of the split audio files.
+            duration_key (str): The field to store the duration of each split audio segment.
+            text_key (str): The field to store the transcriptions corresponding to each split audio segment.
+            caption_file_key (str): The field in the dataset containing the path to the VTT (WebVTT) files for segmentation.
+            additional_fields (List[str], optional): List of additional fields to copy from the original data entry to the split entries. Defaults to an empty list.
+            duration_threshold (float, optional): The duration threshold in seconds for each split audio segment. Defaults to 10.0.
     """
 
     def __init__(
@@ -39,7 +30,7 @@ class SplitByVttSentence(BaseParallelProcessor):
             duration_field: str,
             text_field: str,
             vtt_field: str,
-            proxy_fields: List[str] = [],
+            additional_fields: List[str] = [],
             duration_threshold: float = 10.0,
             **kwargs,
     ):
@@ -51,7 +42,7 @@ class SplitByVttSentence(BaseParallelProcessor):
         self.text_field = text_field
         self.vtt_field = vtt_field
         self.duration_threshold = duration_threshold
-        self.proxy_fields = proxy_fields
+        self.additional_fields = additional_fields
 
     def prepare(self):
         os.makedirs(self.splited_audio_dir, exist_ok=True)
@@ -63,7 +54,7 @@ class SplitByVttSentence(BaseParallelProcessor):
 
         if os.path.isfile(source_audio):
             data, samplerate = sf.read(source_audio)
-            text_list, start_s, end_s = split_by_vtt_new(vtt_file, samplerate)
+            text_list, start_s, end_s = split_by_vtt(vtt_file, samplerate)
             text_c = ''
             start_c, end_c = 0, 0
             if text_list:
@@ -75,7 +66,7 @@ class SplitByVttSentence(BaseParallelProcessor):
                         pass
                     end_c = end_sr
                     if len(text_c) > 0 and (
-                            #end_c - start_c > self.duration_threshold * samplerate or
+                            end_c - start_c > self.duration_threshold * samplerate or
                             text_c[-1] == "." or text_c[-1] == "?"):
                         res_list.append(
                             self.makeDataEntry(data_entry, data, vtt_file, samplerate, text_c, start_c, end_c))
@@ -101,7 +92,7 @@ class SplitByVttSentence(BaseParallelProcessor):
                 self.duration_field: data_sample.shape[0] / samplerate,
                 self.text_field: text_c.strip(),
                 }
-        for proxy_field in self.proxy_fields:
-            data[proxy_field] = data_entry[proxy_field]
+        for field in self.additional_fields:
+            data[field] = data_entry[field]
         return DataEntry(data=data)
 
