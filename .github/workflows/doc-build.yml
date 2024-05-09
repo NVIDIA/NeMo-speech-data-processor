@@ -33,7 +33,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements/main.txt
           pip install -r requirements/docs.txt
       - name: Build docs with sphinx
         run: |
