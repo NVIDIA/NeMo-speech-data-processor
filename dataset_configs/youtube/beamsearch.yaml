@@ -1,0 +1,20 @@
+processors_to_run: "0:" 
+workspace_dir: ???
+
+processors:
+  - _target_: sdp.processors.nemo.beamsearch_inference.BeamsearchTopNInference
+    input_manifest_file: ${workspace_dir}/mls_test_pc.json
+    output_manifest_file: ${workspace_dir}/tmp_manifest1.json
+    input_audio_key: audio_filepath
+    output_text_key: pred_texts
+    batch_size: 16
+    model_path: /mnt/ssd4/ckpts/en/stt_en_fastconformer_hybrid_large_pc/stt_en_fastconformer_hybrid_large_pc.nemo
+
+
+  - _target_: sdp.processors.nemo.beamsearch_inference.RestorePCbyTopN
+    output_manifest_file: ${workspace_dir}/tmp_manifest2.json
+    text_without_pc_key: text
+    texts_with_pc_key: pred_texts
+    output_text_key: pred_text
+    punctuation: ",.?"
+    do_lower: true
