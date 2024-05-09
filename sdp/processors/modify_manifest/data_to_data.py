@@ -76,10 +76,10 @@ class FfmpegConvert(BaseParallelProcessor):
         converted_audio_dir (str): The directory to store the resampled audio files.
         input_file_key (str): The field in the dataset representing the path to the input video or audio files.
         output_file_key (str): The field in the dataset representing the path to the resampled audio files with ``output_format``. If ``id_key`` is None, the output file path will be ``<resampled_audio_dir>/<input file name without extension>.wav``.
-        id_key (str, optional): The field in the dataset representing the unique ID or identifier for each entry. If ``id_key`` is not None, the output file path will be ``<resampled_audio_dir>/<id_key>.wav``. Defaults to None.
-        output_format (str, optional): output_format (str): Format of the output audio files. Defaults to `wav`.
-        target_samplerate (int, optional): The target sampling rate for the resampled audio. Defaults to 16000.
-        target_nchannels (int, optional): The target number of channels for the resampled audio. Defaults to 1.
+        id_key (str): (Optional) The field in the dataset representing the unique ID or identifier for each entry. If ``id_key`` is not None, the output file path will be ``<resampled_audio_dir>/<id_key>.wav``. Defaults to None.
+        output_format (str): (Optional) Format of the output audio files. Defaults to `wav`.
+        target_samplerate (int): (Optional) The target sampling rate for the resampled audio. Defaults to 16000.
+        target_nchannels (int): (Optional) The target number of channels for the resampled audio. Defaults to 1.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     """

@@ -176,9 +176,6 @@ ASR-based processors
 Data modifications
 ''''''''''''''''''
 
-.. autodata:: sdp.processors.GetAudioDuration
-   :annotation:
-   
 .. autodata:: sdp.processors.SoxConvert
    :annotation:
 
