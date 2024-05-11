@@ -1,7 +1,40 @@
 documentation: |
-  ####################
+  Kazakh Speech Dataset (KSD)
+  ###########
 
-  TBD
+  This config is designed for the
+  `Kazakh Speech Dataset (KSD) <https://www.openslr.org/140/>`_ dataset.
+
+  It performs the following data processing.
+
+  1. Downloads specified audio datsets in zipped format from the website, extracts them and converts all data to the specified manifest format.
+  2. Gets audio durations and then keeps only instances with the duration greater than 0.
+  3. Performs replacement of certain punctuation marks and characters.
+  4. Converts visually identical cyrrilic letters to latin equivalent ones.
+  5. Drops any data that contains symbols not in the supported alphabet.
+  6. If required removes punctuation marks and makes utterances lowercase.
+  7. Splits all the data into test, dev and test split and takes only specified in the config data_split. 
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+  * **data_split**: should be "train", "dev" or "test".
+
+  Note that you can customize any part of this config either directly or from command-line.
+  Here are some common customizations to consider:
+
+  * **remove_pc**: set to True if P&C is not needed. Defaults to False.
+  * **remove_hyphen**: set to True if hyphens is not needed. Defaults to False.
+
+  **Output format**.
+
+  This config dumps the final manifest at ``${workspace_dir}/${data_split}_manifest.json``.
+  The output manifest contains the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription, including punctuation ".,?" and capitalization.
+  * **duration (float)**: audio duration in seconds.
+
 
 processors_to_run: all
 data_split: ???
