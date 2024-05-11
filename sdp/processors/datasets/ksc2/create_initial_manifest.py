@@ -30,7 +30,9 @@ from sdp.utils.common import download_file, extract_archive
 
 
 class CreateInitialManifestKSC2(BaseParallelProcessor):
-    """Processor to create initial manifest for the Kazakh Speech Corpus (KSC) 2
+    """Processor to create initial manifest for the Kazakh Speech Corpus (KSC) 2.
+
+    The dataset should be requested via Google Forms, which can be found here https://issai.nu.edu.kz/kz-speech-corpus/.
 
     Extracts raw data for the specified language and creates an initial manifest
     using the transcripts provided in the raw data.
@@ -50,7 +52,7 @@ class CreateInitialManifestKSC2(BaseParallelProcessor):
             {
                 "audio_filepath": <path to the audio file>,
                 "text": <transcription (with capitalization and punctuation)>,
-                "soutce": <source of the given data>,
+                "source": <source of the given data>,
             }
     """
 

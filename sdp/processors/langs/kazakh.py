@@ -42,7 +42,6 @@ class LatinToCyrillic(BaseParallelProcessor):
         self.text_key = text_key
 
     def process_dataset_entry(self, data_entry) -> List:
-        drop_this_utt = False
         latin_counter = collections.defaultdict(int)
 
         text_in = data_entry[self.text_key]

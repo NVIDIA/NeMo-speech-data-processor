@@ -53,7 +53,7 @@ class CreateInitialManifestSLR140(BaseParallelProcessor):
 
     Args:
         raw_data_dir (str): where to put raw downloaded data.
-        audios (list): should be the subset of the AVAILABLE_AUDIOS
+        audios (list | str): should be the subset of the AVAILABLE_AUDIOS or a string "all" for taking all the available audios
 
     Returns:
         This processor generates an initial manifest file with the following fields::
