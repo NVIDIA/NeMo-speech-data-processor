@@ -17,10 +17,10 @@
 import csv
 import glob
 import os
+from collections import defaultdict
 from pathlib import Path
 from typing import Dict, Tuple
 
-import sox
 from sox import Transformer
 from tqdm.contrib.concurrent import process_map
 
@@ -47,7 +47,7 @@ class CreateInitialManifestKSC2(BaseParallelProcessor):
         target_nchannels (int): number of channels to create during resampling process.
             Defaults to 1.
     Returns:
-        This processor generates an initial manifest file with the following fields::
+        This processor generates an initial manifest file with the following fields:
 
             {
                 "audio_filepath": <path to the audio file>,
@@ -106,7 +106,7 @@ class CreateInitialManifestKSC2(BaseParallelProcessor):
 
         dataset_entries = []
 
-        without_text = {}
+        without_text = defaultdict(int)
 
         for audio_filepath in self.data_split_dir.rglob('*.flac'):
             filename = audio_filepath.stem
@@ -122,7 +122,7 @@ class CreateInitialManifestKSC2(BaseParallelProcessor):
                 with open(transcribed_filename, "rt", encoding="utf8") as txtfile:
                     text = ' '.join(txtfile.readlines())
             else:
-                without_text[audio_filepath.parent] = without_text.get(audio_filepath.parent, 0) + 1
+                without_text[audio_filepath.parent] += 1
                 continue
 
             entry = {'audio_filepath': audio_filepath.as_posix(), 'text': text, 'source': source}
