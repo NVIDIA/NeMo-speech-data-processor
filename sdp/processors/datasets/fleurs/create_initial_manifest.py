@@ -113,7 +113,7 @@ class CreateInitialManifestFleurs(BaseProcessor):
         return entries
 
     def process_data(self, data_folder: str, manifest_file: str) -> None:
-        entries = self.process_transcript(os.path.join(data_folder, self.split + ".tsv"))
+        entries = self.process_transcript(os.path.join(data_folder, self.split + "/" + self.split + ".tsv"))
 
         with open(manifest_file, "w", encoding="utf-8") as fout:
             for m in entries:
