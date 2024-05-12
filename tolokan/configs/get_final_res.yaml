@@ -4,6 +4,9 @@ documentation: |
 processors_to_run: all
 workspace_dir: ???
 API_KEY: "1V0v8tbFtwPhDVMbN3cvcQ.045e.k93FVRUudCOHplT6OHcDNjc-k8V_rSFr8l5_jLyo4rLT9W4fgabM40EyompNakPZ0uU-_sgc0hKHzrEge5AJNy5MwZCu93BHoTJGOS1lwqE"
+pool_id: 42824822
+# pool_id: 42939416
+# pool_id: 42949209
 
 processors:
   - _target_: tolokan.processors.GetTolokaResults
@@ -11,23 +14,32 @@ processors:
     input_data_file: ${workspace_dir}/data_file.json
     status: ACCEPTED
     output_dir: ${workspace_dir}/results
-    output_manifest_file: ${workspace_dir}/result_manifest.json
+    output_manifest_file: ${workspace_dir}/manifest-1.json
     API_KEY: ${API_KEY}
     platform: "PRODUCTION"
-    # pool_id: 42824822
-    # pool_id: 42939416
-    pool_id: 42949209
+    pool_id: ${pool_id}
 
-  - _target_: sdp.processors.ASRSeamless
-    input_manifest_file: ${workspace_dir}/result_manifest.json
-    input_field: audio_filepath
-    output_field: pred_text
-    output_manifest_file: ${workspace_dir}/result_manifest_pred.json
-    limit: 100
+  - _target_: sdp.processors.ASRFileCheck
+    audio_filepath_key: audio_filepath  
+    corrupted_audio_dir: ${workspace_dir}/curr
+    output_manifest_file: ${workspace_dir}/manifest0.json
+
+  - _target_: sdp.processors.AudioResampler
+    output_manifest_file: ${workspace_dir}/manifest1.json
+    resampled_audio_dir: ${workspace_dir}/16k
+    audio_filepath_key: "audio_filepath"
+    target_samplerate: 16000
+    target_nchannels: 1
+
+  # - _target_: sdp.processors.ASRSeamless
+  #   input_manifest_file: ${workspace_dir}/result_manifest.json
+  #   input_field: audio_filepath
+  #   output_field: pred_text
+  #   output_manifest_file: ${workspace_dir}/result_manifest_pred.json
+  #   limit: 100
 
   - _target_: sdp.processors.DropIfRegexMatch
-    input_manifest_file: ${workspace_dir}/result_manifest_pred.json
-    output_manifest_file: ${workspace_dir}/result_manifest_clean.json
+    output_manifest_file: ${workspace_dir}/manifest2.json
     text_key: "user_id"
     regex_patterns:
       - "f00a521ecdfae90d3749db2bc94ba47a"
@@ -48,10 +60,29 @@ processors:
       - "2b97303bb6dc587988016e130c71bbb5"
       - "86e79eda49665b1810ed07084ca5fe2c"
 
+  - _target_: sdp.processors.MakeSentence
+    text_key: "text"
+    end_symbol: ":"
+    make_uppercase: True
+    output_manifest_file: ${workspace_dir}/manifest3.json    
+
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${workspace_dir}/manifest4.json
+    fields_to_keep: ["text", "audio_filepath"]
+
   - _target_: sdp.processors.GetAudioDuration
     audio_filepath_field: audio_filepath
     duration_field: duration
-    input_manifest_file: ${workspace_dir}/result_manifest_clean.json
-    output_manifest_file: ${workspace_dir}/evn_mag_manifest.json
+    output_manifest_file: ${workspace_dir}/evn_mag_manifest_${pool_id}.json
 
 
+  # - _target_: sdp.processors.SubRegex
+  #   output_manifest_file: ${workspace_dir}/evn_mag_manifest_${pool_id}1.json
+  #   text_key: text
+  #   regex_params_list:
+  #     - {"pattern": "«", "repl": ""}
+  #     - {"pattern": "»", "repl": ""}
+
+  # - _target_: sdp.processors.GetWER
+  #   pred_text_key: model_transcribed_text
+  #   output_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json

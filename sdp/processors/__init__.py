@@ -51,12 +51,15 @@ from sdp.processors.modify_manifest.create_manifest import (
     ExcelToJsonConverter,
 )
 from sdp.processors.modify_manifest.data_to_data import (
+    ASRFileCheck,
+    AudioResampler,
     CopyManifestData,
     CountNumWords,
     ExtractFromBrackets,
     GetAudioDuration,
     GetWER,
     InsIfASRInsertion,
+    MakeSentence,
     ReadDocxLines,
     SplitLineBySentence,
     SubIfASRSubstitution,

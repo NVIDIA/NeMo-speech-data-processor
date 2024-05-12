@@ -13,16 +13,24 @@
 # limitations under the License.
 
 import collections
+import json
 import os
 import re
 import shutil
 from typing import Dict, List
 
 import soundfile
+import torchaudio
 from docx import Document
+from sox import Transformer
+from tqdm import tqdm
 
 from sdp.logging import logger
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.processors.base_processor import (
+    BaseParallelProcessor,
+    BaseProcessor,
+    DataEntry,
+)
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
 from sdp.utils.metrics_computation import (
@@ -591,4 +599,134 @@ class GetWER(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry) -> List:
         data_entry['wer'] = get_wer(data_entry[self.text_key], data_entry[self.pred_text_key])
+        return [DataEntry(data=data_entry)]
+
+
+class MakeSentence(BaseParallelProcessor):
+    """
+    Takes string from text string, makes first symbol uppercae and adds end_symbol if last symbol is alpha.
+    """
+
+    def __init__(
+        self,
+        text_key: str = "text",
+        end_symbol: str = ":",
+        make_uppercase: bool = True,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.make_uppercase = make_uppercase
+        self.text_key = text_key
+        self.end_symbol = end_symbol
+
+    def process_dataset_entry(self, data_entry) -> List:
+        if self.make_uppercase:
+            data_entry[self.text_key] = data_entry[self.text_key][0].upper() + data_entry[self.text_key][1:]
+
+        # Check if the last character is not a punctuation and if so, add the end_symbol
+        if data_entry[self.text_key][-1].isalpha():
+            data_entry[self.text_key] += self.end_symbol
+        return [DataEntry(data=data_entry)]
+
+
+class ASRFileCheck(BaseProcessor):
+    def __init__(self, audio_filepath_key: str = "audio_filepath", corrupted_audio_dir: str = None, **kwargs):
+        super().__init__(**kwargs)
+        self.audio_filepath_key = audio_filepath_key
+        self.corrupted_audio_dir = corrupted_audio_dir
+        self.failed_files = []
+
+    def process(self):
+        """Check each file listed in the manifest to ensure it can be loaded with torchaudio."""
+        with open(self.input_manifest_file, 'r') as f:
+            lines = f.readlines()
+
+        entries = []
+        total_lines = len(lines)
+
+        for idx in tqdm(range(total_lines), desc="Checking Audio Files"):
+            line = lines[idx]
+            entry = json.loads(line)
+            try:
+                # Attempt to load the audio file to check if it is corrupted
+                torchaudio.load(entry[self.audio_filepath_key])
+                entries.append(entry)  # File is good, append to entries list
+            except Exception as e:
+                print(f"Failed to load {entry[self.audio_filepath_key]}: {e}")
+                self.failed_files.append(entry[self.audio_filepath_key])  # Log failed file path
+
+                # Move or delete the corrupted audio file
+                if self.corrupted_audio_dir:
+                    # Ensure the directory exists
+                    os.makedirs(self.corrupted_audio_dir, exist_ok=True)
+                    dest_path = os.path.join(
+                        self.corrupted_audio_dir, os.path.basename(entry[self.audio_filepath_key])
+                    )
+                    os.rename(entry[self.audio_filepath_key], dest_path)
+                    print(f"Moved corrupted file to: {dest_path}")
+                else:
+                    os.remove(entry[self.audio_filepath_key])
+                    print(f"Deleted corrupted file: {entry[self.audio_filepath_key]}")
+
+        # Output non-corrupted entries to a new manifest file
+        with open(self.output_manifest_file, 'w', encoding='utf-8') as f_out:
+            for entry in entries:
+                json.dump(entry, f_out, ensure_ascii=False)
+                f_out.write("\n")
+
+        if self.failed_files:
+            print(f"Failed to process the following files: {self.failed_files}")
+
+
+class AudioResampler(BaseParallelProcessor):
+    """
+    Class to handle resampling of audio files.
+
+    Args:
+        resampled_audio_dir (str): Directory where resampled audio files will be saved.
+        target_samplerate (int): Desired sample rate (Hz).
+        target_nchannels (int): Desired number of audio channels.
+
+    Methods:
+        process_dataset_entry(data_entry): Processes a single data entry to resample audio.
+    """
+
+    def __init__(
+        self,
+        resampled_audio_dir: str,
+        audio_filepath_key: str = "audio_filepath",
+        target_samplerate: int = 16000,
+        target_nchannels: int = 1,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.audio_filepath_key = audio_filepath_key
+        self.resampled_audio_dir = resampled_audio_dir
+        self.target_samplerate = target_samplerate
+        self.target_nchannels = target_nchannels
+        os.makedirs(resampled_audio_dir, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        """
+        Resamples a single audio file based on the specified sample rate and number of channels.
+
+        Args:
+            data_entry (tuple): A tuple containing the original audio file path and its transcription.
+
+        Returns:
+            dict: A dictionary containing the path to the resampled audio file, its duration, and the transcription text.
+        """
+        file_name = os.path.splitext(os.path.basename(data_entry[self.audio_filepath_key]))[0]
+
+        audio_path = data_entry[self.audio_filepath_key]
+        output_wav_path = os.path.join(self.resampled_audio_dir, file_name + ".wav")
+
+        if not os.path.exists(output_wav_path):
+            tfm = Transformer()
+            tfm.rate(samplerate=self.target_samplerate)
+            tfm.channels(n_channels=self.target_nchannels)
+            tfm.build(input_filepath=audio_path, output_filepath=output_wav_path)
+
+        data_entry[self.audio_filepath_key] = output_wav_path
+
         return [DataEntry(data=data_entry)]
