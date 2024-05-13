@@ -24,7 +24,7 @@ from sdp.processors.base_processor import BaseProcessor, DataEntry
 from sdp.utils.common import download_file, extract_archive
 
 
-def get_fleurs_url_list(lang: str, split: list[str]) -> list[str]:
+def get_fleurs_url_list(lang: str, split: str) -> list[str]:
     # examples
     # "https://huggingface.co/datasets/google/fleurs/resolve/main/data/hy_am/audio/dev.tar.gz",
     # "https://huggingface.co/datasets/google/fleurs/resolve/main/data/hy_am/dev.tsv"
@@ -113,16 +113,7 @@ class CreateInitialManifestFleurs(BaseProcessor):
         return entries
 
     def process_data(self, data_folder: str, manifest_file: str) -> None:
-        files = []
-        entries = []
-
-        for root, _, filenames in os.walk(data_folder):
-            for filename in fnmatch.filter(filenames, "*.tsv"):
-                files.append(os.path.join(root, filename))
-
-        for file in files:
-            result = self.process_transcript(file)
-            entries.extend(result)
+        entries = self.process_transcript(os.path.join(data_folder, self.split + "/" + self.split + ".tsv"))
 
         with open(manifest_file, "w", encoding="utf-8") as fout:
             for m in entries:
@@ -136,8 +127,8 @@ class CreateInitialManifestFleurs(BaseProcessor):
         # downloading all files
         for file_url in get_fleurs_url_list(self.lang, self.split):
             download_file(file_url, str(dst_folder))
-        for data_file in glob.glob(f'{dst_folder}/*.tar.gz'):
-            extract_archive(str(data_file), str(dst_folder), force_extract=True)
+
+        extract_archive(f'{dst_folder}/{self.split}.tar.gz', str(dst_folder), force_extract=True)
 
         # Organizing files into their respective folders
         target_folder = os.path.join(dst_folder, self.split)
