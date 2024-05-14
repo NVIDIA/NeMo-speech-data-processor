@@ -31,6 +31,9 @@ download the data archive and specify its location with the ``raw_data_dir`` par
 * **Portuguese**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/portuguese/mcv/config.yaml>`__ |
   :doc:`documentation <config-docs/portuguese/mcv/config>`
+* **Kazakh**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/kazakh/mcv/config.yaml>`__ |
+  :doc:`documentation <config-docs/kazakh/mcv/config>`
 
 .. toctree:: 
    :hidden:
@@ -38,6 +41,7 @@ download the data archive and specify its location with the ``raw_data_dir`` par
    config-docs/italian/mcv/config
    config-docs/spanish_pc/mcv12/config
    config-docs/portuguese/mcv/config
+   config-docs/kazakh/mcv/config
 
 Multilingual LibriSpeech (MLS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -215,3 +219,43 @@ MTEDx
 
    config-docs/portuguese/mtedx/config
 
+Kazakh Speech Dataset (SLR140)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://www.openslr.org/140/
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/kazakh/slr140/config.yaml>`__ |
+:doc:`documentation <config-docs/kazakh/slr140/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/kazakh/slr140/config
+
+Kazakh Speech Corpus (SLR102)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://www.openslr.org/102/
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/kazakh/slr102/config.yaml>`__ |
+:doc:`documentation <config-docs/kazakh/slr102/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/kazakh/slr102/config
+
+Kazakh Speech Corpus 2 (KSC2)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://issai.nu.edu.kz/kz-speech-corpus/
+
+**Required manual steps:** You need to request the dataset from the website and after getting approval download it manually from Dropbox.
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/kazakh/ksc2/config.yaml>`__ |
+:doc:`documentation <config-docs/kazakh/ksc2/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/kazakh/ksc2/config
