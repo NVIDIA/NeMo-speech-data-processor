@@ -1,3 +1,4 @@
 accelerate
 openai-whisper
 transformers>=0.2.1
+huggingface_hub

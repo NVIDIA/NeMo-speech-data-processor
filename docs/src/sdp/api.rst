@@ -69,6 +69,18 @@ SLR83
 .. autodata:: sdp.processors.CustomDataSplitSLR83
    :annotation:
 
+MTEDx
+'''
+
+.. autodata:: sdp.processors.CreateInitialManifestMTEDX
+   :annotation:
+
+Coraa
+'''
+
+.. autodata:: sdp.processors.CreateInitialManifestCORAA
+   :annotation:
+
 .. TODO: Fisher config is not accessible - should we require moving everything to SDP
 ..       Probably need some policy on shat lives in main folder vs configs.
 ..       To control the number of processors we support.
