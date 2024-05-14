@@ -43,6 +43,17 @@ def data_check_fn_mcv(raw_data_dir: str, archive_file_stem: str) -> None:
     if not expected_file.exists():
         raise ValueError(f"No such file {str(expected_file)}")
 
+def data_check_fn_mtedx(raw_data_dir: str, language_id: str) -> None:
+    """Raises error if do not find expected data"""
+    expected_file = Path(raw_data_dir) / f"mtedx_{language_id}.tgz"
+    if not expected_file.exists():
+        raise ValueError(f"No such file {str(expected_file)}")
+
+def data_check_fn_coraa(raw_data_dir: str) -> None:
+    """Raises error if do not find expected data"""
+    expected_file = Path(raw_data_dir) / "train_dividido/train.part1.rar"
+    if not expected_file.exists():
+        raise ValueError(f"No such file {str(expected_file)}")
 
 def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
     """Raises error if do not find expected data.
@@ -93,12 +104,19 @@ def get_test_cases():
 
     return [
         (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
+        (f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", partial(data_check_fn_mls, language="portuguese")),
         # above one is without p&c, but it's also important to check p&c version as it's substantially different
         (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
         (
             f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml",
             partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es"),
         ),
+        (
+            f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml",
+            partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt"),
+        ),
+        (f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", partial(data_check_fn_mtedx, language_id="pt")),
+        (f"{DATASET_CONFIGS_ROOT}/portuguese/coraa/config.yaml", partial(data_check_fn_coraa)),
         (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
         # audio will be downloaded on the fly, so nothing to check here
         (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
