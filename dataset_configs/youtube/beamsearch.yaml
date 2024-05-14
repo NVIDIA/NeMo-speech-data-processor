@@ -3,12 +3,14 @@ workspace_dir: ???
 
 processors:
   - _target_: sdp.processors.nemo.beamsearch_inference.BeamsearchTopNInference
-    input_manifest_file: ${workspace_dir}/mls_test_pc.json
+    in_memory_chunksize: 10000
+    input_manifest_file: /mnt/md1/YTDS/ES/clean_data/es_manifest.json
     output_manifest_file: ${workspace_dir}/tmp_manifest1.json
     input_audio_key: audio_filepath
     output_text_key: pred_texts
-    batch_size: 16
-    model_path: /mnt/ssd4/ckpts/en/stt_en_fastconformer_hybrid_large_pc/stt_en_fastconformer_hybrid_large_pc.nemo
+    batch_size: 64
+    device: cuda
+    model_path: /mnt/md1/YTDS/ES/lm/stt_es_fastconformer_hybrid_large_pc.nemo
 
 
   - _target_: sdp.processors.nemo.beamsearch_inference.RestorePCbyTopN

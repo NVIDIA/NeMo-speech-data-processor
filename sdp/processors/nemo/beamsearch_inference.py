@@ -77,13 +77,13 @@ class EvalBeamSearchNGramConfig:
     ctc_decoding: CTCDecodingConfig = field(default_factory=lambda: CTCDecodingConfig(
         strategy="flashlight", # gready, beam = pyctcdecode, flashlight
         beam = ctc_beam_decoding.BeamCTCInferConfig(
-            nemo_kenlm_path="/mnt/ssd4/ckpts/en/stt_en_fastconformer_hybrid_large_pc/mls_test_pc_lm.kenlm",
+            nemo_kenlm_path="/mnt/md1/YTDS/ES/lm/lm.kenlm",
             beam_size=4,
             beam_alpha=0.5, # LM weight
             beam_beta=0.5, # length weight
             return_best_hypothesis = False,
             flashlight_cfg=ctc_beam_decoding.FlashlightConfig(
-                lexicon_path = "/mnt/ssd4/ckpts/en/stt_en_fastconformer_hybrid_large_pc/mls_test_pc_lm.flashlight_lexicon"),
+                lexicon_path = "/mnt/md1/YTDS/ES/lm/lm.flashlight_lexicon"),
             pyctcdecode_cfg=ctc_beam_decoding.PyCTCDecodeConfig(),
             ),
         ))
@@ -127,6 +127,7 @@ class BeamsearchTopNInference(BaseProcessor):
         device: Optional[str] = None,
         pretrained_name: Optional[str] = None,
         model_path: Optional[str] = None,
+        in_memory_chunksize: int = 100000,
         cfg: Optional[EvalBeamSearchNGramConfig] = EvalBeamSearchNGramConfig(),
         **kwargs,
     ):
@@ -138,6 +139,7 @@ class BeamsearchTopNInference(BaseProcessor):
         self.output_text_key = output_text_key
         self.device = device
         self.batch_size = batch_size
+        self.in_memory_chunksize=in_memory_chunksize
         self.cfg=cfg
 
         # verify self.pretrained_name/model_path
@@ -146,6 +148,32 @@ class BeamsearchTopNInference(BaseProcessor):
         if self.pretrained_name is not None and self.model_path is not None:
             raise ValueError("pretrained_name and model_path cannot both be specified")
     
+    def _chunk_manifest(self):
+        """Splits the manifest into smaller chunks defined by ``in_memory_chunksize``.
+        """
+        manifest_chunk = []
+        for idx, data_entry in enumerate(self.read_manifest(), 1):
+            manifest_chunk.append(data_entry)
+            if idx % self.in_memory_chunksize == 0:
+                yield manifest_chunk
+                manifest_chunk = []
+        if len(manifest_chunk) > 0:
+            yield manifest_chunk
+
+    def read_manifest(self):
+        """Reading the input manifest file.
+
+        .. note::
+            This function should be overridden in the "initial" class creating
+            manifest to read from the original source of data.
+        """
+        if self.input_manifest_file is None:
+            raise NotImplementedError("Override this method if the processor creates initial manifest")
+
+        with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
+            for line in fin:
+                yield json.loads(line)
+
     def process(self):
         if self.pretrained_name:
             model = EncDecHybridRNNTCTCModel.from_pretrained(self.pretrained_name)
@@ -160,66 +188,69 @@ class BeamsearchTopNInference(BaseProcessor):
         else:
             model = model.to(self.device)
 
-        manifest = load_manifest(Path(self.input_manifest_file))
-        audio_file_paths = [x[self.input_audio_key] for x in manifest]
-
-
-        if isinstance(model, EncDecHybridRNNTCTCModel):
-            model.change_decoding_strategy(decoding_cfg=None, decoder_type="ctc")
-        else:
-            model.change_decoding_strategy(None)
-
-        # Override the beam search config with current search candidate configuration
-        model.cfg.decoding = CTCDecodingConfig(
-            strategy=self.cfg.ctc_decoding.strategy,
-            preserve_alignments=self.cfg.ctc_decoding.preserve_alignments,
-            compute_timestamps=self.cfg.ctc_decoding.compute_timestamps,
-            word_seperator=self.cfg.ctc_decoding.word_seperator,
-            ctc_timestamp_type=self.cfg.ctc_decoding.ctc_timestamp_type,
-            batch_dim_index=self.cfg.ctc_decoding.batch_dim_index,
-            greedy=self.cfg.ctc_decoding.greedy,
-            confidence_cfg=self.cfg.ctc_decoding.confidence_cfg,
-            temperature=self.cfg.ctc_decoding.temperature,
-            beam = ctc_beam_decoding.BeamCTCInferConfig(beam_size=self.cfg.ctc_decoding.beam.beam_size,
-                                                        beam_alpha=self.cfg.ctc_decoding.beam.beam_alpha,
-                                                        beam_beta=self.cfg.ctc_decoding.beam.beam_beta,
-                                                        word_kenlm_path=self.cfg.ctc_decoding.beam.word_kenlm_path,
-                                                        nemo_kenlm_path=self.cfg.ctc_decoding.beam.nemo_kenlm_path,
-                                                        preserve_alignments=self.cfg.ctc_decoding.beam.preserve_alignments,
-                                                        compute_timestamps=self.cfg.ctc_decoding.beam.compute_timestamps,
-                                                        flashlight_cfg=self.cfg.ctc_decoding.beam.flashlight_cfg,
-                                                        pyctcdecode_cfg=self.cfg.ctc_decoding.beam.pyctcdecode_cfg,
-                                                        return_best_hypothesis=self.cfg.ctc_decoding.beam.return_best_hypothesis),
-            )
-        # Update model's decoding strategy
-        if isinstance(model, EncDecHybridRNNTCTCModel):
-            model.change_decoding_strategy(model.cfg.decoding, decoder_type='ctc')
-        else:
-            model.change_decoding_strategy(model.cfg.decoding)
-
-
-        with torch.no_grad():
-            if isinstance(model, EncDecHybridRNNTCTCModel):
-                model.cur_decoder = 'ctc'
-
-            override_cfg = model.get_transcribe_config()
-            override_cfg.batch_size = self.batch_size
-            override_cfg.return_hypotheses = True
-
-            all_hypotheses = model.transcribe(audio_file_paths, override_config=override_cfg)
-            if type(all_hypotheses) == tuple and len(all_hypotheses) == 2: # if transcriptions form a tuple of (best_hypotheses, all_hypotheses)
-                all_hypotheses = all_hypotheses[1]
-
-        pred_texts = [] 
-        for hypotheses in all_hypotheses:
-            pred_text = [hyp.text for hyp in hypotheses]
-            pred_texts.append(pred_text)
-
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
-        with Path(self.output_manifest_file).open('w') as f:
-            for item, t in zip(manifest, pred_texts):
-                item[self.output_text_key] = t
-                f.write(json.dumps(item, ensure_ascii=False) + '\n')
+        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
+
+            for manifest in self._chunk_manifest():
+
+                audio_file_paths = [x[self.input_audio_key] for x in manifest]
+
+
+                if isinstance(model, EncDecHybridRNNTCTCModel):
+                    model.change_decoding_strategy(decoding_cfg=None, decoder_type="ctc")
+                else:
+                    model.change_decoding_strategy(None)
+
+                # Override the beam search config with current search candidate configuration
+                model.cfg.decoding = CTCDecodingConfig(
+                    strategy=self.cfg.ctc_decoding.strategy,
+                    preserve_alignments=self.cfg.ctc_decoding.preserve_alignments,
+                    compute_timestamps=self.cfg.ctc_decoding.compute_timestamps,
+                    word_seperator=self.cfg.ctc_decoding.word_seperator,
+                    ctc_timestamp_type=self.cfg.ctc_decoding.ctc_timestamp_type,
+                    batch_dim_index=self.cfg.ctc_decoding.batch_dim_index,
+                    greedy=self.cfg.ctc_decoding.greedy,
+                    confidence_cfg=self.cfg.ctc_decoding.confidence_cfg,
+                    temperature=self.cfg.ctc_decoding.temperature,
+                    beam = ctc_beam_decoding.BeamCTCInferConfig(beam_size=self.cfg.ctc_decoding.beam.beam_size,
+                                                                beam_alpha=self.cfg.ctc_decoding.beam.beam_alpha,
+                                                                beam_beta=self.cfg.ctc_decoding.beam.beam_beta,
+                                                                word_kenlm_path=self.cfg.ctc_decoding.beam.word_kenlm_path,
+                                                                nemo_kenlm_path=self.cfg.ctc_decoding.beam.nemo_kenlm_path,
+                                                                preserve_alignments=self.cfg.ctc_decoding.beam.preserve_alignments,
+                                                                compute_timestamps=self.cfg.ctc_decoding.beam.compute_timestamps,
+                                                                flashlight_cfg=self.cfg.ctc_decoding.beam.flashlight_cfg,
+                                                                pyctcdecode_cfg=self.cfg.ctc_decoding.beam.pyctcdecode_cfg,
+                                                                return_best_hypothesis=self.cfg.ctc_decoding.beam.return_best_hypothesis),
+                    )
+                # Update model's decoding strategy
+                if isinstance(model, EncDecHybridRNNTCTCModel):
+                    model.change_decoding_strategy(model.cfg.decoding, decoder_type='ctc')
+                else:
+                    model.change_decoding_strategy(model.cfg.decoding)
+
+
+                with torch.no_grad():
+                    if isinstance(model, EncDecHybridRNNTCTCModel):
+                        model.cur_decoder = 'ctc'
+
+                    override_cfg = model.get_transcribe_config()
+                    override_cfg.batch_size = self.batch_size
+                    override_cfg.return_hypotheses = True
+
+                    all_hypotheses = model.transcribe(audio_file_paths, override_config=override_cfg)
+                    if type(all_hypotheses) == tuple and len(all_hypotheses) == 2: # if transcriptions form a tuple of (best_hypotheses, all_hypotheses)
+                        all_hypotheses = all_hypotheses[1]
+
+                pred_texts = [] 
+                for hypotheses in all_hypotheses:
+                    pred_text = [hyp.text for hyp in hypotheses]
+                    pred_texts.append(pred_text)
+
+
+                for item, t in zip(manifest, pred_texts):
+                    item[self.output_text_key] = t
+                    fout.write(json.dumps(item, ensure_ascii=False) + '\n')
 
 class RestorePCbyTopN(BaseParallelProcessor):
     """
