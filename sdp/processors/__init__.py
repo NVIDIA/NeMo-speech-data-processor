@@ -63,6 +63,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
+    SearchRegex,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,

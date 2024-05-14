@@ -577,3 +577,49 @@ class SubRegex(BaseParallelProcessor):
         for word, count in total_counter_sorted.items():
             logger.info(f"{word} {count}")
         super().finalize(metrics)
+
+
+class SearchRegex(BaseParallelProcessor):
+    """Searches for patterns in the input string.
+
+    Args:
+        search_patterns (list[str]): List of search patterns.
+        text_key (str): Key in the data entry containing the text to search.
+        output_key (str): Key in the data entry to store the output value indicating if any pattern has been found.
+    """
+
+    def __init__(
+        self,
+        search_patterns: List[str],
+        text_key: str = "text",
+        output_key: str = "pattern_found",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.search_patterns = search_patterns
+        self.text_key = text_key
+        self.output_key = output_key
+
+    def process_dataset_entry(self, data_entry) -> List:
+        """Searches for each pattern in the input text."""
+        search_results = {}
+
+        text_in = data_entry[self.text_key]
+        pattern_found = False
+
+        for pattern in self.search_patterns:
+            found = bool(re.search(pattern, text_in))
+            search_results[pattern] = found
+            if found:
+                pattern_found = True
+
+        data_entry[self.output_key] = pattern_found
+
+        return [DataEntry(data=data_entry, metrics=pattern_found)]
+
+    def finalize(self, metrics):
+        """Reports counts of how many data entries contained patterns."""
+        print(f"Samples amount which contain patterns: {sum(metrics)}")
+        print(f"Samples amount which don't contain patterns: {len(metrics) - sum(metrics)}")
+        
+        super().finalize(metrics)
