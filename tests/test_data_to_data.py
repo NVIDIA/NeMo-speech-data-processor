@@ -19,6 +19,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
+    SearchRegex
 )
 
 test_params_list = []
@@ -90,6 +91,16 @@ test_params_list.extend(
     ]
 )
 
+test_params_list.extend(
+    [
+        (
+            SearchRegex,
+            {"search_patterns": ["[^a-zA-Z\\s]+"]},
+            {"text": "Hola, bienvenido seas a este Canal de Ministerio Latino por Cristo."},
+            {"text": "Hola, bienvenido seas a este Canal de Ministerio Latino por Cristo.", "pattern_found": True},
+        ),
+    ]
+)
 
 @pytest.mark.parametrize("test_class,class_kwargs,test_input,expected_output", test_params_list, ids=str)
 def test_data_to_data(test_class, class_kwargs, test_input, expected_output):
