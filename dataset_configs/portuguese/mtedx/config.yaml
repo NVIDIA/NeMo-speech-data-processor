@@ -1,0 +1,101 @@
+documentation: |
+  MTEDX Portuguese
+  ################
+  The config  performs the following data processing.
+
+  1. Downloads and extracts the data from the "https://www.openslr.org/100/" in Portuguese
+  2. Converts all flac audio files to wav format.
+  3. Splits audio by the given time steps in vtt files.
+  4. Replaces certain non-supported characters, abbreviations and  punctuation marks with equivalent supported versions.
+  5. Drops any data that contains high/low character occurence.
+  6. Drops any data that contains symbols not in the supported alphabet.
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+  * **raw_data_dir**: specify in which folder the data will be downladed.
+  * **data_split**: should be "train", "valid" or "test".
+
+  **Output format**.
+
+  This config dumps the final manifest at ``${workspace_dir}/${data_split}_manifest.json``.
+  The output manifest contains the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription, including punctuation ".,?" and capitalization.
+  * **duration (float)**: audio duration in seconds.
+
+
+
+processors_to_run: all
+workspace_dir: ???
+data_split: ???
+final_manifest: ???
+
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestMTEDX
+    raw_data_dir: ${workspace_dir}/raw_data
+    data_split: ${data_split}
+    language_id: pt
+    already_extracted: False
+    output_manifest_file: ${workspace_dir}/${data_split}_manifest0.json
+  
+  - _target_: sdp.processors.FfmpegConvert
+    resampled_audio_dir: ${workspace_dir}/resampled
+    input_field: audio_filepath
+    output_field: audio_filepath
+  
+  - _target_: sdp.processors.datasets.commoncrawl.SplitByVttSentence
+    output_manifest_file: ${workspace_dir}/manifest_vtt.json
+    input_manifest_file: ${workspace_dir}/${data_split}_manifest0.json
+    splited_audio_dir: ${workspace_dir}/splited
+    source_audio_field: audio_filepath
+    target_audio_field: audio_filepath
+    duration_field: duration
+    text_field: text
+    vtt_field: vtt_filepath
+    proxy_fields: []
+    duration_threshold: 20.0
+  
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      - {"pattern": "(Aplausos)", "repl": " "}
+      - {"pattern": "(Risos)", "repl": " "}
+      - {"pattern": '[\-\‐\‑\–\—\―\"]', "repl": " "}
+      - {"pattern": "'", "repl": " "}
+      - {"pattern": '[\$\&\¡\(\)]', "repl": " "}
+      - {"pattern": '[\«\°\´\·\»]', "repl": " "}
+      - {"pattern": '[\«\°\´\·\»]', "repl": " "}
+      - {"pattern": '[\‘\’\“\”\„]', "repl": " "}
+      - {"pattern": '[\:\;\`\ʻ]', "repl": " "}
+      - {"pattern": "!", "repl": "."}
+      - {"pattern": "…\\s$", "repl": "."} # '\\s' is to to account for the fact that SDP insert spaces at start and end
+      - {"pattern": "\\.{2,20}\\s$", "repl": "."} # '\\s' is to to account for the fact that SDP insert spaces at start and end
+ 
+      # remove remaining repeated periods since most of the time they are unnecessary in this data
+      - {"pattern": "\\.{2,20}", "repl": " "}
+ 
+      - {"pattern": " ([Pp])rofa ", "repl" : ' \1rofessora '}
+      - {"pattern": " ([Ss])ra.", "repl" : ' \1enhora'}
+      - {"pattern": " ([Ss])rta.", "repl": '\1enhorita'}
+      - {"pattern": " ([Ss])r.", 'repl': '\1enhor' }
+      - {"pattern": " ([Dd])r ", "repl" : ' \1octor '}
+      - {"pattern": " ([Dd])r.", "repl" : ' \1octor '}
+      - {"pattern": " ([Dd])ra ", "repl" : ' \1octora '}
+ 
+      - {"pattern": " um km ", "repl" : " um quilômetro "}
+      - {"pattern": " km ", "repl" : " quilômetros "}
+  
+  - _target_: sdp.processors.DropHighLowDuration
+    high_duration_threshold: 20
+    low_duration_threshold: 1
+  
+  - _target_: sdp.processors.DropHighLowCharrate
+    high_charrate_threshold: 21
+    low_charrate_threshold: 1
+ 
+  - _target_: sdp.processors.DropNonAlphabet
+    output_manifest_file: ${final_manifest}
+    alphabet: " ÁÃÀÂÇÉÊÍÕÓÔÚÜáãàâçéêíõóôúüABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.?"
+ 

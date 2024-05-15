@@ -15,6 +15,7 @@
 import collections
 import os
 import re
+import os
 from typing import Dict, List
 
 import soundfile
@@ -576,6 +577,7 @@ class SubRegex(BaseParallelProcessor):
         total_counter_sorted = dict(sorted(total_counter.items(), key=lambda x: x[1], reverse=True))
         for word, count in total_counter_sorted.items():
             logger.info(f"{word} {count}")
+        
         super().finalize(metrics)
 
 
@@ -623,3 +625,4 @@ class SearchRegex(BaseParallelProcessor):
         print(f"Samples amount which don't contain patterns: {len(metrics) - sum(metrics)}")
         
         super().finalize(metrics)
+        

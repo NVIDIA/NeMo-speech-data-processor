@@ -1,0 +1,82 @@
+documentation: |
+  Coraa Portuguese
+  ################
+
+  The config  performs the following data processing.
+
+  1. Downloads and extracts all the data from the "https://huggingface.co/datasets/gabrielrstan/CORAA-v1.1/tree/main"
+  2. Replaces certain non-supported characters, abbreviations and  punctuation marks with equivalent supported versions.
+  3. Drops any data that contains high/low character occurence.
+  4. Drops any data that contains symbols not in the supported alphabet.
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+  * **data_split**: should be "train", "dev" or "test".
+
+  **Output format**.
+
+  This config dumps the final manifest at ``${workspace_dir}/${data_split}_manifest.json``.
+  The output manifest contains the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription, including punctuation ".,?" and capitalization.
+  * **duration (float)**: audio duration in seconds.
+  
+
+processors_to_run: all 
+workspace_dir: ???
+data_split: ???
+final_manifest: ???
+
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestCORAA
+    raw_data_dir: ${workspace_dir}
+    data_split: ${data_split}
+    extract_archive_dir: ${workspace_dir}/extracted
+    resampled_audio_dir:  ${workspace_dir}/extracted/16k
+    already_downloaded: false
+    already_extracted: false
+    output_manifest_file: ${workspace_dir}/${data_split}_manifest0.json
+  
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      - {"pattern": "(Aplausos)", "repl": " "}
+      - {"pattern": "(Risos)", "repl": " "}
+      - {"pattern": '[\-\‐\‑\–\—\―\"]', "repl": " "}
+      - {"pattern": "'", "repl": " "}
+      - {"pattern": '[\$\&\¡\(\)]', "repl": " "}
+      - {"pattern": '[\«\°\´\·\»]', "repl": " "}
+      - {"pattern": '[\«\°\´\·\»]', "repl": " "}
+      - {"pattern": '[\‘\’\“\”\„]', "repl": " "}
+      - {"pattern": '[\:\;\`\ʻ]', "repl": " "}
+      - {"pattern": "!", "repl": "."}
+      - {"pattern": "…\\s$", "repl": "."} # '\\s' is to to account for the fact that SDP insert spaces at start and end
+      - {"pattern": "\\.{2,20}\\s$", "repl": "."} # '\\s' is to to account for the fact that SDP insert spaces at start and end
+
+      # remove remaining repeated periods since most of the time they are unnecessary in this data
+      - {"pattern": "\\.{2,20}", "repl": " "}
+
+      - {"pattern": " ([Pp])rofa ", "repl" : ' \1rofessora '}
+      - {"pattern": " ([Ss])ra.", "repl" : ' \1enhora'}
+      - {"pattern": " ([Ss])rta.", "repl": '\1enhorita'}
+      - {"pattern": " ([Ss])r.", 'repl': '\1enhor' }
+      - {"pattern": " ([Dd])r ", "repl" : ' \1octor '}
+      - {"pattern": " ([Dd])r.", "repl" : ' \1octor '}
+      - {"pattern": " ([Dd])ra ", "repl" : ' \1octora '}
+
+      - {"pattern": " um km ", "repl" : " um quilômetro "}
+      - {"pattern": " km ", "repl" : " quilômetros "}
+  
+  - _target_: sdp.processors.DropHighLowDuration
+    high_duration_threshold: 20
+    low_duration_threshold: 0.5
+  
+  - _target_: sdp.processors.DropHighLowCharrate
+    high_charrate_threshold: 21
+    low_charrate_threshold: 1
+
+  - _target_: sdp.processors.DropNonAlphabet
+    output_manifest_file: ${final_manifest}
+    alphabet: " ÁÃÀÂÇÉÊÍÕÓÔÚÜáãàâçéêíõóôúüABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.?"
