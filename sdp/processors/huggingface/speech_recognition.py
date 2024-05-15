@@ -13,9 +13,13 @@
 # limitations under the License.
 
 import json
+import random
 from pathlib import Path
 
+import torch
+import torchaudio
 from tqdm import tqdm
+from transformers import AutoProcessor, SeamlessM4Tv2ForSpeechToText
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
@@ -187,3 +191,96 @@ class ASRTransformers(BaseProcessor):
                 for i, item in enumerate(batch):
                     item[self.output_text_key] = results[i]["text"]
                     f.write(json.dumps(item, ensure_ascii=False) + '\n')
+
+
+class ASRSeamless(BaseProcessor):
+    """
+    An audio speech recognition (ASR) processor class utilizing the Seamless model from Facebook's Hugging Face repository to transcribe audio files.
+
+    Attributes:
+        device (str): Computing device for processing, either CUDA-enabled GPU or CPU. Defaults to GPU if available.
+        input_key (str): key in the input manifest file indicating the path to the audio file.
+        output_key (str): key where the transcribed text by the model will be stored.
+        limit (int): Maximum percentage of files to process, helping manage resource use on large datasets.
+        failed_files (list): Tracks files that failed to load for further investigation or handling.
+
+    Methods:
+        process: Reads audio file paths from a manifest file, processes a subset of them through the Seamless model,
+                 and writes the transcriptions to an output manifest file. It handles and logs files that fail to load.
+
+    Example:
+        processor = ASRSeamless(device="cuda:0", input_key="audio_filepath", output_key="transcript", limit=50)
+        processor.process()
+
+    Notes:
+        - The class is designed for use with the `facebook/seamless-m4t-v2-large` model but can be adapted for similar models.
+        - Automatically manages device based on availability, enhancing usability across different hardware setups.
+        - The limit parameter is useful for managing resource use when dealing with very large datasets.
+    """
+
+    def __init__(
+        self,
+        device: str = "cuda:1" if torch.cuda.is_available() else "cpu",
+        input_key: str = "audio_filepath",
+        output_key: str = "model_transcribed_text",
+        limit: int = 100,
+        **kwargs,
+    ):
+        self.device = device
+        self.input_key = input_key
+        self.output_key = output_key
+        self.limit = limit
+        super().__init__(**kwargs)
+        self.failed_files = []  # Initialize array to store failed file names
+
+    def process(self):
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        print("Using device:", device)
+
+        processor = AutoProcessor.from_pretrained("facebook/seamless-m4t-v2-large")
+        model = SeamlessM4Tv2ForSpeechToText.from_pretrained("facebook/seamless-m4t-v2-large").to(device)
+
+        entries = []
+
+        with open(self.input_manifest_file, 'r') as f:
+            lines = f.readlines()
+
+            total_lines = len(lines)
+            files_to_process_count = int((self.limit / 100) * total_lines)
+            selected_indices = random.sample(range(total_lines), files_to_process_count)
+
+            for idx in tqdm(selected_indices, desc="Processing Audio Files"):
+                line = lines[idx]
+                entry = json.loads(line)
+                audio_file_path = entry[self.input_key]
+
+                try:
+                    waveform, orig_sampling_rate = torchaudio.load(audio_file_path)
+                except Exception as e:
+                    print(f"Failed to load {audio_file_path}: {e}")
+                    self.failed_files.append(audio_file_path)
+                    continue
+
+                waveform = waveform.to(device)
+                if orig_sampling_rate != 16000:
+                    resampler = torchaudio.transforms.Resample(orig_freq=orig_sampling_rate, new_freq=16000).to(device)
+                    waveform = resampler(waveform)
+
+                audio_inputs = processor(
+                    audios=waveform.squeeze().cpu().numpy(), src_lang="hye", sampling_rate=16000, return_tensors="pt"
+                ).to(device)
+
+                outputs = model.generate(**audio_inputs, tgt_lang="hye")
+
+                transcribed_text = processor.batch_decode(outputs, skip_special_tokens=True)
+
+                entry[self.output_key] = str(transcribed_text[0]).strip()
+                entries.append(entry)
+
+            with open(self.output_manifest_file, 'w', encoding='utf-8') as f_out:
+                for entry in entries:
+                    json.dump(entry, f_out, ensure_ascii=False)
+                    f_out.write("\n")
+
+        if self.failed_files:
+            print(f"Failed to process the following files: {self.failed_files}")

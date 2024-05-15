@@ -18,12 +18,10 @@ from sdp.processors.datasets.coraal import (
     CreateInitialManifestCORAAL,
     TrainDevTestSplitCORAAL,
 )
-
 from sdp.processors.datasets.fleurs.create_initial_manifest import (
     CreateInitialManifestFleurs,
 )
 from sdp.processors.datasets.lhotse import LhotseImport
-
 from sdp.processors.datasets.librispeech.create_initial_manifest import (
     CreateInitialManifestLibrispeech,
 )
@@ -40,7 +38,11 @@ from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
 from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
-from sdp.processors.huggingface.speech_recognition import ASRTransformers, ASRWhisper
+from sdp.processors.huggingface.speech_recognition import (
+    ASRSeamless,
+    ASRTransformers,
+    ASRWhisper,
+)
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ChangeToRelativePath,
