@@ -144,6 +144,9 @@ Data modifications
    :annotation:
    :noindex:
 
+.. autodata:: sdp.processors.SearchRegex
+   :annotation:
+
 .. autodata:: sdp.processors.SubMakeLowercase
    :annotation:
 
