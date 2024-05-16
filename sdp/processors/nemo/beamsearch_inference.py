@@ -78,7 +78,7 @@ class EvalBeamSearchNGramConfig:
         strategy="flashlight", # gready, beam = pyctcdecode, flashlight
         beam = ctc_beam_decoding.BeamCTCInferConfig(
             nemo_kenlm_path="/mnt/md1/YTDS/ES/lm/lm.kenlm",
-            beam_size=4,
+            beam_size=16,
             beam_alpha=0.5, # LM weight
             beam_beta=0.5, # length weight
             return_best_hypothesis = False,
@@ -284,6 +284,15 @@ class RestorePCbyTopN(BaseParallelProcessor):
         if self.punctuation:
             self.patterns = re.compile("["+self.punctuation+"]")
 
+    def get_capitalisation_from_target(self, text_input, text_to_fix):
+        text_input = text_input.strip()
+        text_to_fix = text_to_fix.strip()
+        if text_input[0].isupper():
+            text_to_fix = text_to_fix[0].upper()+text_to_fix[1:]
+
+        return text_to_fix
+        
+
     def process_dataset_entry(self, data_entry):
         text_without_pc = data_entry[self.text_without_pc_key]
         texts_with_pc = data_entry[self.texts_with_pc_key]
@@ -302,6 +311,7 @@ class RestorePCbyTopN(BaseParallelProcessor):
             ldists.append(ldist)
             texts.append(text)
 
-        data_entry[self.output_text_key] = texts[np.argmin(ldists)]
+        text_with_pc = self.get_capitalisation_from_target(text_without_pc, texts_with_pc[np.argmin(ldists)])
+        data_entry[self.output_text_key] = text_with_pc
         return [DataEntry(data=data_entry)]
     
