@@ -40,14 +40,20 @@ from nemo.utils import logging
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
 
 
-def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
-    result = []
-    with manifest.open() as f:
-        for i, line in enumerate(f):
-            data = json.loads(line)
-            result.append(data)
-    return result
+def read_manifest(input_manifest_file, encoding):
+    """Reading the input manifest file.
 
+    .. note::
+        This function should be overridden in the "initial" class creating
+        manifest to read from the original source of data.
+    """
+    if input_manifest_file is None:
+        raise NotImplementedError("Override this method if the processor creates initial manifest")
+
+    with open(input_manifest_file, "rt", encoding=encoding) as fin:
+        for line in fin:
+            yield json.loads(line)
+            
 @dataclass
 class EvalBeamSearchNGramConfig:
     """
@@ -152,27 +158,13 @@ class BeamsearchTopNInference(BaseProcessor):
         """Splits the manifest into smaller chunks defined by ``in_memory_chunksize``.
         """
         manifest_chunk = []
-        for idx, data_entry in enumerate(self.read_manifest(), 1):
+        for idx, data_entry in enumerate(read_manifest(self.input_manifest_file), 1):
             manifest_chunk.append(data_entry)
             if idx % self.in_memory_chunksize == 0:
                 yield manifest_chunk
                 manifest_chunk = []
         if len(manifest_chunk) > 0:
             yield manifest_chunk
-
-    def read_manifest(self):
-        """Reading the input manifest file.
-
-        .. note::
-            This function should be overridden in the "initial" class creating
-            manifest to read from the original source of data.
-        """
-        if self.input_manifest_file is None:
-            raise NotImplementedError("Override this method if the processor creates initial manifest")
-
-        with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
-            for line in fin:
-                yield json.loads(line)
 
     def process(self):
         if self.pretrained_name:
@@ -315,3 +307,38 @@ class RestorePCbyTopN(BaseParallelProcessor):
         data_entry[self.output_text_key] = text_with_pc
         return [DataEntry(data=data_entry)]
     
+class ConcatManifests(BaseProcessor):
+    """Adds predictions of a text-based punctuation and capitalization (P&C) model.
+
+    Operates on the text in the ``input_text_field``, and saves predictions in
+    the ``output_text_field``.
+
+    Args:
+        input_audio_key (str): the text field that will be the input to the P&C model.
+
+    .. note::
+        Either ``pretrained_name`` or ``model_path`` have to be specified.
+
+    Returns:
+         The same data as in the input manifest with an additional field
+         <output_text_field> containing P&C model's predictions.
+    """
+
+    def __init__(
+        self,
+        input_manifest_files: List[str],
+        encoding: str = "utf8",
+        ensure_ascii: bool = False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_manifest_files = input_manifest_files
+        self.encoding = encoding
+        self.ensure_ascii = ensure_ascii
+
+    def process(self):
+        Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
+        with open(self.output_manifest_file, "wt", encoding=self.encoding) as fout:
+            for input_manifest_file in self.input_manifest_files:
+                for idx, data_entry in enumerate(read_manifest(input_manifest_file, self.encoding)):
+                    fout.write(json.dumps(data_entry, ensure_ascii=self.ensure_ascii) + '\n')

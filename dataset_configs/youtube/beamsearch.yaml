@@ -12,7 +12,6 @@ processors:
     device: cuda
     model_path: /mnt/md1/YTDS/ES/lm/stt_es_fastconformer_hybrid_large_pc.nemo
 
-
   - _target_: sdp.processors.nemo.beamsearch_inference.RestorePCbyTopN
     output_manifest_file: ${workspace_dir}/es_manifest_restored_punct.json
     text_without_pc_key: text
@@ -20,3 +19,15 @@ processors:
     output_text_key: pred_text
     punctuation: ",.?"
     do_lower: true
+
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    fields_to_keep: ["audio_filepath", "duration", "text", "pred_text"]
+
+  - _target_: sdp.processors.RenameFields
+    output_manifest_file: ${workspace_dir}/es_manifest_restored_punct_renamed.json
+    rename_fields: {"pred_text": "text"}
+    
+  - _target_: sdp.processors.nemo.beamsearch_inference.ConcatManifests
+    input_manifest_files: ["${workspace_dir}/es_manifest_restored_punct_renamed.json", "${workspace_dir}/es_manifest_with_punct.json"]
+    output_manifest_file: ${workspace_dir}/es_manifest_concat.json
+    
