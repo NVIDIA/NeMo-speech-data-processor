@@ -1,6 +1,6 @@
 documentation: |
   Kazakh Speech Corpus (KSC)
-  ###########
+  ##########################
 
   This config is designed for the
   `Kazakh Speech Corpus (KSC) <https://www.openslr.org/102/>`_ dataset.

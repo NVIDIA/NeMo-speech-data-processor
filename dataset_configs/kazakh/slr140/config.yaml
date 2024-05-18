@@ -1,6 +1,6 @@
 documentation: |
   Kazakh Speech Dataset (KSD)
-  ###########
+  ###########################
 
   This config is designed for the
   `Kazakh Speech Dataset (KSD) <https://www.openslr.org/140/>`_ dataset.
