@@ -92,7 +92,6 @@ class FfmpegConvert(BaseParallelProcessor):
         id_key: str = None,
         output_format: str = "wav",
         base_dir: str = None,
-        output_format: str = "wav",
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
         **kwargs,
