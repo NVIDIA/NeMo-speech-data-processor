@@ -99,3 +99,13 @@ def ffmpeg_convert(jpg: str, wav: str, ar: int = 0, ac: int = 1):
         process_args = process_args[:-1]
         process_args.extend(["-ar", str(ar), wav])
     return subprocess.run(process_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def extract_tar_with_strip_components(tar_path, extract_path, strip_components=1):
+    with tarfile.open(tar_path, 'r') as tar:
+        members = tar.getmembers()
+        for member in members:
+            components = member.name.split(os.path.sep)
+            if len(components) > strip_components:
+                member.name = os.path.sep.join(components[strip_components:])
+                tar.extract(member, extract_path)
