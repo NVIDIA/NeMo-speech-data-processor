@@ -427,11 +427,14 @@ class NormalizeText(BaseParallelProcessor):
     E.g., “$123” is converted to “one hundred and twenty-three dollars.”
 
     Args:
-        input_text_field (str): the text field that will be the input to the Normalizer.
+        input_text_field (str): the text field that will be the input to the Normalizer. Defaults to: text.
         input_language (str): language specifying the text normalization rules in ISO 639 Set 1 format. E.g., "en", "es", "it", etc.
+            Defaults to: Engish.
         input_case: (str): input text capitalization, set to `cased` if text contains capital letters.
             This flag affects normalization rules applied to the text. Note, `lower_cased` won't lower case input.
+            Defaults to: cased.
         output_text_field (str): the text field that will be the output from the Normalizer.
+            Defaults to: text.
 
     Returns:
         This processor normalizes the text in the `input_text_field` key and saves the normalized text in `output_text_field` key.
@@ -442,10 +445,10 @@ class NormalizeText(BaseParallelProcessor):
 
     def __init__(
         self,
-        input_text_field: str,
-        input_language: str,
-        input_case: str,
-        output_text_field: str,
+        input_text_field: str = "text",
+        input_language: str = "en",
+        input_case: str = "cased",
+        output_text_field: str = "text",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -466,5 +469,4 @@ class NormalizeText(BaseParallelProcessor):
         data_entry[self.output_text_key] = self.normalizer.normalize(
             data_entry[self.input_text_key]
         )
-
         return [DataEntry(data=data_entry)]
