@@ -18,6 +18,7 @@ import re
 from typing import Dict, List
 
 import soundfile
+from nemo_text_processing.text_normalization.normalize import Normalizer
 from sox import Transformer
 
 from sdp.logging import logger
@@ -93,7 +94,9 @@ class SoxConvert(BaseParallelProcessor):
         audio_file = data_entry[self.input_audio_file_key]
 
         key = os.path.splitext(audio_file)[0].split("/")[-1]
-        converted_file = os.path.join(self.converted_audio_dir, key) + f".{self.output_format}"
+        converted_file = (
+            os.path.join(self.converted_audio_dir, key) + f".{self.output_format}"
+        )
 
         if not os.path.isfile(converted_file):
             transformer = Transformer()
@@ -146,7 +149,10 @@ class InsIfASRInsertion(BaseParallelProcessor):
         for insert_word in self.insert_words:
             if not insert_word in data_entry[self.pred_text_key]:
                 break
-            orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
+            orig_words, pred_words = (
+                data_entry[self.text_key],
+                data_entry[self.pred_text_key],
+            )
             diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
             if len(diff) > 0:  # ie if there are differences between text and pred_text
@@ -237,11 +243,16 @@ class SubIfASRSubstitution(BaseParallelProcessor):
     def process_dataset_entry(self, data_entry) -> List:
         sub_word_counter = collections.defaultdict(int)
         data_entry[self.text_key] = add_start_end_spaces(data_entry[self.text_key])
-        data_entry[self.pred_text_key] = add_start_end_spaces(data_entry[self.pred_text_key])
+        data_entry[self.pred_text_key] = add_start_end_spaces(
+            data_entry[self.pred_text_key]
+        )
         for original_word, new_word in self.sub_words.items():
             if not original_word in data_entry[self.text_key]:
                 break
-            orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
+            orig_words, pred_words = (
+                data_entry[self.text_key],
+                data_entry[self.pred_text_key],
+            )
             diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
             if len(diff) > 0:  # ie if there are differences between text and pred_text
@@ -259,7 +270,10 @@ class SubIfASRSubstitution(BaseParallelProcessor):
                         pass
 
                     elif isinstance(diff_entry, tuple):  # substitution
-                        if diff_entry[0][1] == original_word and diff_entry[1][1] == new_word:
+                        if (
+                            diff_entry[0][1] == original_word
+                            and diff_entry[1][1] == new_word
+                        ):
                             # ie. substitution is one we want to use to change the original text
                             new_sent += new_word
                             sub_word_counter[original_word] += 1
@@ -274,7 +288,9 @@ class SubIfASRSubstitution(BaseParallelProcessor):
                 data_entry[self.text_key] = new_sent
 
         data_entry[self.text_key] = remove_extra_spaces(data_entry[self.text_key])
-        data_entry[self.pred_text_key] = remove_extra_spaces(data_entry[self.pred_text_key])
+        data_entry[self.pred_text_key] = remove_extra_spaces(
+            data_entry[self.pred_text_key]
+        )
 
         return [DataEntry(data=data_entry, metrics=sub_word_counter)]
 
@@ -395,8 +411,60 @@ class SubRegex(BaseParallelProcessor):
         for counter in metrics:
             for word, count in counter.items():
                 total_counter[word] += count
-        logger.info("Number of utterances which applied substitutions for the following patterns:")
-        total_counter_sorted = dict(sorted(total_counter.items(), key=lambda x: x[1], reverse=True))
+        logger.info(
+            "Number of utterances which applied substitutions for the following patterns:"
+        )
+        total_counter_sorted = dict(
+            sorted(total_counter.items(), key=lambda x: x[1], reverse=True)
+        )
         for word, count in total_counter_sorted.items():
             logger.info(f"{word} {count}")
         super().finalize(metrics)
+
+
+class NormalizeText(BaseParallelProcessor):
+    """This processor applies text normalization (TN) to the text. I.e. converts text from written form into its verbalized form.
+    E.g., “$123” is converted to “one hundred and twenty-three dollars.”
+
+    Args:
+        input_text_field (str): the text field that will be the input to the Normalizer.
+        input_language (str): language specifying the text normalization rules in ISO 639 Set 1 format. E.g., "en", "es", "it", etc.
+        input_case: (str): input text capitalization, set to `cased` if text contains capital letters.
+            This flag affects normalization rules applied to the text. Note, `lower_cased` won't lower case input.
+        output_text_field (str): the text field that will be the output from the Normalizer.
+
+    Returns:
+        This processor normalizes the text in the `input_text_field` key and saves the normalized text in `output_text_field` key.
+
+    Raises:
+        `NotImplementedError`: when TN is not implemented for the requaested language.
+    """
+
+    def __init__(
+        self,
+        input_text_field: str,
+        input_language: str,
+        input_case: str,
+        output_text_field: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_text_key = input_text_field
+        self.output_text_key = output_text_field
+        self.input_case = input_case
+        self.input_language = input_language
+
+    def prepare(self):
+        try:
+            self.normalizer = Normalizer(
+                input_case=self.input_case, lang=self.input_language
+            )
+        except NotImplementedError as e:
+            logger.error("Failed to run text normalization: %s", repr(e))
+
+    def process_dataset_entry(self, data_entry):
+        data_entry[self.output_text_key] = self.normalizer.normalize(
+            data_entry[self.input_text_key]
+        )
+
+        return [DataEntry(data=data_entry)]

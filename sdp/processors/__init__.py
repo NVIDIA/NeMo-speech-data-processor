@@ -18,6 +18,7 @@ from sdp.processors.datasets.coraal import (
     CreateInitialManifestCORAAL,
     TrainDevTestSplitCORAAL,
 )
+from sdp.processors.datasets.lhotse import LhotseImport
 from sdp.processors.datasets.librispeech.create_initial_manifest import (
     CreateInitialManifestLibrispeech,
 )
@@ -34,7 +35,6 @@ from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
 from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
-from sdp.processors.datasets.lhotse import LhotseImport
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ChangeToRelativePath,
@@ -48,6 +48,7 @@ from sdp.processors.modify_manifest.common import (
 from sdp.processors.modify_manifest.data_to_data import (
     GetAudioDuration,
     InsIfASRInsertion,
+    NormalizeText,
     SoxConvert,
     SubIfASRSubstitution,
     SubMakeLowercase,
