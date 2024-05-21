@@ -350,11 +350,14 @@ class KeepOnlySpecifiedFields(BaseProcessor):
 class ApplyInnerJoin(BaseProcessor):
     """Applies inner join to two manifests, i.e. creates a manifest from records that have matching values in both manifests.
 
+    .. note::
+        If coloumn appears in both manifests, but is not going to be merged, two coloumns with suffixes `_x`, `_y` will be added for each manifest.
+        I.e. for input manifests {"id": 1, "text": "text1"} and {id: 1, "text": "text2"} after join on "id" will return {"id": 1, "text_x": "text1", "text_y": "text2"}.
+
+
     Args:
         coloumn_id (Union[str, List[str], None]): Field names to join on. These must be found in both manifests.
             If `coloumn_id` is None then this defaults to the intersection of the columns in both manifests.
-            If coloumn name appears in both manifestst, but is not going to be merged, two coloumns with suffixes `_x`, `_y` will be added for each manifest.
-            I.e. for input manifests {"id": 1, "text": "text1"} and {id: 1, "text": "text2"} after join on "id" will return {"id": 1, "text_x": "text1", "text_y": "text2"}.
             Defaults to None.
         input_manifest_file2 (str): path to the second manifest
 
