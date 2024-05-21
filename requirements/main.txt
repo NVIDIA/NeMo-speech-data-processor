@@ -12,4 +12,5 @@ tqdm
 wget
 ffmpeg
 rarfile
+nemo_text_processing # for text normalization
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
