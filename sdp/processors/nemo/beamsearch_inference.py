@@ -158,7 +158,7 @@ class BeamsearchTopNInference(BaseProcessor):
         """Splits the manifest into smaller chunks defined by ``in_memory_chunksize``.
         """
         manifest_chunk = []
-        for idx, data_entry in enumerate(read_manifest(self.input_manifest_file), 1):
+        for idx, data_entry in enumerate(read_manifest(self.input_manifest_file, encoding="utf8"), 1):
             manifest_chunk.append(data_entry)
             if idx % self.in_memory_chunksize == 0:
                 yield manifest_chunk
