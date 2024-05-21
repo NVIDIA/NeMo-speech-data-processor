@@ -54,9 +54,7 @@ test_params_list.extend(
 )
 
 
-@pytest.mark.parametrize(
-    "class_kwargs,test_input,expected_output", test_params_list, ids=str
-)
+@pytest.mark.parametrize("class_kwargs,test_input,expected_output", test_params_list, ids=str)
 def test_normalize_text(class_kwargs, test_input, expected_output):
     processor = NormalizeText(**class_kwargs, output_manifest_file=None)
     processor.prepare()

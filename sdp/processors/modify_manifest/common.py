@@ -1,7 +1,9 @@
 import json
 import os
-from typing import Dict, List
+from pathlib import Path
+from typing import Dict, List, Union
 
+import pandas as pd
 from tqdm import tqdm
 
 from sdp.processors.base_processor import (
@@ -9,6 +11,7 @@ from sdp.processors.base_processor import (
     BaseProcessor,
     DataEntry,
 )
+from sdp.utils.common import load_manifest
 
 
 class CombineSources(BaseParallelProcessor):
@@ -71,9 +74,9 @@ class CombineSources(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry: Dict):
         for source_dict in self.sources:
-            if data_entry.get(source_dict['field'], self.na_indicator) != self.na_indicator:
-                data_entry[self.target] = data_entry[source_dict['field']]
-                data_entry[f"{self.target}_origin"] = source_dict['origin_label']
+            if data_entry.get(source_dict["field"], self.na_indicator) != self.na_indicator:
+                data_entry[self.target] = data_entry[source_dict["field"]]
+                data_entry[f"{self.target}_origin"] = source_dict["origin_label"]
                 break  # breaking out on the first present label
         else:  # going here if no break was triggered
             data_entry[self.target] = self.na_indicator
@@ -328,3 +331,37 @@ class KeepOnlySpecifiedFields(BaseProcessor):
                 line = json.loads(line)
                 new_line = {field: line[field] for field in self.fields_to_keep}
                 fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")
+
+
+class ApplyInnerJoin(BaseProcessor):
+    """Applies inner join to two manifests, i.e. creates a manifest from records that have matching values in both manifests.
+
+    Args:
+        coloumn_id (Union[str, List[str], None]): Field names to join on. These must be found in both manifests.
+            If `coloumn_id` is None then this defaults to the intersection of the columns in both manifests. Defaults to None.
+            If coloumn name appears in both manifestst, but is not going to be merged, two coloumns with suffixes `_x`, `_y` will be added for each manifest.
+            I.e. for input manifests {"id": 1, "text": "text1"} and {id: 1, "text": "text2"} after join on "id" will return {"id": 1, "text_x": "text1", "text_y": "text2"}.
+        input_manifest_file2 (str): path to the second manifest
+
+    Returns:
+        Inner join of two manifests.
+    """
+
+    def __init__(
+        self,
+        input_manifest_file2: str,
+        coloumn_id: Union[str, List[str], None] = None,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_manifest_file2 = input_manifest_file2
+        self.coloumn_id = coloumn_id
+
+    def process(self):
+        m1 = pd.DataFrame.from_records(load_manifest(Path(self.input_manifest_file)))
+        m2 = pd.DataFrame.from_records(load_manifest(Path(self.input_manifest_file2)))
+        m3 = pd.merge(m1, m2, on=self.coloumn_id, how="inner")
+
+        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
+            for _, line in m3.iterrows():
+                fout.write(json.dumps(dict(line), ensure_ascii=False) + "\n")
