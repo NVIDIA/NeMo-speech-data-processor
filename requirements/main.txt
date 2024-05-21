@@ -10,4 +10,6 @@ regex
 sox
 tqdm
 wget
+ffmpeg
+rarfile
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required

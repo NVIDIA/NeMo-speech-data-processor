@@ -28,7 +28,9 @@ sys.path.insert(0, os.path.abspath("../../"))
 
 templates_path = ["_templates"]
 
-autodoc_mock_imports = []
+autodoc_mock_imports = [
+    "soundfile",
+]
 
 _skipped_autodoc_mock_imports = []
 
