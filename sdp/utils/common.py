@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 import tarfile
 import urllib
 import zipfile
+from pathlib import Path
+from typing import Dict, List, Union
 
 import wget
 
@@ -77,3 +80,15 @@ def extract_archive(archive_path: str, extract_path: str, force_extract: bool = 
     if force_extract:
         return None
     return archive_contents_dir
+
+
+def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
+    """
+    Loads Nemo manifest as a list of dictionaries.
+    """
+    result = []
+    with manifest.open() as f:
+        for line in f:
+            data = json.loads(line)
+            result.append(data)
+    return result
