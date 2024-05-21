@@ -92,6 +92,13 @@ FLEURS
 .. autodata:: sdp.processors.CreateInitialManifestFleurs
    :annotation:
 
+
+FLEURS
+''''''   
+
+.. autodata:: sdp.processors.CreateInitialManifestFleurs
+   :annotation:
+
 Lhotse processors
 #################
 
@@ -123,6 +130,11 @@ used in the downstream processing for additional enhancement or filtering.
 
 .. autodata:: sdp.processors.ASRTransformers
    :annotation:
+.. autodata:: sdp.processors.ASRWhisper
+   :annotation:
+
+.. autodata:: sdp.processors.ASRTransformers
+   :annotation:
 
 Text-only processors
 ####################
@@ -131,6 +143,9 @@ Text-only processors
     All processors in this section accept additional parameter
     ``text_key`` (defaults to "text") to control which field is used
     for modifications/filtering.
+
+.. autodata:: sdp.processors.ReadTxtLines
+   :annotation:
 
 .. autodata:: sdp.processors.ReadTxtLines
    :annotation:
@@ -202,6 +217,9 @@ Data modifications
 
 Data filtering
 ''''''''''''''
+
+.. autodata:: sdp.processors.PreserveByValue
+   :annotation:
 
 .. autodata:: sdp.processors.PreserveByValue
    :annotation:

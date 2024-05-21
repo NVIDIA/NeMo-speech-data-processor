@@ -27,7 +27,6 @@ from sdp.processors.base_processor import (
 )
 from sdp.utils.common import load_manifest
 
-
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.
 
