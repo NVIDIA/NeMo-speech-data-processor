@@ -603,7 +603,7 @@ class NormalizeText(BaseParallelProcessor):
         input_text_field (str): the text field that will be the input to the Normalizer. Defaults to: text.
         input_language (str): language specifying the text normalization rules in ISO 639 Set 1 format. E.g., "en", "es", "it", etc.
             Defaults to: Engish.
-        input_case: (str): input text capitalization, set to `cased` if text contains capital letters.
+        input_case (str): input text capitalization, set to `cased` if text contains capital letters.
             This flag affects normalization rules applied to the text. Note, `lower_cased` won't lower case input.
             Defaults to: cased.
         output_text_field (str): the text field that will be the output from the Normalizer.
