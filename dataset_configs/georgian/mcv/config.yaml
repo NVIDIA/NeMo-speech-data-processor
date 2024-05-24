@@ -1,6 +1,6 @@
 documentation: |
   MCV Georgian
-  ###########
+  ############
   This config was originally designed for the Mozilla Common Voice (MCV)
    <https://commonvoice.mozilla.org/>_ dataset 17.0 release, 
    but should work for any subsequent releases as well.
