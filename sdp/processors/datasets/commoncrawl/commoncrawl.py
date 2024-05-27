@@ -898,6 +898,7 @@ class Subprocess(BaseProcessor):
         input_manifest_arg: str = "",
         output_manifest_arg: str = "",
         arg_separator: str = "=",
+        shell: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -905,18 +906,17 @@ class Subprocess(BaseProcessor):
         self.output_manifest_arg = output_manifest_arg
         self.arg_separator = arg_separator
         self.cmd = cmd
+        self.shell = shell
 
     def process(self):
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
-        if self.cmd.find(self.input_manifest_file) != -1 or self.cmd.find(self.output_manifest_file) != -1:
-            logger.error(
-                "input_manifest_file "
-                + self.input_manifest_file
-                + " and output_manifest_file "
-                + self.output_manifest_file
-                + " should be exluded from cmd line!"
-            )
-            raise ValueError
+        # if self.cmd.find(self.input_manifest_file) != -1 or self.cmd.find(self.output_manifest_file) != -1:
+        #     raise ValueError("input_manifest_file "
+        #         + self.input_manifest_file
+        #         + " and output_manifest_file "
+        #         + self.output_manifest_file
+        #         + " should be exluded from cmd line: "
+        #         + self.cmd)
         process_args = [x for x in self.cmd.split(" ") if x]
         if self.arg_separator == " ":
             if self.input_manifest_arg:
@@ -928,8 +928,11 @@ class Subprocess(BaseProcessor):
                 process_args.extend([self.input_manifest_arg + self.arg_separator + self.input_manifest_file])
             if self.output_manifest_arg:
                 process_args.extend([self.output_manifest_arg + self.arg_separator + self.output_manifest_file])
-
-        subprocess.run(process_args)
+        if self.shell:
+            process_args = " ".join(process_args)
+            logger.info("subprocess shell: " + process_args)
+        
+        subprocess.run(process_args, shell=self.shell)
 
 
 class NmtSubprocess(Subprocess):
