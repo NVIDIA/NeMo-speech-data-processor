@@ -16,6 +16,9 @@ class AudioLid(BaseProcessor):
         pretrained_model (str): The name of the pre-trained ASR model for language identification.
         output_lang_field (str): The field to store the identified language for each audio file.
         device (str): The device to run the ASR model on (e.g., 'cuda', 'cpu'). If None, it automatically selects the available GPU if present; otherwise, it uses the CPU.
+        segment_duration (float): Random sample duration in seconds. Delault is np.inf.
+        num_segments (int): Number of segments of file to use for majority vote. Delault is 1.
+        random_seed (int): Seed for generating the starting position of the segment. Delault is None.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
     """
