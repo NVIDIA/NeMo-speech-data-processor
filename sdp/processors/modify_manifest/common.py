@@ -1,3 +1,17 @@
+# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 import os
 import subprocess
@@ -11,6 +25,7 @@ from sdp.processors.base_processor import (
     BaseProcessor,
     DataEntry,
 )
+
 
 class Subprocess(BaseProcessor):
     """
@@ -35,6 +50,7 @@ class Subprocess(BaseProcessor):
             --whitelist=/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/en/data/whitelist/asr_with_pc.tsv"
 
     """
+
     def __init__(
         self,
         cmd: str,
@@ -52,7 +68,13 @@ class Subprocess(BaseProcessor):
     def process(self):
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         if self.cmd.find(self.input_manifest_file) != -1 or self.cmd.find(self.output_manifest_file) != -1:
-            logger.error("input_manifest_file "+self.input_manifest_file+" and output_manifest_file "+self.output_manifest_file+" should be exluded from cmd line!")
+            logger.error(
+                "input_manifest_file "
+                + self.input_manifest_file
+                + " and output_manifest_file "
+                + self.output_manifest_file
+                + " should be exluded from cmd line!"
+            )
             raise ValueError
         process_args = [x for x in self.cmd.split(" ") if x]
         if self.arg_separator == " ":
@@ -67,6 +89,7 @@ class Subprocess(BaseProcessor):
                 process_args.extend([self.output_manifest_arg + self.arg_separator + self.output_manifest_file])
 
         subprocess.run(process_args)
+
 
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.

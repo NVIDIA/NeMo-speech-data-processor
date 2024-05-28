@@ -16,6 +16,7 @@ from pathlib import Path
 
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
+
 class CreateInitialManifestByExt(BaseParallelProcessor):
     """
     Processor for creating an initial dataset manifest by saving filepaths with a common extension to the field specified in output_field.
@@ -41,11 +42,9 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         self.extension = extension
 
     def read_manifest(self):
-        input_files = [str(self.raw_data_dir / file) for file in \
-                       self.raw_data_dir.rglob('*.' + self.extension)]
+        input_files = [str(self.raw_data_dir / file) for file in self.raw_data_dir.rglob('*.' + self.extension)]
         return input_files
-    
+
     def process_dataset_entry(self, data_entry):
         data = {self.output_field: data_entry}
         return [DataEntry(data=data)]
-    
