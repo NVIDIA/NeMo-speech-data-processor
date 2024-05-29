@@ -13,15 +13,92 @@
 # limitations under the License.
 
 import json
+import librosa
 from pathlib import Path
+from collections import Counter
 
 from tqdm import tqdm
+import soundfile as sf
+import numpy as np
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import load_manifest
 
+class LangIdWhisper(BaseProcessor):
+    """
+    Processor to get Lang ID using ASR Whisper model from HuggingFace.
 
+    Args:
+        pretrained_model (str): name of pretrained model on HuggingFace.
+        output_lang_key (str): field to save language ID result.
+        device (str): Inference device.
+    """
+
+    def __init__(
+        self,
+        pretrained_model: str,
+        output_lang_key: str,
+        device: str = None,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        try:
+            import torch
+            import whisper
+        except:
+            raise ImportError("Need to install whisper: pip install -U openai-whisper")
+
+        logger.warning("This is an example processor, for demonstration only. Do not use it for production purposes.")
+        self.whisper = whisper
+        self.pretrained_model = pretrained_model
+        self.device = device
+        self.output_lang_key = output_lang_key
+
+        if self.device is None:
+            if torch.cuda.is_available():
+                self.device = "cuda"
+            else:
+                self.device = "cpu"
+        self.model = whisper.load_model(self.pretrained_model)
+
+    def process(self):
+        json_list = load_manifest(Path(self.input_manifest_file))
+
+        Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
+
+        with Path(self.output_manifest_file).open('w') as f:
+            for item in tqdm(json_list):
+                pred_lang = self.segment(item["audio_filepath"], segment_duration=30, num_segments=3, random_seed=None)
+                item[self.output_lang_key] = pred_lang
+                f.write(json.dumps(item, ensure_ascii=False) + '\n')
+
+    
+    def segment(self, path2audio_file, segment_duration, num_segments, random_seed):
+        audio, sr = sf.read(path2audio_file)
+        audio = np.float32(audio)
+
+        audio_length = audio.shape[0]
+
+        duration = sr * segment_duration
+        if duration > audio_length:
+            duration = audio_length
+
+        label_id_list = []
+        np.random.seed(random_seed)
+        starts = np.random.randint(0, audio_length - duration + 1, size=num_segments)
+        for start in starts:
+            audio_segm = audio[start : start + duration]
+            audio_segm = self.whisper.pad_or_trim(audio_segm)
+            mel = self.whisper.log_mel_spectrogram(audio_segm)
+            mel = mel.to(self.device)
+            _, probs = self.model.detect_language(mel)
+            lang = max(probs, key=probs.get)
+            label_id_list.append(lang)
+        
+        m_label_id = Counter(label_id_list).most_common(1)[0][0]
+        return m_label_id
+            
 class ASRWhisper(BaseProcessor):
     """
     Simple example to transcribe using ASR Whisper model from HuggingFace.
