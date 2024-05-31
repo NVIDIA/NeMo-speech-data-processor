@@ -899,6 +899,7 @@ class Subprocess(BaseProcessor):
         output_manifest_arg: str = "",
         arg_separator: str = "=",
         shell: bool = False,
+        dont_wait: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -907,6 +908,7 @@ class Subprocess(BaseProcessor):
         self.arg_separator = arg_separator
         self.cmd = cmd
         self.shell = shell
+        self.dont_wait = dont_wait
 
     def process(self):
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
@@ -931,8 +933,12 @@ class Subprocess(BaseProcessor):
         if self.shell:
             process_args = " ".join(process_args)
             logger.info("subprocess shell: " + process_args)
-        
-        subprocess.run(process_args, shell=self.shell)
+
+        if self.dont_wait:
+            logger.warning("dont_wait flag is True, no logs captures!")
+            subprocess.Popen(process_args, shell=self.shell, stdin=None, stdout=None, stderr=None, close_fds=True)
+        else:
+            subprocess.run(process_args, shell=self.shell)
 
 
 class NmtSubprocess(Subprocess):
