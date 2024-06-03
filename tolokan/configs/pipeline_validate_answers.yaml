@@ -12,6 +12,7 @@ processors:
     status: SUBMITTED
     output_dir: ${workspace_dir}/results
     output_manifest_file: ${workspace_dir}/result_manifest.json
+    API_KEY: ${API_KEY}
 
   - _target_: sdp.processors.ASRSeamless
     input_manifest_file: ${workspace_dir}/result_manifest.json

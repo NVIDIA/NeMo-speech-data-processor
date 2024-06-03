@@ -4,9 +4,9 @@ documentation: |
 processors_to_run: all
 workspace_dir: ???
 API_KEY: "1V0v8tbFtwPhDVMbN3cvcQ.045e.k93FVRUudCOHplT6OHcDNjc-k8V_rSFr8l5_jLyo4rLT9W4fgabM40EyompNakPZ0uU-_sgc0hKHzrEge5AJNy5MwZCu93BHoTJGOS1lwqE"
-pool_id: 42824822
+# pool_id: 42824822
 # pool_id: 42939416
-# pool_id: 42949209
+pool_id: 42949209
 
 processors:
   - _target_: tolokan.processors.GetTolokaResults
@@ -73,7 +73,7 @@ processors:
   - _target_: sdp.processors.GetAudioDuration
     audio_filepath_field: audio_filepath
     duration_field: duration
-    output_manifest_file: ${workspace_dir}/evn_mag_manifest_${pool_id}.json
+    # output_manifest_file: ${workspace_dir}/evn_mag_manifest_${pool_id}.json
 
 
   # - _target_: sdp.processors.SubRegex
@@ -86,3 +86,13 @@ processors:
   # - _target_: sdp.processors.GetWER
   #   pred_text_key: model_transcribed_text
   #   output_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: text
+
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    regex_params_list:
+      - {"pattern": '[^աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
+    output_manifest_file: ${workspace_dir}/evn_mag_manifest_${pool_id}.json
+
