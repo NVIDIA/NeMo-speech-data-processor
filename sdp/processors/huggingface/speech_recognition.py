@@ -197,25 +197,13 @@ class ASRSeamless(BaseProcessor):
     """
     An audio speech recognition (ASR) processor class utilizing the Seamless model from Facebook's Hugging Face repository to transcribe audio files.
 
-    Attributes:
+     Args:
         device (str): Computing device for processing, either CUDA-enabled GPU or CPU. Defaults to GPU if available.
-        input_key (str): key in the input manifest file indicating the path to the audio file.
-        output_key (str): key where the transcribed text by the model will be stored.
+        input_key (str): Key in the input manifest file indicating the path to the audio file.
+        output_key (str): Key where the transcribed text by the model will be stored.
         limit (int): Maximum percentage of files to process, helping manage resource use on large datasets.
-        failed_files (list): Tracks files that failed to load for further investigation or handling.
-
-    Methods:
-        process: Reads audio file paths from a manifest file, processes a subset of them through the Seamless model,
-                 and writes the transcriptions to an output manifest file. It handles and logs files that fail to load.
-
-    Example:
-        processor = ASRSeamless(device="cuda:0", input_key="audio_filepath", output_key="transcript", limit=50)
-        processor.process()
-
-    Notes:
-        - The class is designed for use with the `facebook/seamless-m4t-v2-large` model but can be adapted for similar models.
-        - Automatically manages device based on availability, enhancing usability across different hardware setups.
-        - The limit parameter is useful for managing resource use when dealing with very large datasets.
+        src_lang (str): Source language code used for processing audio input.
+        tgt_lang (str): Target language code for the output transcription.
     """
 
     def __init__(
@@ -224,12 +212,17 @@ class ASRSeamless(BaseProcessor):
         input_key: str = "audio_filepath",
         output_key: str = "model_transcribed_text",
         limit: int = 100,
+        tgt_lang="hye",
+        src_lang="hye",
         **kwargs,
     ):
         self.device = device
         self.input_key = input_key
         self.output_key = output_key
         self.limit = limit
+        self.src_lang = src_lang
+        self.tgt_lang = tgt_lang
+
         super().__init__(**kwargs)
         self.failed_files = []  # Initialize array to store failed file names
 
@@ -267,10 +260,13 @@ class ASRSeamless(BaseProcessor):
                     waveform = resampler(waveform)
 
                 audio_inputs = processor(
-                    audios=waveform.squeeze().cpu().numpy(), src_lang="hye", sampling_rate=16000, return_tensors="pt"
+                    audios=waveform.squeeze().cpu().numpy(),
+                    src_lang=self.src_lang,
+                    sampling_rate=16000,
+                    return_tensors="pt",
                 ).to(device)
 
-                outputs = model.generate(**audio_inputs, tgt_lang="hye")
+                outputs = model.generate(**audio_inputs, tgt_lang=self.tgt_lang)
 
                 transcribed_text = processor.batch_decode(outputs, skip_special_tokens=True)
 
