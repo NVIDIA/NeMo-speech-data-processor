@@ -71,12 +71,19 @@ from sdp.processors.modify_manifest.common import (
 )
 from sdp.processors.modify_manifest.create_manifest import CreateInitialManifestByExt
 from sdp.processors.modify_manifest.data_to_data import (
+    ASRFileCheck,
+    AudioResampler,
+    CopyManifestData,
     CountNumWords,
+    ExtractFromBrackets,
     FfmpegConvert,
     GetAudioDuration,
+    GetWER,
     InsIfASRInsertion,
     InverseNormalizeText,
     NormalizeText,
+    MakeSentence,
+    ReadDocxLines,
     ReadTxtLines,
     SoxConvert,
     SplitLineBySentence,
@@ -106,3 +113,9 @@ from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
 )
 from sdp.processors.nemo.asr_inference import ASRInference
 from sdp.processors.nemo.pc_inference import PCInference
+from sdp.processors.toloka.accept_if import AcceptIfWERLess
+from sdp.processors.toloka.creat_task_set import CreateTolokaTaskSet
+from sdp.processors.toloka.create_pool import CreateTolokaPool
+from sdp.processors.toloka.create_project import CreateTolokaProject
+from sdp.processors.toloka.create_sentence_set import CreateSentenceSet
+from sdp.processors.toloka.download_responces import GetTolokaResults

@@ -1,0 +1,47 @@
+documentation: |
+  Toloka Armenian
+
+processors_to_run: all
+workspace_dir: ???
+API_KEY: ???
+pool_id: ???
+
+processors:
+  - _target_: tolokan.processors.GetTolokaResults
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    status: ACCEPTED
+    output_dir: ${workspace_dir}/results
+    output_manifest_file: ${workspace_dir}/manifest-1.json
+    API_KEY: ${API_KEY}
+    platform: "PRODUCTION"
+    pool_id: ${pool_id}
+
+  - _target_: sdp.processors.ASRFileCheck
+    audio_filepath_key: audio_filepath  
+    corrupted_audio_dir: ${workspace_dir}/curr
+    output_manifest_file: ${workspace_dir}/manifest0.json
+
+  - _target_: sdp.processors.AudioResampler
+    output_manifest_file: ${workspace_dir}/manifest1.json
+    resampled_audio_dir: ${workspace_dir}/16k
+    audio_filepath_key: "audio_filepath"
+    target_samplerate: 16000
+    target_nchannels: 1
+
+  - _target_: sdp.processors.MakeSentence
+    text_key: "text"
+    end_symbol: ":"
+    make_uppercase: True
+    output_manifest_file: ${workspace_dir}/manifest3.json    
+
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${workspace_dir}/manifest4.json
+    fields_to_keep: ["text", "audio_filepath"]
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_field: audio_filepath
+    duration_field: duration
+    output_manifest_file: ${workspace_dir}/results.json
+
+
