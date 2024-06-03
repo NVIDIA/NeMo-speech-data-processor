@@ -119,3 +119,4 @@ from sdp.processors.toloka.create_pool import CreateTolokaPool
 from sdp.processors.toloka.create_project import CreateTolokaProject
 from sdp.processors.toloka.create_sentence_set import CreateSentenceSet
 from sdp.processors.toloka.download_responces import GetTolokaResults
+from sdp.processors.toloka.reject_if import RejectIfBanned
