@@ -98,19 +98,6 @@ class ASRWhisper(BaseProcessor):
 
 
 class ASRTransformers(BaseProcessor):
-    """
-    Processor to transcribe using ASR Transformers model from HuggingFace.
-
-    Args:
-        pretrained_model (str): name of pretrained model on HuggingFace.
-        output_text_key (str): Key to save transcription result.
-        input_audio_key (str): Key to read audio file. Defaults to "audio_filepath".
-        input_duration_key (str): Audio duration key. Defaults to "duration".
-        device (str): Inference device.
-        batch_size (int): Inference batch size. Defaults to 1.
-        torch_dtype (str): Tensor data type. Default to "float32"
-    """
-
     def __init__(
         self,
         pretrained_model: str,
@@ -122,6 +109,7 @@ class ASRTransformers(BaseProcessor):
         torch_dtype: str = "float32",
         generate_task: str = "transcribe",
         generate_language: str = "english",
+        desired_sample_rate: int = 16000,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -129,41 +117,30 @@ class ASRTransformers(BaseProcessor):
             import torch
             from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
         except:
-            raise ImportError("Need to install transformers: pip install accelerate transformers")
+            raise ImportError("Need to install transformers: pip install accelerate transformers senterprice")
 
         logger.warning("This is an example processor, for demonstration only. Do not use it for production purposes.")
         self.pretrained_model = pretrained_model
         self.input_audio_key = input_audio_key
         self.output_text_key = output_text_key
         self.input_duration_key = input_duration_key
-        self.device = device
+        self.device = device or ("cuda:0" if torch.cuda.is_available() else "cpu")
         self.batch_size = batch_size
         self.generate_task = generate_task
         self.generate_language = generate_language
-        if torch_dtype == "float32":
-            self.torch_dtype = torch.float32
-        elif torch_dtype == "float16":
-            self.torch_dtype = torch.float16
-        else:
-            raise NotImplementedError(torch_dtype + " is not implemented!")
-
-        if self.device is None:
-            if torch.cuda.is_available():
-                self.device = "cuda:0"
-            else:
-                self.device = "cpu"
+        self.desired_sample_rate = desired_sample_rate
+        self.torch_dtype = getattr(torch, torch_dtype)
 
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
             self.pretrained_model, torch_dtype=self.torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
-        )
-        self.model.to(self.device)
+        ).to(self.device)
 
-        processor = AutoProcessor.from_pretrained(self.pretrained_model)
+        self.processor = AutoProcessor.from_pretrained(self.pretrained_model)
         self.pipe = pipeline(
             "automatic-speech-recognition",
             model=self.model,
-            tokenizer=processor.tokenizer,
-            feature_extractor=processor.feature_extractor,
+            tokenizer=self.processor.tokenizer,
+            feature_extractor=self.processor.feature_extractor,
             max_new_tokens=128,
             chunk_length_s=30,
             batch_size=self.batch_size,
@@ -171,6 +148,7 @@ class ASRTransformers(BaseProcessor):
             torch_dtype=self.torch_dtype,
             device=self.device,
         )
+        self.failed_files = []
 
     def process(self):
         json_list = load_manifest(Path(self.input_manifest_file))
@@ -180,17 +158,41 @@ class ASRTransformers(BaseProcessor):
 
         with Path(self.output_manifest_file).open('w') as f:
             start_index = 0
-            for _ in tqdm(range(len(json_list_sorted) // self.batch_size)):
+            while start_index < len(json_list_sorted):
                 batch = json_list_sorted[start_index : start_index + self.batch_size]
                 start_index += self.batch_size
-                audio_files = [item[self.input_audio_key] for item in batch]
-                results = self.pipe(
-                    audio_files, generate_kwargs={"language": self.generate_language, "task": self.generate_task}
-                )
 
-                for i, item in enumerate(batch):
-                    item[self.output_text_key] = results[i]["text"]
-                    f.write(json.dumps(item, ensure_ascii=False) + '\n')
+                if self.batch_size == 1:
+                    audio_file = batch[0][self.input_audio_key]
+                    try:
+                        waveform, orig_sampling_rate = torchaudio.load(audio_file)
+                        if orig_sampling_rate != self.desired_sample_rate:
+                            resampler = torchaudio.transforms.Resample(
+                                orig_freq=orig_sampling_rate, new_freq=self.desired_sample_rate
+                            )
+                            waveform = resampler(waveform)
+                        result = self.pipe(
+                            waveform.squeeze(),
+                            generate_kwargs={"language": self.generate_language, "task": self.generate_task},
+                        )
+                        batch[0][self.output_text_key] = result["text"]
+                        f.write(json.dumps(batch[0], ensure_ascii=False) + '\n')
+                    except Exception as e:
+                        logger.error(f"Failed to process file {audio_file}: {str(e)}")
+                        self.failed_files.append(audio_file)
+                else:
+                    logger.warning("Batch size greater than 1: Damaged files will not be handled individually.")
+                    audio_files = [item[self.input_audio_key] for item in batch]
+                    results = self.pipe(
+                        audio_files, generate_kwargs={"language": self.generate_language, "task": self.generate_task}
+                    )
+
+                    for i, item in enumerate(batch):
+                        item[self.output_text_data] = results[i]["text"]
+                        f.write(json.dumps(item, ensure_ascii=False) + '\n')
+
+        if self.failed_files:
+            logger.error(f"Failed to process the following files: {self.failed_files}")
 
 
 class ASRSeamless(BaseProcessor):
