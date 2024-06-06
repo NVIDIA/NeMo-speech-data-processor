@@ -73,7 +73,8 @@ processors:
   - _target_: sdp.processors.GetAudioDuration
     audio_filepath_field: audio_filepath
     duration_field: duration
-    # output_manifest_file: ${workspace_dir}/evn_mag_manifest_${pool_id}.json
+    input_manifest_file: ${workspace_dir}/manifest4.json
+    output_manifest_file: ${workspace_dir}/evn_mag_manifest_${pool_id}.json
 
 
   # - _target_: sdp.processors.SubRegex
@@ -87,12 +88,12 @@ processors:
   #   pred_text_key: model_transcribed_text
   #   output_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
 
-  - _target_: sdp.processors.SubMakeLowercase
-    text_key: text
+  # - _target_: sdp.processors.SubMakeLowercase
+  #   text_key: text
 
-  - _target_: sdp.processors.SubRegex
-    text_key: text
-    regex_params_list:
-      - {"pattern": '[^աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
-    output_manifest_file: ${workspace_dir}/evn_mag_manifest_${pool_id}.json
+  # - _target_: sdp.processors.SubRegex
+  #   text_key: text
+  #   regex_params_list:
+  #     - {"pattern": '[^աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
+  #   output_manifest_file: ${workspace_dir}/evn_mag_manifest_${pool_id}.json
 
