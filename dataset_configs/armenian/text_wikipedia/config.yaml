@@ -1,0 +1,12 @@
+documentation: |
+  Wikipedia
+processors_to_run: all
+workspace_dir: ???
+data_split: dev
+final_manifest: ${workspace_dir}/${data_split}_manifest.json
+
+processors:
+  # creating manifest for armenian test set
+  - _target_: sdp.processors.CreateInitialManifestWiki
+    lang: "hy"
+    raw_data_dir: ${workspace_dir}/raw_data
