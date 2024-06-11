@@ -33,7 +33,7 @@ data_split: dev
 final_manifest: ${workspace_dir}/${data_split}_manifest.json
 
 processors:
-  # creating manifest for armenian test set
+  # creating manifest for armenian dev set
   - _target_: sdp.processors.CreateInitialManifestFleurs
     lang: "hy_am"
     split: ${data_split}

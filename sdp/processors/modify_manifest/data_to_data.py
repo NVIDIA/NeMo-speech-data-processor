@@ -18,13 +18,27 @@ import re
 from typing import Dict, List
 
 import soundfile
+import torchaudio
+from docx import Document
 from sox import Transformer
+from tqdm import tqdm
 
 from sdp.logging import logger
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.processors.base_processor import (
+    BaseParallelProcessor,
+    BaseProcessor,
+    DataEntry,
+)
 from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
+from sdp.utils.metrics_computation import (
+    get_cer,
+    get_charrate,
+    get_wer,
+    get_wmr,
+    get_wordrate,
+)
 
 
 class GetAudioDuration(BaseParallelProcessor):
@@ -91,6 +105,7 @@ class FfmpegConvert(BaseParallelProcessor):
         output_file_key: str,
         id_key: str = None,
         output_format: str = "wav",
+        base_dir: str = None,
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
         **kwargs,
@@ -101,6 +116,7 @@ class FfmpegConvert(BaseParallelProcessor):
         self.output_file_key = output_file_key
         self.output_format = output_format
         self.id_key = id_key
+        self.base_dir = base_dir
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
 
@@ -115,6 +131,13 @@ class FfmpegConvert(BaseParallelProcessor):
             os.makedirs(os.path.join(self.converted_audio_dir, *key.split("/")[:-1]), exist_ok=True)
         else:
             key = os.path.splitext(input_file)[0].split("/")[-1]
+
+        if self.base_dir:
+            new_dir = os.path.dirname(os.path.relpath(input_file, self.base_dir))
+            os.makedirs(os.path.join(self.converted_audio_dir, new_dir), exist_ok=True)
+
+            key = os.path.join(new_dir, key)
+
         audio_file = os.path.join(self.converted_audio_dir, key) + "." + self.output_format
 
         if not os.path.isfile(audio_file):
@@ -577,3 +600,250 @@ class SubRegex(BaseParallelProcessor):
         for word, count in total_counter_sorted.items():
             logger.info(f"{word} {count}")
         super().finalize(metrics)
+
+
+class CopyManifestData(BaseParallelProcessor):
+    def __init__(
+        self,
+        copy_path: str,
+        source_filepath: str = "audio_path",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = source_filepath
+        self.copy_path = copy_path
+
+    def prepare(self):
+        os.makedirs(self.copy_path, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        fname = data_entry[self.input_field]
+
+        dest_file_path = os.path.join(self.copy_path, os.path.basename(fname))
+        shutil.copy(fname, dest_file_path)
+        data_entry[self.input_field] = dest_file_path
+
+        return [DataEntry(data=data_entry)]
+
+
+class ExtractFromBrackets(BaseParallelProcessor):
+    """
+    A class for extracting text contained within specified bracket types from strings,
+    handling nested brackets.
+
+    Attributes:
+        brackets (List[str]): A list where each element is a pair of strings representing
+                              the opening and closing brackets.
+        text_key (str): The key in the input data from which to extract text, defaults to "text".
+    """
+
+    def __init__(
+        self,
+        brackets: List[str],
+        text_key: str = "text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.brackets = brackets
+        self.text_key = text_key
+
+    def extract_text_within_brackets(self, text, brackets):
+        """
+        Extracts text within the specified brackets, including handling nested brackets.
+
+        Args:
+            text (str): The string from which to extract text.
+            brackets (tuple[str, str]): A tuple containing the opening and closing bracket.
+
+        Returns:
+            List[str]: A list of strings, each representing a segment of text found within
+                       the outermost brackets, including any nested brackets content.
+        """
+        open_bracket, close_bracket = brackets
+        depth = 0
+        buffer = ""
+        sentences = []
+
+        for char in text:
+            if char == open_bracket:
+                if depth > 0:
+                    buffer += char  # Add to buffer if already inside brackets
+                depth += 1
+            elif char == close_bracket:
+                depth -= 1
+                if depth == 0:  # Exiting outermost brackets
+                    if buffer:
+                        sentences.append(buffer)
+                        buffer = ""  # Reset buffer for next possible extraction
+                elif depth > 0:
+                    buffer += char  # Still inside nested brackets, continue adding
+            elif depth > 0:
+                buffer += char  # Add characters inside brackets to buffer
+
+        return sentences
+
+    def process_dataset_entry(self, data_entry) -> List:
+        data: list[dict] = []
+        sentences = []
+        text_in = data_entry[self.text_key]
+
+        for bracket in self.brackets:
+            sentences.extend(self.extract_text_within_brackets(text_in, bracket))
+
+        for sentence in sentences:
+            new_entry = data_entry.copy()
+            new_entry[self.text_key] = sentence
+            # new_entry["ORIGINAL TEXT"] = text_in  # for testing
+            data.append(new_entry)
+
+        data_list = []
+        for data_point in data:
+            data_list.append(DataEntry(data=data_point))
+
+        return data_list
+
+
+class GetWER(BaseParallelProcessor):
+    def __init__(
+        self,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.text_key = text_key
+        self.pred_text_key = pred_text_key
+
+    def process_dataset_entry(self, data_entry) -> List:
+        data_entry['wer'] = get_wer(data_entry[self.text_key], data_entry[self.pred_text_key])
+        return [DataEntry(data=data_entry)]
+
+
+class MakeSentence(BaseParallelProcessor):
+    """
+    Takes string from text string, makes first symbol uppercae and adds end_symbol if last symbol is alpha.
+    """
+
+    def __init__(
+        self,
+        text_key: str = "text",
+        end_symbol: str = ":",
+        make_uppercase: bool = True,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.make_uppercase = make_uppercase
+        self.text_key = text_key
+        self.end_symbol = end_symbol
+
+    def process_dataset_entry(self, data_entry) -> List:
+        if self.make_uppercase:
+            data_entry[self.text_key] = data_entry[self.text_key][0].upper() + data_entry[self.text_key][1:]
+
+        # Check if the last character is not a punctuation and if so, add the end_symbol
+        if data_entry[self.text_key][-1].isalpha():
+            data_entry[self.text_key] += self.end_symbol
+        return [DataEntry(data=data_entry)]
+
+
+class ASRFileCheck(BaseProcessor):
+    def __init__(self, audio_filepath_key: str = "audio_filepath", corrupted_audio_dir: str = None, **kwargs):
+        super().__init__(**kwargs)
+        self.audio_filepath_key = audio_filepath_key
+        self.corrupted_audio_dir = corrupted_audio_dir
+        self.failed_files = []
+
+    def process(self):
+        """Check each file listed in the manifest to ensure it can be loaded with torchaudio."""
+        with open(self.input_manifest_file, 'r') as f:
+            lines = f.readlines()
+
+        entries = []
+        total_lines = len(lines)
+
+        for idx in tqdm(range(total_lines), desc="Checking Audio Files"):
+            line = lines[idx]
+            entry = json.loads(line)
+            try:
+                # Attempt to load the audio file to check if it is corrupted
+                torchaudio.load(entry[self.audio_filepath_key])
+                entries.append(entry)  # File is good, append to entries list
+            except Exception as e:
+                print(f"Failed to load {entry[self.audio_filepath_key]}: {e}")
+                self.failed_files.append(entry[self.audio_filepath_key])  # Log failed file path
+
+                # Move or delete the corrupted audio file
+                if self.corrupted_audio_dir:
+                    # Ensure the directory exists
+                    os.makedirs(self.corrupted_audio_dir, exist_ok=True)
+                    dest_path = os.path.join(
+                        self.corrupted_audio_dir, os.path.basename(entry[self.audio_filepath_key])
+                    )
+                    os.rename(entry[self.audio_filepath_key], dest_path)
+                    print(f"Moved corrupted file to: {dest_path}")
+                else:
+                    os.remove(entry[self.audio_filepath_key])
+                    print(f"Deleted corrupted file: {entry[self.audio_filepath_key]}")
+
+        # Output non-corrupted entries to a new manifest file
+        with open(self.output_manifest_file, 'w', encoding='utf-8') as f_out:
+            for entry in entries:
+                json.dump(entry, f_out, ensure_ascii=False)
+                f_out.write("\n")
+
+        if self.failed_files:
+            print(f"Failed to process the following files: {self.failed_files}")
+
+
+class AudioResampler(BaseParallelProcessor):
+    """
+    Class to handle resampling of audio files.
+
+    Args:
+        resampled_audio_dir (str): Directory where resampled audio files will be saved.
+        target_samplerate (int): Desired sample rate (Hz).
+        target_nchannels (int): Desired number of audio channels.
+
+    Methods:
+        process_dataset_entry(data_entry): Processes a single data entry to resample audio.
+    """
+
+    def __init__(
+        self,
+        resampled_audio_dir: str,
+        audio_filepath_key: str = "audio_filepath",
+        target_samplerate: int = 16000,
+        target_nchannels: int = 1,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.audio_filepath_key = audio_filepath_key
+        self.resampled_audio_dir = resampled_audio_dir
+        self.target_samplerate = target_samplerate
+        self.target_nchannels = target_nchannels
+        os.makedirs(resampled_audio_dir, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        """
+        Resamples a single audio file based on the specified sample rate and number of channels.
+
+        Args:
+            data_entry (tuple): A tuple containing the original audio file path and its transcription.
+
+        Returns:
+            dict: A dictionary containing the path to the resampled audio file, its duration, and the transcription text.
+        """
+        file_name = os.path.splitext(os.path.basename(data_entry[self.audio_filepath_key]))[0]
+
+        audio_path = data_entry[self.audio_filepath_key]
+        output_wav_path = os.path.join(self.resampled_audio_dir, file_name + ".wav")
+
+        if not os.path.exists(output_wav_path):
+            tfm = Transformer()
+            tfm.rate(samplerate=self.target_samplerate)
+            tfm.channels(n_channels=self.target_nchannels)
+            tfm.build(input_filepath=audio_path, output_filepath=output_wav_path)
+
+        data_entry[self.audio_filepath_key] = output_wav_path
+
+        return [DataEntry(data=data_entry)]
