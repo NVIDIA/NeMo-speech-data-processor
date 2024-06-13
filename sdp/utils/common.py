@@ -36,22 +36,70 @@ def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
     return result
 
 
+def read_manifest(manifest_filepath: str | Path):
+    """
+    Generator function that yields samples from a manifest file.
+
+    Args:
+        manifest_filepath (str | Path): The path to the manifest file.
+
+    Yields:
+        dict: A sample from the manifest file.
+    """
+    with open(manifest_filepath, "rt", encoding="utf8") as fin:
+        for line in fin:
+            yield json.loads(line)
+
+
+def write_manifest(manifest_filepath: str, samples: list[dict] = [], mode: str = "w"):
+    """
+    Writes or appends samples to a manifest file.
+
+    Args:
+        samples (list[dict]): List of samples to write to the manifest file.
+        manifest_filepath (str): The path to the manifest file.
+        mode (str, optional): The mode in which to open the file. Defaults to "w".
+            Use "w" for writing (overwriting) and "a" for appending.
+
+    """
+    if mode not in ["w", "a"]:
+        raise ValueError(
+            f"mode can't be `{mode}`. Use `w` for writing or `a` for appending."
+        )
+
+    os.makedirs(os.path.dirname(manifest_filepath), exist_ok=True)
+
+    with open(manifest_filepath, mode=mode, encoding="utf8") as manifest:
+        for sample in tqdm(samples, desc="Writing samples:.."):
+            line = json.dumps(sample)
+            manifest.writelines(f"{line}\n")
+    logger.info(f"Manifest is saved: {manifest_filepath}")
+
+
 def download_file(source_url: str, target_directory: str, verbose=True):
     # make sure target_directory is an absolute path to avoid bugs when we change directories to download data later
     target_directory = os.path.abspath(target_directory)
 
     if verbose:
-        logger.info(f"Trying to download data from {source_url} and save it in this directory: {target_directory}")
+        logger.info(
+            f"Trying to download data from {source_url} and save it in this directory: {target_directory}"
+        )
     filename = os.path.basename(urllib.parse.urlparse(source_url).path)
     target_filepath = os.path.join(target_directory, filename)
 
     if os.path.exists(target_filepath):
         if verbose:
-            logger.info(f"Found file {target_filepath} => will not be attempting download from {source_url}")
+            logger.info(
+                f"Found file {target_filepath} => will not be attempting download from {source_url}"
+            )
     else:
         logger.info(f"Not found file {target_filepath}")
-        original_dir = os.getcwd()  # record current working directory so can cd back to it
-        os.chdir(target_directory)  # cd to target dir so that temporary download file will be saved in target dir
+        original_dir = (
+            os.getcwd()
+        )  # record current working directory so can cd back to it
+        os.chdir(
+            target_directory
+        )  # cd to target dir so that temporary download file will be saved in target dir
 
         wget.download(source_url, target_directory)
 
@@ -63,8 +111,12 @@ def download_file(source_url: str, target_directory: str, verbose=True):
     return target_filepath
 
 
-def extract_archive(archive_path: str, extract_path: str, force_extract: bool = False) -> str:
-    logger.info(f"Attempting to extract all contents from tar file {archive_path} and save in {extract_path}")
+def extract_archive(
+    archive_path: str, extract_path: str, force_extract: bool = False
+) -> str:
+    logger.info(
+        f"Attempting to extract all contents from tar file {archive_path} and save in {extract_path}"
+    )
     if not force_extract:
         if tarfile.is_tarfile(archive_path):
             with tarfile.open(archive_path, "r") as archive:
@@ -73,12 +125,16 @@ def extract_archive(archive_path: str, extract_path: str, force_extract: bool = 
             with zipfile.ZipFile(archive_path, "r") as archive:
                 archive_extracted_dir = archive.namelist()[0]
         else:
-            raise RuntimeError(f"Unknown archive format: {archive_path}. We only support tar and zip archives.")
+            raise RuntimeError(
+                f"Unknown archive format: {archive_path}. We only support tar and zip archives."
+            )
 
         archive_contents_dir = os.path.join(extract_path, archive_extracted_dir)
 
     if not force_extract and os.path.exists(archive_contents_dir):
-        logger.info(f"Directory {archive_contents_dir} already exists => will not attempt to extract file")
+        logger.info(
+            f"Directory {archive_contents_dir} already exists => will not attempt to extract file"
+        )
     else:
         if tarfile.is_tarfile(archive_path):
             with tarfile.open(archive_path, "r") as archive:
@@ -94,15 +150,30 @@ def extract_archive(archive_path: str, extract_path: str, force_extract: bool = 
 
 
 def ffmpeg_convert(jpg: str, wav: str, ar: int = 0, ac: int = 1):
-    process_args = ["ffmpeg", "-nostdin", "-i", jpg, '-ac', str(ac), "-map", "0:a", "-c:a", "pcm_s16le", "-y", wav]
+    process_args = [
+        "ffmpeg",
+        "-nostdin",
+        "-i",
+        jpg,
+        "-ac",
+        str(ac),
+        "-map",
+        "0:a",
+        "-c:a",
+        "pcm_s16le",
+        "-y",
+        wav,
+    ]
     if ar:
         process_args = process_args[:-1]
         process_args.extend(["-ar", str(ar), wav])
-    return subprocess.run(process_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return subprocess.run(
+        process_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
 
 
 def extract_tar_with_strip_components(tar_path, extract_path, strip_components=1):
-    with tarfile.open(tar_path, 'r') as tar:
+    with tarfile.open(tar_path, "r") as tar:
         members = tar.getmembers()
         for member in members:
             components = member.name.split(os.path.sep)

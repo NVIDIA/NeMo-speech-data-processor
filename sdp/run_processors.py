@@ -27,6 +27,7 @@ from sdp.logging import logger
 OmegaConf.register_new_resolver("subfield", lambda node, field: node[field])
 OmegaConf.register_new_resolver("not", lambda x: not x)
 OmegaConf.register_new_resolver("equal", lambda field, value: field == value)
+OmegaConf.register_new_resolver("inside_group", lambda value: f"${{{value.replace('processors.', '')}}}")
 
 
 # customizing logger
@@ -139,7 +140,7 @@ def run_processors(cfg):
                 with open_dict(processors_cfgs[idx + 1]):
                     processors_cfgs[idx + 1]["input_manifest_file"] = processor_cfg["output_manifest_file"]
 
-            processor = hydra.utils.instantiate(processor_cfg)
+            processor = hydra.utils.instantiate(processor_cfg, _recursive_=False)
             # running runtime tests to fail right-away if something is not
             # matching users expectations
             processor.test()

@@ -14,6 +14,10 @@
 
 # let's import all supported processors here to simplify target specification
 
+from sdp.processors.group_processors import (
+    GroupProcessors,
+)
+
 from sdp.processors.datasets.coraa.create_initial_manifest import (
     CreateInitialManifestCORAA,
 )
