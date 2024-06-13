@@ -16,6 +16,7 @@ import json
 import os
 import subprocess
 import tarfile
+from tqdm import tqdm
 import urllib
 import zipfile
 from pathlib import Path
