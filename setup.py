@@ -17,7 +17,7 @@ from setuptools import find_packages, setup
 setup(
     name="sdp",
     version="0.1.0",
-    description="NeMo-Speech-Data-Processor - a project to process data",
+    description="NeMo-Speech-Data-Processor is a toolkit for processing speech data and creating speech datasets",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     license="Apache License, Version 2.0",
