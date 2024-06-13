@@ -877,6 +877,8 @@ class Subprocess(BaseProcessor):
         input_manifest_arg (str, optional): The argument specifying the input manifest. Defaults to an empty string.
         output_manifest_arg (str, optional): The argument specifying the output manifest. Defaults to an empty string.
         arg_separator (str, optional): The separator used between argument and value. Defaults to "=".
+        shell (bool, optional): The argument specifies whether to use shell for subprocess.run(). Defaults to False.
+        dont_wait (bool, optional): The argument specifies whether to wait while the subprocess finishes. . Defaults to False.
         **kwargs: Additional keyword arguments to be passed to the base class.
 
     Example:
@@ -889,7 +891,6 @@ class Subprocess(BaseProcessor):
         cmd: "python /workspace/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
             --language=en --n_jobs=-1 --batch_size=600 --manifest_text_field=text --cache_dir=${workspace_dir}/cache --overwrite_cache \
             --whitelist=/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/en/data/whitelist/asr_with_pc.tsv"
-
     """
 
     def __init__(
@@ -912,13 +913,14 @@ class Subprocess(BaseProcessor):
 
     def process(self):
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
-        # if self.cmd.find(self.input_manifest_file) != -1 or self.cmd.find(self.output_manifest_file) != -1:
-        #     raise ValueError("input_manifest_file "
-        #         + self.input_manifest_file
-        #         + " and output_manifest_file "
-        #         + self.output_manifest_file
-        #         + " should be exluded from cmd line: "
-        #         + self.cmd)
+        if (self.cmd.find(self.input_manifest_file) != -1 and self.input_manifest_arg != "") \
+        or (self.cmd.find(self.output_manifest_file) != -1 and self.output_manifest_arg != ""):
+            raise ValueError("input_manifest_file "
+                + self.input_manifest_file
+                + " and output_manifest_file "
+                + self.output_manifest_file
+                + " should be exluded from cmd line: "
+                + self.cmd)
         process_args = [x for x in self.cmd.split(" ") if x]
         if self.arg_separator == " ":
             if self.input_manifest_arg:
@@ -1150,40 +1152,41 @@ class SplitByVtt(BaseParallelProcessor):
 
 class SplitByVttSentence(BaseParallelProcessor):
     """
-    A class for splitting audio files based on VTT (WebVTT) sentence-level segmentation in a dataset.
+        A class for splitting audio files based on VTT (WebVTT) sentence-level segmentation in a dataset.
 
-    Parameters:
-        splited_audio_dir (str): The directory to store the split audio files.
-        source_audio_key (str): The field in the dataset containing the path to the source audio files.
-        target_audio_key (str): The field to store the paths of the split audio files.
-        duration_key (str): The field to store the duration of each split audio segment.
-        text_key (str): The field to store the transcriptions corresponding to each split audio segment.
-        caption_file_key (str): The field in the dataset containing the path to the VTT (WebVTT) files for segmentation.
-        proxy_keys (List[str], optional): List of additional fields to proxy from the original data entry to the split entries. Defaults to an empty list.
-        duration_threshold (float, optional): The duration threshold in seconds for each split audio segment. Defaults to 10.0.
+        Args:
+            splited_audio_dir (str): The directory to store the split audio files.
+            source_audio_key (str): The field in the dataset containing the path to the source audio files.
+            target_audio_key (str): The field to store the paths of the split audio files.
+            duration_key (str): The field to store the duration of each split audio segment.
+            text_key (str): The field to store the transcriptions corresponding to each split audio segment.
+            caption_file_key (str): The field in the dataset containing the path to the VTT (WebVTT) files for segmentation.
+            additional_fields (List[str], optional): List of additional fields to copy from the original data entry to the split entries.
+                Defaults to an empty list.
+            duration_threshold (float, optional): The duration threshold in seconds for each split audio segment. Defaults to 10.0.
     """
 
     def __init__(
-        self,
-        splited_audio_dir: str,
-        source_audio_key: str,
-        target_audio_key: str,
-        duration_key: str,
-        text_key: str,
-        caption_file_key: str,
-        proxy_keys: List[str] = [],
-        duration_threshold: float = 10.0,
-        **kwargs,
+            self,
+            splited_audio_dir: str,
+            source_audio_field: str,
+            target_audio_field: str,
+            duration_field: str,
+            text_field: str,
+            vtt_field: str,
+            additional_fields: List[str] = [],
+            duration_threshold: float = 10.0,
+            **kwargs,
     ):
         super().__init__(**kwargs)
         self.splited_audio_dir = splited_audio_dir
-        self.source_audio_key = source_audio_key
-        self.target_audio_key = target_audio_key
-        self.duration_key = duration_key
-        self.text_key = text_key
-        self.caption_file_key = caption_file_key
+        self.source_audio_field = source_audio_field
+        self.target_audio_field = target_audio_field
+        self.duration_field = duration_field
+        self.text_field = text_field
+        self.vtt_field = vtt_field
         self.duration_threshold = duration_threshold
-        self.proxy_keys = proxy_keys
+        self.additional_fields = additional_fields
 
     def prepare(self):
         os.makedirs(self.splited_audio_dir, exist_ok=True)

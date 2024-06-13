@@ -139,6 +139,7 @@ class ASRWhisper(BaseProcessor):
     Args:
         pretrained_model (str): name of pretrained model on HuggingFace.
         output_text_field (str): field to save transcription result.
+        pad_or_trim_length (int): Audio duration to pad or trim (number of samples). Counted as sample_rate * n_seconds i.e.: 16000*30=480000
         device (str): Inference device.
     """
 
@@ -146,6 +147,7 @@ class ASRWhisper(BaseProcessor):
         self,
         pretrained_model: str,
         output_text_key: str,
+        pad_or_trim_length: int = None,
         device: str = None,
         output_lang_key: str = "lid",
         **kwargs,
@@ -163,12 +165,14 @@ class ASRWhisper(BaseProcessor):
         self.output_text_key = output_text_key
         self.device = device
         self.output_lang_key = output_lang_key
+        self.pad_or_trim_length = pad_or_trim_length
         if self.device is None:
             if torch.cuda.is_available():
                 self.device = "cuda"
             else:
                 self.device = "cpu"
         self.model = whisper.load_model(self.pretrained_model)
+        self.model.to(self.device)
 
     def process(self):
         json_list = load_manifest(Path(self.input_manifest_file))
@@ -186,14 +190,14 @@ class ASRWhisper(BaseProcessor):
     def whisper_infer(self, audio_path):
         audio = self.whisper.load_audio(audio_path)
 
-        audio = self.whisper.pad_or_trim(audio)
+        audio = self.whisper.pad_or_trim(audio, length=self.pad_or_trim_length)
         mel = self.whisper.log_mel_spectrogram(audio)
         mel = mel.to(self.device)
 
         _, probs = self.model.detect_language(mel)
         lang = max(probs, key=probs.get)
 
-        options = self.whisper.DecodingOptions()
+        options = self.whisper.DecodingOptions(fp16=False)
         result = self.whisper.decode(self.model, mel, options)
         return result.text, lang
 
@@ -221,6 +225,8 @@ class ASRTransformers(BaseProcessor):
         device: str = None,
         batch_size: int = 1,
         torch_dtype: str = "float32",
+        generate_task: str = "transcribe",
+        generate_language: str = "english",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -237,6 +243,8 @@ class ASRTransformers(BaseProcessor):
         self.input_duration_key = input_duration_key
         self.device = device
         self.batch_size = batch_size
+        self.generate_task = generate_task
+        self.generate_language = generate_language
         if torch_dtype == "float32":
             self.torch_dtype = torch.float32
         elif torch_dtype == "float16":
@@ -281,7 +289,9 @@ class ASRTransformers(BaseProcessor):
                 batch = json_list_sorted[start_index : start_index + self.batch_size]
                 start_index += self.batch_size
                 audio_files = [item[self.input_audio_key] for item in batch]
-                results = self.pipe(audio_files)
+                results = self.pipe(
+                    audio_files, generate_kwargs={"language": self.generate_language, "task": self.generate_task}
+                )
 
                 for i, item in enumerate(batch):
                     item[self.output_text_key] = results[i]["text"]

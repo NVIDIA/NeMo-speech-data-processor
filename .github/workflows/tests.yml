@@ -44,6 +44,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements/main.txt
         pip install -r requirements/tests.txt
+        pip install -r requirements/huggingface.txt
     - name: Checking that SDP can be imported and basic configs can be run without nemo
       # in the future this might fail if some runtime tests require nemo
       # in that case this test will need to be changed
@@ -64,6 +65,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements/main.txt
         pip install -r requirements/tests.txt
+        pip install -r requirements/huggingface.txt
         sudo apt-get update
         sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
         pip install Cython wheel  # need to pre-install to avoid error in nemo installation

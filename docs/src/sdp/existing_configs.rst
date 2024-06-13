@@ -28,12 +28,20 @@ download the data archive and specify its location with the ``raw_data_dir`` par
 * **Spanish**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/mcv12/config.yaml>`__ |
   :doc:`documentation <config-docs/spanish_pc/mcv12/config>`
+* **Portuguese**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/portuguese/mcv/config.yaml>`__ |
+  :doc:`documentation <config-docs/portuguese/mcv/config>`
+* **Kazakh**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/kazakh/mcv/config.yaml>`__ |
+  :doc:`documentation <config-docs/kazakh/mcv/config>`
 
-.. toctree::
+.. toctree:: 
    :hidden:
 
    config-docs/italian/mcv/config
    config-docs/spanish_pc/mcv12/config
+   config-docs/portuguese/mcv/config
+   config-docs/kazakh/mcv/config
 
 Multilingual LibriSpeech (MLS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,6 +62,9 @@ Multilingual LibriSpeech (MLS)
 * **Spanish (no punctuation and capitalization)**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish/mls/config.yaml>`__ |
   :doc:`documentation <config-docs/spanish/mls/config>`
+* **Portuguese (with punctuation and capitalization)**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/portuguese/mls/config.yaml>`__ |
+  :doc:`documentation <config-docs/portuguese/mls/config>`
 
 .. toctree::
    :hidden:
@@ -62,6 +73,7 @@ Multilingual LibriSpeech (MLS)
    config-docs/italian/mls/config_nopc
    config-docs/spanish_pc/mls/config
    config-docs/spanish/mls/config
+   config-docs/portuguese/mls/config
 
 VoxPopuli
 ~~~~~~~~~
@@ -128,7 +140,7 @@ Corpus of Regional African American Language (CORAAL)
    config-docs/english/coraal/config
 
 Corpus of Armenian Text to Upload into Common Voice (MCV)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Dataset link:** https://commonvoice.mozilla.org/
 
@@ -141,7 +153,7 @@ Corpus of Armenian Text to Upload into Common Voice (MCV)
    config-docs/armenian/text_mcv/config
 
 Corpus based on Armenian audiobooks 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/audio_books/config.yaml>`__ |
@@ -151,3 +163,99 @@ Corpus based on Armenian audiobooks
    :hidden:
 
    config-docs/armenian/audio_books/config
+
+Few-shot Learning Evaluation of Universal Representations of Speech (FLEURS)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://huggingface.co/datasets/google/fleurs
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/fleurs/config.yaml>`__ |
+:doc:`documentation <config-docs/armenian/fleurs/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/armenian/fleurs/config
+
+English LibriSpeech (ELS)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://openslr.org/12
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/librispeech/config.yaml>`__ |
+:doc:`documentation <config-docs/english/librispeech/config>`
+
+.. toctree::
+   :hidden:
+   
+   config-docs/english/librispeech/config
+
+Coraa Brazilian Portuguese dataset
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://github.com/nilc-nlp/CORAA
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/portuguese/coraa/config.yaml>`__ |
+:doc:`documentation <config-docs/portuguese/coraa/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/portuguese/coraa/config
+
+MTEDx
+~~~~~~
+
+**Dataset link:** https://www.openslr.org/100/
+
+**Supported configs**.
+
+* **Portuguese**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/portuguese/mtedx/config.yaml>`__ |
+  :doc:`documentation <config-docs/portuguese/mtedx/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/portuguese/mtedx/config
+
+Kazakh Speech Dataset (SLR140)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://www.openslr.org/140/
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/kazakh/slr140/config.yaml>`__ |
+:doc:`documentation <config-docs/kazakh/slr140/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/kazakh/slr140/config
+
+Kazakh Speech Corpus (SLR102)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://www.openslr.org/102/
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/kazakh/slr102/config.yaml>`__ |
+:doc:`documentation <config-docs/kazakh/slr102/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/kazakh/slr102/config
+
+Kazakh Speech Corpus 2 (KSC2)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://issai.nu.edu.kz/kz-speech-corpus/
+
+**Required manual steps:** You need to request the dataset from the website and after getting approval download it manually from Dropbox.
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/kazakh/ksc2/config.yaml>`__ |
+:doc:`documentation <config-docs/kazakh/ksc2/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/kazakh/ksc2/config

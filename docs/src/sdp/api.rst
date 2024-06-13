@@ -52,6 +52,14 @@ CORAAL
 .. autodata:: sdp.processors.TrainDevTestSplitCORAAL
    :annotation:
 
+
+Librispeech
+'''''''''''
+
+.. autodata:: sdp.processors.CreateInitialManifestLibrispeech
+   :annotation:
+   
+
 SLR83
 '''''
 
@@ -61,9 +69,28 @@ SLR83
 .. autodata:: sdp.processors.CustomDataSplitSLR83
    :annotation:
 
+MTEDx
+'''
+
+.. autodata:: sdp.processors.CreateInitialManifestMTEDX
+   :annotation:
+
+Coraa
+'''
+
+.. autodata:: sdp.processors.CreateInitialManifestCORAA
+   :annotation:
+
 .. TODO: Fisher config is not accessible - should we require moving everything to SDP
 ..       Probably need some policy on shat lives in main folder vs configs.
 ..       To control the number of processors we support.
+
+
+FLEURS
+''''''   
+
+.. autodata:: sdp.processors.CreateInitialManifestFleurs
+   :annotation:
 
 Lhotse processors
 #################
@@ -94,7 +121,7 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.ASRWhisper
    :annotation:
 
-.. autodata:: sdp.processors.ASRTransformer
+.. autodata:: sdp.processors.ASRTransformers
    :annotation:
 
 Text-only processors
@@ -160,6 +187,9 @@ ASR-based processors
 
 Data modifications
 ''''''''''''''''''
+
+.. autodata:: sdp.processors.SoxConvert
+   :annotation:
 
 .. autodata:: sdp.processors.InsIfASRInsertion
    :annotation:
@@ -234,9 +264,6 @@ Miscellaneous
    :annotation:
 
 .. autodata:: sdp.processors.FfmpegConvert
-   :annotation:
-
-.. autodata:: sdp.processors.Subprocess
    :annotation:
 
 .. autodata:: sdp.processors.CreateInitialManifestByExt
