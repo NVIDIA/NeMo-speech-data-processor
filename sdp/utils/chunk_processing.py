@@ -1,3 +1,16 @@
+# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import os
 import tempfile
 import uuid
@@ -9,6 +22,8 @@ from omegaconf import OmegaConf
 from sdp.logging import logger
 from sdp.utils.common import read_manifest, write_manifest
 
+def get_last_output_manifest_file_in_group(group_processors_cfg):
+    return group_processors_cfg[-1].get("output_manifest_file", None)
 
 class ChunkedProcessor:
     def __init__(
@@ -133,12 +148,14 @@ class ChunkProcessingPipeline:
     def __init__(
         self,
         initial_manifest_file: str,
+        last_output_manifest_file: str,
         processors_cfgs: list[dict],
         chunksize: int = 100,
         aggregation_at_end: bool = True,
         light_logging: bool = True,
     ):
         self.initial_manifest_file = initial_manifest_file
+        self.last_output_manifest_file = last_output_manifest_file
         self.chunksize = chunksize
         self.processors_cfgs = processors_cfgs
         self.aggregation_at_end = aggregation_at_end
@@ -146,7 +163,7 @@ class ChunkProcessingPipeline:
         self.tmp_dir = None
 
     def prepare(self):
-        for processor_cfg in self.processors_cfgs:
+        for processor_cfg in self.processors_cfgs[:-1]:
             if "output_manifest_file" not in processor_cfg:
                 processor_cfg["output_manifest_file"] = os.path.join(
                     self.tmp_dir, str(uuid.uuid4())
@@ -155,6 +172,13 @@ class ChunkProcessingPipeline:
                 os.path.dirname(processor_cfg["output_manifest_file"]), exist_ok=True
             )
             write_manifest(processor_cfg["output_manifest_file"])
+        
+        if "output_manifest_file" not in self.processors_cfgs[-1]:
+            self.processors_cfgs[-1]['output_manifest_file'] = self.last_output_manifest_file
+            os.makedirs(
+                os.path.dirname(self.last_output_manifest_file), exist_ok=True
+            )
+            write_manifest(self.last_output_manifest_file)
 
     def chunk_manifest(self):
         """Splits the manifest into smaller chunks defined by ``chunksize``."""

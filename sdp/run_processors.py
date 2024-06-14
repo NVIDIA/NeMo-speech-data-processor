@@ -22,6 +22,7 @@ import hydra
 from omegaconf import OmegaConf, open_dict
 
 from sdp.logging import logger
+from sdp.utils.chunk_processing import get_last_output_manifest_file_in_group
 
 # registering new resolvers to simplify config files
 OmegaConf.register_new_resolver("subfield", lambda node, field: node[field])
@@ -129,6 +130,12 @@ def run_processors(cfg):
             # and "input_manifest_file" keys, which can be optional. In case they
             # are missing, we create tmp files here for them
             # (1) first use a temporary file for the "output_manifest_file" if it is unspecified
+            if processor_cfg["_target_"] == "sdp.processors.GroupProcessors" and "output_manifest_file" not in processor_cfg:
+                last_output_manifest_file_in_group = get_last_output_manifest_file_in_group(processor_cfg['processors'])
+                if last_output_manifest_file_in_group:
+                    with open_dict(processor_cfg):
+                        processor_cfg["output_manifest_file"] = last_output_manifest_file_in_group
+
             if "output_manifest_file" not in processor_cfg:
                 tmp_file_path = os.path.join(tmp_dir, str(uuid.uuid4()))
                 with open_dict(processor_cfg):

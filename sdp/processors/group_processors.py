@@ -20,7 +20,7 @@ class GroupProcessors(BaseProcessor):
     def __init__(
         self,
         output_manifest_file: str,
-        input_manifest_file: str | None = None,
+        input_manifest_file: str,
         chunksize: int = 500,
         **processors_cfg,
     ):
@@ -39,6 +39,7 @@ class GroupProcessors(BaseProcessor):
     def process(self):
         chunked_pipeline = ChunkProcessingPipeline(
             initial_manifest_file=self.initial_manifest_file,
+            last_output_manifest_file=self.output_manifest_file,
             chunksize=self.chunksize,
             processors_cfgs=self.processors_cfg,
         )
