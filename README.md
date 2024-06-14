@@ -29,9 +29,11 @@ SDP is officially supported for Python 3.10, but might work for other versions.
    - [NeMo Installation](https://github.com/NVIDIA/NeMo.git)
 
 ## Example:
-1. In this example we will load librispeech using SDP. For downloading all available data - replace config.yaml with all.yaml and for mini dataset - replace with mini.yaml. 
-2. If you need something specific split or the combination of splits if one file - pass to optional argument 
-data_split ["dev_clean", dev_test] (for example)
+1. In this example we will load librispeech using SDP.
+   * For downloading all available data - replace config.yaml with all.yaml
+   * For mini dataset - replace with mini.yaml.
+3. If you need something specific split or the combination of splits if one file
+   * Pass to optional argument data_split ["dev_clean", dev_test] (for example)
 ```bash
     python NeMo-speech-data-processor/main.py \
     --config-path="dataset_configs/english/librispeech" \
