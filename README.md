@@ -16,25 +16,25 @@ SDP is officially supported for Python 3.10, but might work for other versions.
 
 1. Clone the repository:
 
-   '''sh
-   git clone <https://github.com/NVIDIA/NeMo-speech-data-processor.git>
-   cd <https://github.com/NVIDIA/NeMo-speech-data-processor.git>
-   '''
-
+```bash
+   git clone https://github.com/NVIDIA/NeMo-speech-data-processor.git
+   cd NeMo-speech-data-processor
+```
 2. Install dependencies:
-
-   '''sh
+```bash
    pip install -r requirements/main.txt
-   '''
+```
 
 3. Optional: If you need to use ASR, NLP parts, or NeMo Text Processing, follow the NeMo installation instructions:
    - [NeMo Installation](https://github.com/NVIDIA/NeMo.git)
 
 ## Example:
-1. In this example we will load librispeech using SDP. For downloading all available data - replace config.yaml with all.yaml and for mini dataset - replace with mini.yaml. 
-2. If you need something specific split or the combination of splits if one file - pass to optional argument 
-data_split ["dev_clean", dev_test] (for example)
-```sh
+1. In this example we will load librispeech using SDP.
+   * For downloading all available data - replace config.yaml with all.yaml
+   * For mini dataset - replace with mini.yaml.
+3. If you need something specific split or the combination of splits if one file
+   * Pass to optional argument data_split ["dev_clean", dev_test] (for example)
+```bash
     python NeMo-speech-data-processor/main.py \
     --config-path="dataset_configs/english/librispeech" \
     --config-name="config.yaml" \
@@ -47,7 +47,7 @@ data_split ["dev_clean", dev_test] (for example)
 
    Here is a simplified example of a `config.yaml` file:
 
-   '''yaml
+   ```yaml
    processors:
      - _target_: sdp.processors.CreateInitialManifestMCV
        output_manifest_file: "${data_split}_initial_manifest.json"
@@ -71,20 +71,20 @@ data_split ["dev_clean", dev_test] (for example)
          - "audio_filepath"
          - "text"
          - "duration"
-   '''
+   ```
 
 2. Run the Processor:
 
    Use the following command to process your dataset:
 
-   '''sh
+```bash
    python <SDP_ROOT>/main.py \
      --config-path="dataset_configs/<lang>/<dataset>/" \
      --config-name="config.yaml" \
      processors_to_run="all" \
      data_split="train" \
      workspace_dir="<dir_to_store_processed_data>"
-   '''
+```
 
 ![SDP overview](https://github.com/NVIDIA/NeMo/releases/download/v1.17.0/sdp_overview_diagram.png)
 
