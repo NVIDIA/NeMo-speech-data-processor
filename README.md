@@ -21,6 +21,11 @@ SDP is officially supported for Python 3.10, but might work for other versions.
       cd <https://github.com/NVIDIA/NeMo-speech-data-processor.git>
    
 
+.. code-block:: bash
+
+    conda create --name nemo python==3.10.12
+    conda activate nemo
+
 2. Install dependencies:
 
    .. code-block:: bash
