@@ -17,6 +17,7 @@ SDP is officially supported for Python 3.10, but might work for other versions.
 1. Clone the repository:
 
 .. code-block:: bash
+
    git clone <https://github.com/NVIDIA/NeMo-speech-data-processor.git>
    cd <https://github.com/NVIDIA/NeMo-speech-data-processor.git>
    
@@ -29,6 +30,7 @@ SDP is officially supported for Python 3.10, but might work for other versions.
 2. Install dependencies:
 
 .. code-block:: bash
+
    pip install -r requirements/main.txt
    
 
