@@ -16,11 +16,12 @@ SDP is officially supported for Python 3.10, but might work for other versions.
 
 1. Clone the repository:
 
-.. code-block:: bash
+   ```bash
+   git clone https://github.com/NVIDIA/NeMo-speech-data-processor.git
+   cd NeMo-speech-data-processor
+   ```
 
-   git clone <https://github.com/NVIDIA/NeMo-speech-data-processor.git>
-   cd <https://github.com/NVIDIA/NeMo-speech-data-processor.git>
-   
+
 
 .. code-block:: bash
 
