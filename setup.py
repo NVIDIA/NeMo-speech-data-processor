@@ -14,15 +14,6 @@
 
 from setuptools import find_packages, setup
 
-
-def parse_requirements(filename):
-    with open(filename) as f:
-        return f.read().splitlines()
-
-
-# Read the requirements from the requirements/main.txt file
-requirements = parse_requirements('requirements/main.txt')
-
 setup(
     name="sdp",
     version="0.1.0",
@@ -33,7 +24,22 @@ setup(
     url="https://github.com/NVIDIA/NeMo-speech-data-processor",
     packages=find_packages(include=["sdp*"]),
     python_requires=">=3.10",
-    install_requires=requirements,
+    install_requires=[
+    'diff_match_patch',
+    'editdistance',
+    'hydra-core',
+    'joblib',
+    'librosa>=0.10.0', # specify >=0.10.0 so that librosa.get_duration(path=...) will work
+    'numpy',
+    'omegaconf',
+    'pandas',
+    'regex',
+    'sox',
+    'tqdm',
+    'wget',
+    'ffmpeg',
+    'rarfile',
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.10",
