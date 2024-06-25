@@ -7,5 +7,6 @@ docs/html
 docs/src/sdp/config-docs/
 .hypothesis
 asr-venv
+test-venv
 workdir
 lightning_logs

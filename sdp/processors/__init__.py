@@ -72,6 +72,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     FfmpegConvert,
     GetAudioDuration,
     InsIfASRInsertion,
+    InverseNormalizeText,
     NormalizeText,
     ReadTxtLines,
     SoxConvert,
