@@ -1,3 +1,5 @@
+# python main.py --config-path="dataset_configs/arabic/masc" --config-name="config.yaml" dataset_dir=/home/lgrigoryan/data/datasets/arab/masc workspace_dir=/home/lgrigoryan/prog/asr_commonvoice_finetuning/NeMo-speech-data-processor/workdir/masc data_split=clean_dev
+
 documentation: |
   Massive Arabic Speech Corpus (MASC)
   ################
@@ -30,8 +32,6 @@ documentation: |
   * **text (str)**: transcription.
   * **duration (float)**: audio duration in seconds.
 
-# python main.py --config-path="dataset_configs/arabic/masc" --config-name="config.yaml" dataset_dir=/home/lgrigoryan/data/datasets/arab/masc workspace_dir=/home/lgrigoryan/prog/asr_commonvoice_finetuning/NeMo-speech-data-processor/workdir/masc/${data_split}/ data_split=clean_dev
-
 processors_to_run: "0:"
 
 data_split: ??? # specify dataset type (clean_train, clean_test, ...)
@@ -51,71 +51,31 @@ processors:
     data_split: ${data_split}
     output_manifest_file: ${manifest_dir}/manifest0.json
 
-  # # 0 creating manifest {sample_id, audio_path}
-  # - _target_: sdp.processors.CreateInitialManifestByExtByCsv
-  #   dataset_dir: ${dataset_dir}/audios
-  #   csv_file_path: ${dataset_dir}/subsets/${data_split}_with_meta.csv
-  #   csv_primary_key: video_id
-  #   extension: wav
-  #   save_sample_ids: True
-  #   output_manifest_sample_id_key: sample_id
-  #   output_manifest_result_path_key: raw_audio_file_path
-  #   filter_key: dialect
-  #   filter_value: ${dialect}
-  #   output_manifest_file: ${workspace_dir}/manifest0.json
+  # 1 removing meta data fields
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    fields_to_keep: ["sample_id", "audio_filepath", "vtt_filepath"]
+    output_manifest_file: ${manifest_dir}/manifest1.json
 
-  # # 1 resampling audios to the same sample rate
-  # - _target_: sdp.processors.FfmpegConvert
-  #   resampled_audio_dir: ${workspace_dir}/wav
-  #   target_samplerate: 16000
-  #   target_nchannels: 1
-  #   input_file_key: raw_audio_file_path
-  #   output_file_key: audio_file_path
-  #   output_manifest_file: ${workspace_dir}/manifest1.json
+  # 2 calculating durations
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+    output_manifest_file: ${manifest_dir}/manifest2.json
 
-  # # 2 creating manifest {sample_id, vtt_path}
-  # - _target_: sdp.processors.CreateInitialManifestByExtByCsv
-  #   dataset_dir: ${dataset_dir}/subtitles
-  #   csv_file_path: ${dataset_dir}/subsets/${data_split}.csv
-  #   csv_primary_key: video_id
-  #   extension: ar.vtt
-  #   save_sample_ids: True
-  #   output_manifest_sample_id_key: sample_id
-  #   output_manifest_result_path_key: vtt_file_path
-  #   output_manifest_file: ${workspace_dir}/manifest2.json
+  # 3 removing negative durations
+  - _target_: sdp.processors.PreserveByValue
+    input_value_key: duration
+    target_value: 0
+    operator: gt
+    output_manifest_file: ${manifest_dir}/manifest3.json
 
-  # # 3 merging audios manifest with vtts manifest by common key sample_id
-  # - _target_: sdp.processors.MergeTwoManifestsByKey
-  #   key: sample_id
-  #   input_manifest_file2: ${workspace_dir}/manifest1.json
-  #   output_manifest_file: ${workspace_dir}/manifest3.json
-
-  # # 4 removing unnecessary fields
-  # - _target_: sdp.processors.KeepOnlySpecifiedFields
-  #   fields_to_keep: ["sample_id", "audio_file_path", "vtt_file_path"]
-  #   output_manifest_file: ${workspace_dir}/manifest4.json
-
-  # # 5 calculating durations
-  # - _target_: sdp.processors.GetAudioDuration
-  #   audio_file_key: audio_file_path
-  #   duration_key: audio_duration
-  #   output_manifest_file: ${workspace_dir}/manifest5.json
-
-  # # 6 removing negative durations
-  # - _target_: sdp.processors.PreserveByValue
-  #   input_value_key: audio_duration
-  #   target_value: 0
-  #   operator: gt
-  #   output_manifest_file: ${workspace_dir}/manifest6.json
-
-  # #TODO: remove numeration from vtts!!!!!!!!!!!
-  # # 7 removing numeration from vtt files
-  # - _target_: sdp.processors.FilterVttText
-  #   regex_params: { "pattern": '^\s*\d+\]', "repl": "" }
-  #   input_filepath_key: vtt_file_path
-  #   output_filtered_vtt_dir: ${workspace_dir}/filtered_vtt
-  #   output_filepath_key: filtered_vtt_file_path
-  #   output_manifest_file: ${workspace_dir}/manifest7.json
+  # 4 removing numeration from vtt files
+  - _target_: sdp.processors.RegExpVttEntries
+    regex_params: { "pattern": '^\s*\d+\]', "repl": "" }
+    input_filepath_key: vtt_filepath
+    output_filtered_vtt_dir: ${manifest_dir}/filtered_vtt
+    output_filepath_key: filtered_vtt_file_path
+    output_manifest_file: ${manifest_dir}/manifest4.json
 
   # # 8 Gathering all the vtt text
   # - _target_: sdp.processors.datasets.commoncrawl.AllVttText
