@@ -18,6 +18,10 @@ import re
 from typing import Dict, List
 
 import soundfile
+from nemo_text_processing.inverse_text_normalization.inverse_normalize import (
+    InverseNormalizer,
+)
+from nemo_text_processing.text_normalization.normalize import Normalizer
 from sox import Transformer
 
 from sdp.logging import logger
@@ -59,6 +63,113 @@ class GetAudioDuration(BaseParallelProcessor):
             logger.warning(str(e) + " file: " + audio_filepath)
             data_entry[self.duration_key] = -1.0
         return [DataEntry(data=data_entry)]
+
+
+class FfmpegConvert(BaseParallelProcessor):
+    """
+    Processor for converting video or audio files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
+    If ``id_key`` is not None, the output file path will be ``<resampled_audio_dir>/<id_key>.wav``.
+    If ``id_key`` is None, the output file path will be ``<resampled_audio_dir>/<input file name without extension>.wav``.
+
+    .. note:: ``id_key`` can be used to create subdirectories inside ``resampled_audio_dir`` (by using forward slashes ``/``).
+        e.g. if ``id_key`` takes the form ``dir_name1/dir_name2/filename``, the output file path will be
+
+        ``<resampled_audio_dir>/dir_name1/dirname2/filename.wav``.
+
+    Args:
+        converted_audio_dir (str): The directory to store the resampled audio files.
+        input_file_key (str): The field in the dataset representing the path to the input video or audio files.
+        output_file_key (str): The field in the dataset representing the path to the resampled audio files with ``output_format``. If ``id_key`` is None, the output file path will be ``<resampled_audio_dir>/<input file name without extension>.wav``.
+        id_key (str): (Optional) The field in the dataset representing the unique ID or identifier for each entry. If ``id_key`` is not None, the output file path will be ``<resampled_audio_dir>/<id_key>.wav``. Defaults to None.
+        output_format (str): (Optional) Format of the output audio files. Defaults to `wav`.
+        target_samplerate (int): (Optional) The target sampling rate for the resampled audio. Defaults to 16000.
+        target_nchannels (int): (Optional) The target number of channels for the resampled audio. Defaults to 1.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        converted_audio_dir: str,
+        input_file_key: str,
+        output_file_key: str,
+        id_key: str = None,
+        output_format: str = "wav",
+        base_dir: str = None,
+        target_samplerate: int = 16000,
+        target_nchannels: int = 1,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.converted_audio_dir = converted_audio_dir
+        self.input_file_key = input_file_key
+        self.output_file_key = output_file_key
+        self.output_format = output_format
+        self.id_key = id_key
+        self.base_dir = base_dir
+        self.target_samplerate = target_samplerate
+        self.target_nchannels = target_nchannels
+
+    def prepare(self):
+        assert self.output_format == "wav", "Currently only wav format is supported"
+        os.makedirs(self.converted_audio_dir, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        input_file = data_entry[self.input_file_key]
+        if self.id_key:
+            key = data_entry[self.id_key]
+            os.makedirs(os.path.join(self.converted_audio_dir, *key.split("/")[:-1]), exist_ok=True)
+        else:
+            key = os.path.splitext(input_file)[0].split("/")[-1]
+
+        if self.base_dir:
+            new_dir = os.path.dirname(os.path.relpath(input_file, self.base_dir))
+            os.makedirs(os.path.join(self.converted_audio_dir, new_dir), exist_ok=True)
+
+            key = os.path.join(new_dir, key)
+
+        audio_file = os.path.join(self.converted_audio_dir, key) + "." + self.output_format
+
+        if not os.path.isfile(audio_file):
+            ffmpeg_convert(input_file, audio_file, self.target_samplerate, self.target_nchannels)
+
+        data_entry[self.output_file_key] = audio_file
+        return [DataEntry(data=data_entry)]
+
+
+class ReadTxtLines(BaseParallelProcessor):
+    """
+    The text file specified in source_filepath will be read, and each line in it will be added as a line in the output manifest,
+    saved in the field text_key.
+
+    Args:
+        input_file_key (str): The key in the manifest containing the input txt file path .
+        text_key (str): The key to store the read text lines in the manifest.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        input_file_key: str,
+        text_key: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_file_key = input_file_key
+        self.text_key = text_key
+
+    def process_dataset_entry(self, data_entry):
+        fname = data_entry[self.input_file_key]
+        data_list = []
+        with open(fname, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    data = data_entry.copy()
+                    data[self.text_key] = line
+                    data_list.append(DataEntry(data=data))
+        return data_list
 
 
 class FfmpegConvert(BaseParallelProcessor):
@@ -238,8 +349,8 @@ class CountNumWords(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry):
         text = data_entry[self.text_key]
-        cleaned_string = self.pattern.sub('', text).strip()
-        cleaned_string = re.sub('\\s+', ' ', cleaned_string).strip()
+        cleaned_string = self.pattern.sub("", text).strip()
+        cleaned_string = re.sub("\\s+", " ", cleaned_string).strip()
         words = cleaned_string.split()
         num_words = len(words)
         data_entry[self.num_words_key] = num_words
@@ -332,7 +443,10 @@ class InsIfASRInsertion(BaseParallelProcessor):
         for insert_word in self.insert_words:
             if not insert_word in data_entry[self.pred_text_key]:
                 break
-            orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
+            orig_words, pred_words = (
+                data_entry[self.text_key],
+                data_entry[self.pred_text_key],
+            )
             diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
             if len(diff) > 0:  # ie if there are differences between text and pred_text
@@ -427,7 +541,10 @@ class SubIfASRSubstitution(BaseParallelProcessor):
         for original_word, new_word in self.sub_words.items():
             if not original_word in data_entry[self.text_key]:
                 break
-            orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
+            orig_words, pred_words = (
+                data_entry[self.text_key],
+                data_entry[self.pred_text_key],
+            )
             diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
             if len(diff) > 0:  # ie if there are differences between text and pred_text
@@ -586,3 +703,99 @@ class SubRegex(BaseParallelProcessor):
         for word, count in total_counter_sorted.items():
             logger.info(f"{word} {count}")
         super().finalize(metrics)
+
+
+class NormalizeText(BaseParallelProcessor):
+    """This processor applies text normalization (TN) to the text. I.e. converts text from written form into its verbalized form.
+    E.g., “$123” is converted to “one hundred and twenty-three dollars.”
+
+    Args:
+        input_text_field (str): the text field that will be the input to the Normalizer. Defaults to: text.
+        input_language (str): language specifying the text normalization rules in ISO 639 Set 1 format. E.g., "en", "es", "it", etc.
+            Defaults to: English.
+        input_case (str): input text capitalization, set to `cased` if text contains capital letters.
+            This flag affects normalization rules applied to the text. Note, `lower_cased` won't lower case input.
+            Defaults to: cased.
+        output_text_field (str): the text field that will be the output from the Normalizer.
+            Defaults to: text.
+
+    Returns:
+        This processor normalizes the text in the `input_text_field` key and saves the normalized text in `output_text_field` key.
+
+    Raises:
+        `NotImplementedError`: when TN is not implemented for the requaested language.
+    """
+
+    def __init__(
+        self,
+        input_text_field: str = "text",
+        input_language: str = "en",
+        input_case: str = "cased",
+        output_text_field: str = "text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_text_key = input_text_field
+        self.output_text_key = output_text_field
+        self.input_case = input_case
+        self.input_language = input_language
+
+    def prepare(self):
+        try:
+            self.normalizer = Normalizer(input_case=self.input_case, lang=self.input_language)
+        except NotImplementedError as e:
+            logger.error("Failed to run text normalization: %s", repr(e))
+
+    def process_dataset_entry(self, data_entry):
+        data_entry[self.output_text_key] = self.normalizer.normalize(data_entry[self.input_text_key])
+        return [DataEntry(data=data_entry)]
+
+
+class InverseNormalizeText(BaseParallelProcessor):
+    """This processor applies inverse text normalization (ITN) to the text. I.e. transforms spoken forms of numbers, dates, etc into their written equivalents.
+    E.g., “one hundred and twenty-three dollars.” is converted to “$123”.
+
+    Args:
+        input_text_field (str): the text field that will be the input to the Normalizer. Defaults to: text.
+        input_language (str): language specifying the text normalization rules in ISO 639 Set 1 format. E.g., "en", "es", "it", etc.
+            Defaults to: English.
+        input_case (str): input text capitalization, set to `cased` if text contains capital letters.
+            This flag affects normalization rules applied to the text. Note, `lower_cased` won't lower case input.
+            Defaults to: cased.
+        output_text_field (str): the text field that will be the output from the InverseNormalizer.
+            Defaults to: text.
+
+    Returns:
+        This processor inverse normalizes the text in the `input_text_field` key and saves the inverse normalized text in `output_text_field` key.
+
+    Raises:
+        `NotImplementedError`: when ITN is not implemented for the requaested language.
+    """
+
+    def __init__(
+        self,
+        input_text_field: str = "text",
+        input_language: str = "en",
+        input_case: str = "cased",
+        output_text_field: str = "text",
+        verbose: bool = False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_text_key = input_text_field
+        self.output_text_key = output_text_field
+        self.input_case = input_case
+        self.input_language = input_language
+        self.verbose = verbose
+
+    def prepare(self):
+        try:
+            self.inverse_normalizer = InverseNormalizer(input_case=self.input_case, lang=self.input_language)
+        except NotImplementedError as e:
+            logger.error("Failed to run text inverse normalization: %s", repr(e))
+
+    def process_dataset_entry(self, data_entry):
+        data_entry[self.output_text_key] = self.inverse_normalizer.inverse_normalize(
+            data_entry[self.input_text_key], verbose=self.verbose
+        )
+        return [DataEntry(data=data_entry)]
