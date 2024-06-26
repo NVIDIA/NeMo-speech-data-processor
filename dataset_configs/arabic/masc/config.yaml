@@ -74,14 +74,14 @@ processors:
     regex_params: { "pattern": '^\s*\d+\]', "repl": "" }
     input_filepath_key: vtt_filepath
     output_filtered_vtt_dir: ${manifest_dir}/filtered_vtt
-    output_filepath_key: filtered_vtt_file_path
+    output_filepath_key: filtered_vtt_filepath
     output_manifest_file: ${manifest_dir}/manifest4.json
 
-  # # 8 Gathering all the vtt text
+  # # 5 Gathering all the vtt text
   # - _target_: sdp.processors.datasets.commoncrawl.AllVttText
   #   output_text_key: text
   #   input_filepath_key: vtt_file_path
-  #   output_manifest_file: ${workspace_dir}/manifest8.json
+  #   output_manifest_file: ${workspace_dir}/manifest5.json
 
   # # # 9 keeping samples that contain at least one punctuation mark
   # # - _target_: "sdp.processors.DropIfNoneOfRegexMatch"
@@ -91,13 +91,13 @@ processors:
   # #     # ["^[^\\?!:;\\-\\.,؟،؛\u06D4]*$"]
   # #   output_manifest_file: ${workspace_dir}/manifest9.json
 
-  # # 10 splitting by vtt
-  # # TODO: check if splitting by vtt sentences works better
-  # - _target_: sdp.processors.datasets.commoncrawl.SplitByVtt
-  #   source_audio_key: audio_file_path
-  #   caption_file_key: filtered_vtt_file_path
-  #   output_text_key: splitted_vtt_text
-  #   output_manifest_file: ${workspace_dir}/manifest10.json
+  # 5 splitting by vtt
+  # TODO: check if splitting by vtt sentences works better
+  - _target_: sdp.processors.datasets.commoncrawl.SplitByVtt
+    source_audio_key: audio_filepath
+    caption_file_key: filtered_vtt_filepath
+    output_text_key: splitted_vtt_text
+    output_manifest_file: ${manifest_dir}/manifest5.json
 
   # # 11 Aggregating segments
   # - _target_: sdp.processors.datasets.youtube.AggregateSegments

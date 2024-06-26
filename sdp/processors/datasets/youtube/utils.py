@@ -1,0 +1,123 @@
+# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from dataclasses import dataclass
+
+import pysrt
+from pydub import AudioSegment
+
+from sdp.processors.base_processor import DataEntry
+
+
+@dataclass
+class RawSegment:
+    segment_id: int = None
+    start_time: float = None
+    end_time: float = None
+    duration: str = None
+    duration_match: bool = None
+    orig_text: str = None
+    audio_lang: str = None
+    text_lang: str = None
+    source_audio: str = None
+
+    def to_dataentry(self):
+        return DataEntry(data=self.__dict__)
+
+
+def get_audio_segment(audio, start_time: float, end_time: float, output_audio_filepath: str = None):
+    start_time = start_time * 1000
+    end_time = end_time * 1000
+    audio_segment = audio[start_time:end_time]
+
+    if output_audio_filepath:
+        audio_segment.export(output_audio_filepath, format="wav")
+    return audio_segment
+
+
+def get_audio_segment_duration(audio, start_time, end_time):
+    audio_segment = get_audio_segment(audio, start_time, end_time)
+    return audio_segment.duration_seconds
+
+
+def parse_srt(srt_filepath, verify_duration: bool = True, wav_filepath: str = None):
+    subs = pysrt.open(srt_filepath)
+    srt_segments = []
+
+    if verify_duration and wav_filepath:
+        audio = AudioSegment.from_wav(wav_filepath)
+    else:
+        audio = None
+
+    epsilon = 1e-2
+
+    for sub_index, sub in enumerate(subs):
+        if sub.index:
+            index = sub.index
+        else:
+            index = sub_index
+        segment = RawSegment(
+            segment_id=index,
+            start_time=sub.start.ordinal / 1000,
+            end_time=sub.end.ordinal / 1000,
+            orig_text=sub.text_without_tags,
+        )
+
+        duration_by_timestemps = segment.end_time - segment.start_time
+
+        if audio:
+            segment.duration = get_audio_segment_duration(audio, segment.start_time, segment.end_time)
+            segment.duration_match = abs(segment.duration - duration_by_timestemps) < epsilon
+        else:
+            segment.duration = duration_by_timestemps
+
+        srt_segments.append(segment)
+
+    return srt_segments
+
+
+def parse_vtt(srt_filepath, verify_duration: bool = True, wav_filepath: str = None):
+    subs = pysrt.open(srt_filepath)
+    srt_segments = []
+
+    if verify_duration and wav_filepath:
+        audio = AudioSegment.from_wav(wav_filepath)
+    else:
+        audio = None
+
+    epsilon = 1e-2
+
+    for sub_index, sub in enumerate(subs):
+        if sub.index:
+            index = sub.index
+        else:
+            index = sub_index
+        segment = RawSegment(
+            segment_id=index,
+            start_time=sub.start.ordinal / 1000,
+            end_time=sub.end.ordinal / 1000,
+            orig_text=sub.text_without_tags,
+        )
+
+        duration_by_timestemps = segment.end_time - segment.start_time
+
+        if audio:
+            segment.duration = get_audio_segment_duration(audio, segment.start_time, segment.end_time)
+            segment.duration_match = abs(segment.duration - duration_by_timestemps) < epsilon
+        else:
+            segment.duration = duration_by_timestemps
+
+        srt_segments.append(segment)
+
+    return srt_segments
