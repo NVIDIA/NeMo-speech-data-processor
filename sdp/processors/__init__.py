@@ -54,7 +54,7 @@ from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
 from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
-from sdp.processors.huggingface.speech_recognition import ASRTransformers, ASRWhisper
+from sdp.processors.huggingface.speech_recognition import ASRTransformers, ASRWhisper, LangIdWhisper
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ChangeToRelativePath,
@@ -77,6 +77,10 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
+    GetWER,
+    GetCER,
+    GetEdgeCER,
+    GetLenDiffRatio,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,
@@ -97,5 +101,5 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
 )
-from sdp.processors.nemo.asr_inference import ASRInference
+from sdp.processors.nemo.asr_inference import ASRInference, ASRInferenceParallel
 from sdp.processors.nemo.pc_inference import PCInference
