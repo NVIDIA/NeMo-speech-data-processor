@@ -30,6 +30,7 @@ documentation: |
     You need to manually place the downloaded MCV Georgian data inside
     ``<workspace dir>/raw_data/`` subfolder.
   * **data_split**: should be "train", "dev", "test" or "other".
+  
   Note: It is better to process data in this order: test,dev,train,other.
  
   **Output format**.

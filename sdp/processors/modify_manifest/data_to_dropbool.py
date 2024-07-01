@@ -810,8 +810,7 @@ class DropRepeatedFields(BaseParallelProcessor):
     Args:
         manifests_paths (list[str]): List of paths to the manifest files to check against.
         current_manifest_file (str): Path to the current manifest file to be processed.
-        punctuations (str, optional): String of punctuation characters to be removed from the text fields before
-        checking for duplicates. Defaults to None.
+        punctuations (str): (Optional): String of punctuation characters to be removed from the text fields before checking for duplicates. Defaults to None.
         text_key (str): The key in the manifest entries that contains the text field. Defaults to "text".
     
     Returns:
