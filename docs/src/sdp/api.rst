@@ -232,6 +232,9 @@ Data filtering
 .. autodata:: sdp.processors.DropHighLowDuration
    :annotation:
 
+.. autodata:: sdp.processors.DropRepeatedFields
+   :annotation:
+
 
 Miscellaneous
 #############
