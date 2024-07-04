@@ -11,8 +11,6 @@ documentation: |
   During the preprocessing, we are going to use not only validated data (train/dev/test) from MCV but also unvalidated data (other.tsv)
   which requires more processing for better and clearer results. You can use the same data processing for Fleur's Georgian data. 
 
-  Note: You need to rename the "other.tsv" file to one of the following names for working with this config: train/test/dev.
-
   This config performs the following data processing:
 
   1. Extracts and converts all data to the NeMo format.
@@ -30,7 +28,7 @@ documentation: |
     You need to manually place the downloaded MCV Georgian data inside
     ``<workspace dir>/raw_data/`` subfolder.
   * **data_split**: should be "train", "dev", "test" or "other".
-  
+
   Note: It is better to process data in this order: test,dev,train,other.
  
   **Output format**.
@@ -53,7 +51,7 @@ processors:
   - _target_: sdp.processors.CreateInitialManifestMCV
     output_manifest_file: ${workspace_dir}/${data_split}_manifest0.json
     language_id: ka
-    extract_archive_dir: /Users/skostandian/Downloads/cv-corpus-17.0-2024-03-15
+    extract_archive_dir: ${workspace_dir}
     resampled_audio_dir: ${workspace_dir}/${data_split}/audio/
     data_split: ${data_split}
     raw_data_dir: ${workspace_dir}/raw_data/
