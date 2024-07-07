@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import os
 from collections import defaultdict
 
 import toloka.client
@@ -28,37 +29,55 @@ class AcceptIfWERLess(BaseProcessor):
         input_data_file: str,
         input_pool_file: str,
         threshold: float = 75,
-        API_KEY: str = "---",
-        platform: str = "---",
-        pool_id: str = "---",
+        config_file: str = None,
+        API_KEY: str = None,
+        platform: str = None,
+        pool_id: str = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.input_data_file = input_data_file
         self.input_pool_file = input_pool_file
         self.threshold = threshold
-        self.API_KEY = API_KEY
-        self.platform = platform
+        self.config_file = config_file
+        self.API_KEY = API_KEY or os.getenv('TOLOKA_API_KEY')
+        self.platform = platform or os.getenv('TOLOKA_PLATFORM')
         self.pool_id = pool_id
+        if self.config_file:
+            self.load_config()
+
+    def load_config(self):
+        try:
+            with open(self.config_file, 'r') as file:
+                config = json.load(file)
+                self.API_KEY = config.get('API_KEY', self.API_KEY)
+                self.platform = config.get('platform', self.platform)
+                self.pool_id = config.get('pool_id', self.pool_id)
+        except FileNotFoundError:
+            print("Configuration file not found.")
+        except json.JSONDecodeError:
+            print("Error decoding JSON from the configuration file.")
 
     def prepare(self):
-        try:
-            with open(self.input_data_file, 'r') as file:
-                data = json.loads(file.readline())
-                if self.API_KEY == "---":
-                    self.API_KEY = data["API_KEY"]
-                if self.platform == "---":
-                    self.platform = data["platform"]
-        except FileNotFoundError:
-            print("Data file not found.")
+        if not self.API_KEY or not self.platform or not self.pool_id:
+            try:
+                with open(self.input_data_file, 'r') as file:
+                    data = json.loads(file.readline())
+                    self.API_KEY = data.get("API_KEY", self.API_KEY)
+                    self.platform = data.get("platform", self.platform)
+            except FileNotFoundError:
+                print("Data file not found.")
+            except json.JSONDecodeError:
+                print("Error decoding JSON from the data file.")
 
-        try:
-            with open(self.input_pool_file, 'r') as file:
-                data = json.loads(file.readline())
-                if self.pool_id == "---":
-                    self.pool_id = data["pool_id"]
-        except FileNotFoundError:
-            print("Pool file not found.")
+            try:
+                with open(self.input_pool_file, 'r') as file:
+                    data = json.loads(file.readline())
+                    self.pool_id = data.get("pool_id", self.pool_id)
+            except FileNotFoundError:
+                print("Pool file not found.")
+            except json.JSONDecodeError:
+                print("Error decoding JSON from the pool file.")
 
         self.toloka_client = toloka.client.TolokaClient(self.API_KEY, self.platform)
 
