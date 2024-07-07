@@ -3,19 +3,15 @@ documentation: |
 
 processors_to_run: all
 workspace_dir: ???
-API_KEY: ???
-pool_id: ???
 
 processors:
-  - _target_: tolokan.processors.GetTolokaResults
+  - _target_: sdp.processors.GetTolokaResults
     input_pool_file: ${workspace_dir}/taskpool.json
     input_data_file: ${workspace_dir}/data_file.json
     status: ACCEPTED
     output_dir: ${workspace_dir}/results
     output_manifest_file: ${workspace_dir}/manifest-1.json
-    API_KEY: ${API_KEY}
     platform: "PRODUCTION"
-    pool_id: ${pool_id}
 
   - _target_: sdp.processors.ASRFileCheck
     audio_filepath_key: audio_filepath  
@@ -40,8 +36,8 @@ processors:
     fields_to_keep: ["text", "audio_filepath"]
 
   - _target_: sdp.processors.GetAudioDuration
-    audio_filepath_field: audio_filepath
-    duration_field: duration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
     output_manifest_file: ${workspace_dir}/results.json
 
 
