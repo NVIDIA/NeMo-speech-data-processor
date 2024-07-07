@@ -754,15 +754,25 @@ class ReadDocxLines(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry):
         fname = data_entry[self.input_field]
+
+        # Skip hidden files and directories (e.g., .DS_Store, ._filename)
+        if os.path.basename(fname).startswith('.'):
+            logger.warning(f"Skipping hidden file: {fname}")
+            return []
+
         data_list = []
 
-        doc = Document(fname)
-        for para in doc.paragraphs:
-            line = para.text.strip()
-            if line:
-                data = data_entry.copy()
-                data[self.output_field] = line
-                data_list.append(DataEntry(data=data))
+        try:
+            doc = Document(fname)
+            for para in doc.paragraphs:
+                line = para.text.strip()
+                if line:
+                    data = data_entry.copy()
+                    data[self.output_field] = line
+                    data_list.append(DataEntry(data=data))
+        except Exception as e:
+            logger.error(f"Error reading document {fname}: {e}")
+
         return data_list
 
 
