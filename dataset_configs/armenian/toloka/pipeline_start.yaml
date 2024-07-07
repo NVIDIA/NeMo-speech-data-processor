@@ -105,7 +105,7 @@ processors:
     target_value: 3
     operator: ge
 
-  - _target_: sdp.processors.DropDublicates
+  - _target_: sdp.processors.DropDuplicates
     drop_key: "text"
     input_manifest_file: ${workspace_dir}/sentences4.json
     output_manifest_file: ${workspace_dir}/tasks_clear.json

@@ -13,37 +13,64 @@
 # limitations under the License.
 
 import datetime
+import os
 
 import toloka.client
 import toloka.client.project.template_builder
 
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
 class CreateTolokaPool(BaseParallelProcessor):
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        API_KEY: str = None,
+        platform: str = None,
+        project_id: str = None,  # Optional project_id during initialization
+        **kwargs,
+    ):
         super().__init__(**kwargs)
+        self.API_KEY = API_KEY or os.getenv('TOLOKA_API_KEY')
+        self.platform = platform or os.getenv('TOLOKA_PLATFORM')
+        self.project_id = project_id  # Store project_id if provided during initialization
 
     def process_dataset_entry(self, data_entry):
-        API_KEY = data_entry["API_KEY"]
-        project_id = data_entry["project_id"]
-        platform = data_entry["platform"]
-        toloka_client = toloka.client.TolokaClient(API_KEY, platform)
+        API_KEY = data_entry.get("API_key", self.API_KEY)  # Retrieve API_KEY from data_entry or use self.API_KEY
+        project_id = data_entry.get(
+            "project_id", self.project_id
+        )  # Retrieve project_id from data_entry or use self.project_id
+        platform = data_entry.get("platform", self.platform)
 
-        new_pool = toloka.client.Pool(
-            project_id=project_id,
-            private_name='Voice recording',
-            may_contain_adult_content=False,
-            will_expire=datetime.datetime.utcnow() + datetime.timedelta(days=365),
-            reward_per_assignment=0.01,
-            assignment_max_duration_seconds=60 * 10,
-            auto_accept_solutions=False,
-            auto_accept_period_day=14,
-            filter=((toloka.client.filter.Languages.in_('HY')) & (toloka.client.filter.ClientType == 'TOLOKA_APP')),
-        )
-        new_pool.set_mixer_config(real_tasks_count=5)
-        # Setting up quality control for skipped assignments
-        new_pool.quality_control.add_action(
+        try:
+            toloka_client = toloka.client.TolokaClient(API_KEY, platform)
+
+            new_pool = toloka.client.Pool(
+                project_id=project_id,
+                private_name='Voice recording',
+                may_contain_adult_content=False,
+                will_expire=datetime.datetime.utcnow() + datetime.timedelta(days=365),
+                reward_per_assignment=0.01,
+                assignment_max_duration_seconds=60 * 10,
+                auto_accept_solutions=False,
+                auto_accept_period_day=14,
+                filter=(
+                    (toloka.client.filter.Languages.in_('HY')) & (toloka.client.filter.ClientType == 'TOLOKA_APP')
+                ),
+            )
+            new_pool.set_mixer_config(real_tasks_count=5)
+            self.setup_quality_control(new_pool)
+
+            new_pool = toloka_client.create_pool(new_pool)
+            data = {"pool_id": new_pool.id}
+            return [DataEntry(data=data)]
+        except Exception as e:
+            logger.error(f"Failed to create a new pool in Toloka: {e}")
+            return []
+
+    def setup_quality_control(self, pool):
+        # Control for skipped tasks in a row
+        pool.quality_control.add_action(
             collector=toloka.client.collectors.SkippedInRowAssignments(),
             conditions=[toloka.client.conditions.SkippedInRowCount >= 2],
             action=toloka.client.actions.RestrictionV2(
@@ -53,8 +80,9 @@ class CreateTolokaPool(BaseParallelProcessor):
                 private_comment='Skips too many task suites in a row',
             ),
         )
-        # Fast responses fraud
-        new_pool.quality_control.add_action(
+
+        # Control for fast responses that might indicate fraud
+        pool.quality_control.add_action(
             collector=toloka.client.collectors.AssignmentSubmitTime(history_size=10, fast_submit_threshold_seconds=60),
             conditions=[toloka.client.conditions.FastSubmittedCount >= 5],
             action=toloka.client.actions.RestrictionV2(
@@ -63,9 +91,3 @@ class CreateTolokaPool(BaseParallelProcessor):
                 private_comment='Fast responses',
             ),
         )
-
-        new_pool = toloka_client.create_pool(new_pool)
-
-        data = {"pool_id": new_pool.id}
-
-        return [DataEntry(data=data)]
