@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import datetime
+import json
 import os
 
 import toloka.client
@@ -34,9 +35,22 @@ class CreateTolokaPool(BaseParallelProcessor):
         self.API_KEY = API_KEY or os.getenv('TOLOKA_API_KEY')
         self.platform = platform or os.getenv('TOLOKA_PLATFORM')
         self.project_id = project_id  # Store project_id if provided during initialization
+        self.load_config()
+
+    def load_config(self):
+        try:
+            with open(self.output_manifest_file, 'r') as file:
+                config = json.load(file)
+                self.API_KEY = config.get('API_KEY', self.API_KEY)
+                self.platform = config.get('platform', self.platform)
+                self.project_id = config.get('project_id', self.project_id)
+        except FileNotFoundError:
+            logger.error("Configuration file not found.")
+        except json.JSONDecodeError:
+            logger.error("Error decoding JSON from the configuration file.")
 
     def process_dataset_entry(self, data_entry):
-        API_KEY = data_entry.get("API_key", self.API_KEY)  # Retrieve API_KEY from data_entry or use self.API_KEY
+        API_KEY = data_entry.get("API_KEY", self.API_KEY)  # Retrieve API_KEY from data_entry or use self.API_KEY
         project_id = data_entry.get(
             "project_id", self.project_id
         )  # Retrieve project_id from data_entry or use self.project_id

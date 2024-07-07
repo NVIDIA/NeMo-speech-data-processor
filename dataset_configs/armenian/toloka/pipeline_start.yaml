@@ -3,16 +3,58 @@ documentation: |
 
 processors_to_run: all
 workspace_dir: ???
-API_KEY: ???
 
 processors:
   - _target_: sdp.processors.CreateTolokaProject
-    API_KEY: ${API_KEY}
     platform: "PRODUCTION"
     project_name: "Հայերեն ձայնագրություններ"
     project_description: "Սեղմել ձայնագրելու կոճակը և կարդալ տեքստը բարձրաձայն։"
-    project_instructions: '<style scoped=""> body{ 	overflow: scroll; } /* скрываем чекбоксы и блоки с содержанием */ .hide { 	display: none; } .hide+label~div { 	display: none; } /* оформляем текст label */ .hide+label { 	border-bottom: 1px dotted green; 	padding: 0; 	color: green; 	cursor: pointer; 	display: inline-block; } /* вид текста label при активном переключателе */ .hide:checked+label { 	color: red; 	border-bottom: 0; } /* когда чекбокс активен показываем блоки с содержанием */ .hide:checked+label+div { 	display: block; 	padding: 10px; } /* demo контейнер */ .demo { 	margin: 5% 10%; } .padt { 	padding: 5px 5px 5px 5px; } </style><style scoped="">  	h2,h3 { 		color: #1F3A93; 	}  	h4 { 		color: #333333; 	}  	ul,ol { 		padding-left: 10px; 		margin-left: 20px; }  </style><h3>Հանձնարարության մասին</h3><div><div>Ձայնագրությունները կօգնեն սովորեցնել հայերեն ավտոմատ խոսք հասկացող մոդել։</div><div>Ամեն մի հանձնարարությունը պարունակում է բառակապակցություն կամ նախադասություն։&nbsp;</div><div>Ձեր նպատակն է բարձրաձայն կարդալ և ձայնագրել տեքստը։&nbsp;</div><div>Ամեն մի նախադասության համար պետք է նոր ձայնագրություն անեք, եթե նույնիսկ դա արդեն հանդիպել է։<br>&nbsp; <h3>Ներկայացում</h3>   <div><input type="checkbox" class="hide" id="hd-1"><label for="hd-1"><b>iOS Համակարգ (iPhone, iPad)</b>  - կարդալ ավելին</label> <div><ol><li>Սեղմեք&nbsp;<img height="35" width="35" src="https://prodtlkappspresetsfiles-cdn.azureedge.net/tasks-datasets/tmp_dir/cc196b0c-fa6c-4c37-b57d-4bcffefe45ee">։ Ձայնագրիչը կհայտնվի ներքևի հատվածում և ձայնագրությունը կսկսի։</li><li>Սկսեք խոսել&nbsp;միայն ձայնագրությունը միանալուց հետո, այս դեպքում խոսքի սկիզբը չի կորի։</li><li>Խոսքը ավարտելուց հետո սեղմեք&nbsp;<img height="25" width="25" src="https://prodtlkappspresetsfiles-cdn.azureedge.net/tasks-datasets/tmp_dir/4366f8f3-d96a-4d73-b9b1-1536fe257589">&nbsp;.</li><li>Պահպանեք ձայնագրությունը, եթե ամեն ինչ ճիշտ է։ Եթե սխալ եք թույլ տվել, սեղմեք&nbsp;«Նորից սկսել» (Start over)։</li><li>Ձայնագրության հաջողակ upload-ից հետո իր համարը կհայտնվի հանձնարարության մեջ։ Այսպիսով կարող եք շարունակել դեպի հաջորդ հանձնարարությունը։</li></ol>  </div></div> <div><input type="checkbox" class="hide" id="hd-2"><label for="hd-2"><b>Android Համակարգ</b>&nbsp;- կարդալ ավելին</label><div><div><ol><li>Սեղմեք&nbsp;<img height="35" width="35" src="https://prodtlkappspresetsfiles-cdn.azureedge.net/tasks-datasets/tmp_dir/cc196b0c-fa6c-4c37-b57d-4bcffefe45ee"> կոճակը։</li><li>Սեղմեք&nbsp;<img height="25" width="25" src="https://prodtlkappspresetsfiles-cdn.azureedge.net/tasks-datasets/tmp_dir/20c8652f-3a14-4fdb-9f20-a23ed37f86db">&nbsp;ձայնագրությունը սկսելու համար։ Սկսեք խոսել <b>միայն ձայնագրությունը միանալուց հետո</b>, այս դեպքում խոսքի սկիզբը չի կորի։</li><li>Խոսքը ավարտելուց հետո սեղմեք&nbsp;<img height="25" width="25" src="https://prodtlkappspresetsfiles-cdn.azureedge.net/tasks-datasets/tmp_dir/4366f8f3-d96a-4d73-b9b1-1536fe257589"> .</li><li>Պահպանեք ձայնագրությունը, եթե ամեն ինչ ճիշտ է։ Եթե սխալ եք թույլ տվել, սեղմեք <b>«Նորից սկսել» (Start over).</b></li><li></li></ol></div>Ձայնագրության հաջողակ upload-ից հետո իր համարը կհայտնվի հանձնարարության մեջ։ Այսպիսով կարող եք շարունակել դեպի հաջորդ հանձնարարությունը։</div>  <h3>Հանձնարարության ավարտման ստուգում</h3></div><div>Ձայնագրությունների ստուգումը իրականացվում է 7 օրվա ընթացքում։<br>&nbsp;  <h4>Մերժման հնարավոր պատճառներն են՝&nbsp;</h4> <ul><li>Ձայնագրությունները չեն պարունակում հանձնարարության մեջ ներկայացված նախադասությունը կամ բառակապակցությունը։</li><li>Նախադասությունները ձայնագրված չեն ամբողջությամբ(մասնավորապես՝ խոսքը սկսել է ձայնագրելուց շուտ ինչի հետևանքով առաջին բառը կիսատ է ստացվել)։</li><li>Ձայնագրությունները շատ ցածր են և/կամ առկա է չափից դուրս ուժեղ աղմուկ։&nbsp;</li><li>Նույն ձայնագրությունը ներկայացված է մի քանի հանձնարարություններին։&nbsp;</li></ul></div></div></div>'
+    project_instructions: |
+        <style scoped="">
+          h2,h3 { color: #1F3A93; }
+          h4 { color: #333333; }
+          ul,ol { padding-left: 10px; margin-left: 20px; }
+        </style>
+        <h3>Հանձնարարության մասին</h3>
+        <div>
+          <div>Ձայնագրությունները կօգնեն սովորեցնել հայերեն ավտոմատ խոսք հասկացող մոդել։</div>
+          <div>Ամեն մի հանձնարարությունը պարունակում է բառակապակցություն կամ նախադասություն։</div>
+          <div>Ձեր նպատակն է բարձրաձայն կարդալ և ձայնագրել տեքստը։</div>
+          <div>Ամեն մի նախադասության համար պետք է նոր ձայնագրություն անեք, եթե նույնիսկ դա արդեն հանդիպել է։</div>
+        </div>
+        <h3>Ներկայացում</h3>
+        <div>
+          <b>iOS Համակարգ (iPhone, iPad)</b>
+          <ol>
+            <li>Սեղմեք ձայնագրելու կոճակը։</li>
+            <li>Սկսեք խոսել միայն ձայնագրությունը միանալուց հետո, այս դեպքում խոսքի սկիզբը չի կորի։</li>
+            <li>Խոսքը ավարտելուց հետո սեղմեք կանգնեցնելու կոճակը։</li>
+            <li>Պահպանեք ձայնագրությունը, եթե ամեն ինչ ճիշտ է։ Եթե սխալ եք թույլ տվել, սեղմեք «Նորից սկսել»։</li>
+            <li>Ձայնագրության հաջող upload-ից հետո իր համարը կհայտնվի հանձնարարության մեջ։ Շարունակեք դեպի հաջորդ հանձնարարությունը։</li>
+          </ol>
+          <b>Android Համակարգ</b>
+          <ol>
+            <li>Սեղմեք ձայնագրելու կոճակը։</li>
+            <li>Սեղմեք ձայնագրությունը սկսելու կոճակը։ Սկսեք խոսել միայն ձայնագրությունը միանալուց հետո, այս դեպքում խոսքի սկիզբը չի կորի։</li>
+            <li>Խոսքը ավարտելուց հետո սեղմեք կանգնեցնելու կոճակը։</li>
+            <li>Պահպանեք ձայնագրությունը, եթե ամեն ինչ ճիշտ է։ Եթե սխալ եք թույլ տվել, սեղմեք «Նորից սկսել»։</li>
+            <li>Ձայնագրության հաջող upload-ից հետո իր համարը կհայտնվի հանձնարարության մեջ։ Շարունակեք դեպի հաջորդ հանձնարարությունը։</li>
+          </ol>
+        </div>
+        <h3>Հանձնարարության ավարտման ստուգում</h3>
+        <div>
+          <div>Ձայնագրությունների ստուգումը իրականացվում է 7 օրվա ընթացքում։</div>
+          <h4>Մերժման հնարավոր պատճառներն են՝</h4>
+          <ul>
+            <li>Ձայնագրությունները չեն պարունակում հանձնարարության մեջ ներկայացված նախադասությունը կամ բառակապակցությունը։</li>
+            <li>Նախադասությունները ձայնագրված չեն ամբողջությամբ։</li>
+            <li>Ձայնագրությունները շատ ցածր են և/կամ առկա է չափից դուրս ուժեղ աղմուկ։</li>
+            <li>Նույն ձայնագրությունը ներկայացված է մի քանի հանձնարարություններին։</li>
+          </ul>
+        </div>
     output_manifest_file: ${workspace_dir}/data_file.json
+    save_api_key_to_config: false
+
 
   - _target_: sdp.processors.CreateTolokaPool
     input_manifest_file: ${workspace_dir}/data_file.json
@@ -21,7 +63,7 @@ processors:
   - _target_: sdp.processors.CreateInitialManifestByExt
     raw_data_dir: ${workspace_dir}/arm_docs
     extension: docx
-    output_field: source_filepath
+    output_file_key: source_filepath
     output_manifest_file: ${workspace_dir}/docfiles.json
 
   - _target_: sdp.processors.ReadDocxLines
@@ -94,14 +136,14 @@ processors:
   - _target_: sdp.processors.PreserveByValue
     input_manifest_file: ${workspace_dir}/sentences2.json
     output_manifest_file: ${workspace_dir}/sentences3.json
-    input_field: num_words
+    input_value_key: num_words
     target_value: 20
     operator: le
 
   - _target_: sdp.processors.PreserveByValue
     input_manifest_file: ${workspace_dir}/sentences3.json
     output_manifest_file: ${workspace_dir}/sentences4.json
-    input_field: num_words
+    input_value_key: num_words
     target_value: 3
     operator: ge
 
@@ -114,4 +156,4 @@ processors:
     input_manifest_file: ${workspace_dir}/tasks_clear.json
     input_pool_file: ${workspace_dir}/taskpool.json
     input_data_file: ${workspace_dir}/data_file.json
-    limit: 100
+    limit: 1
