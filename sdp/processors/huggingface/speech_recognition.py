@@ -94,6 +94,10 @@ class ASRTransformers(BaseProcessor):
         self.model.generation_config.language = self.generate_language
 
         processor = AutoProcessor.from_pretrained(self.pretrained_model)
+
+        # Check if the model is Whisper
+        is_whisper = 'whisper' in self.pretrained_model.lower()
+
         self.pipe = pipeline(
             "automatic-speech-recognition",
             model=self.model,
@@ -102,7 +106,7 @@ class ASRTransformers(BaseProcessor):
             max_new_tokens=None,
             chunk_length_s=self.chunk_length_s,
             batch_size=self.batch_size,
-            return_timestamps=True,
+            return_timestamps=is_whisper,  # Only set return_timestamps if the model is Whisper
             torch_dtype=self.torch_dtype,
             device=self.device,
         )

@@ -12,8 +12,13 @@ processors:
     output_dir: ${workspace_dir}/results
     output_manifest_file: ${workspace_dir}/result_manifest.json
 
+  - _target_: sdp.processors.ASRFileCheck
+    audio_filepath_key: audio_filepath  
+    corrupted_audio_dir: ${workspace_dir}/curr
+    output_manifest_file: ${workspace_dir}/result_manifest_no_curr.json
+
   - _target_: sdp.processors.ASRTransformers # pip install accelerate transformers
-    input_manifest_file: ${workspace_dir}/result_manifest.json
+    input_manifest_file: ${workspace_dir}/result_manifest_no_curr.json
     output_manifest_file: ${workspace_dir}/result_manifest_pred.json
     pretrained_model: "facebook/seamless-m4t-v2-large" 
     batch_size: 32

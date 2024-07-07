@@ -16,7 +16,6 @@ import json
 import os
 
 import toloka.client
-import toloka.client.project.template_builder
 
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
@@ -28,9 +27,10 @@ class GetTolokaResults(BaseParallelProcessor):
         input_pool_file: str,
         output_dir: str,
         status: str = "ACCEPTED",
-        API_KEY: str = "---",
-        platform: str = "---",
-        pool_id: str = "---",
+        config_file: str = None,
+        API_KEY: str = None,
+        platform: str = None,
+        pool_id: str = None,
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -38,31 +38,47 @@ class GetTolokaResults(BaseParallelProcessor):
         self.input_pool_file = input_pool_file
         self.output_dir = output_dir
         self.status = status
-        self.API_KEY = API_KEY
-        self.platform = platform
+        self.config_file = config_file
+        self.API_KEY = API_KEY or os.getenv('TOLOKA_API_KEY')
+        self.platform = platform or os.getenv('TOLOKA_PLATFORM')
         self.pool_id = pool_id
+        if self.config_file:
+            self.load_config()
+
+    def load_config(self):
+        try:
+            with open(self.config_file, 'r') as file:
+                config = json.load(file)
+                self.API_KEY = config.get('API_KEY', self.API_KEY)
+                self.platform = config.get('platform', self.platform)
+                self.pool_id = config.get('pool_id', self.pool_id)
+        except FileNotFoundError:
+            logger.error("Configuration file not found.")
+        except json.JSONDecodeError:
+            logger.error("Error decoding JSON from the configuration file.")
 
     def prepare(self):
-        try:
-            with open(self.input_data_file, 'r') as file:
-                data = json.loads(file.readline())
-                if self.API_KEY == "---":
-                    self.API_KEY = data["API_KEY"]
-                if self.platform == "---":
-                    self.platform = data["platform"]
-        except FileNotFoundError:
-            print("Data file not found.")
+        if not self.API_KEY or not self.platform or not self.pool_id:
+            try:
+                with open(self.input_data_file, 'r') as file:
+                    data = json.loads(file.readline())
+                    self.API_KEY = data.get("API_KEY", self.API_KEY)
+                    self.platform = data.get("platform", self.platform)
+            except FileNotFoundError:
+                logger.error("Data file not found.")
+            except json.JSONDecodeError:
+                logger.error("Error decoding JSON from the data file.")
 
-        try:
-            with open(self.input_pool_file, 'r') as file:
-                data = json.loads(file.readline())
-                if self.pool_id == "---":
-                    self.pool_id = data["pool_id"]
-        except FileNotFoundError:
-            print("Pool file not found.")
+            try:
+                with open(self.input_pool_file, 'r') as file:
+                    data = json.loads(file.readline())
+                    self.pool_id = data.get("pool_id", self.pool_id)
+            except FileNotFoundError:
+                logger.error("Pool file not found.")
+            except json.JSONDecodeError:
+                logger.error("Error decoding JSON from the pool file.")
 
         self.toloka_client = toloka.client.TolokaClient(self.API_KEY, self.platform)
-
         return super().prepare()
 
     def read_manifest(self):
