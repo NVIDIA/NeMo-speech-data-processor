@@ -13,12 +13,17 @@
 # limitations under the License.
 
 import collections
+import json
 import re
 from operator import eq, ge, gt, le, lt, ne
 from typing import List, Union
 
 from sdp.logging import logger
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.processors.base_processor import (
+    BaseParallelProcessor,
+    BaseProcessor,
+    DataEntry,
+)
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff, get_diff_with_subs_grouped
 from sdp.utils.metrics_computation import (
@@ -795,3 +800,38 @@ class DropIfSubstringInInsertion(BaseParallelProcessor):
         for insertion, count in total_counter_sorted.items():
             logger.info(f"{insertion}, {count}")
         super().finalize(metrics)
+
+
+class DropDuplicates(BaseProcessor):
+    """
+    Processor that drops all the non unique uterances associated with the specified key, keeping only the first utterance.
+
+    Args:
+        drop_key (str): A string specifying the key in the data entries used to determine uniqueness. Defaults to "text".
+
+    Returns:
+        list: A list of unique data entries after removing duplicates.
+
+    """
+
+    def __init__(self, drop_key: str = "text", **kwargs):
+        super().__init__(**kwargs)
+        self.drop_key = drop_key
+        self.seen_texts = set()
+
+    def process(self):
+        unique_entries = []
+        with open(self.input_manifest_file, 'r', encoding='utf-8') as file:
+            for line in file:
+                data_entry = json.loads(line)
+                text_in = data_entry[self.drop_key]
+                if text_in not in self.seen_texts:
+                    self.seen_texts.add(text_in)
+                    unique_entries.append(data_entry)
+
+        with open(self.output_manifest_file, "wt", encoding='utf-8') as fout:
+            for entry in unique_entries:
+                fout.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+        logger.info(f"Total number of entries after processing: {len(unique_entries)}")
+        return unique_entries
