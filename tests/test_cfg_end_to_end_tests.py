@@ -248,6 +248,9 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
     if "data_split" not in cfg:
         cfg["data_split"] = "train"
     cfg["processors"][0]["raw_data_dir"] = str(Path(test_data_root) / rel_path_from_root)
+    
+    if "already_downloaded" in cfg["processors"][0]:
+        cfg["processors"][0]["already_downloaded"] = True
 
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
