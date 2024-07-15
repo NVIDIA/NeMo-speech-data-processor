@@ -6,3 +6,8 @@ pytest-coverage.txt
 docs/html
 docs/src/sdp/config-docs/
 .hypothesis
+
+asr-venv
+lightning_logs
+test-venv
+workdir
