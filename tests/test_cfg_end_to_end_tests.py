@@ -188,8 +188,7 @@ def check_e2e_test_data() -> bool:
         return True
     return False
 
-
-def get_e2e_test_data_path() -> str:
+def get_e2e_test_data_path(rel_path_from_root: str) -> str:
     """Returns path to e2e test data (downloading from AWS if necessary).
 
     In case of downloading from AWS, will create "test_data" folder in the
@@ -197,7 +196,7 @@ def get_e2e_test_data_path() -> str:
     to locate test data).
     """
     test_data_root = os.getenv("TEST_DATA_ROOT")
-    if test_data_root:  # assume it's present locally
+    if test_data_root:
         return test_data_root
 
     import boto3
@@ -208,14 +207,15 @@ def get_e2e_test_data_path() -> str:
         aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
     )
     bucket = s3_resource.Bucket("sdp-test-data")
-    print("Downloading test data from s3")
-    for obj in bucket.objects.all():
-        if obj.key.endswith("/"):  # do not try to "download_file" on objects which are actually directories
-            continue
-        if not os.path.exists(os.path.dirname(obj.key)):
-            os.makedirs(os.path.dirname(obj.key))
-        bucket.download_file(obj.key, obj.key)
-    print("Test data downloaded to 'test_data' folder.")
+    print(f"Downloading test data for {rel_path_from_root} from s3")
+    
+    prefix = rel_path_from_root + "/"
+    for obj in bucket.objects.filter(Prefix=prefix):
+        local_file_path = Path("test_data") / obj.key
+        local_file_path.parent.mkdir(parents=True, exist_ok=True)
+        bucket.download_file(obj.key, str(local_file_path))
+    
+    print(f"Test data downloaded to 'test_data/{rel_path_from_root}' folder.")
     os.environ["TEST_DATA_ROOT"] = os.path.abspath("test_data")
 
     return os.environ["TEST_DATA_ROOT"]
