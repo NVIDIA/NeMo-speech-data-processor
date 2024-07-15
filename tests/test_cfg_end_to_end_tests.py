@@ -189,14 +189,8 @@ def check_e2e_test_data() -> bool:
     return False
 
 def get_e2e_test_data_path(rel_path_from_root: str) -> str:
-    """Returns path to e2e test data (downloading from AWS if necessary).
-
-    In case of downloading from AWS, will create "test_data" folder in the
-    current folder and set TEST_DATA_ROOT automatically (used by the sdp code
-    to locate test data).
-    """
     test_data_root = os.getenv("TEST_DATA_ROOT")
-    if test_data_root:
+    if test_data_root:  # assume it's present locally
         return test_data_root
 
     import boto3
@@ -231,7 +225,9 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
     test_data_root = get_e2e_test_data_path()
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
     # to have the same structure (e.g. <lang>/<dataset>)
+    
     rel_path_from_root = os.path.relpath(Path(config_path).parent, DATASET_CONFIGS_ROOT)
+    test_data_root = get_e2e_test_data_path(rel_path_from_root)
 
     # run data_check_fn - it will raise error if the expected test data is not found
     data_check_fn(raw_data_dir=str(Path(test_data_root) / rel_path_from_root))
