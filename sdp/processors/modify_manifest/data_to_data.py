@@ -649,7 +649,7 @@ class InverseNormalizeText(BaseParallelProcessor):
     E.g., “one hundred and twenty-three dollars.” is converted to “$123”.
 
     Args:
-        input_text_field (str): the text field that will be the input to the Normalizer. Defaults to: text.
+        input_text_field (str): the text field that will be the input to the InverseNormalizer. Defaults to: text.
         input_language (str): language specifying the text normalization rules in ISO 639 Set 1 format. E.g., "en", "es", "it", etc.
             Defaults to: English.
         input_case (str): input text capitalization, set to `cased` if text contains capital letters.
