@@ -14,11 +14,14 @@
 
 import pytest
 
-from sdp.processors.modify_manifest.data_to_data import NormalizeText
+from sdp.processors.modify_manifest.data_to_data import (
+    InverseNormalizeText,
+    NormalizeText,
+)
 
-test_params_list = []
+normalize_test_params_list = []
 
-test_params_list.extend(
+normalize_test_params_list.extend(
     [
         (
             {
@@ -54,9 +57,58 @@ test_params_list.extend(
 )
 
 
-@pytest.mark.parametrize("class_kwargs,test_input,expected_output", test_params_list, ids=str)
-def test_normalize_text(class_kwargs, test_input, expected_output):
+@pytest.mark.parametrize("class_kwargs,test_input,expected_output", normalize_test_params_list, ids=str)
+def test_inverse_normalize_text(class_kwargs, test_input, expected_output):
     processor = NormalizeText(**class_kwargs, output_manifest_file=None)
+    processor.prepare()
+
+    print(test_input)
+    output = processor.process_dataset_entry(test_input)[0].data
+
+    assert output == expected_output
+
+
+inverse_normalize_test_params_list = []
+
+inverse_normalize_test_params_list.extend(
+    [
+        (
+            {
+                "input_text_field": "text",
+                "input_language": "en",
+                "input_case": "cased",
+                "output_text_field": "inverse_normalized_text",
+            },
+            {"text": "twelve dollar"},
+            {"text": "twelve dollar", "inverse_normalized_text": "$12"},
+        ),
+        (
+            {
+                "input_text_field": "text",
+                "input_language": "en",
+                "input_case": "cased",
+                "output_text_field": "inverse_normalized_text",
+            },
+            {"text": "one hundred and twenty"},
+            {"text": "one hundred and twenty", "inverse_normalized_text": "120"},
+        ),
+        (
+            {
+                "input_text_field": "text",
+                "input_language": "hy",
+                "input_case": "cased",
+                "output_text_field": "inverse_normalized_text",
+            },
+            {"text": "տասնմեկ"},
+            {"text": "տասնմեկ", "inverse_normalized_text": "11"},
+        ),
+    ]
+)
+
+
+@pytest.mark.parametrize("class_kwargs,test_input,expected_output", inverse_normalize_test_params_list, ids=str)
+def test_inverse_normalize_text(class_kwargs, test_input, expected_output):
+    processor = InverseNormalizeText(**class_kwargs, output_manifest_file=None)
     processor.prepare()
 
     print(test_input)

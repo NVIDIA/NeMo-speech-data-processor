@@ -18,6 +18,9 @@ import re
 from typing import Dict, List
 
 import soundfile
+from nemo_text_processing.inverse_text_normalization.inverse_normalize import (
+    InverseNormalizer,
+)
 from nemo_text_processing.text_normalization.normalize import Normalizer
 from sox import Transformer
 
@@ -602,7 +605,7 @@ class NormalizeText(BaseParallelProcessor):
     Args:
         input_text_field (str): the text field that will be the input to the Normalizer. Defaults to: text.
         input_language (str): language specifying the text normalization rules in ISO 639 Set 1 format. E.g., "en", "es", "it", etc.
-            Defaults to: Engish.
+            Defaults to: English.
         input_case (str): input text capitalization, set to `cased` if text contains capital letters.
             This flag affects normalization rules applied to the text. Note, `lower_cased` won't lower case input.
             Defaults to: cased.
@@ -638,4 +641,54 @@ class NormalizeText(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry):
         data_entry[self.output_text_key] = self.normalizer.normalize(data_entry[self.input_text_key])
+        return [DataEntry(data=data_entry)]
+
+
+class InverseNormalizeText(BaseParallelProcessor):
+    """This processor applies inverse text normalization (ITN) to the text. I.e. transforms spoken forms of numbers, dates, etc into their written equivalents.
+    E.g., “one hundred and twenty-three dollars.” is converted to “$123”.
+
+    Args:
+        input_text_field (str): the text field that will be the input to the Normalizer. Defaults to: text.
+        input_language (str): language specifying the text normalization rules in ISO 639 Set 1 format. E.g., "en", "es", "it", etc.
+            Defaults to: English.
+        input_case (str): input text capitalization, set to `cased` if text contains capital letters.
+            This flag affects normalization rules applied to the text. Note, `lower_cased` won't lower case input.
+            Defaults to: cased.
+        output_text_field (str): the text field that will be the output from the InverseNormalizer.
+            Defaults to: text.
+
+    Returns:
+        This processor inverse normalizes the text in the `input_text_field` key and saves the inverse normalized text in `output_text_field` key.
+
+    Raises:
+        `NotImplementedError`: when ITN is not implemented for the requaested language.
+    """
+
+    def __init__(
+        self,
+        input_text_field: str = "text",
+        input_language: str = "en",
+        input_case: str = "cased",
+        output_text_field: str = "text",
+        verbose: bool = False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_text_key = input_text_field
+        self.output_text_key = output_text_field
+        self.input_case = input_case
+        self.input_language = input_language
+        self.verbose = verbose
+
+    def prepare(self):
+        try:
+            self.inverse_normalizer = InverseNormalizer(input_case=self.input_case, lang=self.input_language)
+        except NotImplementedError as e:
+            logger.error("Failed to run text inverse normalization: %s", repr(e))
+
+    def process_dataset_entry(self, data_entry):
+        data_entry[self.output_text_key] = self.inverse_normalizer.inverse_normalize(
+            data_entry[self.input_text_key], verbose=self.verbose
+        )
         return [DataEntry(data=data_entry)]
