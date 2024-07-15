@@ -9,3 +9,4 @@ docs/src/sdp/config-docs/
 asr-venv
 workdir
 lightning_logs
+test-venv
