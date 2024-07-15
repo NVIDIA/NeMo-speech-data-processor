@@ -157,6 +157,9 @@ Data modifications
 
 .. autodata:: sdp.processors.NormalizeText
    :annotation:
+   
+.. autodata:: sdp.processors.InverseNormalizeText
+   :annotation:
 
 Data filtering
 ''''''''''''''
