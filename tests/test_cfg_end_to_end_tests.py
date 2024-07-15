@@ -222,7 +222,7 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
 )
 @pytest.mark.parametrize("config_path,data_check_fn", get_test_cases())
 def test_configs(config_path: str, data_check_fn: Callable, tmp_path: str):
-    test_data_root = get_e2e_test_data_path()
+    
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
     # to have the same structure (e.g. <lang>/<dataset>)
     
