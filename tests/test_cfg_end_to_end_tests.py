@@ -47,6 +47,10 @@ data_check_fn_librispeech = partial(data_check_fn_generic, file_name="dev-clean.
 data_check_fn_fleurs = partial(data_check_fn_generic, file_name="dev.tar.gz")
 
 def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
+    """Raises error if do not find expected data.
+
+    Will also extract the archive as initial processor expects extracted data.
+    """
     if (Path(raw_data_dir) / "transcribed_data").exists():
         return
     expected_file = Path(raw_data_dir) / "transcribed_data.tar.gz"
@@ -54,6 +58,11 @@ def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
         raise ValueError(f"No such file {str(expected_file)}")
     with tarfile.open(expected_file, 'r:gz') as tar:
         tar.extractall(path=raw_data_dir)
+
+# using Mock so coraal_processor will only try to use the files listed.
+# To reduce the amount of storage required by the test data, the S3 bucket contains
+# modified versions of LES_audio_part01_2021.07.tar.gz and
+# LES_textfiles_2021.07.tar.gz which only contain data from 2 recordings
 
 coraal_processor.get_coraal_url_list = mock.Mock(
     return_value=[
@@ -86,9 +95,23 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
     ]
 
 def check_e2e_test_data() -> bool:
+    """Checks if required environment variables are defined for e2e data.
+
+
+
+    Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY
+
+    and AWS_ACCESS_KEY.
+
+    """
     return bool(os.getenv("TEST_DATA_ROOT") or (os.getenv("AWS_SECRET_KEY") and os.getenv("AWS_ACCESS_KEY")))
 
 def get_e2e_test_data_path(rel_path_from_root: str) -> str:
+    """Returns path to e2e test data (downloading from AWS if necessary).
+    In case of downloading from AWS, will create "test_data" folder in the
+    current folder and set TEST_DATA_ROOT automatically (used by the sdp code
+    to locate test data).
+    """
     test_data_root = os.getenv("TEST_DATA_ROOT")
     if test_data_root:
         return test_data_root
@@ -121,8 +144,13 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
 )
 @pytest.mark.parametrize("config_path,data_check_fn", get_test_cases())
 def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
+    # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
+
+    # to have the same structure (e.g. <lang>/<dataset>)
     rel_path_from_root = Path(config_path).parent.relative_to(DATASET_CONFIGS_ROOT)
     test_data_root = Path(get_e2e_test_data_path(str(rel_path_from_root)))
+ 
+    # run data_check_fn - it will raise error if the expected test data is not found
     try:
         data_check_fn(raw_data_dir=str(test_data_root / rel_path_from_root))
     except ValueError as e:
@@ -142,6 +170,9 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
 
     run_processors(cfg)
 
+    # additionally, let's test that final generated manifest matches the
+
+    # reference file (ignoring the file paths)
     with open(reference_manifest, "rt", encoding="utf8") as reference_fin, \
          open(cfg.final_manifest, "rt", encoding="utf8") as generated_fin:
         reference_lines = sorted(reference_fin.readlines())
@@ -155,6 +186,7 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
             generated_data.pop("audio_filepath", None)
             assert reference_data == generated_data
 
+ # if CLEAN_UP_TMP_PATH is set to non-0 value, we will delete tmp_path
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
         shutil.rmtree(tmp_path)
 
