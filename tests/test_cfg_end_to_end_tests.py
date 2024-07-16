@@ -30,13 +30,15 @@ from sdp.utils.common import extract_tar_with_strip_components
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
 
 def data_check_fn_generic(raw_data_dir: str, file_name: str, **kwargs) -> None:
+    if callable(file_name):
+        file_name = file_name(**kwargs)
     expected_file = Path(raw_data_dir) / file_name
     if not expected_file.exists():
         raise ValueError(f"No such file {str(expected_file)}")
 
-data_check_fn_mls = partial(data_check_fn_generic, file_name=lambda lang: f"mls_{lang}.tar.gz")
-data_check_fn_mcv = partial(data_check_fn_generic, file_name=lambda stem: f"{stem}.tar.gz")
-data_check_fn_mtedx = partial(data_check_fn_generic, file_name=lambda lang_id: f"mtedx_{lang_id}.tgz")
+data_check_fn_mls = partial(data_check_fn_generic, file_name=lambda language, **kwargs: f"mls_{language}.tar.gz")
+data_check_fn_mcv = partial(data_check_fn_generic, file_name=lambda archive_file_stem, **kwargs: f"{archive_file_stem}.tar.gz")
+data_check_fn_mtedx = partial(data_check_fn_generic, file_name=lambda language_id, **kwargs: f"mtedx_{language_id}.tgz")
 data_check_fn_coraa = partial(data_check_fn_generic, file_name="train_dividido/train.part1.rar")
 data_check_fn_slr140 = partial(data_check_fn_generic, file_name="slr140_kk.tar.gz")
 data_check_fn_slr102 = partial(data_check_fn_generic, file_name="slr102_kk.tar.gz")
@@ -155,3 +157,36 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
 
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
         shutil.rmtree(tmp_path)
+
+# Additional unit tests to increase coverage
+def test_check_e2e_test_data():
+    os.environ.clear()
+    assert not check_e2e_test_data()
+    os.environ["TEST_DATA_ROOT"] = "/path/to/test/data"
+    assert check_e2e_test_data()
+    os.environ.clear()
+    os.environ["AWS_SECRET_KEY"] = "secret"
+    os.environ["AWS_ACCESS_KEY"] = "access"
+    assert check_e2e_test_data()
+
+@pytest.mark.slow
+def test_get_e2e_test_data_path(tmp_path):
+    os.environ["TEST_DATA_ROOT"] = str(tmp_path)
+    assert get_e2e_test_data_path("test/path") == str(tmp_path)
+
+    os.environ.clear()
+    os.environ["AWS_SECRET_KEY"] = "secret"
+    os.environ["AWS_ACCESS_KEY"] = "access"
+    with mock.patch("boto3.resource") as mock_resource:
+        mock_bucket = mock.MagicMock()
+        mock_resource.return_value.Bucket.return_value = mock_bucket
+        mock_bucket.objects.filter.return_value = [
+            mock.MagicMock(key="test/path/file1.txt"),
+            mock.MagicMock(key="test/path/file2.txt"),
+        ]
+        result = get_e2e_test_data_path("test/path")
+        assert result == os.path.abspath("test_data")
+        assert mock_bucket.download_file.call_count == 2
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "--durations=0"])
