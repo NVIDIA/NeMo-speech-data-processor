@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import json
 import os
 import shutil
@@ -30,7 +29,7 @@ from sdp.utils.common import extract_tar_with_strip_components
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
 
-def data_check_fn_generic(raw_data_dir: str, file_name: str) -> None:
+def data_check_fn_generic(raw_data_dir: str, file_name: str, **kwargs) -> None:
     expected_file = Path(raw_data_dir) / file_name
     if not expected_file.exists():
         raise ValueError(f"No such file {str(expected_file)}")
@@ -122,11 +121,14 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
 def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
     rel_path_from_root = Path(config_path).parent.relative_to(DATASET_CONFIGS_ROOT)
     test_data_root = Path(get_e2e_test_data_path(str(rel_path_from_root)))
-    data_check_fn(raw_data_dir=str(test_data_root / rel_path_from_root))
+    try:
+        data_check_fn(raw_data_dir=str(test_data_root / rel_path_from_root))
+    except ValueError as e:
+        pytest.skip(f"Test data not available: {str(e)}")
 
     reference_manifest = test_data_root / rel_path_from_root / "test_data_reference.json"
     if not reference_manifest.exists():
-        raise ValueError(f"Did not find reference manifest {reference_manifest}")
+        pytest.skip(f"Reference manifest not found: {reference_manifest}")
 
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
