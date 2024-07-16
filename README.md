@@ -37,7 +37,7 @@ SDP is officially supported for Python 3.10, but might work for other versions.
     --config-path="dataset_configs/english/librispeech" \
     --config-name="config.yaml" \
     processors_to_run="0:" \
-    workspace_dir=" /app/librispeecht"
+    workspace_dir="librispeech_data_dir"
 ```
 ## Usage
 
