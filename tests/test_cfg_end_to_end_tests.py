@@ -95,14 +95,10 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
     ]
 
 def check_e2e_test_data() -> bool:
-    """Checks if required environment variables are defined for e2e data.
-
-
-
+    """
+    Checks if required environment variables are defined for e2e data.
     Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY
-
     and AWS_ACCESS_KEY.
-
     """
     return bool(os.getenv("TEST_DATA_ROOT") or (os.getenv("AWS_SECRET_KEY") and os.getenv("AWS_ACCESS_KEY")))
 
@@ -112,7 +108,7 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
     current folder and set TEST_DATA_ROOT automatically (used by the sdp code
     to locate test data).
     """
-    test_data_root = os.getenv("TEST_DATA_ROOT")
+    test_data_root = os.getenv("TEST_DATA_ROOT") # assume it's present locally
     if test_data_root:
         return test_data_root
 
@@ -169,10 +165,9 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
     cfg.processors[0].raw_data_dir = str(test_data_root / rel_path_from_root)
 
     run_processors(cfg)
-
     # additionally, let's test that final generated manifest matches the
-
     # reference file (ignoring the file paths)
+    
     with open(reference_manifest, "rt", encoding="utf8") as reference_fin, \
          open(cfg.final_manifest, "rt", encoding="utf8") as generated_fin:
         reference_lines = sorted(reference_fin.readlines())
