@@ -108,8 +108,8 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
     current folder and set TEST_DATA_ROOT automatically (used by the sdp code
     to locate test data).
     """
-    test_data_root = os.getenv("TEST_DATA_ROOT") # assume it's present locally
-    if test_data_root:
+    test_data_root = os.getenv("TEST_DATA_ROOT") 
+    if test_data_root: # assume it's present locally
         return test_data_root
 
     import boto3
