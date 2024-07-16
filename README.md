@@ -26,7 +26,7 @@ SDP is officially supported for Python 3.10, but might work for other versions.
 ```
 
 3. Optional: If you need to use ASR, NLP parts, or NeMo Text Processing, follow the NeMo installation instructions:
-   - [NeMo Installation](https://github.com/NVIDIA/NeMo.git)
+   - [NeMo Installation](https://github.com/NVIDIA/NeMo)
 
 ## Example:
 1. In this example we will load librispeech using SDP.
