@@ -157,7 +157,7 @@ def get_test_cases():
             f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml",
             partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt"),
         ),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", partial(data_check_fn_mtedx, language_id="pt")), # FAILING
+        (f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", partial(data_check_fn_mtedx, language_id="pt")),
         (f"{DATASET_CONFIGS_ROOT}/portuguese/coraa/config.yaml", partial(data_check_fn_coraa)),
         (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
         # audio will be downloaded on the fly, so nothing to check here
