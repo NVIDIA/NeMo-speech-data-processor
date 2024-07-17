@@ -164,6 +164,9 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
     cfg.data_split = cfg.get("data_split", "train")
     cfg.processors[0].raw_data_dir = str(test_data_root / rel_path_from_root)
 
+    if "already_downloaded" in cfg["processors"][0]:
+        cfg["processors"][0]["already_downloaded"] = True
+
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
     # reference file (ignoring the file paths)
