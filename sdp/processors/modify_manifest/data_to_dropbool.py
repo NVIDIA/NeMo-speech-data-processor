@@ -804,6 +804,7 @@ class DropRepeatedFields(BaseParallelProcessor):
     This class processes multiple manifest files and removes entries from the current manifest if the text field
     matches any entry in the other manifests. It allows for optional punctuation removal from the text fields 
     before performing the check.
+    
     .. note::
         It is better to process Test/Dev/Train and then Other.tsv
 

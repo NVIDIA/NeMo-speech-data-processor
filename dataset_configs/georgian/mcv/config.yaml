@@ -2,7 +2,7 @@ documentation: |
   MCV Georgian
   ############
   This config was originally designed for the Mozilla Common Voice (MCV)
-   <https://commonvoice.mozilla.org/>_ dataset 17.0 release, 
+   `MCV <https://commonvoice.mozilla.org/>`__ dataset 17.0 release, 
    but should work for any subsequent releases as well.
 
   Note: Georgian is a unicameral language, meaning it does not have uppercase and lowercase letters. 
@@ -29,8 +29,8 @@ documentation: |
     ``<workspace dir>/raw_data/`` subfolder.
   * **data_split**: should be "train", "dev", "test" or "other".
 
-  Note: It is better to process data in this order: test,dev,train,other.
- 
+  Note: due to the text deduplication in step 3, we recommend processing the data in the following order: test, dev, train, other.
+
   **Output format**.
  
   This config dumps the final manifest at ``${workspace_dir}/${data_split}_manifest.json``.
