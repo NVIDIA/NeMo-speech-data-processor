@@ -32,7 +32,7 @@ def get_librispeech_url_list(split: str) -> str:
         "train-clean-360": "https://openslr.org/resources/12/train-clean-360.tar.gz",
         "train-other-500": "https://openslr.org/resources/12/train-other-500.tar.gz",
         "dev-clean-2": "https://www.openslr.org/resources/31/dev-clean-2.tar.gz",
-        "train-clean-5": "https://www.openslr.org/resources/31/train-clean-5.tar.gz"
+        "train-clean-5": "https://www.openslr.org/resources/31/train-clean-5.tar.gz",
     }
 
     if split not in urls:
@@ -54,7 +54,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
     Args:
         split (str): Which datasets or their combinations should be processed.
             Options are:
-            
+
             - ``"dev-clean"``
             - ``"dev-other"``
             - ``"test-clean"``
@@ -125,13 +125,11 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
             for entry in entries:
                 fout.write(json.dumps(entry) + "\n")
 
-
     def download_extract_files(self, dst_folder: str) -> None:
         """downloading and extracting files"""
 
         os.makedirs(dst_folder, exist_ok=True)
 
-        # downloading all fil
         download_file(get_librispeech_url_list(self.split), str(dst_folder))
         data_file = f'{dst_folder}/{self.split}.tar.gz'
         extract_archive(str(data_file), str(dst_folder), force_extract=True)
