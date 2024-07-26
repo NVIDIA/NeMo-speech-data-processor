@@ -1,5 +1,5 @@
 documentation: |
-  FLEURS
+  uzbekvoice
   ######
   This config can be used to prepare
   `uzbekvoice <https://uzbekvoice.ai/en-US/>`_
@@ -28,9 +28,10 @@ documentation: |
   * **audio_filepath (str)**: relative path to the audio files.
   * **text (str)**: transcription (lower-case without punctuation).
   * **duration (float)**: audio duration in seconds.
-processors_to_run: "all"
+processors_to_run: '0:'
 workspace_dir: ???
-final_manifest: ${workspace_dir}/$final_manifest.json
+data_split: ???
+save_dir: ???
 
 processors:
   # creating manifest for uzbek dev set
@@ -40,22 +41,42 @@ processors:
   - _target_: sdp.processors.GetAudioDuration
     audio_filepath_key: audio_filepath
     duration_key: duration
+    output_manifest_file: ${save_dir}/${data_split}_manifest_1.json
+
 
   - _target_: sdp.processors.SubRegex
     text_key: text
+    output_manifest_file: ${save_dir}/${data_split}_manifest_2.json
+
     regex_params_list:
       - {"pattern": ":", "repl": ''}
 
-      - {"pattern": "‘", "repl": "ʻ"}
-      - {"pattern": "’", "repl": "ʻ"}
-      - {"pattern": "`", "repl": "ʻ"}
-      - {"pattern": "'", "repl": "ʻ"}
-      - {"pattern": 'ʼ', "repl": "ʻ"}
+      - {"pattern": "(?<=o|g|O|G)‘", "repl": "ʻ"}
+      - {"pattern": "(?<=o|g|O|G)’", "repl": "ʻ"}
+      - {"pattern": "(?<=o|g|O|G)`", "repl": "ʻ"}
+      - {"pattern": "(?<=o|g|O|G)'", "repl": "ʻ"}
+      - {"pattern": '(?<=o|g|O|G)ʼ', "repl": "ʻ"}
+
+      - {"pattern": "‘", "repl": "’"}
+      - {"pattern": "`", "repl": "’"}
+      - {"pattern": "'", "repl": "’"}
+      - {"pattern": 'ʼ', "repl": "’"}
+      - {"pattern": '(?<!o|g|O|G)ʻ', "repl": "’"}
+
+    test_cases:
+      - { input: { text: "Bir sig’ir ka'tta qashshoqlikni yopadi." }, output:  { text: "Bir sigʻir ka’tta qashshoqlikni yopadi." }}
+      - { input: { text: "O‘shanda yapon universiteti ta’lim grantini yutib olgandim." }, output: { text: "Oʻshanda yapon universiteti ta’lim grantini yutib olgandim." }}
+
+
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    output_manifest_file: ${save_dir}/${data_split}_manifest_3.json
+
+    regex_params_list:
+      - {"pattern": ":", "repl": ""}
 
       - {"pattern": "!", "repl": "."}
       - {"pattern": "\r", "repl": ""}
-      - {"pattern": "\u2018", "repl": ""}
-      - {"pattern": "\u2019", "repl": ""}
 
       - {"pattern": '―', "repl": "-"}
       - {"pattern": '—', "repl": "-"}
@@ -101,15 +122,7 @@ processors:
       - {"pattern": "ñ", "repl": "ng"}
 
     test_cases:
-        - { input: { text: "Bir sigir ka'tta qashshoqlikni yopadi." }, output:  { text: "Bir sigir kaʻtta qashshoqlikni yopadi." }}
-
-  - _target_: sdp.processors.DropIfRegexMatch
-    text_key: text
-    regex_patterns:
-      - "(?<!o|g|O|G)'(?!')"
-    test_cases:
-        - { input: { text: "Bir sigir ka'tta qashshoqlikni yopadi." }, output:  null}
-        - { input: { text: "Bir sigir katta qashshoqlikni yo'padi." }, output:  { text: "Bir sigir katta qashshoqlikni yo'padi." }}
+        - { input: { text: "Bir siḡir katta; qashshoqlikni yopadi." }, output:  { text: "Bir sigʻir katta, qashshoqlikni yopadi." }}
 
 
   - _target_: sdp.processors.DropIfNoneOfRegexMatch
@@ -120,10 +133,11 @@ processors:
 
 
   - _target_: sdp.processors.DropNonAlphabet
-    alphabet: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZʻ.,-? "
+    alphabet: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZʻ’.,-? "
     test_cases:
       - { input: { text: "• Bir sigir katta qashshoqlikni yopadi." }, output: null }
       - { input: { text: "Bir sigir 2 katta qashshoqlikni yopadi" }, output: null }
 
       - { input: { text: "Bu vaqtga qadar u oʻzi yoqtirmagan kasbda faoliyat yuritgan." }, output: { text: "Bu vaqtga qadar u oʻzi yoqtirmagan kasbda faoliyat yuritgan." } }
-    output_manifest_file: ${final_manifest}
+    output_manifest_file: ${save_dir}/${data_split}_manifest_final.json
+    
