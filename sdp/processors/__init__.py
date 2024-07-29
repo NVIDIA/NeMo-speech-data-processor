@@ -24,6 +24,9 @@ from sdp.processors.datasets.coraal import (
 from sdp.processors.datasets.fleurs.create_initial_manifest import (
     CreateInitialManifestFleurs,
 )
+from sdp.processors.datasets.uzbekvoice.create_initial_manifest import (
+    CreateInitialManifestUzbekvoice,
+)
 from sdp.processors.datasets.ksc2.create_initial_manifest import (
     CreateInitialManifestKSC2,
 )
