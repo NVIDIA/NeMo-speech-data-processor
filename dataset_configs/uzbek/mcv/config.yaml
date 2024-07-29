@@ -38,7 +38,8 @@ documentation: |
 processors_to_run: '0:'
 workspace_dir: ???
 data_split: ???
-save_dir: ???
+final_manifest: ${workspace_dir}/${data_split}_manifest.json
+save_dir: ${workspace_dir}
 remove_pc: False
 
 processors:
@@ -47,7 +48,7 @@ processors:
     extract_archive_dir: ${workspace_dir}/raw_data
     resampled_audio_dir: ${workspace_dir}/${data_split}/audio/
     data_split: ${data_split}
-    raw_data_dir: ${workspace_dir}/raw_data
+    raw_data_dir: ${workspace_dir}
     output_manifest_file: ${save_dir}/${data_split}_manifest_1.json
 
   - _target_: sdp.processors.SubRegex
@@ -145,4 +146,4 @@ processors:
       - { input: { text: "Bir sigir 2 katta qashshoqlikni yopadi" }, output: null }
 
       - { input: { text: "Bu vaqtga qadar u oʻzi yoqtirmagan kasbda faoliyat yuritgan." }, output: { text: "Bu vaqtga qadar u oʻzi yoqtirmagan kasbda faoliyat yuritgan." } }
-    output_manifest_file: ${save_dir}/${data_split}_manifest_final.json
+    output_manifest_file: ${final_manifest}

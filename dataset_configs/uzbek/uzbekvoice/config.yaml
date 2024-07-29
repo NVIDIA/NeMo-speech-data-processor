@@ -30,8 +30,10 @@ documentation: |
   * **duration (float)**: audio duration in seconds.
 processors_to_run: '0:'
 workspace_dir: ???
+final_manifest: ${workspace_dir}/manifest.json
 data_split: ???
-save_dir: ???
+save_dir: ${workspace_dir}
+
 
 processors:
   # creating manifest for uzbek dev set
@@ -139,5 +141,5 @@ processors:
       - { input: { text: "Bir sigir 2 katta qashshoqlikni yopadi" }, output: null }
 
       - { input: { text: "Bu vaqtga qadar u oʻzi yoqtirmagan kasbda faoliyat yuritgan." }, output: { text: "Bu vaqtga qadar u oʻzi yoqtirmagan kasbda faoliyat yuritgan." } }
-    output_manifest_file: ${save_dir}/${data_split}_manifest_final.json
+    output_manifest_file: ${final_manifest}
     

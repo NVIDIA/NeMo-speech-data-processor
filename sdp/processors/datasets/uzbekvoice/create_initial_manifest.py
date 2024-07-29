@@ -62,15 +62,18 @@ class CreateInitialManifestUzbekvoice(BaseProcessor):
         # downloading all files
         # for big files google drive doesn't allow to try downlaoding them more than once
         # so, in case of receiveing gdown error we need to download them manually
-        try:
-            gdown.download_folder(self.URL, output=dst_folder)
-        except Exception as e:
-            print("Error occured while downloading files from google drive. Please download them manually.")
-            print("URL: ", self.URL)
-            print("Error: ", e)
-        
-        print(f"Looking for zip files in the {dst_folder} folder...")
-        # finding the zip file and extracting it
+
+        #check if clisp.zip and uzbekvoice-dataset.zip are already in dst_folder
+        if os.path.exists(os.path.join(dst_folder, 'clips.zip')) and os.path.exists(os.path.join(dst_folder, 'uzbekvoice-dataset.zip')):
+            print("Files already exist in the folder. Skipping download.")
+        else:
+            print(f"Downloading files from {self.URL}...")
+            try:
+                gdown.download_folder(self.URL, output=dst_folder)
+            except Exception as e:
+                print("Error occured while downloading files from google drive. Please download them manually.")
+                print("URL: ", self.URL)
+                print("Error: ", e)
         for file in glob.glob(os.path.join(dst_folder, '*.zip')):
             extract_archive(file, str(dst_folder), force_extract=True)
             print(f"Extracted {file}")
