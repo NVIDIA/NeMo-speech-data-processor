@@ -1,0 +1,14 @@
+diff_match_patch
+editdistance
+hydra-core
+joblib
+librosa>=0.10.0
+numpy
+omegaconf
+pandas
+regex
+sox
+tqdm
+wget
+ffmpeg
+rarfile
