@@ -42,9 +42,9 @@ processors:
     output_manifest_file: ${workspace_dir}/${data_split}_manifest0.json
   
   - _target_: sdp.processors.FfmpegConvert
-    converted_audio_dir: ${workspace_dir}/resampled
-    input_file_key: audio_filepath
-    output_file_key: audio_filepath
+    resampled_audio_dir: ${workspace_dir}/resampled
+    input_field: audio_filepath
+    output_field: audio_filepath
   
   - _target_: sdp.processors.datasets.commoncrawl.SplitByVttSentence
     output_manifest_file: ${workspace_dir}/manifest_vtt.json
@@ -55,7 +55,7 @@ processors:
     duration_field: duration
     text_field: text
     vtt_field: vtt_filepath
-    additional_fields: []
+    proxy_fields: []
     duration_threshold: 20.0
   
   - _target_: sdp.processors.SubRegex
