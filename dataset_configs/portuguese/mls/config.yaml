@@ -38,9 +38,9 @@ processors:
     data_split: ${data_split}
 
   - _target_: sdp.processors.FfmpegConvert
-    resampled_audio_dir: ${workspace_dir}/resampled
-    input_field: audio_filepath
-    output_field: audio_filepath
+    converted_audio_dir: ${workspace_dir}/resampled
+    input_file_key: audio_filepath
+    output_file_key: audio_filepath
   
   - _target_: sdp.processors.SubRegex
     regex_params_list:
