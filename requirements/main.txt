@@ -14,3 +14,4 @@ tqdm
 webvtt-py
 wget
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
+# apt-get update && apt-get upgrade -y && apt-get install -y unrar sox libsox-fmt-all
