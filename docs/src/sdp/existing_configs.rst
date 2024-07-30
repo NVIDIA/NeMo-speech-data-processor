@@ -34,6 +34,9 @@ download the data archive and specify its location with the ``raw_data_dir`` par
 * **Kazakh**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/kazakh/mcv/config.yaml>`__ |
   :doc:`documentation <config-docs/kazakh/mcv/config>`
+* **Georgian**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/georgian/mcv/config.yaml>`__ |
+  :doc:`documentation <config-docs/georgian/mcv/config>`
 
 .. toctree:: 
    :hidden:
@@ -42,6 +45,7 @@ download the data archive and specify its location with the ``raw_data_dir`` par
    config-docs/spanish_pc/mcv12/config
    config-docs/portuguese/mcv/config
    config-docs/kazakh/mcv/config
+   config-docs/georgian/mcv/config
 
 Multilingual LibriSpeech (MLS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
