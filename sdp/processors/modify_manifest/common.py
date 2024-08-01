@@ -15,7 +15,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 
 import pandas as pd
 from tqdm import tqdm
@@ -348,17 +348,16 @@ class KeepOnlySpecifiedFields(BaseProcessor):
 
 class ApplyInnerJoin(BaseProcessor):
     """Applies inner join to two manifests, i.e. creates a manifest from records that have matching values in both manifests.
-
-    .. note::
-        If coloumn appears in both manifests, but is not going to be merged, two coloumns with suffixes `_x`, `_y` will be added for each manifest.
-        I.e. for input manifests {"id": 1, "text": "text1"} and {id: 1, "text": "text2"} after join on "id" will return {"id": 1, "text_x": "text1", "text_y": "text2"}.
+    For more information, please refer to the Pandas merge function documentation:
+    https://pandas.pydata.org/docs/reference/api/pandas.merge.html#pandas.merge
 
 
     Args:
-        coloumn_id (Union[str, List[str], None]): Field names to join on. These must be found in both manifests.
-            If `coloumn_id` is None then this defaults to the intersection of the columns in both manifests.
+        column_id (Union[str, List[str], None]): Field names to join on. These must be found in both manifests.
+            If `column_id` is None then this defaults to the intersection of the columns in both manifests.
             Defaults to None.
-        input_manifest_file2 (str): path to the second manifest
+        left_manifest_file (str): path to the left manifest. Defaults to `input_manifest_file`.
+        right_manifest_file (str): path to the right manifest.
 
     Returns:
         Inner join of two manifests.
@@ -366,18 +365,20 @@ class ApplyInnerJoin(BaseProcessor):
 
     def __init__(
         self,
-        input_manifest_file2: str,
-        coloumn_id: Union[str, List[str], None] = None,
+        left_manifest_file: Optional[str],
+        right_manifest_file: str,
+        column_id: Union[str, List[str], None] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_manifest_file2 = input_manifest_file2
-        self.coloumn_id = coloumn_id
+        self.left_manifes_file = left_manifest_file if left_manifest_file != None else self.input_manifest_file
+        self.right_manifest_file = right_manifest_file
+        self.column_id = column_id
 
     def process(self):
-        m1 = pd.DataFrame.from_records(load_manifest(Path(self.input_manifest_file)))
-        m2 = pd.DataFrame.from_records(load_manifest(Path(self.input_manifest_file2)))
-        m3 = pd.merge(m1, m2, on=self.coloumn_id, how="inner")
+        m1 = pd.DataFrame.from_records(load_manifest(Path(self.left_manifest_file)))
+        m2 = pd.DataFrame.from_records(load_manifest(Path(self.right_manifest_file)))
+        m3 = pd.merge(m1, m2, on=self.column_id, how="inner")
 
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for _, line in m3.iterrows():

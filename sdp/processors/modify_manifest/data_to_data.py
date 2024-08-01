@@ -603,33 +603,33 @@ class NormalizeText(BaseParallelProcessor):
     E.g., “$123” is converted to “one hundred and twenty-three dollars.”
 
     Args:
-        input_text_field (str): the text field that will be the input to the Normalizer. Defaults to: text.
+        input_text_key (str): the text field that will be the input to the Normalizer. Defaults to: text.
         input_language (str): language specifying the text normalization rules in ISO 639 Set 1 format. E.g., "en", "es", "it", etc.
             Defaults to: English.
         input_case (str): input text capitalization, set to `cased` if text contains capital letters.
             This flag affects normalization rules applied to the text. Note, `lower_cased` won't lower case input.
             Defaults to: cased.
-        output_text_field (str): the text field that will be the output from the Normalizer.
+        output_text_key (str): the text field that will be the output from the Normalizer.
             Defaults to: text.
 
     Returns:
-        This processor normalizes the text in the `input_text_field` key and saves the normalized text in `output_text_field` key.
+        This processor normalizes the text in the `input_text_key` field and saves the normalized text in `output_text_key` field.
 
     Raises:
-        `NotImplementedError`: when TN is not implemented for the requaested language.
+        `NotImplementedError`: when TN is not implemented for the requested language.
     """
 
     def __init__(
         self,
-        input_text_field: str = "text",
+        input_text_key: str = "text",
         input_language: str = "en",
         input_case: str = "cased",
-        output_text_field: str = "text",
+        output_text_key: str = "text",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_text_key = input_text_field
-        self.output_text_key = output_text_field
+        self.input_text_key = input_text_key
+        self.output_text_key = output_text_key
         self.input_case = input_case
         self.input_language = input_language
 
@@ -649,34 +649,34 @@ class InverseNormalizeText(BaseParallelProcessor):
     E.g., “one hundred and twenty-three dollars.” is converted to “$123”.
 
     Args:
-        input_text_field (str): the text field that will be the input to the InverseNormalizer. Defaults to: text.
+        input_text_key (str): the text field that will be the input to the InverseNormalizer. Defaults to: text.
         input_language (str): language specifying the text normalization rules in ISO 639 Set 1 format. E.g., "en", "es", "it", etc.
             Defaults to: English.
         input_case (str): input text capitalization, set to `cased` if text contains capital letters.
             This flag affects normalization rules applied to the text. Note, `lower_cased` won't lower case input.
             Defaults to: cased.
-        output_text_field (str): the text field that will be the output from the InverseNormalizer.
+        output_text_key (str): the text field that will be the output from the InverseNormalizer.
             Defaults to: text.
 
     Returns:
-        This processor inverse normalizes the text in the `input_text_field` key and saves the inverse normalized text in `output_text_field` key.
+        This processor inverse normalizes the text in the `input_text_key` field and saves the inverse normalized text in `output_text_key` field.
 
     Raises:
-        `NotImplementedError`: when ITN is not implemented for the requaested language.
+        `NotImplementedError`: when ITN is not implemented for the requested language.
     """
 
     def __init__(
         self,
-        input_text_field: str = "text",
+        input_text_key: str = "text",
         input_language: str = "en",
         input_case: str = "cased",
-        output_text_field: str = "text",
+        output_text_key: str = "text",
         verbose: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_text_key = input_text_field
-        self.output_text_key = output_text_field
+        self.input_text_key = input_text_key
+        self.output_text_key = output_text_key
         self.input_case = input_case
         self.input_language = input_language
         self.verbose = verbose

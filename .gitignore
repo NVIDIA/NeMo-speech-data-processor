@@ -1,14 +1,24 @@
-__pycache__
+# log and data files
 test_data
-pytest.xml
-pytest-coverage.txt
-.coverage
-docs/html
-docs/src/sdp/config-docs/
-.hypothesis
-asr-venv
-test-venv
 workdir
 lightning_logs
-test-venv
+
+# unit test / coverage reports
+.hypothesis
+.coverage
+pytest.xml
+pytest-coverage.txt
+
+# vscode 
 .vscode
+
+# docs
+docs/html
+docs/src/sdp/config-docs/
+
+# venv
+asr-venv
+test-venv
+
+# byte-compiled / optimized / DLL files
+__pycache__

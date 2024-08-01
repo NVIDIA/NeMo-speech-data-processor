@@ -156,8 +156,8 @@ def test_apply_inner_join(
 
         processor = ApplyInnerJoin(
             input_manifest_file=manifest1,
-            input_manifest_file2=manifest2,
-            coloumn_id=coloumn_id,
+            right_manifest_file=manifest2,
+            column_id=coloumn_id,
             output_manifest_file=manifest_out,
         )
 
