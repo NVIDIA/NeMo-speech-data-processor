@@ -13,3 +13,4 @@
 # limitations under the License.
 
 from .apply_reg_exp_on_vtt_entries import RegExpVttEntries
+from .aggregate_segments import AggregateSegments

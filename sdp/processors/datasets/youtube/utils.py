@@ -16,6 +16,8 @@ from dataclasses import dataclass
 
 import pysrt
 from pydub import AudioSegment
+import os
+import re
 
 from sdp.processors.base_processor import DataEntry
 
@@ -34,6 +36,35 @@ class RawSegment:
 
     def to_dataentry(self):
         return DataEntry(data=self.__dict__)
+
+class AggregatedSegment(RawSegment):
+    def __init__(
+        self,
+        segment: dict,
+        segment_id: int,
+        sample_id: str,
+        output_audio_dir: str,
+        audio_lang: str,
+        text_lang: str,
+        source_audio: str,
+    ):
+        super().__init__(**segment.__dict__)
+        self.segment_id = f"{sample_id}_{str(segment_id).zfill(4)}"
+        self.audio_lang = audio_lang
+        self.text_lang = text_lang
+        self.source_audio = source_audio
+        self.audio_filepath = (
+            os.path.join(output_audio_dir, f"{self.segment_id}.wav")
+            if output_audio_dir is not None
+            else None
+        )
+
+    def aggregate(self, segment):
+        self.end_time = segment.end_time
+        self.duration = self.end_time - self.start_time
+        self.orig_text = re.sub(
+            "\s+", " ", f"{self.orig_text} {segment.orig_text}".strip()
+        )
 
 
 def get_audio_segment(audio, start_time: float, end_time: float, output_audio_filepath: str = None):
