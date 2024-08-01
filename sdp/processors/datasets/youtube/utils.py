@@ -15,7 +15,6 @@
 from dataclasses import dataclass
 
 import pysrt
-from pydub import AudioSegment
 import os
 import re
 
@@ -77,78 +76,25 @@ def get_audio_segment(audio, start_time: float, end_time: float, output_audio_fi
     return audio_segment
 
 
-def get_audio_segment_duration(audio, start_time, end_time):
-    audio_segment = get_audio_segment(audio, start_time, end_time)
-    return audio_segment.duration_seconds
-
-
-def parse_srt(srt_filepath, verify_duration: bool = True, wav_filepath: str = None):
+def parse_captions(srt_filepath: str):
+    """
+    Creates a list of segments from .vtt or .srt captions file.
+    Each segment contains segment_id, start_time, end_time and text.
+    
+    Args:
+        srt_filepath (str): path to srt file.
+    """
     subs = pysrt.open(srt_filepath)
+    
     srt_segments = []
-
-    if verify_duration and wav_filepath:
-        audio = AudioSegment.from_wav(wav_filepath)
-    else:
-        audio = None
-
-    epsilon = 1e-2
-
-    for sub_index, sub in enumerate(subs):
-        if sub.index:
-            index = sub.index
-        else:
-            index = sub_index
-        segment = RawSegment(
-            segment_id=index,
-            start_time=sub.start.ordinal / 1000,
-            end_time=sub.end.ordinal / 1000,
-            orig_text=sub.text_without_tags,
-        )
-
-        duration_by_timestemps = segment.end_time - segment.start_time
-
-        if audio:
-            segment.duration = get_audio_segment_duration(audio, segment.start_time, segment.end_time)
-            segment.duration_match = abs(segment.duration - duration_by_timestemps) < epsilon
-        else:
-            segment.duration = duration_by_timestemps
-
-        srt_segments.append(segment)
-
-    return srt_segments
-
-
-def parse_vtt(srt_filepath, verify_duration: bool = True, wav_filepath: str = None):
-    subs = pysrt.open(srt_filepath)
-    srt_segments = []
-
-    if verify_duration and wav_filepath:
-        audio = AudioSegment.from_wav(wav_filepath)
-    else:
-        audio = None
-
-    epsilon = 1e-2
-
-    for sub_index, sub in enumerate(subs):
-        if sub.index:
-            index = sub.index
-        else:
-            index = sub_index
-        segment = RawSegment(
-            segment_id=index,
-            start_time=sub.start.ordinal / 1000,
-            end_time=sub.end.ordinal / 1000,
-            orig_text=sub.text_without_tags,
-        )
-
-        duration_by_timestemps = segment.end_time - segment.start_time
-
-        if audio:
-            segment.duration = get_audio_segment_duration(audio, segment.start_time, segment.end_time)
-            segment.duration_match = abs(segment.duration - duration_by_timestemps) < epsilon
-        else:
-            segment.duration = duration_by_timestemps
-
+    for sub_index, sub in enumerate(subs):              # for each entry in captions file 
+        index = sub_index if sub_index else sub_index   # if captions file did not contain segments indices
+        segment = {
+            "segment_id": index,
+            "start_time": sub.start.ordinal / 1000,
+            "end_time": sub.end.ordinal / 1000,
+            "text": sub.text_without_tags
+        }
         srt_segments.append(segment)
 
     return srt_segments

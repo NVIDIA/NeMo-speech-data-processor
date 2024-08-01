@@ -5,7 +5,8 @@ import soundfile as sf
 
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.processors.datasets.commoncrawl.harv_utils import split_by_vtt
-from sdp.processors.datasets.youtube.utils import parse_srt
+from sdp.processors.datasets.youtube.utils import parse_captions
+import logging
 
 
 class SplitByVttSentence(BaseParallelProcessor):
@@ -110,6 +111,7 @@ class SplitByVtt(BaseParallelProcessor):
         caption_file_key: str,
         duration_key: str = "duration",
         output_text_key: str = "orig_text",
+        verbose: bool = True,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -117,15 +119,22 @@ class SplitByVtt(BaseParallelProcessor):
         self.duration_key = duration_key
         self.output_text_key = output_text_key
         self.caption_file_key = caption_file_key
+        self.verbose = verbose
 
     def process_dataset_entry(self, data_entry):
         caption_file = data_entry[self.caption_file_key]
         audio_file = data_entry[self.source_audio_key]
+        
         if not os.path.exists(audio_file):
+            if not self.verbose:
+                logging.info(f"File {audio_file} does not exist.")
             return []
-        segments = parse_srt(caption_file, verify_duration=True, wav_filepath=audio_file)
+        
+        if not os.path.exists(caption_file):
+            if not self.verbose:
+                logging.info(f"File {caption_file} does not exist.")
+            return []
 
-        if len(segments) > 0:
-            data_entry["segments"] = [segment.__dict__ for segment in segments]
+        data_entry["segments"] = parse_captions(caption_file)
 
         return [DataEntry(data=data_entry)]

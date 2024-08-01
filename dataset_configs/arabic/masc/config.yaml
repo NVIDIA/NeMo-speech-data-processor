@@ -99,11 +99,11 @@ processors:
     output_text_key: splitted_vtt_text
     output_manifest_file: ${manifest_dir}/manifest5.json
 
-  # 11 Aggregating segments
-  - _target_: sdp.processors.datasets.youtube.AggregateSegments
-    max_duration: ${max_duration}
-    output_segments_audio_dir: ${workspace_dir}/audios
-    output_manifest_file: ${workspace_dir}/manifest6.json
+  # # 11 Aggregating segments
+  # - _target_: sdp.processors.datasets.youtube.AggregateSegments
+  #   max_duration: ${max_duration}
+  #   output_segments_audio_dir: ${workspace_dir}/audios
+  #   output_manifest_file: ${workspace_dir}/manifest6.json
 
   # # 12 removing unnecessary fields
   # - _target_: sdp.processors.KeepOnlySpecifiedFields
