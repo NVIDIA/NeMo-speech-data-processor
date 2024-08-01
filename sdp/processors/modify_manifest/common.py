@@ -356,7 +356,7 @@ class ApplyInnerJoin(BaseProcessor):
         column_id (Union[str, List[str], None]): Field names to join on. These must be found in both manifests.
             If `column_id` is None then this defaults to the intersection of the columns in both manifests.
             Defaults to None.
-        left_manifest_file (str): path to the left manifest. Defaults to `input_manifest_file`.
+        left_manifest_file (Optional[str]): path to the left manifest. Defaults to `input_manifest_file`.
         right_manifest_file (str): path to the right manifest.
 
     Returns:
@@ -371,7 +371,7 @@ class ApplyInnerJoin(BaseProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.left_manifes_file = left_manifest_file if left_manifest_file != None else self.input_manifest_file
+        self.left_manifest_file = left_manifest_file if left_manifest_file != None else self.input_manifest_file
         self.right_manifest_file = right_manifest_file
         self.column_id = column_id
 

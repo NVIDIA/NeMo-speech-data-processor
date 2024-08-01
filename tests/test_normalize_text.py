@@ -25,30 +25,30 @@ normalize_test_params_list.extend(
     [
         (
             {
-                "input_text_field": "text",
+                "input_text_key": "text",
                 "input_language": "en",
                 "input_case": "cased",
-                "output_text_field": "normalized_text",
+                "output_text_key": "normalized_text",
             },
             {"text": "12$"},
             {"text": "12$", "normalized_text": "twelve dollar"},
         ),
         (
             {
-                "input_text_field": "text",
+                "input_text_key": "text",
                 "input_language": "en",
                 "input_case": "cased",
-                "output_text_field": "normalized_text",
+                "output_text_key": "normalized_text",
             },
             {"text": "120"},
             {"text": "120", "normalized_text": "one hundred and twenty"},
         ),
         (
             {
-                "input_text_field": "text",
+                "input_text_key": "text",
                 "input_language": "hy",
                 "input_case": "cased",
-                "output_text_field": "normalized_text",
+                "output_text_key": "normalized_text",
             },
             {"text": "11"},
             {"text": "11", "normalized_text": "տասնմեկ"},
@@ -74,30 +74,30 @@ inverse_normalize_test_params_list.extend(
     [
         (
             {
-                "input_text_field": "text",
+                "input_text_key": "text",
                 "input_language": "en",
                 "input_case": "cased",
-                "output_text_field": "inverse_normalized_text",
+                "output_text_key": "inverse_normalized_text",
             },
             {"text": "twelve dollar"},
             {"text": "twelve dollar", "inverse_normalized_text": "$12"},
         ),
         (
             {
-                "input_text_field": "text",
+                "input_text_key": "text",
                 "input_language": "en",
                 "input_case": "cased",
-                "output_text_field": "inverse_normalized_text",
+                "output_text_key": "inverse_normalized_text",
             },
             {"text": "one hundred and twenty"},
             {"text": "one hundred and twenty", "inverse_normalized_text": "120"},
         ),
         (
             {
-                "input_text_field": "text",
+                "input_text_key": "text",
                 "input_language": "hy",
                 "input_case": "cased",
-                "output_text_field": "inverse_normalized_text",
+                "output_text_key": "inverse_normalized_text",
             },
             {"text": "տասնմեկ"},
             {"text": "տասնմեկ", "inverse_normalized_text": "11"},
