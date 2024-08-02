@@ -25,7 +25,7 @@ documentation: |
 
   **Output format**.
 
-  This config dumps the final manifest at ``${workspace_dir}/manifest0.json`` and wav files ``${workspace_dir}/audios``.
+  This config dumps the final manifest at ``${manifest_dir}/manifest.json`` and wav files ``${manifest_dir}/audios``.
   The output manifest contains the following fields:
 
   * **audio_filepath (str)**: relative path to the audio files.
@@ -39,10 +39,15 @@ dataset_dir: ???
 workspace_dir: ???
 manifest_dir: ${workspace_dir}/${data_split}
 
-min_duration: 1 # minimal duration of the segment
+min_duration: 0.1 # minimal duration of the segment
 max_duration: 20.0 # maximal duration of the segment
 min_wordrate: 0.8 # minimal wordrate
 max_wordrate: 3 # maximal wordrate
+
+remove_punctuation: False
+remove_diacritics: True
+remove_tatweel: True
+normalize_ligature: True
 
 processors:
   # 0 creating manifest {sample_id, audio_path}
@@ -51,7 +56,7 @@ processors:
     data_split: ${data_split}
     output_manifest_file: ${manifest_dir}/manifest0.json
 
-  # 1 removing meta data fields
+  # 1 removing metadata fields
   - _target_: sdp.processors.KeepOnlySpecifiedFields
     fields_to_keep: ["sample_id", "audio_filepath", "vtt_filepath"]
     output_manifest_file: ${manifest_dir}/manifest1.json
@@ -77,177 +82,146 @@ processors:
     output_filepath_key: filtered_vtt_filepath
     output_manifest_file: ${manifest_dir}/manifest4.json
 
-  # # 5 Gathering all the vtt text
-  # - _target_: sdp.processors.datasets.commoncrawl.AllVttText
-  #   output_text_key: text
-  #   input_filepath_key: vtt_file_path
-  #   output_manifest_file: ${workspace_dir}/manifest5.json
-
-  # # # 9 keeping samples that contain at least one punctuation mark
-  # # - _target_: "sdp.processors.DropIfNoneOfRegexMatch"
-  # #   text_key: text
-  # #   regex_patterns:
-  # #     ["\\?", "!", ":", ";", "\\-", "\\.", ",", "؟", "،", "؛", "\u06D4"]
-  # #     # ["^[^\\?!:;\\-\\.,؟،؛\u06D4]*$"]
-  # #   output_manifest_file: ${workspace_dir}/manifest9.json
-
-  # 5 splitting by vtt
-  # TODO: check if splitting by vtt sentences works better
+  # 5 splitting by vtt into segments
   - _target_: sdp.processors.datasets.commoncrawl.SplitByVtt
     source_audio_key: audio_filepath
     caption_file_key: filtered_vtt_filepath
     output_text_key: splitted_vtt_text
     output_manifest_file: ${manifest_dir}/manifest5.json
 
-  # # 11 Aggregating segments
-  # - _target_: sdp.processors.datasets.youtube.AggregateSegments
-  #   max_duration: ${max_duration}
-  #   output_segments_audio_dir: ${workspace_dir}/audios
-  #   output_manifest_file: ${workspace_dir}/manifest6.json
+  # 6 aggregating segments to larger segments with durations up to `max_duration`
+  - _target_: sdp.processors.datasets.youtube.AggregateSegments
+    max_duration: ${max_duration}
+    output_audio_dir: ${manifest_dir}/audios
+    output_manifest_file: ${manifest_dir}/manifest6.json
 
-  # # 12 removing unnecessary fields
-  # - _target_: sdp.processors.KeepOnlySpecifiedFields
-  #   fields_to_keep: ["audio_filepath", "duration", "orig_text"]
-  #   output_manifest_file: ${workspace_dir}/manifest12.json
+  # 7 removing unnecessary fields
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    fields_to_keep: ["audio_filepath", "duration", "text"]
+    output_manifest_file: ${manifest_dir}/manifest7.json
 
-  # # 13 removing samples with empty subtitles for exmaple id=2M6vs0L7Xg0
-  # - _target_: sdp.processors.PreserveByValue
-  #   input_value_key: orig_text
-  #   target_value: ""
-  #   operator: ne
-  #   output_manifest_file: ${workspace_dir}/manifest13.json
+  # 8 removing samples with empty subtitles
+  - _target_: sdp.processors.PreserveByValue
+    input_value_key: text
+    target_value: ""
+    operator: ne
+    output_manifest_file: ${manifest_dir}/manifest8.json
 
-  # # 14 Dropping too short and too long segments
-  # - _target_: sdp.processors.DropHighLowDuration
-  #   high_duration_threshold: ${max_duration}
-  #   low_duration_threshold: ${min_duration}
-  #   duration_key: duration
-  #   output_manifest_file: ${workspace_dir}/manifest14.json
+  # 9 dropping too short and too long segments
+  - _target_: sdp.processors.DropHighLowDuration
+    high_duration_threshold: ${max_duration}
+    low_duration_threshold: ${min_duration}
+    duration_key: duration
+    output_manifest_file: ${manifest_dir}/manifest9.json
 
-  # # 15 renaming fields accordingly
-  # - _target_: sdp.processors.RenameFields
-  #   rename_fields: { "orig_text": "text" }
-  #   output_manifest_file: ${workspace_dir}/manifest15.json
+  # 10 replacing eastern Arabic numerals with common ones
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    regex_params_list:
+      - { "pattern": "٠", "repl": "0" }
+      - { "pattern": "١", "repl": "1" }
+      - { "pattern": "٢", "repl": "2" }
+      - { "pattern": "٣", "repl": "3" }
+      - { "pattern": "٤", "repl": "4" }
+      - { "pattern": "٥", "repl": "5" }
+      - { "pattern": "٦", "repl": "6" }
+      - { "pattern": "٧", "repl": "7" }
+      - { "pattern": "٨", "repl": "8" }
+      - { "pattern": "٩", "repl": "9" }
+    output_manifest_file: ${manifest_dir}/manifest10.json
 
-  # # 16 replacing eastern arabic numerals with common ones
-  # - _target_: sdp.processors.SubRegex
-  #   text_key: text
-  #   regex_params_list:
-  #     - { "pattern": "٠", "repl": "0" }
-  #     - { "pattern": "١", "repl": "1" }
-  #     - { "pattern": "٢", "repl": "2" }
-  #     - { "pattern": "٣", "repl": "3" }
-  #     - { "pattern": "٤", "repl": "4" }
-  #     - { "pattern": "٥", "repl": "5" }
-  #     - { "pattern": "٦", "repl": "6" }
-  #     - { "pattern": "٧", "repl": "7" }
-  #     - { "pattern": "٨", "repl": "8" }
-  #     - { "pattern": "٩", "repl": "9" }
-  #   output_manifest_file: ${workspace_dir}/manifest16.json
-
-  # # 17 normalizing arabic numbers
+  # # 11 applying text normalization
   # - _target_: sdp.processors.NormalizeText
   #   input_text_field: "text"
   #   input_language: "ar"
   #   input_case: "cased"
   #   output_text_field: "text"
-  #   output_manifest_file: ${workspace_dir}/manifest17.json
+  #   output_manifest_file: ${manifest_dir}/manifest11.json
 
-  # # 18 replacing punctuation marks
-  # - _target_: sdp.processors.SubRegex
-  #   text_key: text
-  #   regex_params_list:
-  #     - { "pattern": "٠", "repl": "0" }
-  #     - { "pattern": "١", "repl": "1" }
-  #     - { "pattern": "٢", "repl": "2" }
-  #     - { "pattern": "٣", "repl": "3" }
-  #     - { "pattern": "٤", "repl": "4" }
-  #     - { "pattern": "٥", "repl": "5" }
-  #     - { "pattern": "٦", "repl": "6" }
-  #     - { "pattern": "٧", "repl": "7" }
-  #     - { "pattern": "٨", "repl": "8" }
-  #     - { "pattern": "٩", "repl": "9" }
-  #     - { "pattern": "&lrm;", "repl": "" }
-  #     - { "pattern": "&rlm;", "repl": "" }
-  #     - { "pattern": "'", "repl": "" }
-  #     - { "pattern": "’", "repl": "" }
-  #     - { "pattern": "‘", "repl": "" }
-  #     - { "pattern": "’", "repl": "" }
-  #     - { "pattern": "‘", "repl": "" }
-  #     - { "pattern": "٬", "repl": "" }
-  #     - { "pattern": '"', "repl": "" }
-  #     - { "pattern": "…", "repl": " " }
-  #     - { "pattern": "«", "repl": " " }
-  #     - { "pattern": "»", "repl": " " }
-  #     - { "pattern": "“", "repl": " " }
-  #     - { "pattern": "”", "repl": " " }
-  #     - { "pattern": "☭", "repl": "" }
-  #     - { "pattern": "•", "repl": "" }
-  #     - { "pattern": "\\s+", "repl": " " }
-  #     - { "pattern": "\\[\\.\\]+", "repl": "." }
-  #     - { "pattern": "\u0670", "repl": "" } # removing small alif
-  #     - { "pattern": "\u06CC", "repl": "\u064A" } # replacing arabic letter farsi yeh with yeh
-  #     - { "pattern": "\u06A9", "repl": "\u063A" } # replacing arabic letter keheh yeh with kaf
-  #   output_manifest_file: ${workspace_dir}/manifest18.json
+  # 12 replacing/removing special marks
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    regex_params_list:
+      - { "pattern": "&lrm;", "repl": "" }                    # removing left-to-right mark
+      - { "pattern": "&rlm;", "repl": "" }                    # removing right-to-left mark
+      - { "pattern": "'", "repl": "" }                        # removing single quote mark
+      - { "pattern": '"', "repl": "" }                        # removing double quote mark
+      - { "pattern": "’", "repl": "" }                        # removing right apostrophe
+      - { "pattern": "‘", "repl": "" }                        # removing left apostrophe
+      - { "pattern": "«", "repl": " " }                       # removing left-pointing double angle quotation mark
+      - { "pattern": "»", "repl": " " }                       # removing right-pointing double angle quotation mark
+      - { "pattern": "“", "repl": " " }                       # removing left double quotation mark
+      - { "pattern": "”", "repl": " " }                       # removing right double quotation mark
+      - { "pattern": "٬", "repl": "" }                        # removing arabic thousands separator
+      - { "pattern": "…", "repl": "." }                       # replacing elipsis with final stop
+      - { "pattern": "☭", "repl": "" }                        # removing hammer and sickle symbol
+      - { "pattern": "•", "repl": "" }                        # removing bullet (is used in lists)
+      - { "pattern": "\\s+", "repl": " " }                    # replacing one or more whitespace characters with single space
+      - { "pattern": "\u0670", "repl": "" }                   # removing small Superscript Alif
+      - { "pattern": "\u06CC", "repl": "\u064A" }             # replacing Persian letter Yeh with Arabic letter Yeh
+      - { "pattern": "\u06A9", "repl": "\u063A" }             # replacing Persian letter Kaf with Arabic letter Kaf
+    output_manifest_file: ${manifest_dir}/manifest12.json
+    test_cases:
+      - { input: { text: "  test   " }, output: { text: "test" } }
+    
+  # 13 replacing English punctuation marks with Arabic ones
+  # Only Final stop, Arabic Comma and Arabic Question marks are supported
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    regex_params_list:
+    # replacing/removing puntuation marks
+      - { "pattern": ",", "repl": "،" }
+      - { "pattern": "\\?", "repl": "؟" }
+      - { "pattern": "-", "repl": " " }
+      - { "pattern": "؛", "repl": " " }
+      - { "pattern": ";", "repl": " " }
+      - { "pattern": ":", "repl": " " }
+      - { "pattern": "!", "repl": "." }
 
-  # # 19 replacing english punctuation marks with arabic ones
-  # - _target_: sdp.processors.SubRegex
-  #   text_key: text
-  #   regex_params_list:
-  #     - { "pattern": ",", "repl": "،" }
-  #     - { "pattern": "\\?", "repl": "؟" }
-  #     - { "pattern": "-", "repl": " " }
-  #     - { "pattern": "؛", "repl": " " }
-  #     - { "pattern": ";", "repl": " " }
-  #     - { "pattern": ":", "repl": " " }
-  #     - { "pattern": "!", "repl": "." }
+    # removing whitespaces before puntuation marks
+      - { "pattern": "\\s+\\.", "repl": "." }
+      - { "pattern": "\\s+؟", "repl": "؟" }
+      - { "pattern": "\\s+،", "repl": "،" }
+      - { "pattern": "\\s+", "repl": " " }
 
-  #     - { "pattern": "\\s+\\.", "repl": "." }
-  #     - { "pattern": "\\s+؟", "repl": "؟" }
-  #     - { "pattern": "\\s+:", "repl": ":" }
-  #     - { "pattern": "\\s+،", "repl": "،" }
-  #     # - { "pattern": "\\s+!", "repl": "!" }
-  #     - { "pattern": "\\s+", "repl": " " }
+    # replacing duplicate punctuation marks with one mark
+      - { "pattern": "\\.+", "repl": "." }
+      - { "pattern": "،+", "repl": "،" }
+      - { "pattern": "؟+", "repl": "؟" }
+      - { "pattern": "،+", "repl": "،" }
+    output_manifest_file: ${manifest_dir}/manifest13.json
+    test_cases:
+      - { input: { text: "..." }, output: { text: "." } }
+      - { input: { text: "test..." }, output: { text: "test." } }
+      - { input: { text: "test. . ." }, output: { text: "test." } }
+      - { input: { text: "test. . . ؟؟؟" }, output: { text: "test.؟" } }
+      - { input: { text: "test-test" }, output: { text: "test test" } }
+      - { input: { text: "test ." }, output: { text: "test." } }
 
-  #     - { "pattern": "\\s+", "repl": " " }
-  #     - { "pattern": "\\.+", "repl": "." }
-  #     - { "pattern": "،+", "repl": "،" }
-  #     # - { "pattern": "!+", "repl": "!" }
-  #     - { "pattern": "؟+", "repl": "؟" }
-  #     - { "pattern": "،+", "repl": "،" }
-  #   output_manifest_file: ${workspace_dir}/manifest19.json
-  #   test_cases:
-  #     - { input: { text: "..." }, output: { text: "." } }
-  #     - { input: { text: "test..." }, output: { text: "test." } }
-  #     - { input: { text: "test. . ." }, output: { text: "test." } }
-  #     - { input: { text: "test. . . ؟؟؟" }, output: { text: "test.؟" } }
-  #     - { input: { text: "test-test" }, output: { text: "test test" } }
-  #     - { input: { text: "test ." }, output: { text: "test." } }
+  # 14 removing punctuation, diacritics, dotted letters and tatweel
+  - _target_: sdp.processors.langs.arabic.ArabicTextPreprocessor
+    input_text_key: text
+    remove_diacritics: ${remove_diacritics}
+    remove_punctuation: ${remove_punctuation}
+    remove_tatweel: ${remove_tatweel}
+    normalize_ligature: ${normalize_ligature}
+    output_manifest_file: ${manifest_dir}/manifest14.json
 
-  # # 20 removing punctuation, diacritics, dotted letters and tatweel
-  # - _target_: sdp.processors.ArabicTextPreprocessor
-  #   input_text_key: text
-  #   remove_diacritics: True
-  #   remove_punctuation: False
-  #   remove_tatweel: True
-  #   normalize_ligature: True
-  #   output_manifest_file: ${workspace_dir}/manifest20.json
+  # 15 removing high low wordrate samples
+  - _target_: sdp.processors.DropHighLowWordrate
+    text_key: text
+    high_wordrate_threshold: ${max_wordrate}
+    low_wordrate_threshold: ${min_wordrate}
+    output_manifest_file: ${manifest_dir}/manifest15.json
 
-  # # 21 removing high low wordrate samples
-  # - _target_: sdp.processors.DropHighLowWordrate
-  #   text_key: text
-  #   high_wordrate_threshold: ${max_wordrate}
-  #   low_wordrate_threshold: ${min_wordrate}
-  #   output_manifest_file: ${workspace_dir}/manifest21.json
+  # 16 dropping non alphabetical symbols
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: "؟.،  \u0631\u0630\u062F\u062E\u062D\u062C\u062B\u062A\u0629\u0628\u0627\u0626\u0625\u0624\u0623\u0622
+                    \u0621\u064A\u0649\u0648\u0647\u0646\u0645\u0644\u0643\u0642\u0641\u063A\u0639\u0638\u0637\u0636
+                    \u0635\u0634\u0633\u0632\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652"
+    output_manifest_file: ${manifest_dir}/manifest16.json
 
-  # # 22 dropping non alphabetical symbols
-  # - _target_: sdp.processors.DropNonAlphabet
-  #   alphabet: "؟.، \u0631\u0630\u062F\u062E\u062D\u062C\u062B\u062A\u0629\u0628\u0627\u0626\u0625\u0624\u0623\u0622\u0621\u064A\u0649\u0648\u0647\u0646\u0645\u0644\u0643\u0642\u0641\u063A\u0639\u0638\u0637\u0636\u0635\u0634\u0633\u0632\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652"
-  #   # alphabet: " \u0621\u0622\u0623\u0624\u0625\u0626\u0627\u0628\u0629\u062A\u062B\u062C\u062D\u062E\u062F\u0630\u0631\u0632\u0633\u0634\u0635\u0636\u0637\u0638\u0639\u063A\u0640\u0641\u0642\u0643\u0644\u0645\u0646\u0647\u0648\u0649\u064A"
-  #   # alphabet: " \u0627\u0628\u062A\u062B\u062C\u062D\u062E\u062F\u0630\u0631\u0632\u0633\u0634\u0635\u0636\u0637\u0638\u0639\u063A\u0641\u0642\u0643\u0644\u0645\u0646\u0647\u0648\u064A \u0621"
-  #   output_manifest_file: ${workspace_dir}/manifest22.json
-
-  # # 23 changing paths to relative
-  # - _target_: sdp.processors.ChangeToRelativePath
-  #   base_dir: ${workspace_dir}
-  #   output_manifest_file: ${workspace_dir}/manifest.json
+  # 17 changing paths to relative
+  - _target_: sdp.processors.ChangeToRelativePath
+    base_dir: ${manifest_dir}
+    output_manifest_file: ${manifest_dir}/manifest.json

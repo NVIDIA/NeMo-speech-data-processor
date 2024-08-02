@@ -12,61 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass
-
 import pysrt
-import os
-import re
+from typing import Optional
 
 from sdp.processors.base_processor import DataEntry
 
-
-@dataclass
-class RawSegment:
-    segment_id: int = None
-    start_time: float = None
-    end_time: float = None
-    duration: str = None
-    duration_match: bool = None
-    orig_text: str = None
-    audio_lang: str = None
-    text_lang: str = None
-    source_audio: str = None
-
-    def to_dataentry(self):
-        return DataEntry(data=self.__dict__)
-
-class AggregatedSegment(RawSegment):
-    def __init__(
-        self,
-        segment: dict,
-        segment_id: int,
-        sample_id: str,
-        output_audio_dir: str,
-        audio_lang: str,
-        text_lang: str,
-        source_audio: str,
-    ):
-        super().__init__(**segment.__dict__)
-        self.segment_id = f"{sample_id}_{str(segment_id).zfill(4)}"
-        self.audio_lang = audio_lang
-        self.text_lang = text_lang
-        self.source_audio = source_audio
-        self.audio_filepath = (
-            os.path.join(output_audio_dir, f"{self.segment_id}.wav")
-            if output_audio_dir is not None
-            else None
-        )
-
-    def aggregate(self, segment):
-        self.end_time = segment.end_time
-        self.duration = self.end_time - self.start_time
-        self.orig_text = re.sub(
-            "\s+", " ", f"{self.orig_text} {segment.orig_text}".strip()
-        )
-
-
-def get_audio_segment(audio, start_time: float, end_time: float, output_audio_filepath: str = None):
+def get_audio_segment(audio, start_time: float, end_time: float, output_audio_filepath: Optional[str]):
+    """
+    Extracts a segment from audio.
+    
+    Args:
+        audio: input audio
+        start_time (float): segment start time in seconds.
+        end_time (float): segment end time in seconds.
+        audio_filepath (Optional[str]): filepath to store the segment.
+        
+    Returns:
+        audio_segment: audio segment
+        
+    """
     start_time = start_time * 1000
     end_time = end_time * 1000
     audio_segment = audio[start_time:end_time]
@@ -76,15 +40,15 @@ def get_audio_segment(audio, start_time: float, end_time: float, output_audio_fi
     return audio_segment
 
 
-def parse_captions(srt_filepath: str):
+def parse_captions(captions_filepath: str):
     """
     Creates a list of segments from .vtt or .srt captions file.
     Each segment contains segment_id, start_time, end_time and text.
     
     Args:
-        srt_filepath (str): path to srt file.
+        captions_filepath (str): path to srt file.
     """
-    subs = pysrt.open(srt_filepath)
+    subs = pysrt.open(captions_filepath)
     
     srt_segments = []
     for sub_index, sub in enumerate(subs):              # for each entry in captions file 
