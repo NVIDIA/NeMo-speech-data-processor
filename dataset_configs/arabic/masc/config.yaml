@@ -1,5 +1,3 @@
-# python main.py --config-path="dataset_configs/arabic/masc" --config-name="config.yaml" dataset_dir=/home/lgrigoryan/data/datasets/arab/masc workspace_dir=/home/lgrigoryan/prog/asr_commonvoice_finetuning/NeMo-speech-data-processor/workdir/masc data_split=clean_dev
-
 documentation: |
   Massive Arabic Speech Corpus (MASC)
   ################
@@ -133,13 +131,13 @@ processors:
       - { "pattern": "٩", "repl": "9" }
     output_manifest_file: ${manifest_dir}/manifest10.json
 
-  # # 11 applying text normalization
-  # - _target_: sdp.processors.NormalizeText
-  #   input_text_field: "text"
-  #   input_language: "ar"
-  #   input_case: "cased"
-  #   output_text_field: "text"
-  #   output_manifest_file: ${manifest_dir}/manifest11.json
+  # 11 applying text normalization
+  - _target_: sdp.processors.NormalizeText
+    input_text_field: "text"
+    input_language: "ar"
+    input_case: "cased"
+    output_text_field: "text"
+    output_manifest_file: ${manifest_dir}/manifest11.json
 
   # 12 replacing/removing special marks
   - _target_: sdp.processors.SubRegex

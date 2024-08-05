@@ -29,14 +29,19 @@ def get_audio_segment(audio, start_time: float, end_time: float, output_audio_fi
         
     Returns:
         audio_segment: audio segment
-        
+    
+    IndexError: Raised if segment boundaries are out of range.
     """
     start_time = start_time * 1000
     end_time = end_time * 1000
+    
+    if start_time >= len(audio) or end_time >= len(audio):
+        raise IndexError("Segment boundaries are out of range.")
+    
     audio_segment = audio[start_time:end_time]
-
     if output_audio_filepath:
         audio_segment.export(output_audio_filepath, format="wav")
+    
     return audio_segment
 
 

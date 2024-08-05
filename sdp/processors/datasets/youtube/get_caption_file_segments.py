@@ -23,9 +23,9 @@ class GetCaptionFileSegments(BaseParallelProcessor):
     Each segment represents a single subtitle line.
 
     Args:
-        input_caption_file_key (str):   The field name in the input manifest containing path to the caption file.
-        output_segments_key (str):      The field name to store segment information. Defaults to "segments".
-        verbose (boolean):              Set true for outputing logging information.
+        input_caption_file_key (str): The field name in the input manifest containing path to the caption file.
+        output_segments_key (str): The field name to store segment information. Defaults to "segments".
+        verbose (bool): Set true for outputing logging information.
         
     Returns:
         This processor adds an output_segments field to the input manifest with a list of segments.
