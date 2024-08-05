@@ -102,7 +102,6 @@ def check_e2e_test_data() -> bool:
     Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY
     and AWS_ACCESS_KEY.
     """
-    print("#"*30, bool(os.getenv("TEST_DATA_ROOT") or (os.getenv("AWS_SECRET_KEY") and os.getenv("AWS_ACCESS_KEY"))))
     return bool(os.getenv("TEST_DATA_ROOT") or (os.getenv("AWS_SECRET_KEY") and os.getenv("AWS_ACCESS_KEY")))
 
 def get_e2e_test_data_path(rel_path_from_root: str) -> str:
