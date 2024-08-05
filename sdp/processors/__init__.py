@@ -65,6 +65,7 @@ from sdp.processors.datasets.youtube import (
 from sdp.processors.huggingface.speech_recognition import ASRTransformers, ASRWhisper
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
+    ApplyInnerJoin,
     ChangeToRelativePath,
     CombineSources,
     DuplicateFields,
@@ -79,6 +80,8 @@ from sdp.processors.modify_manifest.data_to_data import (
     FfmpegConvert,
     GetAudioDuration,
     InsIfASRInsertion,
+    InverseNormalizeText,
+    NormalizeText,
     ReadTxtLines,
     SoxConvert,
     SplitLineBySentence,

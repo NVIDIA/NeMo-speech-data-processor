@@ -85,7 +85,6 @@ Coraa
 ..       Probably need some policy on shat lives in main folder vs configs.
 ..       To control the number of processors we support.
 
-
 FLEURS
 ''''''   
 
@@ -154,6 +153,12 @@ Data modifications
    :annotation:
 
 .. autodata:: sdp.processors.CountNumWords
+   :annotation:
+
+.. autodata:: sdp.processors.NormalizeText
+   :annotation:
+   
+.. autodata:: sdp.processors.InverseNormalizeText
    :annotation:
 
 Data filtering
@@ -267,6 +272,9 @@ Miscellaneous
    :annotation:
 
 .. autodata:: sdp.processors.CreateInitialManifestByExt
+   :annotation:
+
+.. autodata:: sdp.processors.ApplyInnerJoin
    :annotation:
 
 .. _sdp-base-classes:
