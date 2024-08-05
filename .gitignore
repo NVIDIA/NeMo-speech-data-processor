@@ -11,3 +11,5 @@ asr-venv
 lightning_logs
 test-venv
 workdir
+
+.vscode
