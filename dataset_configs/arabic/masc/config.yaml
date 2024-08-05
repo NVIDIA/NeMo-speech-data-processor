@@ -133,10 +133,10 @@ processors:
 
   # 11 applying text normalization
   - _target_: sdp.processors.NormalizeText
-    input_text_field: "text"
+    input_text_key: "text"
     input_language: "ar"
     input_case: "cased"
-    output_text_field: "text"
+    output_text_key: "text"
     output_manifest_file: ${manifest_dir}/manifest11.json
 
   # 12 replacing/removing special marks
