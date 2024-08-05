@@ -1,0 +1,154 @@
+documentation: |
+  Text MCV (Armenian)
+  ###################
+
+  This config can be used to prepare text corpus to submit to Common Voice https://common-voice.github.io/community-playbook/sub_pages/text.html
+
+  This config performs the following data processing.
+
+  1. Create initial manifest by collecling all avalible files with txt expention in raw_data_dir folder. 
+
+  2. Read text files line by line. 
+
+  3. Normalize text lines using Regex. 
+
+  4. Split lines into sentences. 
+
+  5. Replaces common transcription errors as well as "non-linguistic", "unintelligible" and "redacted" flags. 
+
+  6. Drops everything with non-Armenian characters. 
+
+  7. Drops all utterances that are shorter than 3 words or longer than 15 words. 
+
+  8. Extract source book name. 
+
+  9. Convert into target csv format.
+
+  10. Get random subsample.
+
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+
+  Note that you can customize any part of this config either directly or from command-line.
+
+  Here are some common customizations to consider:
+
+  **Output format**.
+
+  Output manifest `final_manifest.json` contain the following fields:
+
+  * **Sentence (str)**: text of sentence to vocalise.
+
+  * **Source (str)**: source book.
+
+  Output manifest ``manifest13.tsv`` contain the same data as ``final_manifest.json`` but in tsv format.
+
+  Output manifest ``manifest14.tsv`` contain random subset of data from ``manifest13.json``. 
+
+processors_to_run: "0:"
+workspace_dir: ???
+final_manifest: ${workspace_dir}/final_manifest.json
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestByExt
+    raw_data_dir: ${workspace_dir}
+    extension: txt
+    output_file_key: source_filepath
+    output_manifest_file: ${workspace_dir}/manifest0.json
+
+  - _target_: sdp.processors.ReadTxtLines
+    input_file_key: source_filepath
+    text_key: text_line
+    output_manifest_file: ${workspace_dir}/manifest1.json
+
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest2.json
+    text_key: text_line
+    regex_params_list:
+      - {"pattern": '։', "repl": ':'}
+      - {"pattern": '․', "repl": "."}
+      - {"pattern": '—', "repl": "-"}
+      - {"pattern": '–', "repl": "-"}
+      - {"pattern": '―', "repl": "-"}
+      - {"pattern": '\.\.\.', "repl": "…"}
+      - {"pattern": "\\s+", "repl": " "}
+
+  - _target_: sdp.processors.DuplicateFields
+    output_manifest_file: ${workspace_dir}/manifest3.json
+    duplicate_fields: {"text_line":"text"}
+
+  - _target_: sdp.processors.SplitLineBySentence
+    text_key: text
+    end_pattern: ':|\.|…'
+    output_manifest_file: ${workspace_dir}/manifest4.json
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    output_manifest_file: ${workspace_dir}/manifest5.json
+    text_key: text
+    regex_patterns:
+      - 'տիկ\. $'
+      - 'Գ\. $'
+      - '[0-9]'
+      - '\('
+      - '\)'
+      - '\['
+      - '\]'
+      - '\*'
+      - '"'
+      - '«'
+      - '»'
+      - '[А-Яа-я]'
+      - '[A-Za-z]'
+      - '\+'
+      - '='
+      - '¬'
+      - '&'
+
+  - _target_: sdp.processors.DropNonAlphabet
+    output_manifest_file: ${workspace_dir}/manifest6.json
+    text_key: text
+    alphabet: "՝՞՜՛`֊´’'՚-ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև,:\\.…;"
+    test_cases:
+      - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
+      - {input: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
+
+  - _target_: sdp.processors.CountNumWords
+    output_manifest_file: ${workspace_dir}/manifest7.json
+    alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև"
+    text_key: text
+    num_words_key: num_words
+
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest8.json
+    input_value_key: num_words
+    target_value: 15
+    operator: le
+
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest9.json
+    input_value_key: num_words
+    target_value: 3
+    operator: ge
+
+  - _target_: sdp.processors.langs.armenian.GetSourceBookName
+    output_manifest_file: ${workspace_dir}/manifest10.json
+    source_file_key: source_filepath
+    source_key: Source
+
+  - _target_: sdp.processors.RenameFields
+    output_manifest_file: ${workspace_dir}/manifest11.json
+    rename_fields: {"text": "Sentence"}
+    
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${final_manifest}
+    fields_to_keep: ["Sentence", "Source"]
+
+  - _target_: sdp.processors.langs.armenian.MakeTsv
+    output_manifest_file: ${workspace_dir}/manifest13.tsv
+
+  - _target_: sdp.processors.langs.armenian.RandomTsvPart
+    output_manifest_file: ${workspace_dir}/manifest14.tsv
+    random_state: 100
+    part: 0.01

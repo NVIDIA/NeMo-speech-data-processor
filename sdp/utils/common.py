@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
+import subprocess
 import tarfile
 import urllib
 import zipfile
+from pathlib import Path
+from typing import Dict, List, Union
 
 import wget
 
 from sdp.logging import logger
+
+
+def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
+    # read NeMo manifest as a list of dicts
+    result = []
+    with manifest.open() as f:
+        for line in f:
+            data = json.loads(line)
+            result.append(data)
+    return result
 
 
 def download_file(source_url: str, target_directory: str, verbose=True):
@@ -54,7 +68,7 @@ def extract_archive(archive_path: str, extract_path: str, force_extract: bool = 
     if not force_extract:
         if tarfile.is_tarfile(archive_path):
             with tarfile.open(archive_path, "r") as archive:
-                archive_extracted_dir = archive.getnames()[0]
+                archive_extracted_dir = os.path.commonprefix(archive.getnames()[1:])
         elif zipfile.is_zipfile(archive_path):
             with zipfile.ZipFile(archive_path, "r") as archive:
                 archive_extracted_dir = archive.namelist()[0]
@@ -77,3 +91,21 @@ def extract_archive(archive_path: str, extract_path: str, force_extract: bool = 
     if force_extract:
         return None
     return archive_contents_dir
+
+
+def ffmpeg_convert(jpg: str, wav: str, ar: int = 0, ac: int = 1):
+    process_args = ["ffmpeg", "-nostdin", "-i", jpg, '-ac', str(ac), "-map", "0:a", "-c:a", "pcm_s16le", "-y", wav]
+    if ar:
+        process_args = process_args[:-1]
+        process_args.extend(["-ar", str(ar), wav])
+    return subprocess.run(process_args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def extract_tar_with_strip_components(tar_path, extract_path, strip_components=1):
+    with tarfile.open(tar_path, 'r') as tar:
+        members = tar.getmembers()
+        for member in members:
+            components = member.name.split(os.path.sep)
+            if len(components) > strip_components:
+                member.name = os.path.sep.join(components[strip_components:])
+                tar.extract(member, extract_path)
