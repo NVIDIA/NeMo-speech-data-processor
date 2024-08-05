@@ -8,14 +8,15 @@ documentation: |
   The config performs the following data processing.
 
   1. Replaces certain non-supported characters, abbreviations and  punctuation marks with equivalent supported versions.
-  2. Drops any data that contains high/low character occurence.
+  2. Drops any data that contains high/low word occurence.
   3. Drops any data that contains symbols not in the supported alphabet.
 
   **Required arguments**.
 
-  * **dataset_dir**: path to the dataset.
-  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
-  * **data_split**: should be "clean_train", "clean_dev", "clean_test" or "noisy_train", "noisy_dev", "noisy_test".
+  * **raw_dataset_dir**:  path to the tarred dataset.
+  * **workspace_dir**:    specify the workspace folder where all audio files will be stored.
+  * **data_split**:       should be "train", "dev", "test", "clean_train", "clean_dev", "clean_test" or "noisy_train", "noisy_dev", "noisy_test".
+                          "train" is same as "clean_train", "dev" is same as "clean_dev", "test" is same as "clean_test". These are added to support end-to-end tests.
   * **keep_pc**: specify whether to keep punctuation or not. Should be "True" or "False".
   * **keep_diacr**: specify whether to keep diacritics or not. Should be "True" or "False".
   * **min_duration**: minimal duration of segment in seconds. Defaults to 0.1s.
@@ -34,10 +35,11 @@ documentation: |
 
 processors_to_run: "0:"
 
-data_split: ??? # specify dataset type (clean_train, clean_test, ...)
-dataset_dir: ???
+data_split: ???   # specify dataset type (clean_train, clean_test, ...)
+dataset_dir: ???  # dataset 
 workspace_dir: ???
 manifest_dir: ${workspace_dir}/${data_split}
+final_manifest: ${manifest_dir}/manifest.json
 
 min_duration: 0.1 # minimal duration of the segment
 max_duration: 20.0 # maximal duration of the segment
@@ -52,8 +54,11 @@ normalize_ligature: True
 processors:
   # 0 creating manifest {sample_id, audio_path}
   - _target_: sdp.processors.CreateInitialManifestMASC
-    dataset_dir: ${dataset_dir}
+    raw_data_dir: ${dataset_dir}
     data_split: ${data_split}
+    extract_archive_dir: ${workspace_dir}
+    resampled_audios_dir: ${manifest_dir}/resampled_audios
+    verbose : True
     output_manifest_file: ${manifest_dir}/manifest0.json
 
   # 1 removing metadata fields
@@ -83,16 +88,14 @@ processors:
     output_manifest_file: ${manifest_dir}/manifest4.json
 
   # 5 splitting by vtt into segments
-  - _target_: sdp.processors.datasets.commoncrawl.SplitByVtt
-    source_audio_key: audio_filepath
-    caption_file_key: filtered_vtt_filepath
-    output_text_key: splitted_vtt_text
+  - _target_: sdp.processors.GetCaptionFileSegments
+    input_caption_file_key: filtered_vtt_filepath
     output_manifest_file: ${manifest_dir}/manifest5.json
 
   # 6 aggregating segments to larger segments with durations up to `max_duration`
-  - _target_: sdp.processors.datasets.youtube.AggregateSegments
+  - _target_: sdp.processors.AggregateSegments
     max_duration: ${max_duration}
-    output_audio_dir: ${manifest_dir}/audios
+    output_audio_dir: ${manifest_dir}/segment_audios
     output_manifest_file: ${manifest_dir}/manifest6.json
 
   # 7 removing unnecessary fields
@@ -224,4 +227,4 @@ processors:
   # 17 changing paths to relative
   - _target_: sdp.processors.ChangeToRelativePath
     base_dir: ${manifest_dir}
-    output_manifest_file: ${manifest_dir}/manifest.json
+    output_manifest_file: ${final_manifest}

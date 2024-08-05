@@ -19,20 +19,23 @@ from sdp.processors.datasets.youtube.utils import parse_captions
 
 class GetCaptionFileSegments(BaseParallelProcessor):
     """
-    This class parses segment information from caption files.
-    It supports caption files in .vtt (WebVTT) and .srt (SubRip Subtitle) formats.
+    This class extracts subtitle information from .vtt (WebVTT) or .srt (SubRip Subtitle) files.
+    Each segment represents a single subtitle line.
 
     Args:
-        input_audio_key (str): 
-        splited_audio_dir (str): The directory to store the split audio files.
-        source_audio_key (str): The field in the dataset containing the path to the source audio files.
-        target_audio_key (str): The field to store the paths of the split audio files.
-        duration_key (str): The field to store the duration of each split audio segment.
-        text_key (str): The field to store the transcriptions corresponding to each split audio segment.
-        caption_file_key (str): The field in the dataset containing the path to the VTT (WebVTT) files for segmentation.
-        additional_fields (List[str], optional): List of additional fields to copy from the original data entry to the split entries.
-            Defaults to an empty list.
-        duration_threshold (float, optional): The duration threshold in seconds for each split audio segment. Defaults to 10.0.
+        input_caption_file_key (str):   The field name in the input manifest containing path to the caption file.
+        output_segments_key (str):      The field name to store segment information. Defaults to "segments".
+        verbose (boolean):              Set true for outputing logging information.
+        
+    Returns:
+        This processor adds an output_segments field to the input manifest with a list of segments.
+        Each segment has a structure:
+            {
+                "segment_id":   <index of subtitle line>,
+                "start_time":   <segment start time>,
+                "end_time":     <segment end time>
+                "text":         <segment text>
+            }
     """
     def __init__(
         self,
@@ -50,7 +53,7 @@ class GetCaptionFileSegments(BaseParallelProcessor):
         caption_file = data_entry[self.caption_file_key]
         
         if not os.path.exists(caption_file):
-            if not self.verbose:
+            if self.verbose:
                 logging.info(f"File {caption_file} does not exist.")
             return []
 
