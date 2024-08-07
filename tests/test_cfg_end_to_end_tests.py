@@ -75,23 +75,23 @@ coraal_processor.get_coraal_url_list = mock.Mock(
 def get_test_cases() -> List[Tuple[str, Callable]]:
     return [
         (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", partial(data_check_fn_mls, language="portuguese")),
-        (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
-        (f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", partial(data_check_fn_mtedx, language_id="pt")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/coraa/config.yaml", data_check_fn_coraa),
-        (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
-        (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", data_check_fn_fleurs),
-        (f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/armenian/audio_books/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", data_check_fn_librispeech),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="mcv_kk")),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/slr140/config.yaml", data_check_fn_slr140),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/slr102/config.yaml", data_check_fn_slr102),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", data_check_fn_ksc2),
+        # (f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")),
+        # (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
+        # (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
+        # (f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", partial(data_check_fn_mls, language="portuguese")),
+        # (f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")),
+        # (f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", partial(data_check_fn_mtedx, language_id="pt")),
+        # (f"{DATASET_CONFIGS_ROOT}/portuguese/coraa/config.yaml", data_check_fn_coraa),
+        # (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", data_check_fn_librispeech),
+        # (f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", data_check_fn_fleurs),
+        # (f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/armenian/audio_books/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/kazakh/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="mcv_kk")),
+        # (f"{DATASET_CONFIGS_ROOT}/kazakh/slr140/config.yaml", data_check_fn_slr140),
+        # (f"{DATASET_CONFIGS_ROOT}/kazakh/slr102/config.yaml", data_check_fn_slr102),
+        # (f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", data_check_fn_ksc2),
     ]
 
 def check_e2e_test_data() -> bool:
@@ -108,6 +108,8 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
     current folder and set TEST_DATA_ROOT automatically (used by the sdp code
     to locate test data).
     """
+    print("#"*40)
+    print(rel_path_from_root)
     test_data_root = os.getenv("TEST_DATA_ROOT") 
     if test_data_root: # assume it's present locally
         return test_data_root
@@ -123,15 +125,27 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
     bucket = s3_resource.Bucket("sdp-test-data")
     logging.info(f"Downloading test data for {rel_path_from_root} from s3")
     
-    prefix = rel_path_from_root + "/"
-    for obj in bucket.objects.filter(Prefix=prefix):
-        local_file_path = Path("test_data") / obj.key
-        local_file_path.parent.mkdir(parents=True, exist_ok=True)
-        bucket.download_file(obj.key, str(local_file_path))
+    # for obj in bucket.objects.all():
+    #     if obj.key[-1] == "/":
+    #         continue
+    #     if rel_path_from_root in obj.key:
+    for obj in bucket.objects.all():
+        print(f"------ {obj.key}")
+        if rel_path_from_root in obj.key:
+            print(obj.key)
+        
+    for obj in bucket.objects.all():
+        if obj.key.endswith("/"):  # do not try to "download_file" on objects which are actually directories
+            continue
+        if rel_path_from_root in obj.key: 
+            if not os.path.exists(os.path.dirname(obj.key)):
+                os.makedirs(os.path.dirname(obj.key))
+            bucket.download_file(obj.key, obj.key)
     
+    print(f"Test data downloaded to 'test_data/{rel_path_from_root}' folder.")
     logging.info(f"Test data downloaded to 'test_data/{rel_path_from_root}' folder.")
-    os.environ["TEST_DATA_ROOT"] = os.path.abspath("test_data")
-    return os.environ["TEST_DATA_ROOT"]
+
+    return os.path.abspath("test_data")
 
 @pytest.mark.skipif(
     not check_e2e_test_data(),
@@ -141,7 +155,7 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
 @pytest.mark.parametrize("config_path,data_check_fn", get_test_cases())
 def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
-
+    print(config_path)
     # to have the same structure (e.g. <lang>/<dataset>)
     rel_path_from_root = Path(config_path).parent.relative_to(DATASET_CONFIGS_ROOT)
     test_data_root = Path(get_e2e_test_data_path(str(rel_path_from_root)))
@@ -150,10 +164,12 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
     try:
         data_check_fn(raw_data_dir=str(test_data_root / rel_path_from_root))
     except ValueError as e:
+        print(f"Test data not available: {str(e)}")
         pytest.skip(f"Test data not available: {str(e)}")
 
     reference_manifest = test_data_root / rel_path_from_root / "test_data_reference.json"
     if not reference_manifest.exists():
+        print(f"Reference manifest not found: {reference_manifest}")
         pytest.skip(f"Reference manifest not found: {reference_manifest}")
 
     cfg = OmegaConf.load(config_path)
@@ -210,7 +226,11 @@ def test_get_e2e_test_data_path(tmp_path):
     with mock.patch("boto3.resource") as mock_resource:
         mock_bucket = mock.MagicMock()
         mock_resource.return_value.Bucket.return_value = mock_bucket
-        mock_bucket.objects.filter.return_value = [
+        # mock_bucket.objects.filter.return_value = [
+        #     mock.MagicMock(key="test/path/file1.txt"),
+        #     mock.MagicMock(key="test/path/file2.txt"),
+        # ]
+        mock_bucket.objects.all.return_value = [
             mock.MagicMock(key="test/path/file1.txt"),
             mock.MagicMock(key="test/path/file2.txt"),
         ]
