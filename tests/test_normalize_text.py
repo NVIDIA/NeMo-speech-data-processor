@@ -62,6 +62,7 @@ def test_normalize_text(class_kwargs, test_input, expected_output):
     processor = NormalizeText(**class_kwargs, output_manifest_file=None)
     processor.prepare()
 
+    print(test_input)
     output = processor.process_dataset_entry(test_input)[0].data
 
     assert output == expected_output
@@ -110,6 +111,7 @@ def test_inverse_normalize_text(class_kwargs, test_input, expected_output):
     processor = InverseNormalizeText(**class_kwargs, output_manifest_file=None)
     processor.prepare()
 
+    print(test_input)
     output = processor.process_dataset_entry(test_input)[0].data
 
     assert output == expected_output
