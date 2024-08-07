@@ -73,13 +73,6 @@ processors:
     input_value_key: duration
     target_value: 0
     operator: gt
-    
-  - _target_: sdp.processors.ASRWhisper # pip install -U openai-whisper
-    output_manifest_file: ${workspace_dir}/manifest4.json
-    pretrained_model: "small"
-    output_text_key: text
-    output_lang_key: lid
-    pad_or_trim_length: 480000
 
   - _target_: sdp.processors.ASRTransformers # pip install accelerate transformers
     output_manifest_file: ${workspace_dir}/manifest5.json
