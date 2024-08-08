@@ -13,11 +13,9 @@
 # limitations under the License.
 
 import os
+import subprocess
 from pathlib import Path
-import sdp.processors.nemo.transcribe_speech as transcribe_speech
-from omegaconf import OmegaConf
 
-# import nemo.transcribe_speech
 from sdp.processors.base_processor import BaseProcessor
 
 # Note that we do not re-use base parallel implementation, since the ASR
@@ -49,19 +47,19 @@ class ASRInference(BaseProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        self.script_path = Path(__file__).parents[1] / "nemo" / "transcribe_speech.py"
         self.pretrained_model = pretrained_model
         self.batch_size = batch_size
 
     def process(self):
         """This will add "pred_text" key into the output manifest."""
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
-        transcribe_speech.main(
-            OmegaConf.structured(
-                transcribe_speech.TranscriptionConfig(
-                    pretrained_name=self.pretrained_model,
-                    dataset_manifest=self.input_manifest_file,
-                    output_filename=self.output_manifest_file,
-                    batch_size=self.batch_size
-                )
-            )
+        subprocess.run(
+            f"python {self.script_path} "
+            f"pretrained_name={self.pretrained_model} "
+            f"dataset_manifest={self.input_manifest_file} "
+            f"output_filename={self.output_manifest_file} "
+            f"batch_size={self.batch_size} ",
+            shell=True,
+            check=True,
         )
