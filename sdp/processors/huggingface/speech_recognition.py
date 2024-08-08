@@ -20,6 +20,7 @@ from tqdm import tqdm
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import load_manifest
+from typing import Optional
 
 class ASRTransformers(BaseProcessor):
     """
@@ -33,6 +34,8 @@ class ASRTransformers(BaseProcessor):
         device (str): Inference device.
         batch_size (int): Inference batch size. Defaults to 1.
         torch_dtype (str): Tensor data type. Default to "float32"
+        max_new_tokens Optional[int]: The maximum number of new tokens to generate.
+            If not specified, there is no hard limit on the number of tokens generated, other than model-specific constraints.
     """
 
     def __init__(
@@ -46,6 +49,7 @@ class ASRTransformers(BaseProcessor):
         torch_dtype: str = "float32",
         generate_task: str = "transcribe",
         generate_language: str = "english",
+        max_new_tokens: Optional[int] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -64,6 +68,7 @@ class ASRTransformers(BaseProcessor):
         self.batch_size = batch_size
         self.generate_task = generate_task
         self.generate_language = generate_language
+        self.max_new_tokens = max_new_tokens
         if torch_dtype == "float32":
             self.torch_dtype = torch.float32
         elif torch_dtype == "float16":
@@ -88,7 +93,7 @@ class ASRTransformers(BaseProcessor):
             model=self.model,
             tokenizer=processor.tokenizer,
             feature_extractor=processor.feature_extractor,
-            max_new_tokens=128,
+            max_new_tokens=None,
             chunk_length_s=30,
             batch_size=self.batch_size,
             return_timestamps=True,
