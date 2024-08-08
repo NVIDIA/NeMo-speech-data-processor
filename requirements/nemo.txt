@@ -1,0 +1,13 @@
+# Requirements to run NeMo functions
+# For example used in sdp.processors.ASRInference
+
+datasets
+editdistance
+jiwer
+ipython
+sentencepiece
+webdataset
+onnx
+text-unidecode
+pyannote.audio
+huggingface_hub<=0.23.2 # https://github.com/NVIDIA/NeMo/issues/9793
