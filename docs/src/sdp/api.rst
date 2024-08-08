@@ -85,7 +85,6 @@ Coraa
 ..       Probably need some policy on shat lives in main folder vs configs.
 ..       To control the number of processors we support.
 
-
 FLEURS
 ''''''   
 
@@ -116,9 +115,6 @@ used in the downstream processing for additional enhancement or filtering.
    :annotation:
 
 .. autodata:: sdp.processors.PCInference
-   :annotation:
-
-.. autodata:: sdp.processors.ASRWhisper
    :annotation:
 
 .. autodata:: sdp.processors.ASRTransformers
@@ -154,6 +150,12 @@ Data modifications
    :annotation:
 
 .. autodata:: sdp.processors.CountNumWords
+   :annotation:
+
+.. autodata:: sdp.processors.NormalizeText
+   :annotation:
+   
+.. autodata:: sdp.processors.InverseNormalizeText
    :annotation:
 
 Data filtering
@@ -267,6 +269,9 @@ Miscellaneous
    :annotation:
 
 .. autodata:: sdp.processors.CreateInitialManifestByExt
+   :annotation:
+
+.. autodata:: sdp.processors.ApplyInnerJoin
    :annotation:
 
 .. _sdp-base-classes:

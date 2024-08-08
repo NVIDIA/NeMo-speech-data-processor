@@ -15,13 +15,11 @@ documentation: |
 
   4. Filter out broken files with duration shorter than 0 seconds. You can directly change the config file to control this.
 
-  5. Predict transcription using a Whisper ASR model and save results into text field.
+  5. Predict transcription using a ``openai/whisper-large-v3`` ASR model and save results into pred_text field.
 
-  6. Predict transcription using a ``distil-whisper`` ASR model and save results into pred_text field.
+  6. Drops everything with non-Armenian characters.
 
-  7. Drops everything with non-Armenian characters.
-
-  8. Normalise some text examples with SubRegex.
+  7. Normalise some text examples with SubRegex.
 
   **Required arguments**:
   
@@ -38,8 +36,6 @@ documentation: |
   * **audio_filepath (str)**: relative path to the audio files.
 
   * **text (str)**: transcription predicted by Whisper (Upper-case with punctuation).
-
-  * **pred_text (str)**: transcription predicted by Transformers (Upper-case without punctuation).
 
   * **duration (float)**: audio duration in seconds.
 
@@ -73,23 +69,16 @@ processors:
     input_value_key: duration
     target_value: 0
     operator: gt
-    
-  - _target_: sdp.processors.ASRWhisper # pip install -U openai-whisper
-    output_manifest_file: ${workspace_dir}/manifest4.json
-    pretrained_model: "small"
-    output_text_key: text
-    output_lang_key: lid
-    pad_or_trim_length: 480000
 
   - _target_: sdp.processors.ASRTransformers # pip install accelerate transformers
     output_manifest_file: ${workspace_dir}/manifest5.json
-    pretrained_model: "distil-whisper/distil-large-v2" #  distil-whisper/distil-large-v2 openai/whisper-large-v2
+    pretrained_model: "openai/whisper-large-v3"
     generate_language: armenian
     generate_task: transcribe
-    output_text_key: pred_text
+    output_text_key: text
 
   - _target_: sdp.processors.SubRegex
-    output_manifest_file: ${final_manifest}
+    output_manifest_file: ${workspace_dir}/manifest6.json
     regex_params_list:
       - {"pattern": '\[(.*?)\]', "repl": ' '}
       - {"pattern": '�', "repl": ' '}
@@ -101,22 +90,22 @@ processors:
       - {"pattern": 'Ռուսերենիս', "repl": "Ռուսերենից"}
       - {"pattern": 'ամալիահ', "repl": "Ամալիյա"}
 
-      - {"pattern": 'Էտկարպո', "repl": "Էդգար Պո"}
-      - {"pattern": 'թարգմանություն', "repl": "թարգմանությունը"}
-      - {"pattern": 'արտաշ է սեմինի', "repl": "Արտաշես Էմինի"}
+      - {"pattern": 'Եդգար պո', "repl": "Էդգար Պո"}
+      - {"pattern": 'թարգմանությունըը', "repl": "թարգմանությունը"}
+      - {"pattern": 'արտաշես է մինի', "repl": "Արտաշես Էմինի"}
       # double space to single space
       - {"pattern": "\\s+", "repl": " "}
     test_cases:
       - {input: {text: "Գրիմ եղբայրներ, անտարի թնակը, Ռուսերենիս թարգմանեց, ամալիահ Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
-      - {input: {text: "Էտկարպո, Մատնիչ սիրտը, թարգմանություն արտաշ է սեմինի."}, output: {text: "Էդգար Պո, Մատնիչ սիրտը, թարգմանությունը Արտաշես Էմինի."}}
+      - {input: {text: "Եդգար պո, թարգմանությունըը արտաշես է մինի."}, output: {text: "Էդգար Պո, թարգմանությունը Արտաշես Էմինի."}}
 
   - _target_: sdp.processors.DropNonAlphabet
-    output_manifest_file: ${workspace_dir}/manifest6.json
-    alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև.,!?"
+    output_manifest_file: ${workspace_dir}/manifest7.json
+    alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև,։՞"
     test_cases:
       - {input: {text: "test тест Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: null}
-      - {input: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը."}}
+      - {input: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը։"}, output: {text: "Գրիմ եղբայրներ, անտառի տնակը, Ռուսերենից թարգմանեց, Ամալիյա Ուկասյանը։"}}
 
   - _target_: sdp.processors.SubMakeLowercase
-    output_manifest_file: ${workspace_dir}/manifest7.json
+    output_manifest_file: ${final_manifest}
     text_key: "text"
