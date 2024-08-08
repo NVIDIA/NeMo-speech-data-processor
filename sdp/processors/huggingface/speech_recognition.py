@@ -34,7 +34,7 @@ class ASRTransformers(BaseProcessor):
         device (str): Inference device.
         batch_size (int): Inference batch size. Defaults to 1.
         torch_dtype (str): Tensor data type. Default to "float32"
-        max_new_tokens Optional[int]: The maximum number of new tokens to generate.
+        max_new_tokens (Optional[int]): The maximum number of new tokens to generate.
             If not specified, there is no hard limit on the number of tokens generated, other than model-specific constraints.
     """
 

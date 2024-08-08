@@ -6,4 +6,3 @@ pytest-cov
 lhotse
 torch
 torchaudio
-pytorch_lightning
