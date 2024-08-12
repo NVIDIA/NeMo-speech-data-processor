@@ -62,7 +62,7 @@ from sdp.processors.datasets.youtube import (
     GetCaptionFileSegments,
     AggregateSegments
 )
-from sdp.processors.huggingface.speech_recognition import ASRTransformers, ASRWhisper
+from sdp.processors.huggingface.speech_recognition import ASRTransformers
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ApplyInnerJoin,

@@ -117,9 +117,6 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.PCInference
    :annotation:
 
-.. autodata:: sdp.processors.ASRWhisper
-   :annotation:
-
 .. autodata:: sdp.processors.ASRTransformers
    :annotation:
 

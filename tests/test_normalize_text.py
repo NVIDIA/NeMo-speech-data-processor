@@ -30,8 +30,8 @@ normalize_test_params_list.extend(
                 "input_case": "cased",
                 "output_text_key": "normalized_text",
             },
-            {"text": "12$"},
-            {"text": "12$", "normalized_text": "twelve dollar"},
+            {"text": "$12"},
+            {"text": "$12", "normalized_text": "twelve dollars"},
         ),
         (
             {
@@ -58,11 +58,10 @@ normalize_test_params_list.extend(
 
 
 @pytest.mark.parametrize("class_kwargs,test_input,expected_output", normalize_test_params_list, ids=str)
-def test_inverse_normalize_text(class_kwargs, test_input, expected_output):
+def test_normalize_text(class_kwargs, test_input, expected_output):
     processor = NormalizeText(**class_kwargs, output_manifest_file=None)
     processor.prepare()
 
-    print(test_input)
     output = processor.process_dataset_entry(test_input)[0].data
 
     assert output == expected_output
@@ -79,8 +78,8 @@ inverse_normalize_test_params_list.extend(
                 "input_case": "cased",
                 "output_text_key": "inverse_normalized_text",
             },
-            {"text": "twelve dollar"},
-            {"text": "twelve dollar", "inverse_normalized_text": "$12"},
+            {"text": "twelve dollars"},
+            {"text": "twelve dollars", "inverse_normalized_text": "$12"},
         ),
         (
             {
@@ -111,7 +110,6 @@ def test_inverse_normalize_text(class_kwargs, test_input, expected_output):
     processor = InverseNormalizeText(**class_kwargs, output_manifest_file=None)
     processor.prepare()
 
-    print(test_input)
     output = processor.process_dataset_entry(test_input)[0].data
 
     assert output == expected_output
