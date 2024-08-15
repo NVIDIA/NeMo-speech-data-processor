@@ -18,6 +18,10 @@ import re
 from typing import Dict, List
 
 import soundfile
+from nemo_text_processing.inverse_text_normalization.inverse_normalize import (
+    InverseNormalizer,
+)
+from nemo_text_processing.text_normalization.normalize import Normalizer
 from sox import Transformer
 
 from sdp.logging import logger

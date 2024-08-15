@@ -70,7 +70,6 @@ def data_check_fn_slr140(raw_data_dir: str) -> None:
 
     extract_tar_with_strip_components(expected_file, tgt_dir, strip_components=1)
 
-
 def data_check_fn_librispeech(raw_data_dir: str) -> None:
     expected_file = Path(raw_data_dir) / "dev-clean.tar.gz"
     if expected_file.exists():
