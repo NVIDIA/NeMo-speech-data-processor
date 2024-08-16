@@ -1,4 +1,3 @@
 accelerate
-openai-whisper
 transformers>=0.2.1
-huggingface_hub
+huggingface_hub>=0.20.3,<0.24.0 # https://github.com/NVIDIA/NeMo/issues/9793
