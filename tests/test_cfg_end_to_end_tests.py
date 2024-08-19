@@ -27,10 +27,6 @@ import sdp.processors.datasets.coraal.create_initial_manifest as coraal_processo
 from sdp.run_processors import run_processors
 from sdp.utils.common import extract_tar_with_strip_components
 
-pid = os.getpid()
-print("#"*30)
-print(f"PID of this Python script: {pid}")
-
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
 
 def data_check_fn_generic(raw_data_dir: str, file_name: str, **kwargs) -> None:
@@ -89,10 +85,10 @@ coraal_processor.get_coraal_url_list = mock.Mock(
 
 def get_test_cases() -> List[Tuple[str, Callable]]:
     return [
-        # (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
-        # (f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")),
+        (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
+        (f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")),
         (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
-        # (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
+        (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
         (f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", partial(data_check_fn_mls, language="portuguese")),
         (f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")),
         (f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", partial(data_check_fn_mtedx, language_id="pt")),
@@ -199,7 +195,8 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
             generated_data.pop("audio_filepath", None)
             assert reference_data == generated_data
 
-# if CLEAN_UP_TMP_PATH is set to non-0 value, we will delete tmp_path
+    print("#"*30, os.getenv("CLEAN_UP_TMP_PATH", "0"))
+ # if CLEAN_UP_TMP_PATH is set to non-0 value, we will delete tmp_path
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
         shutil.rmtree(tmp_path)
 
