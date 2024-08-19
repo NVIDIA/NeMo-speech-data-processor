@@ -195,7 +195,6 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
             generated_data.pop("audio_filepath", None)
             assert reference_data == generated_data
 
-    print("#"*30, os.getenv("CLEAN_UP_TMP_PATH", "0"))
  # if CLEAN_UP_TMP_PATH is set to non-0 value, we will delete tmp_path
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
         shutil.rmtree(tmp_path)
