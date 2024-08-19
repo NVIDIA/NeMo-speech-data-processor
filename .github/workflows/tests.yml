@@ -71,7 +71,9 @@ jobs:
         sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
         pip install Cython wheel  # need to pre-install to avoid error in nemo installation
         pip install "nemo_toolkit[asr,nlp]"
+        df -h
         python -m pip cache purge
+        df -h
     - name: Run all tests
       env:
         AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
