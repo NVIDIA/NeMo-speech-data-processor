@@ -33,8 +33,8 @@ processors:
     fields_to_keep: ["text", "text_pc", "audio_filepath",  "duration"]
 
   # 4 
-  - _target_: sdp.processors.huggingface.llm.ApplyLlama3 # pip install num2words huggingface_hub; huggingface-cli login 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
-    input_manifest_file: /mnt/ssd8/multilang/en/val_test/mls/test/mls_test_nopc.json # /home/nkarpov/workspace/pnc/manifests/mls_test_nopc_tail.json #
+  - _target_: sdp.processors.huggingface.llm.ApplyLlama3 # pip install num2words huggingface_hub; huggingface-cli; login hf_...
+    input_manifest_file: /mnt/ssd8/multilang/en/val_test/mls/test/mls_test_nopc.json 
     input_example_manifest: ${workspace_dir}/mls_test_example.json
     example_query_key: "text"
     example_response_key: "text_pc"
