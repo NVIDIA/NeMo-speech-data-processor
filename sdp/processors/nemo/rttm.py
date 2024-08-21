@@ -10,30 +10,40 @@ from sdp.utils.common import load_manifest
 
 
 class GetRttmSegments(BaseParallelProcessor):
-    """
-    Processor for language identification (LID) of audio files using a pre-trained LID model.
+    """This processor extracts audio segments based on RTTM (Rich Transcription Time Marked) files.
+
+    The class reads an RTTM file specified by the `rttm_key` in the input data entry and
+    generates a list of audio segment start times. It ensures that segments longer than a specified
+    duration threshold are split into smaller segments. The resulting segments are stored in the
+    output data entry under the `output_file_key`.
 
     Args:
-        rttm_field (str): The field in the dataset containing the path to the audio files for language identification.
-        pretrained_model (str): The name of the pre-trained ASR model for language identification.
-        output_file_field (str): The field to store the identified language for each audio file.
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
+        rttm_key (str): The key in the manifest that contains the path to the RTTM file.
+        output_file_key (str, optional): The key in the data entry where the list of audio segment
+            start times will be stored. Defaults to "audio_segments".
+        duration_key (str, optional): The key in the data entry that contains the total duration
+            of the audio file. Defaults to "duration".
+        duration_threshold (float, optional): The maximum duration for a segment before it is split.
+            Segments longer than this threshold will be divided into smaller segments. Defaults to 20.0 seconds.
 
+    Returns:
+        A list containing a single `DataEntry` object with the updated data entry, which includes
+        the `output_file_key` containing the sorted list of audio segment start times.
     """
 
     def __init__(
         self,
-        rttm_field: str,
+        rttm_key: str,
+        output_file_key: str = "audio_segments",
+        duration_key: str = "duration",
         duration_threshold: float = 20.0,
-        duration_field: str = "duration",
-        output_file_field: str = "audio_segments",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.rttm_field = rttm_field
+        self.rttm_key = rttm_key
         self.duration_threshold = duration_threshold
-        self.duration_field = duration_field
-        self.output_file_field = output_file_field
+        self.duration_key = duration_key
+        self.output_file_key = output_file_key
 
     def split_long_segment(self, slices, duration, last_slice):
         duration0 = self.duration_threshold
@@ -46,8 +56,8 @@ class GetRttmSegments(BaseParallelProcessor):
         return slices, last_slice + duration0
 
     def process_dataset_entry(self, data_entry: Dict):
-        file_duration = data_entry[self.duration_field]
-        rttm_file = data_entry[self.rttm_field]
+        file_duration = data_entry[self.duration_key]
+        rttm_file = data_entry[self.rttm_key]
 
         starts = []
         with open(rttm_file, "r") as f:
@@ -80,38 +90,52 @@ class GetRttmSegments(BaseParallelProcessor):
             last_start = start
             last_duration = duration
 
-        data_entry[self.output_file_field] = sorted(list(set(slices)))
+        data_entry[self.output_file_key] = sorted(list(set(slices)))
 
         return [DataEntry(data=data_entry)]
 
 
-class SplitFile(BaseParallelProcessor):
-    """
-    Processor for language identification (LID) of audio files using a pre-trained LID model.
+class SplitAudioFile(BaseParallelProcessor):
+    """This processor splits audio files into segments based on provided timestamps.
+
+    The class reads an audio file specified by the `input_file_key` and splits it into segments
+    based on the timestamps provided in the `segments_key` field of the input data entry.
+    The split audio segments are saved as individual WAV files in the specified `splited_audio_dir`
+    directory. The `output_file_key` field of the data entry is updated with the path to the
+    corresponding split audio file, and the `duration_key` field is updated with the duration
+    of the split audio segment.
 
     Args:
-        rttm_field (str): The field in the dataset containing the path to the audio files for language identification.
-        pretrained_model (str): The name of the pre-trained ASR model for language identification.
-        output_file_field (str): The field to store the identified language for each audio file.
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
+        splited_audio_dir (str): The directory where the split audio files will be saved.
+        segments_key (str, optional): The key in the manifest that contains the list of
+            timestamps for splitting the audio. Defaults to "audio_segments".
+        duration_key (str, optional): The key in the manifest where the duration of the
+            split audio segment will be stored. Defaults to "duration".
+        input_file_key (str, optional): The key in the manifest that contains the path
+            to the input audio file. Defaults to "source_filepath".
+        output_file_key (str, optional): The key in the manifest where the path to the
+            split audio file will be stored. Defaults to "audio_filepath".
 
+    Returns:
+        A list of data entries, where each entry represents a split audio segment with
+        the corresponding file path and duration updated in the data entry.
     """
 
     def __init__(
         self,
         splited_audio_dir: str,
-        segments_field: str = "audio_segments",
-        input_file_field: str = "source_filepath",
-        output_file_field: str = "audio_filepath",
-        duration_field: str = "duration",
+        segments_key: str = "audio_segments",
+        duration_key: str = "duration",
+        input_file_key: str = "source_filepath",
+        output_file_key: str = "audio_filepath",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_file_field = input_file_field
         self.splited_audio_dir = splited_audio_dir
-        self.segments_field = segments_field
-        self.output_file_field = output_file_field
-        self.duration_field = duration_field
+        self.segments_key = segments_key
+        self.duration_key = duration_key
+        self.input_file_key = input_file_key
+        self.output_file_key = output_file_key
 
     def write_segment(self, data, samplerate, start_sec, end_sec, input_file):
         wav_save_file = os.path.join(
@@ -135,13 +159,13 @@ class SplitFile(BaseParallelProcessor):
             return wav_save_file, duration
 
     def process_dataset_entry(self, data_entry: Dict):
-        slices = data_entry[self.segments_field]
-        input_file = data_entry[self.input_file_field]
+        slices = data_entry[self.segments_key]
+        input_file = data_entry[self.input_file_key]
         input_data, samplerate = sf.read(input_file)
         data_entries = []
         for i in range(len(slices[:-1])):
             wav_save_file, duration = self.write_segment(input_data, samplerate, slices[i], slices[i + 1], input_file)
-            data_entry[self.output_file_field] = wav_save_file
-            data_entry[self.duration_field] = duration
+            data_entry[self.output_file_key] = wav_save_file
+            data_entry[self.duration_key] = duration
             data_entries.append(DataEntry(data=data_entry.copy()))
         return data_entries

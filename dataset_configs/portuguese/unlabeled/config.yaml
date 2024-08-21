@@ -7,18 +7,18 @@ processors:
   - _target_: sdp.processors.CreateInitialManifestByExt
     raw_data_dir: /mnt/ssd8/multilang/portuguese/yt/wavs
     extension: wav
-    output_field: audio_filepath
+    output_file_key: audio_filepath
     output_manifest_file: ${workspace_dir}/manifest0.json
 
   - _target_: sdp.processors.GetAudioDuration
-    audio_filepath_field: audio_filepath
-    duration_field: duration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
     output_manifest_file: ${workspace_dir}/manifest1.json
 
   - _target_: sdp.processors.AudioLid
     output_manifest_file: ${workspace_dir}/manifest2.json
-    input_audio_field: audio_filepath
-    output_lang_field: audio_lang
+    input_audio_key: audio_filepath
+    output_lang_key: audio_lang
     device: cuda
     pretrained_model: "langid_ambernet"
     segment_duration: 20
@@ -26,12 +26,12 @@ processors:
 
   - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest3.json
-    input_field: audio_lang
+    input_value_key: audio_lang
     target_value: pt
 
   - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest4.json
-    input_field: duration
+    input_value_key: duration
     operator: le
     target_value: 20000.0
   
@@ -53,22 +53,22 @@ processors:
 
   - _target_: sdp.processors.nemo.rttm.GetRttmSegments
     output_manifest_file: ${workspace_dir}/manifest8.json
-    rttm_field: rttm_file
-    output_file_field: audio_segments
+    rttm_key: rttm_file
+    output_file_key: audio_segments
+    duration_key: duration
     duration_threshold: 20.0
-    duration_field: duration
 
-  - _target_: sdp.processors.nemo.rttm.SplitFile
+  - _target_: sdp.processors.nemo.rttm.SplitAudioFile
     output_manifest_file: ${workspace_dir}/manifest9.json
     splited_audio_dir: /mnt/ssd8/multilang/portuguese/yt/splited_wavs/
-    segments_field: audio_segments
-    input_file_field: source_filepath
-    output_file_field: audio_filepath
-    duration_field: duration
+    segments_key: audio_segments
+    duration_key: duration
+    input_file_key: source_filepath
+    output_file_key: audio_filepath
 
   - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${workspace_dir}/manifest10.json
-    input_field: duration
+    input_value_key: duration
     operator: gt
     target_value: 0.0
 

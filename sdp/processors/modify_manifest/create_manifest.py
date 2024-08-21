@@ -23,7 +23,7 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
 
     Args:
         raw_data_dir (str): The root directory of the files to be added to the initial manifest. This processor will recursively look for files with the extension 'extension' inside this directory.
-        output_field (str): The field to store the paths to the files in the dataset.
+        output_file_key (str): The key to store the paths to the files in the dataset.
         extension (str): The field stecify extension of the files to use them in the dataset.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
@@ -32,13 +32,13 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
     def __init__(
         self,
         raw_data_dir: str,
-        output_field: str = "audio_filepath",
+        output_file_key: str = "audio_filepath",
         extension: str = "mp3",
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.raw_data_dir = Path(raw_data_dir)
-        self.output_field = output_field
+        self.output_file_key = output_file_key
         self.extension = extension
 
     def read_manifest(self):
@@ -46,5 +46,5 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         return input_files
 
     def process_dataset_entry(self, data_entry):
-        data = {self.output_field: data_entry}
+        data = {self.output_file_key: data_entry}
         return [DataEntry(data=data)]

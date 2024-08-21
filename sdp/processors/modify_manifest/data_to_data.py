@@ -18,7 +18,10 @@ import re
 from typing import Dict, List
 
 import soundfile
-import soundfile as sf
+from nemo_text_processing.inverse_text_normalization.inverse_normalize import (
+    InverseNormalizer,
+)
+from nemo_text_processing.text_normalization.normalize import Normalizer
 from sox import Transformer
 
 from sdp.logging import logger
@@ -26,38 +29,6 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
-
-
-class GetAudioDuration(BaseParallelProcessor):
-    """
-    Processor to count audio duration using audio file path from input_field
-
-    Args:
-        audio_filepath_field (str): where to get path to wav file.
-        duration_field (str): where to put to audio duration.
-    Returns:
-        All the same fields as in the input manifest plus output_field
-    """
-
-    def __init__(
-        self,
-        audio_filepath_field: str,
-        duration_field: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.audio_filepath_field = audio_filepath_field
-        self.duration_field = duration_field
-
-    def process_dataset_entry(self, data_entry):
-        audio_filepath = data_entry[self.audio_filepath_field]
-        try:
-            data, samplerate = sf.read(audio_filepath)
-            data_entry[self.duration_field] = data.shape[0] / samplerate
-        except Exception as e:
-            logger.warning(str(e) + " file: " + audio_filepath)
-            data_entry[self.duration_field] = -1.0
-        return [DataEntry(data=data_entry)]
 
 
 class GetAudioDuration(BaseParallelProcessor):
@@ -271,8 +242,8 @@ class CountNumWords(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry):
         text = data_entry[self.text_key]
-        cleaned_string = self.pattern.sub('', text).strip()
-        cleaned_string = re.sub('\\s+', ' ', cleaned_string).strip()
+        cleaned_string = self.pattern.sub("", text).strip()
+        cleaned_string = re.sub("\\s+", " ", cleaned_string).strip()
         words = cleaned_string.split()
         num_words = len(words)
         data_entry[self.num_words_key] = num_words
@@ -365,7 +336,10 @@ class InsIfASRInsertion(BaseParallelProcessor):
         for insert_word in self.insert_words:
             if not insert_word in data_entry[self.pred_text_key]:
                 break
-            orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
+            orig_words, pred_words = (
+                data_entry[self.text_key],
+                data_entry[self.pred_text_key],
+            )
             diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
             if len(diff) > 0:  # ie if there are differences between text and pred_text
@@ -460,7 +434,10 @@ class SubIfASRSubstitution(BaseParallelProcessor):
         for original_word, new_word in self.sub_words.items():
             if not original_word in data_entry[self.text_key]:
                 break
-            orig_words, pred_words = data_entry[self.text_key], data_entry[self.pred_text_key]
+            orig_words, pred_words = (
+                data_entry[self.text_key],
+                data_entry[self.pred_text_key],
+            )
             diff = get_diff_with_subs_grouped(orig_words, pred_words)
 
             if len(diff) > 0:  # ie if there are differences between text and pred_text
@@ -619,3 +596,99 @@ class SubRegex(BaseParallelProcessor):
         for word, count in total_counter_sorted.items():
             logger.info(f"{word} {count}")
         super().finalize(metrics)
+
+
+class NormalizeText(BaseParallelProcessor):
+    """This processor applies text normalization (TN) to the text. I.e. converts text from written form into its verbalized form.
+    E.g., “$123” is converted to “one hundred and twenty-three dollars.”
+
+    Args:
+        input_text_key (str): the text field that will be the input to the Normalizer. Defaults to: text.
+        input_language (str): language specifying the text normalization rules in ISO 639 Set 1 format. E.g., "en", "es", "it", etc.
+            Defaults to: English.
+        input_case (str): input text capitalization, set to `cased` if text contains capital letters.
+            This flag affects normalization rules applied to the text. Note, `lower_cased` won't lower case input.
+            Defaults to: cased.
+        output_text_key (str): the text field that will be the output from the Normalizer.
+            Defaults to: text.
+
+    Returns:
+        This processor normalizes the text in the `input_text_key` field and saves the normalized text in `output_text_key` field.
+
+    Raises:
+        `NotImplementedError`: when TN is not implemented for the requested language.
+    """
+
+    def __init__(
+        self,
+        input_text_key: str = "text",
+        input_language: str = "en",
+        input_case: str = "cased",
+        output_text_key: str = "text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_text_key = input_text_key
+        self.output_text_key = output_text_key
+        self.input_case = input_case
+        self.input_language = input_language
+
+    def prepare(self):
+        try:
+            self.normalizer = Normalizer(input_case=self.input_case, lang=self.input_language)
+        except NotImplementedError as e:
+            logger.error("Failed to run text normalization: %s", repr(e))
+
+    def process_dataset_entry(self, data_entry):
+        data_entry[self.output_text_key] = self.normalizer.normalize(data_entry[self.input_text_key])
+        return [DataEntry(data=data_entry)]
+
+
+class InverseNormalizeText(BaseParallelProcessor):
+    """This processor applies inverse text normalization (ITN) to the text. I.e. transforms spoken forms of numbers, dates, etc into their written equivalents.
+    E.g., “one hundred and twenty-three dollars.” is converted to “$123”.
+
+    Args:
+        input_text_key (str): the text field that will be the input to the InverseNormalizer. Defaults to: text.
+        input_language (str): language specifying the text normalization rules in ISO 639 Set 1 format. E.g., "en", "es", "it", etc.
+            Defaults to: English.
+        input_case (str): input text capitalization, set to `cased` if text contains capital letters.
+            This flag affects normalization rules applied to the text. Note, `lower_cased` won't lower case input.
+            Defaults to: cased.
+        output_text_key (str): the text field that will be the output from the InverseNormalizer.
+            Defaults to: text.
+
+    Returns:
+        This processor inverse normalizes the text in the `input_text_key` field and saves the inverse normalized text in `output_text_key` field.
+
+    Raises:
+        `NotImplementedError`: when ITN is not implemented for the requested language.
+    """
+
+    def __init__(
+        self,
+        input_text_key: str = "text",
+        input_language: str = "en",
+        input_case: str = "cased",
+        output_text_key: str = "text",
+        verbose: bool = False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_text_key = input_text_key
+        self.output_text_key = output_text_key
+        self.input_case = input_case
+        self.input_language = input_language
+        self.verbose = verbose
+
+    def prepare(self):
+        try:
+            self.inverse_normalizer = InverseNormalizer(input_case=self.input_case, lang=self.input_language)
+        except NotImplementedError as e:
+            logger.error("Failed to run text inverse normalization: %s", repr(e))
+
+    def process_dataset_entry(self, data_entry):
+        data_entry[self.output_text_key] = self.inverse_normalizer.inverse_normalize(
+            data_entry[self.input_text_key], verbose=self.verbose
+        )
+        return [DataEntry(data=data_entry)]

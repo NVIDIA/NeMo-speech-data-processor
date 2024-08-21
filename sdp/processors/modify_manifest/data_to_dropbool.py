@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import collections
+import json
+import os
 import re
 from operator import eq, ge, gt, le, lt, ne
 from typing import List, Union
@@ -35,7 +37,7 @@ class PreserveByValue(BaseParallelProcessor):
     Processor for preserving dataset entries based on a specified condition involving a target value and an input field.
 
     Args:
-        input_field (str): The field in the dataset entries to be evaluated.
+        input_value_key (str): The field in the dataset entries to be evaluated.
         target_value (Union[int, str]): The value to compare with the input field.
         operator (str, optional): The operator to apply for comparison. Options: "lt" (less than), "le" (less than or equal to), "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than). Defaults to "eq".
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
@@ -44,13 +46,13 @@ class PreserveByValue(BaseParallelProcessor):
 
     def __init__(
         self,
-        input_field: str,
+        input_value_key: str,
         target_value: Union[int, str],
         operator: str = "eq",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.input_field = input_field
+        self.input_value_key = input_value_key
         self.target_value = target_value
         if operator == "lt":
             self.operator = lt
@@ -70,7 +72,7 @@ class PreserveByValue(BaseParallelProcessor):
             )
 
     def process_dataset_entry(self, data_entry):
-        input_value = data_entry[self.input_field]
+        input_value = data_entry[self.input_value_key]
         target = self.target_value
         if self.operator(input_value, target):
             return [DataEntry(data=data_entry)]
@@ -794,4 +796,73 @@ class DropIfSubstringInInsertion(BaseParallelProcessor):
 
         for insertion, count in total_counter_sorted.items():
             logger.info(f"{insertion}, {count}")
+        super().finalize(metrics)
+
+
+class DropRepeatedFields(BaseParallelProcessor):
+    """Drops utterances from the current manifest if their text fields are present in other manifests.
+
+    This class processes multiple manifest files and removes entries from the current manifest if the text field
+    matches any entry in the other manifests. It allows for optional punctuation removal from the text fields
+    before performing the check.
+
+    .. note::
+        It is better to process Test/Dev/Train and then Other.tsv
+
+    Args:
+        manifests_paths (list[str]): List of paths to the manifest files to check against.
+        current_manifest_file (str): Path to the current manifest file to be processed.
+        punctuations (str): (Optional): String of punctuation characters to be removed from the text fields before checking for duplicates. Defaults to None.
+        text_key (str): The key in the manifest entries that contains the text field. Defaults to "text".
+
+    Returns:
+         The same data as in the input manifest with some entries dropped.
+
+    """
+
+    def __init__(
+        self,
+        manifests_paths: List[str],
+        current_manifest_file: str,
+        punctuations: str = None,
+        text_key: str = "text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.manifests_paths = manifests_paths
+        self.current_manifest_file = current_manifest_file
+        self.text_key = text_key
+        self.punctuations = punctuations
+        self.text_set = set()
+        self.load_data()
+
+    def load_data(self):
+        if self.current_manifest_file in self.manifests_paths:
+            self.manifests_paths.remove(self.current_manifest_file)
+        for path in self.manifests_paths:
+            if os.path.exists(path):
+                with open(path, "rt", encoding="utf8") as fin:
+                    for line in fin:
+                        line_dict = json.loads(line)
+                        line_text = line_dict[self.text_key]
+                        if self.punctuations is not None and len(self.punctuations) > 0:
+                            line_text = self.remove_punctuation(line_text)
+                        self.text_set.add(line_text)
+
+    def remove_punctuation(self, text):
+        return re.sub(fr'[{self.punctuations}]', '', text)
+
+    def process_dataset_entry(self, data_entry) -> List:
+        text_for_check = data_entry[self.text_key]
+        if self.punctuations is not None and len(self.punctuations) > 0:
+            text_for_check = self.remove_punctuation(text_for_check)
+        if text_for_check in self.text_set:
+            return [DataEntry(data=None, metrics=1)]
+        return [DataEntry(data=data_entry, metrics=0)]
+
+    def finalize(self, metrics: List):
+        total_counter = 0
+        for counter in metrics:
+            total_counter += counter
+        logger.info("Dropped %d utterances", total_counter)
         super().finalize(metrics)
