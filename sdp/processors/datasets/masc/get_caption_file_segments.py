@@ -15,11 +15,11 @@
 import os
 import logging
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
-from sdp.processors.datasets.youtube.utils import parse_captions
+from sdp.processors.datasets.masc.utils import parse_captions
 
 class GetCaptionFileSegments(BaseParallelProcessor):
     """
-    This class extracts subtitle information from .vtt (WebVTT) or .srt (SubRip Subtitle) files.
+    This class extracts subtitle information from .vtt (WebVTT) files.
     Each segment represents a single subtitle line.
 
     Args:

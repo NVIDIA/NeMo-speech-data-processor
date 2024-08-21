@@ -1,6 +1,3 @@
-# no punctuation, no tatweel, no diacritics, no dotted letters
-# python main.py --config-path="dataset_configs/arabic/youtube/" --config-name="configmcv.yaml"
-
 documentation: |
   Mozilla Common Voice Arabic (MCV)
   ################
@@ -42,6 +39,16 @@ dataset_dir: ???  # dataset
 workspace_dir: ???
 manifest_dir: ${workspace_dir}/${data_split}
 final_manifest: ${manifest_dir}/manifest.json
+
+min_duration: 0.1 # minimal duration of the segment
+max_duration: 20.0 # maximal duration of the segment
+min_wordrate: 0.8 # minimal wordrate
+max_wordrate: 3 # maximal wordrate
+
+remove_punctuation: False
+remove_diacritics: True
+remove_tatweel: True
+normalize_ligature: True
 
 processors:
   # 0 creating manifest {sample_id, audio_path}

@@ -16,7 +16,7 @@ import os
 import logging
 from pydub import AudioSegment
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
-from sdp.processors.datasets.youtube.utils import get_audio_segment
+from sdp.processors.datasets.masc.utils import get_audio_segment
 
 class AggregateSegments(BaseParallelProcessor):
     """

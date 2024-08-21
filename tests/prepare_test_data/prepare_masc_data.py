@@ -30,7 +30,7 @@ if __name__ == "__main__":
         required=True,
         help="What the stem (ie without the 'tar.gz' bit) of the new archive file should be",
     )
-    parser.add_argument("--num_entries", default=40, type=int, help="How many entries to keep (in each split)")
+    parser.add_argument("--num_entries", default=10, type=int, help="How many entries to keep (in each split)")
     parser.add_argument("--test_data_folder", required=True, help="Where to place the prepared data")
 
     args = parser.parse_args()

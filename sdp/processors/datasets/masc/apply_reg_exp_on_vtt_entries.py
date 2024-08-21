@@ -21,7 +21,7 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 class RegExpVttEntries(BaseParallelProcessor):
     """
-    Applies regular expressions on entries of a .vtt (WebVTT) or .srt (SubRip Subtitle) file and stores the processed file in the specified directory.
+    Applies regular expressions on entries of a .vtt (WebVTT) file and stores the processed file in the specified directory.
 
     Args::
         input_filepath_key (str): Key that stores path to the input `.vtt` file.
