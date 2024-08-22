@@ -16,4 +16,5 @@ gdown
 nemo_text_processing # for text normalization
 webvtt-py
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
+# for some processers, additionally nemo_text_processingis required
 pytorch_lightning
