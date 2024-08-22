@@ -634,6 +634,7 @@ class NormalizeText(BaseParallelProcessor):
         self.input_language = input_language
 
     def prepare(self):
+        import nemo_text_processing
         try:
             self.normalizer = Normalizer(input_case=self.input_case, lang=self.input_language)
         except NotImplementedError as e:
@@ -682,6 +683,7 @@ class InverseNormalizeText(BaseParallelProcessor):
         self.verbose = verbose
 
     def prepare(self):
+        import nemo_text_processing
         try:
             self.inverse_normalizer = InverseNormalizer(input_case=self.input_case, lang=self.input_language)
         except NotImplementedError as e:

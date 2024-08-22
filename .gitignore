@@ -23,3 +23,5 @@ test-venv
 workdir
 
 .vscode
+
+__pycache__
