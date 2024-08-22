@@ -15,13 +15,10 @@ pytest-coverage.txt
 # docs
 docs/html
 docs/src/sdp/config-docs/
-.hypothesis
 
+# venv
 asr-venv
-lightning_logs
 test-venv
-workdir
 
-.vscode
-
+# byte-compiled / optimized / DLL files
 __pycache__
