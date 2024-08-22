@@ -1,0 +1,121 @@
+documentation: |
+  MCV Georgian
+  ############
+  This config was originally designed for the Mozilla Common Voice (MCV)
+  `MCV <https://commonvoice.mozilla.org/>`__ dataset 17.0 release, 
+  but should work for any subsequent releases as well.
+
+  Note: Georgian is a unicameral language, meaning it does not have uppercase and lowercase letters. 
+  It always uses the same case for all letters.
+
+  During the preprocessing, we are going to use not only validated data (train/dev/test) from MCV but also unvalidated data (other.tsv)
+  which requires more processing for better and clearer results. You can use the same data processing for Fleur's Georgian data. 
+
+  This config performs the following data processing:
+
+  1. Extracts and converts all data to the NeMo format.
+  2. Replaces certain non-supported characters and punctuation marks with equivalent supported versions.
+  3. Drops any duplicates from current manifest if they are presented in another manifests. 
+  4. Drops any data that does not contain any Georgian letters.
+  5. Drops any data that contains symbols not in the supported alphabet.
+  6. Drops any data that contains high/low character occurrence.
+  7. Drops any data that contains high/low word occurrence.
+  8. Drops any data that has a duration of more than 18 seconds.     
+
+  **Required arguments**.
+ 
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+    You need to manually place the downloaded MCV Georgian data inside
+    ``<workspace dir>/raw_data/`` subfolder.
+  * **data_split**: should be "train", "dev", "test" or "other".
+
+  Note: due to the text deduplication in step 3, we recommend processing the data in the following order: test, dev, train, other.
+
+  **Output format**.
+ 
+  This config dumps the final manifest at ``${workspace_dir}/${data_split}_manifest.json``.
+  The output manifest contains the following fields:
+ 
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription, including punctuation ".,?" and capitalization.
+  * **duration (float)**: audio duration in seconds.
+ 
+ 
+processors_to_run: all
+data_split: ???
+workspace_dir: ???
+final_manifest: ${workspace_dir}/${data_split}_manifest.json
+remove_pc: False
+ 
+processors:
+  - _target_: sdp.processors.CreateInitialManifestMCV
+    output_manifest_file: ${workspace_dir}/${data_split}_manifest0.json
+    language_id: ka
+    extract_archive_dir: ${workspace_dir}
+    resampled_audio_dir: ${workspace_dir}/${data_split}/audio/
+    data_split: ${data_split}
+    raw_data_dir: ${workspace_dir}/raw_data/
+    already_extracted: True
+ 
+  - _target_: sdp.processors.SubRegex
+    regex_params_list:
+      - {"pattern": "[!]", "repl": "."}
+      - {"pattern": "…", "repl": "."}
+      - {"pattern": ";", "repl": ","}
+      - {"pattern": '[\":\(\)“”;„“]', "repl": ' '}
+      - {"pattern": '-', "repl": ' '}
+      - {"pattern": "[/]", "repl": " "}
+      - {"pattern": "\\s+", "repl": ' '}
+      - {"pattern": ' ,', "repl": ','}
+      - {"pattern": ' \.', "repl": '.'}
+    test_cases:
+      - {input: {text: "კატამ თაგვი დაიჭირა; ისინი ითამაშებენ!"}, output: {text: "კატამ თაგვი დაიჭირა, ისინი ითამაშებენ."}}
+      - {input: {text: 'მან გამახსენა თქვენი სიტყვები: „ყველაფერი შეიძლება, თუ გინდა.“'}, output: {text: "მან გამახსენა თქვენი სიტყვები ყველაფერი შეიძლება, თუ გინდა."}}
+      - {input: {text: "მან თქვა, მე ვიყენებდი  ყოველ დღე ."}, output: {text: "მან თქვა, მე ვიყენებდი ყოველ დღე." } }
+ 
+  - _target_: sdp.processors.DropRepeatedFields
+    manifests_paths: ['${workspace_dir}/train_manifest.json', '${workspace_dir}/test_manifest.json',"${workspace_dir}/dev_manifest.json", "${workspace_dir}/other_manifest.json"]
+    current_manifest_file: "${workspace_dir}/${data_split}_manifest.json"
+
+  - _target_: sdp.processors.DropIfNoneOfRegexMatch
+    regex_patterns: ['[აბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰ]']
+    test_cases:
+      - {input: {text: "მე მანაგერი, შენ დიზაინერი"}, output: {text: "მე მანაგერი, შენ დიზაინერი"}}
+      - {input: {text: "-?.-"}, output: null}
+      - {input: {text: " "}, output: null}
+      - {input: {text: "''"}, output: null}
+  
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: ".,? აბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰ"
+    test_cases:
+      - {input: {text: "მე მანაგერი, შენ დიზაინერი?"}, output: {text : "მე მანაგერი, შენ დიზაინერი?"}}
+      - {input: {text: 'მან თქვა: „მე ვიყენებდი Photoshop-ს ყოველ დღე.“'}, output: null}
+
+  - _target_: sdp.processors.DropHighLowCharrate
+    high_charrate_threshold: 18
+    low_charrate_threshold: 0
+    test_cases:
+      - {input: {text: "მან თქვა: „მე ვიყენებდი Photoshop-ს ყოველ დღე.", duration: 1}, output: null}
+
+  - _target_: sdp.processors.DropHighLowWordrate
+    high_wordrate_threshold: 2.67
+    low_wordrate_threshold: 0.3
+    test_cases:
+    - {input: {text: "მან თქვა: „მე ვიყენებდი Photoshop-ს ყოველ დღე.", duration: 120}, output: null}
+
+  - _target_: sdp.processors.DropHighLowDuration
+    high_duration_threshold: 18
+    low_duration_threshold: 1
+    test_cases:
+    - {input: {text: "მან თქვა: „მე ვიყენებდი Photoshop-ს ყოველ დღე.", duration: 19}, output: null}
+
+  - _target_: sdp.processors.ChangeToRelativePath
+    base_dir: ${workspace_dir}
+
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${final_manifest}
+    fields_to_keep:
+      - audio_filepath
+      - text
+      - duration
+  

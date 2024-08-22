@@ -96,6 +96,7 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropNonAlphabet,
     DropOnAttribute,
     PreserveByValue,
+    DropRepeatedFields,
 )
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
