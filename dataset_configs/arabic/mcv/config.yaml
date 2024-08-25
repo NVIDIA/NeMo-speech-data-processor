@@ -1,6 +1,6 @@
 documentation: |
   Mozilla Common Voice Arabic (MCV)
-  ################
+  #################################
   This config is designed for the `Mozilla Common Voice (MCV) <https://commonvoice.mozilla.org/>`_ dataset
   17.0 release, but should work for any subsequent releases as well.
 
@@ -16,8 +16,10 @@ documentation: |
   * **workspace_dir**:    specify the workspace folder where all audio files will be stored.
   * **data_split**:       should be "train", "dev", "test", "clean_train", "clean_dev", "clean_test" or "noisy_train", "noisy_dev", "noisy_test".
                           "train" is same as "clean_train", "dev" is same as "clean_dev", "test" is same as "clean_test". These are added to support end-to-end tests.
-  * **keep_pc**: specify whether to keep punctuation or not. Should be "True" or "False".
-  * **keep_diacr**: specify whether to keep diacritics or not. Should be "True" or "False".
+  * **remove_punctuation**: specify whether to remove punctuation or not. Should be "True" or "False". Defaults to False.
+  * **remove_diacritics**: specify whether to remove tatweel marks or not. Should be "True" or "False". Defaults to True.
+  * **remove_tatweel**: specify whether to remove punctuation or not. Should be "True" or "False". Defaults to True.
+  * **normalize_ligature**: specify whether to normalize ligature or not. Should be "True" or "False". Defaults to True.
   * **min_duration**: minimal duration of segment in seconds. Defaults to 0.1s.
   * **max_duration**: maximal duration of segment in seconds. Defaults to 20s.
   * **min_wordrate**: minimal wordrate. Defaults to 0.8.

@@ -1,4 +1,3 @@
-# import ffmpeg # pip install ffmpeg-python
 import webvtt  # pip install webvtt-py
 from datetime import datetime
 from sdp.logging import logger
