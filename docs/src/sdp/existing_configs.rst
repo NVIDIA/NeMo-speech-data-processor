@@ -37,6 +37,9 @@ download the data archive and specify its location with the ``raw_data_dir`` par
 * **Georgian**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/georgian/mcv/config.yaml>`__ |
   :doc:`documentation <config-docs/georgian/mcv/config>`
+* **Arabic**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/arabic/mcv/config.yaml>`__ |
+  :doc:`documentation <config-docs/arabic/mcv/config>`
 
 .. toctree:: 
    :hidden:
@@ -46,6 +49,7 @@ download the data archive and specify its location with the ``raw_data_dir`` par
    config-docs/portuguese/mcv/config
    config-docs/kazakh/mcv/config
    config-docs/georgian/mcv/config
+   config-docs/arabic/mcv/config
 
 Multilingual LibriSpeech (MLS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -263,3 +267,16 @@ Kazakh Speech Corpus 2 (KSC2)
    :hidden:
 
    config-docs/kazakh/ksc2/config
+
+Massive Arabic Speech Corpus (MASC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://ieee-dataport.org/open-access/masc-massive-arabic-speech-corpus
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/arabic/masc/config.yaml>`__ |
+:doc:`documentation <config-docs/arabic/masc/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/arabic/masc/config

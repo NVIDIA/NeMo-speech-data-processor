@@ -167,3 +167,5 @@ nitpick_ignore = [
     ('py:class', 'sdp.processors.base_processor.DataEntry'),
 ]
 # nitpick_ignore_regex = [('py:class', '*')]
+
+sys.modules['webvtt-py'] = __import__('webvtt')

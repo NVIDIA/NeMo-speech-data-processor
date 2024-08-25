@@ -91,6 +91,13 @@ FLEURS
 .. autodata:: sdp.processors.CreateInitialManifestFleurs
    :annotation:
 
+
+MASC
+'''   
+
+.. autodata:: sdp.processors.CreateInitialManifestMASC
+   :annotation:
+
 Lhotse processors
 #################
 
