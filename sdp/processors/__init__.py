@@ -31,6 +31,13 @@ from sdp.processors.datasets.lhotse import LhotseImport
 from sdp.processors.datasets.librispeech.create_initial_manifest import (
     CreateInitialManifestLibrispeech,
 )
+from sdp.processors.datasets.masc import (
+    CreateInitialManifestMASC,
+    AggregateSegments,
+    RegExpVttEntries,
+    GetCaptionFileSegments
+)
+
 from sdp.processors.datasets.mcv.create_initial_manifest import CreateInitialManifestMCV
 from sdp.processors.datasets.mls.create_initial_manifest import CreateInitialManifestMLS
 from sdp.processors.datasets.mls.restore_pc import RestorePCForMLS
