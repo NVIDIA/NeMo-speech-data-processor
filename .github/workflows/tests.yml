@@ -74,10 +74,8 @@ jobs:
         pip install nemo_text_processing
         pip install Cython wheel  # need to pre-install to avoid error in nemo installation
         pip install "nemo_toolkit[asr,nlp]"
-<<<<<<< HEAD
         python -m pip cache purge
-=======
->>>>>>> 082b9fd (text normalization inner join (#61))
+
     - name: Run all tests
       env:
         AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}

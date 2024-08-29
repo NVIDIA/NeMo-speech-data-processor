@@ -85,7 +85,6 @@ def data_check_fn_uzbekvoice(raw_data_dir: str) -> None:
         else:
             raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
 
-
 # using Mock so coraal_processor will only try to use the files listed.
 # To reduce the amount of storage required by the test data, the S3 bucket contains
 # modified versions of LES_audio_part01_2021.07.tar.gz and
