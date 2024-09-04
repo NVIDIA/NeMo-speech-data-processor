@@ -19,6 +19,7 @@ from collections import Counter
 from tqdm import tqdm
 import soundfile as sf
 import numpy as np
+from typing import Optional
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
@@ -214,6 +215,8 @@ class ASRTransformers(BaseProcessor):
         device (str): Inference device.
         batch_size (int): Inference batch size. Defaults to 1.
         torch_dtype (str): Tensor data type. Default to "float32"
+        max_new_tokens (Optional[int]): The maximum number of new tokens to generate.
+            If not specified, there is no hard limit on the number of tokens generated, other than model-specific constraints.
     """
 
     def __init__(
@@ -227,6 +230,7 @@ class ASRTransformers(BaseProcessor):
         torch_dtype: str = "float32",
         generate_task: str = "transcribe",
         generate_language: str = "english",
+        max_new_tokens: Optional[int] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -245,6 +249,7 @@ class ASRTransformers(BaseProcessor):
         self.batch_size = batch_size
         self.generate_task = generate_task
         self.generate_language = generate_language
+        self.max_new_tokens = max_new_tokens
         if torch_dtype == "float32":
             self.torch_dtype = torch.float32
         elif torch_dtype == "float16":
@@ -269,7 +274,7 @@ class ASRTransformers(BaseProcessor):
             model=self.model,
             tokenizer=processor.tokenizer,
             feature_extractor=processor.feature_extractor,
-            max_new_tokens=128,
+            max_new_tokens=None,
             chunk_length_s=30,
             batch_size=self.batch_size,
             return_timestamps=True,
@@ -283,7 +288,7 @@ class ASRTransformers(BaseProcessor):
 
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
 
-        with Path(self.output_manifest_file).open('w') as f:
+        with Path(self.output_manifest_file).open("w") as f:
             start_index = 0
             for _ in tqdm(range(len(json_list_sorted) // self.batch_size)):
                 batch = json_list_sorted[start_index : start_index + self.batch_size]
@@ -295,4 +300,4 @@ class ASRTransformers(BaseProcessor):
 
                 for i, item in enumerate(batch):
                     item[self.output_text_key] = results[i]["text"]
-                    f.write(json.dumps(item, ensure_ascii=False) + '\n')
+                    f.write(json.dumps(item, ensure_ascii=False) + "\n")
