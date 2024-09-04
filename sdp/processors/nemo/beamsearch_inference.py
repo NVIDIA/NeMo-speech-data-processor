@@ -83,7 +83,7 @@ class EvalBeamSearchNGramConfig:
     ctc_decoding: CTCDecodingConfig = field(default_factory=lambda: CTCDecodingConfig(
         strategy="flashlight", # gready, beam = pyctcdecode, flashlight
         beam = ctc_beam_decoding.BeamCTCInferConfig(
-            nemo_kenlm_path="/mnt/md1/YTDS/ES/lm/lm.kenlm",
+            kenlm_path="/mnt/md1/YTDS/ES/lm/lm.kenlm",
             beam_size=16,
             beam_alpha=0.5, # LM weight
             beam_beta=0.5, # length weight
@@ -207,8 +207,8 @@ class BeamsearchTopNInference(BaseProcessor):
                     beam = ctc_beam_decoding.BeamCTCInferConfig(beam_size=self.cfg.ctc_decoding.beam.beam_size,
                                                                 beam_alpha=self.cfg.ctc_decoding.beam.beam_alpha,
                                                                 beam_beta=self.cfg.ctc_decoding.beam.beam_beta,
-                                                                word_kenlm_path=self.cfg.ctc_decoding.beam.word_kenlm_path,
-                                                                nemo_kenlm_path=self.cfg.ctc_decoding.beam.nemo_kenlm_path,
+                                                                kenlm_path=self.cfg.ctc_decoding.beam.kenlm_path,
+                                                                kenlm_type=self.cfg.ctc_decoding.beam.kenlm_type,
                                                                 preserve_alignments=self.cfg.ctc_decoding.beam.preserve_alignments,
                                                                 compute_timestamps=self.cfg.ctc_decoding.beam.compute_timestamps,
                                                                 flashlight_cfg=self.cfg.ctc_decoding.beam.flashlight_cfg,

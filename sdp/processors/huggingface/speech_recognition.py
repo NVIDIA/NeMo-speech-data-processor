@@ -115,7 +115,7 @@ class LangIdWhisper(BaseProcessor):
 
         n_mels = 80
 
-        if self.pretrained_model = "large-v3":
+        if self.pretrained_model == "large-v3":
             n_mels=128
         
         for segment_start, segment_end in zip(segment_starts, segment_ends):
