@@ -51,32 +51,20 @@ remove_punctuation: False
 remove_diacritics: True
 remove_tatweel: True
 normalize_ligature: True
+apply_nfkc: True
 
 processors:
   # 0 creating manifest {sample_id, audio_path}
   - _target_: sdp.processors.CreateInitialManifestMCV
     raw_data_dir: ${dataset_dir}
-    extract_archive_dir: ${workspace_dir}
-    resampled_audio_dir: ${workspace_dir}/resampled_audios
+    extract_archive_dir: ${dataset_dir}
+    resampled_audio_dir: ${manifest_dir}/resampled_audios
     data_split: ${data_split}
+    already_extracted: True
     language_id: ar
-    output_manifest_file: ${workspace_dir}/manifest0.json
-
-  # 1 replacing eastern arabic numerals with common ones
-  - _target_: sdp.processors.SubRegex
-    text_key: text
-    regex_params_list:
-      - { "pattern": "٠", "repl": "0" }
-      - { "pattern": "١", "repl": "1" }
-      - { "pattern": "٢", "repl": "2" }
-      - { "pattern": "٣", "repl": "3" }
-      - { "pattern": "٤", "repl": "4" }
-      - { "pattern": "٥", "repl": "5" }
-      - { "pattern": "٦", "repl": "6" }
-      - { "pattern": "٧", "repl": "7" }
-      - { "pattern": "٨", "repl": "8" }
-      - { "pattern": "٩", "repl": "9" }
-    output_manifest_file: ${workspace_dir}/manifest1.json
+    target_samplerate: 16000
+    target_nchannels: 1
+    output_manifest_file: ${manifest_dir}/manifest0.json
 
   # 2 replacing eastern Arabic numerals with common ones
   - _target_: sdp.processors.SubRegex
@@ -92,7 +80,7 @@ processors:
       - { "pattern": "٧", "repl": "7" }
       - { "pattern": "٨", "repl": "8" }
       - { "pattern": "٩", "repl": "9" }
-    output_manifest_file: ${manifest_dir}/manifest10.json
+    output_manifest_file: ${manifest_dir}/manifest1.json
 
   # 3 applying text normalization
   - _target_: sdp.processors.NormalizeText
@@ -100,7 +88,7 @@ processors:
     input_language: "ar"
     input_case: "cased"
     output_text_key: "text"
-    output_manifest_file: ${manifest_dir}/manifest11.json
+    output_manifest_file: ${manifest_dir}/manifest2.json
 
   # 4 replacing/removing special marks
   - _target_: sdp.processors.SubRegex
@@ -124,7 +112,7 @@ processors:
       - { "pattern": "\u0670", "repl": "" }                   # removing small Superscript Alif
       - { "pattern": "\u06CC", "repl": "\u064A" }             # replacing Persian letter Yeh with Arabic letter Yeh
       - { "pattern": "\u06A9", "repl": "\u063A" }             # replacing Persian letter Kaf with Arabic letter Kaf
-    output_manifest_file: ${manifest_dir}/manifest12.json
+    output_manifest_file: ${manifest_dir}/manifest3.json
     test_cases:
       - { input: { text: "  test   " }, output: { text: "test" } }
     
@@ -153,7 +141,7 @@ processors:
       - { "pattern": "،+", "repl": "،" }
       - { "pattern": "؟+", "repl": "؟" }
       - { "pattern": "،+", "repl": "،" }
-    output_manifest_file: ${manifest_dir}/manifest13.json
+    output_manifest_file: ${manifest_dir}/manifest4.json
     test_cases:
       - { input: { text: "..." }, output: { text: "." } }
       - { input: { text: "test..." }, output: { text: "test." } }
@@ -169,21 +157,22 @@ processors:
     remove_punctuation: ${remove_punctuation}
     remove_tatweel: ${remove_tatweel}
     normalize_ligature: ${normalize_ligature}
-    output_manifest_file: ${manifest_dir}/manifest14.json
+    apply_nfkc: apply_nfkc
+    output_manifest_file: ${manifest_dir}/manifest5.json
 
   # 7 removing high low wordrate samples
   - _target_: sdp.processors.DropHighLowWordrate
     text_key: text
     high_wordrate_threshold: ${max_wordrate}
     low_wordrate_threshold: ${min_wordrate}
-    output_manifest_file: ${manifest_dir}/manifest15.json
+    output_manifest_file: ${manifest_dir}/manifest6.json
 
   # 8 dropping non alphabetical symbols
   - _target_: sdp.processors.DropNonAlphabet
     alphabet: "؟.،  \u0631\u0630\u062F\u062E\u062D\u062C\u062B\u062A\u0629\u0628\u0627\u0626\u0625\u0624\u0623\u0622
                     \u0621\u064A\u0649\u0648\u0647\u0646\u0645\u0644\u0643\u0642\u0641\u063A\u0639\u0638\u0637\u0636
                     \u0635\u0634\u0633\u0632\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652"
-    output_manifest_file: ${manifest_dir}/manifest16.json
+    output_manifest_file: ${manifest_dir}/manifest7.json
 
   # 9 changing paths to relative
   - _target_: sdp.processors.ChangeToRelativePath

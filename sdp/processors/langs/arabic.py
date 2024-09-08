@@ -80,21 +80,17 @@ class ArabicTextPreprocessor(BaseParallelProcessor):
         remove_empty_lines (bool):  joins multiline input into single-line text. Defaults to True.
         remove_diacritics (bool):   removes Arabic diacritical marks from the input text. Defaults to False.
         remove_punctuation (bool):  removes punctuation marks from the input text. Defaults to False.
-                                    Processed punctuation marks are: Question mark, Exclamation mark, Colon,Semicolon,
-                                                                    Hypen-Minus, Full stop, Comma, Arabic Question Mark,
-                                                                    Arabic Comma, Arabic Semicolon.
+            Processed punctuation marks are: Question mark, Exclamation mark, Colon,Semicolon,
+            Hypen-Minus, Full stop, Comma, Arabic Question Mark, Arabic Comma, Arabic Semicolon.
         remove_tatweel (bool):      removes tatweel justification sign from the text. Defaults to False.
-        apply_canonical_decomposition (bool):   applies canonical decomposition to the input text. This will decompose composit letters such as Alef with Hamza Above,
-                                                Alef with Hamza Below into two separate symbols. This will provide unique ordering for combining marks. Default to False.
-        apply_canonical_decomposition_canonical_composition (bool): applies canonical decomposition and then composition to the input text. This will provide unique ordering for combining marks.
-                                                                    Useful when handling Arabic letters with multiple diacritics, to ensure unique ordering of the diacritical marks. 
-                                                                    Default to False.
-        apply_compatability_decomposition (bool):   applies applies compatability decomposition followed by canonical composition.
-                                                    Useful for replacing Arabic letters positional forms with general unicode. Defaults to False.
+        apply_nfkc (bool):   applies applies compatability decomposition followed by canonical composition.
+            Useful for replacing Arabic letters positional forms with general unicode and ensuring consistend diacritical marks ordering.
+            Find more here https://docs.python.org/3/library/unicodedata.html#unicodedata.normalize.
+            Defaults to False.
         normalize (bool): normalizes the input text. Normalization includes:    removing diacritical marks,
-                                                                                normalization of letter `ALEF`-- `ALEF_HAMZA_BELOW`, `ALEF_HAMZA_ABOVE`, `ALEF_MADDA_ABOVE` will be replaced by `ALEF`,
-                                                                                normalization of ligatures: `LAM_ALEF`, `LAM_ALEF_HAMZA_ABOVE`, `LAM_ALEF_HAMZA_BELOW`, `LAM_ALEF_MADDA_ABOVE` ligatures will be replaces by two letters `LAM` and `ALEF`.
-                                                                                letter `TEH_MARBUTA` will be replaced by `HEH` 
+            normalization of letter `ALEF`-- `ALEF_HAMZA_BELOW`, `ALEF_HAMZA_ABOVE`, `ALEF_MADDA_ABOVE` will be replaced by `ALEF`,
+            normalization of ligatures: `LAM_ALEF`, `LAM_ALEF_HAMZA_ABOVE`, `LAM_ALEF_HAMZA_BELOW`, `LAM_ALEF_MADDA_ABOVE` ligatures will be replaces by two letters `LAM` and `ALEF`.
+            letter `TEH_MARBUTA` will be replaced by `HEH` 
     """
     def __init__(
         self,
@@ -106,9 +102,7 @@ class ArabicTextPreprocessor(BaseParallelProcessor):
         remove_punctuation: bool = False,
         remove_tatweel: bool = False,
         normalize_ligature: bool = False,
-        apply_canonical_decomposition: bool = False,
-        apply_canonical_decomposition_canonical_composition: bool = False,
-        apply_compatability_decomposition_canonical_composition: bool = False,
+        apply_nfkc: bool = False,
         normalize: bool = False,
         **kwargs,
     ):
@@ -123,11 +117,7 @@ class ArabicTextPreprocessor(BaseParallelProcessor):
         self.remove_tatweel = remove_tatweel
         self.normalize_ligature = normalize_ligature
         self.normalize = normalize
-        self.apply_canonical_decomposition = apply_canonical_decomposition
-        self.apply_canonical_decomposition_canonical_composition = (
-            apply_canonical_decomposition_canonical_composition
-        )
-        self.apply_compatability_decomposition_canonical_composition = apply_compatability_decomposition_canonical_composition
+        self.apply_nfkc = apply_nfkc
 
     def process_dataset_entry(self, data_entry):
         data_entry[self.output_text_key] = self.clean_data(
@@ -188,10 +178,6 @@ class ArabicTextPreprocessor(BaseParallelProcessor):
             text = self._normalize_ligature(text)
         if self.normalize:
             text = self._normalize(text)
-        if self.apply_canonical_decomposition:
-            text = unicodedata.normalize("NFD", text)
-        if self.apply_canonical_decomposition_canonical_composition:
-            text = unicodedata.normalize("NFC", text)
-        if self.apply_compatability_decomposition_canonical_composition:
+        if self.apply_nfkc:
             text = unicodedata.normalize("NFKC", text)
         return text

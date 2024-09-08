@@ -74,11 +74,16 @@ class AggregateSegments(BaseParallelProcessor):
         if len(segments) == 0:
             return []
         
+        audio = AudioSegment.from_wav(data_entry[self.input_audio_filepath_key])
+        
         audio_basename = os.path.basename(data_entry[self.input_audio_filepath_key]).split(".")[0]
         agg_segments = []
         aggregated_segment = {**segments[0]}
         for segment in segments[1:]:
             # checking if after adding segement it's duration will exceed `max_duration`
+            if (segment["end_time"] > audio.duration_seconds or segment["start_time"] > audio.duration_seconds):
+                continue
+            
             start_time = min(segment["start_time"], aggregated_segment["start_time"])
             end_time = max(segment["end_time"], aggregated_segment["end_time"])
             if end_time - start_time >= self.max_duration:
@@ -98,7 +103,7 @@ class AggregateSegments(BaseParallelProcessor):
             if aggregated_segment not in agg_segments:
                 agg_segments.append(aggregated_segment)
             
-        audio = AudioSegment.from_wav(data_entry[self.input_audio_filepath_key])
+        valid_segments = []
         for aggregated_segment in agg_segments:
             aggregated_segment.update(data_entry)
             
@@ -116,8 +121,10 @@ class AggregateSegments(BaseParallelProcessor):
                         end_time=end_time,
                         output_audio_filepath=aggregated_segment[self.output_splitted_audio_filepath_key]
                     )
+                    valid_segments.append(aggregated_segment)
                 except IndexError as e:
                     if self.verbose:
-                        logging.warning("Invalid segment boundaries. Skipping...")
-        return [DataEntry(data=segment) for segment in agg_segments]
+                        logging.warning(f"{audio_basename} Invalid segment boundaries. Skipping...")
+                
+        return [DataEntry(data=segment) for segment in valid_segments]
         
