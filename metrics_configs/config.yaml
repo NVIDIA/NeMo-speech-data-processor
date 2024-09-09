@@ -1,0 +1,50 @@
+documentation: |
+  Bootstrap metric processor
+  ##########################
+
+  This config is used to process a custom speech dataset using the `BootstrapProcessor` class for bootstrapped metric computation (WER, CER, WMR, etc.). It calculates metrics like Word Error Rate (WER) or other custom metrics such as Character Error Rate (CER) or Word Match Rate (WMR), depending on the config.
+
+  This config performs the following data processing:
+
+  1. Loads the speech dataset from manifest files in JSONL format.
+  2. Applies bootstrapped metric calculation for the selected metric type.
+  3. Optionally performs pairwise comparison between models, calculating the difference in performance between different model predictions.
+  4. Saves the results, including mean metric values, confidence intervals, and optional Probability of Improvement (POI) values.
+
+  **Required arguments**:
+
+  * **workspace_dir**: Specify the workspace folder where all the data and results will be stored.
+  * **manifest_files**: List of file paths to the manifest files in JSONL format.
+  * **metric_type**: The metric to compute. Supported options include 'wer', 'cer', 'wmr', 'charrate', 'wordrate'.
+  * **num_bootstraps**: The number of bootstrap iterations for metric computation.
+  * **ci_lower**: Lower bound percentile for confidence intervals (default: 2.5).
+  * **ci_upper**: Upper bound percentile for confidence intervals (default: 97.5).
+
+  **Output format**:
+
+  The config generates the following outputs:
+
+  * **output_file**: A JSON file containing the results of the metric computation.
+  * The output file will contain fields for the mean metric value, confidence intervals (ci_lower, ci_upper), and optional pairwise comparisons between models.
+
+processors_to_run: all
+workspace_dir: ???
+manifest_files: ["${workspace_dir}/manifest1.json", "${workspace_dir}/manifest2.json"]
+output_file: ${workspace_dir}/results.json
+metric_type: "wer"
+num_bootstraps: 10
+ci_lower: 2.5
+ci_upper: 97.5
+
+processors:
+  - _target_: sdp.utils.BootstrapProcessor
+    manifest_files: ${manifest_files}
+    num_bootstraps: ${num_bootstraps}
+    dataset_size: 1.0
+    output_file: ${output_file}
+    calculate_pairwise: true
+    metric_type: ${metric_type}
+    text_key: "text"  # Can be customized if manifest uses a different key for ground truth text
+    pred_text_key: "pred_text"  # Can be customized if manifest uses a different key for predicted text
+    ci_lower: ${ci_lower}
+    ci_upper: ${ci_upper}
