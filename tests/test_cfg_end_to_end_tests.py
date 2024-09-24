@@ -78,6 +78,21 @@ def data_check_fn_slr140(raw_data_dir: str) -> None:
 
     extract_tar_with_strip_components(expected_file, tgt_dir, strip_components=1)
 
+def data_check_fn_librispeech(raw_data_dir: str) -> None:
+    expected_file = Path(raw_data_dir) / "dev-clean.tar.gz"
+    if expected_file.exists():
+        return
+    else:
+        raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
+
+def data_check_fn_uzbekvoice(raw_data_dir: str) -> None:
+    expected_files = [Path(raw_data_dir) / "clips.zip", Path(raw_data_dir) / "uzbekvoice-dataset.zip"]
+    for expected_file in expected_files:
+        if expected_file.exists():
+            return
+        else:
+            raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
+
 # using Mock so coraal_processor will only try to use the files listed.
 # To reduce the amount of storage required by the test data, the S3 bucket contains
 # modified versions of LES_audio_part01_2021.07.tar.gz and
@@ -93,6 +108,7 @@ coraal_processor.get_coraal_url_list = mock.Mock(
 
 def get_test_cases() -> List[Tuple[str, Callable]]:
     return [
+<<<<<<< HEAD
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", 
             data_check_fn=partial(data_check_fn_mls, language="spanish"),
@@ -166,6 +182,14 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
             config_path=f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", 
             data_check_fn=partial(data_check_fn_generic, file_name="ksc2_kk.tar.gz")
             ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/uzbek/mcv/config.yaml", 
+            data_check_fn=partial(data_check_fn_mcv, archive_file_stem="mcv_uz")
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/uzbek/uzbekvoice/config.yaml", 
+            data_check_fn=data_check_fn_uzbekvoice
+            )
     ]
 
 def get_test_names():
