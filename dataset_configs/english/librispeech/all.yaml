@@ -23,15 +23,15 @@ documentation: |
  
   **Output format**.
 
-    This config generates output manifest files for all splits of the data:
+  This config generates output manifest files for all splits of the data:
 
-    * ``${workspace_dir}/dev-clean.json`` - dev-clean subset.
-    * ``${workspace_dir}/dev-other.json`` - dev-other subset.
-    * ``${workspace_dir}/test-clean.json`` - test-clean subset.
-    * ``${workspace_dir}/test-other.json`` - test-other subset.
-    * ``${workspace_dir}/train-clean-100.json`` - train-clean-100 subset.
-    * ``${workspace_dir}/train-clean-360.json`` - train-clean-360 subset.
-    * ``${workspace_dir}/train-other-500.json`` - train-other-500 subset.
+  * ``${workspace_dir}/dev-clean.json`` - dev-clean subset.
+  * ``${workspace_dir}/dev-other.json`` - dev-other subset.
+  * ``${workspace_dir}/test-clean.json`` - test-clean subset.
+  * ``${workspace_dir}/test-other.json`` - test-other subset.
+  * ``${workspace_dir}/train-clean-100.json`` - train-clean-100 subset.
+  * ``${workspace_dir}/train-clean-360.json`` - train-clean-360 subset.
+  * ``${workspace_dir}/train-other-500.json`` - train-other-500 subset.
 
 
   Output manifest contains the following fields:

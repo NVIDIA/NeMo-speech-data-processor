@@ -4,7 +4,6 @@ documentation: |
   
   This config can be used to prepare
   `Librispeech <https://openslr.org/12>`_
-  `Librispeech(mini) <https://openslr.org/31>`_
   dataset in the NeMo format.
 
   It produces manifests for the dev-clean split (for other splits, please configure). 

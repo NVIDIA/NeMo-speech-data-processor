@@ -3,7 +3,7 @@ documentation: |
   ##################
   
   This config can be used to prepare
-  `Librispeech <https://www.openslr.org/31/>`_
+  `Librispeech mini <https://www.openslr.org/31/>`_
   dataset in the NeMo format.
 
   It produces manifests for the mini split of Libripseech. 
