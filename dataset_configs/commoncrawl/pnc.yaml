@@ -1,0 +1,85 @@
+processors_to_run: "0:"
+
+WINDOW: 8000
+OFFSET: 0
+THRESHOLD: -5
+MAX_DURATION: 40
+MAX_SILENCE: 1.0 # 1.5
+
+MODEL: "stt_en_citrinet_512_gamma_0_25" 
+NEMO_DIR_PATH: /home/nkarpov/workspace/NeMo_main
+TOOLS_DIR: ${NEMO_DIR_PATH}/tools/ctc_segmentation/scripts
+DATA_DIR: /mnt/ssd8/multilang/en/val_test/mls/test
+workspace_dir: ${DATA_DIR}/manifests
+
+
+processors:
+  - _target_: sdp.processors.DuplicateFields
+    input_manifest_file: /mnt/ssd8/multilang/en/val_test/mls/test/mls_test_pc_head.json
+    duplicate_fields: {"text": "text_pc"}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: "text"
+
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    regex_params_list:
+      - {"pattern": "[\\?\\.]", "repl": " "}
+      - {"pattern": ",", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
+
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${workspace_dir}/mls_test_example.json
+    fields_to_keep: ["text", "text_pc", "audio_filepath",  "duration"]
+
+  # 4 
+  - _target_: sdp.processors.huggingface.llm.ApplyLlama3 # pip install num2words huggingface_hub; huggingface-cli; login hf_...
+    input_manifest_file: /mnt/ssd8/multilang/en/val_test/mls/test/mls_test_nopc.json 
+    input_example_manifest: ${workspace_dir}/mls_test_example.json
+    example_query_key: "text"
+    example_response_key: "text_pc"
+    pretrained_model: "meta-llama/Meta-Llama-3-8B-Instruct"
+    input_text_key: "text"
+    main_promt: [
+        "Your task is to punctuate the text.",
+        "You must not change the words in the text.",
+        "Just add punctuations.",
+        "You can only use a period, comma or question mark as punctuation.",
+        "Add capitalization to the beginning of the sentence if necessary.",
+        "Do not use too long sentences, try to insert period mark.",
+        "Do not reduce the number of input words",
+        "Do not add your own comments in the beggining of the answer"
+                ]
+    torch_dtype: "float16"
+    output_text_key: "text_pc"
+    output_manifest_file: ${workspace_dir}/manifest_pc.json
+  # 5
+  - _target_: sdp.processors.huggingface.llm.WriteTxtFiles
+    text_key: text_pc
+    audio_key: audio_filepath
+    output_dir: ${DATA_DIR}/text
+
+  - _target_: sdp.processors.huggingface.llm.Subprocess
+    cmd: "python ${TOOLS_DIR}/prepare_data.py \
+        --in_text=${DATA_DIR}/text \
+        --output_dir=${DATA_DIR}/processed/ \
+        --language=en \
+        --model=${MODEL} \
+        --additional_split_symbols='.' \
+        --audio_dir=${DATA_DIR}/wav"
+
+  - _target_: sdp.processors.huggingface.llm.Subprocess
+    cmd: "python ${TOOLS_DIR}/run_ctc_segmentation.py \
+        --output_dir=${DATA_DIR}/output \
+        --data=${DATA_DIR}/for_ctc_segmentation \
+        --model=${MODEL} \
+        --window_len=${WINDOW}"
+
+  - _target_: sdp.processors.huggingface.llm.Subprocess
+    cmd: "python ${TOOLS_DIR}/cut_audio_with_combain_segments.py \
+        --output_dir=${DATA_DIR}/output \
+        --alignment=${DATA_DIR}/output/segments/ \
+        --threshold=${THRESHOLD} \
+        --max_duration=${MAX_DURATION} \
+        --offset=${OFFSET} \
+        --max_silence=${MAX_SILENCE}"
