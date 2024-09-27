@@ -13,38 +13,46 @@ documentation: |
 
   **Required arguments**:
 
-  * **workspace_dir**: Specify the workspace folder where all the data and results will be stored.
-  * **manifest_files**: List of file paths to the manifest files in JSONL format.
+  * **workspace_dir**: Specify the workspace folder where the results will be stored.
+  * **raw_data_dir**: Specify the data folder where all the datawill be stored.
+  * **bootstrap_manifest_files**: List of file paths to the manifest files in JSONL format.
   * **metric_type**: The metric to compute. Supported options include 'wer', 'cer', 'wmr', 'charrate', 'wordrate'.
+  * **dataset_size**: Proportion of dataset size for each bootstrap sample.
   * **num_bootstraps**: The number of bootstrap iterations for metric computation.
   * **ci_lower**: Lower bound percentile for confidence intervals (default: 2.5).
   * **ci_upper**: Upper bound percentile for confidence intervals (default: 97.5).
+  * **calculate_pairwise**: Whether to calculate pairwise metric difference and POI
+  * **text_key**: The key in the manifest that contains the ground truth text
+  * **pred_text_key**: The key in the manifest that contains the predicted text
+  * **random_state**: Random state of the program
 
   **Output format**:
 
   The config generates the following outputs:
 
-  * **output_file**: A JSON file containing the results of the metric computation.
+  * **output_manifest_file**: A JSON file containing the results of the metric computation.
   * The output file will contain fields for the mean metric value, confidence intervals (ci_lower, ci_upper), and optional pairwise comparisons between models.
 
 processors_to_run: all
 workspace_dir: ???
-manifest_files: ["${workspace_dir}/manifest1.json", "${workspace_dir}/manifest2.json"]
-output_file: ${workspace_dir}/results.json
+bootstrap_manifest_files: ["manifest1.json", "manifest2.json"]
+final_manifest: ${workspace_dir}/manifest.json
 metric_type: "wer"
-num_bootstraps: 10
+num_bootstraps: 1000
 ci_lower: 2.5
 ci_upper: 97.5
 
 processors:
   - _target_: sdp.utils.BootstrapProcessor
-    manifest_files: ${manifest_files}
+    bootstrap_manifest_files: ${bootstrap_manifest_files}
+    raw_data_dir: ${workspace_dir}/data
     num_bootstraps: ${num_bootstraps}
     dataset_size: 1.0
-    output_file: ${output_file}
+    output_manifest_file: ${final_manifest}
     calculate_pairwise: true
     metric_type: ${metric_type}
-    text_key: "text"  # Can be customized if manifest uses a different key for ground truth text
-    pred_text_key: "pred_text"  # Can be customized if manifest uses a different key for predicted text
+    text_key: "text"
+    pred_text_key: "pred_text"
     ci_lower: ${ci_lower}
     ci_upper: ${ci_upper}
+    random_state: 42

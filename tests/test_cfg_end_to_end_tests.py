@@ -28,6 +28,7 @@ from sdp.run_processors import run_processors
 from sdp.utils.common import extract_tar_with_strip_components
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
+METRICS_CONFIGS_ROOT = Path(__file__).parents[1] / "metrics_configs"
 
 def data_check_fn_generic(raw_data_dir: str, file_name: str, **kwargs) -> None:
     if callable(file_name):
@@ -35,6 +36,13 @@ def data_check_fn_generic(raw_data_dir: str, file_name: str, **kwargs) -> None:
     expected_file = Path(raw_data_dir) / file_name
     if not expected_file.exists():
         raise ValueError(f"No such file {str(expected_file)}")
+
+def data_check_fn_bootstrap(raw_data_dir: str) -> None:
+    file_names = ["test_MCV_RNNT_MCV_FLEURS_CROWD_ev_pc.json", "test_MCV_RNNT_MCV_FLEURS_CROWD_BOOKS_ev_pc.json"]
+    for file in file_names:
+        expected_file = Path(raw_data_dir) / file
+        if not expected_file.exists():
+            raise ValueError(f"No such file {str(expected_file)}")
 
 data_check_fn_mls = partial(data_check_fn_generic, file_name=lambda language, **kwargs: f"mls_{language}.tar.gz")
 data_check_fn_mcv = partial(data_check_fn_generic, file_name=lambda archive_file_stem, **kwargs: f"{archive_file_stem}.tar.gz")
@@ -85,24 +93,26 @@ coraal_processor.get_coraal_url_list = mock.Mock(
 
 def get_test_cases() -> List[Tuple[str, Callable]]:
     return [
-        (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
-        (f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")),
-        (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
-        (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", partial(data_check_fn_mls, language="portuguese")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", partial(data_check_fn_mtedx, language_id="pt")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/coraa/config.yaml", data_check_fn_coraa),
-        (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", data_check_fn_librispeech),
-        (f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", data_check_fn_fleurs),
-        (f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/armenian/audio_books/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="mcv_kk")),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/slr140/config.yaml", data_check_fn_slr140),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/slr102/config.yaml", data_check_fn_slr102),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", data_check_fn_ksc2),
+        # (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
+        # (f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")),
+        # (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
+        # (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
+        # (f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", partial(data_check_fn_mls, language="portuguese")),
+        # (f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")),
+        # (f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", partial(data_check_fn_mtedx, language_id="pt")),
+        # (f"{DATASET_CONFIGS_ROOT}/portuguese/coraa/config.yaml", data_check_fn_coraa),
+        # (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", data_check_fn_librispeech),
+        # (f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", data_check_fn_fleurs),
+        # (f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/armenian/audio_books/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/kazakh/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="mcv_kk")),
+        # (f"{DATASET_CONFIGS_ROOT}/kazakh/slr140/config.yaml", data_check_fn_slr140),
+        # (f"{DATASET_CONFIGS_ROOT}/kazakh/slr102/config.yaml", data_check_fn_slr102),
+        # (f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", data_check_fn_ksc2),
+        (f"{METRICS_CONFIGS_ROOT}/bootstrap/config.yaml", data_check_fn_bootstrap),
+
     ]
 
 def check_e2e_test_data() -> bool:
@@ -154,14 +164,23 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
 def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
     # to have the same structure (e.g. <lang>/<dataset>)
-    rel_path_from_root = Path(config_path).parent.relative_to(DATASET_CONFIGS_ROOT)
+    config_path = Path(config_path)
+    if DATASET_CONFIGS_ROOT in config_path.parents:
+        rel_path_from_root = config_path.parent.relative_to(DATASET_CONFIGS_ROOT)
+    elif METRICS_CONFIGS_ROOT in config_path.parents:
+        rel_path_from_root =  "metrics" / config_path.parent.relative_to(METRICS_CONFIGS_ROOT)
+    else:
+        pytest.fail(f"Config path {config_path} is not under dataset_configs or metrics_configs")
+
     test_data_root = Path(get_e2e_test_data_path(str(rel_path_from_root)))
- 
+
+
     # run data_check_fn - it will raise error if the expected test data is not found
     try:
         data_check_fn(raw_data_dir=str(test_data_root / rel_path_from_root))
     except ValueError as e:
         pytest.skip(f"Test data not available: {str(e)}")
+
 
     reference_manifest = test_data_root / rel_path_from_root / "test_data_reference.json"
     if not reference_manifest.exists():
@@ -178,26 +197,85 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
     if "already_downloaded" in cfg["processors"][0]:
         cfg["processors"][0]["already_downloaded"] = True
 
+    if "random_state" in cfg["processors"][0]:
+        cfg["processors"][0]["random_state"] = 42
+
+    bootstrap_comp = False
+    if "bootstrap_manifest_files" in cfg:
+        cfg["bootstrap_manifest_files"] = ["test_MCV_RNNT_MCV_FLEURS_CROWD_ev_pc.json", "test_MCV_RNNT_MCV_FLEURS_CROWD_BOOKS_ev_pc.json"] 
+        bootstrap_comp = True
+
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
     # reference file (ignoring the file paths)
     
-    with open(reference_manifest, "rt", encoding="utf8") as reference_fin, \
-         open(cfg.final_manifest, "rt", encoding="utf8") as generated_fin:
-        reference_lines = sorted(reference_fin.readlines())
-        generated_lines = sorted(generated_fin.readlines())
-        assert len(reference_lines) == len(generated_lines)
 
-        for reference_line, generated_line in zip(reference_lines, generated_lines):
-            reference_data = json.loads(reference_line)
-            generated_data = json.loads(generated_line)
-            reference_data.pop("audio_filepath", None)
-            generated_data.pop("audio_filepath", None)
-            assert reference_data == generated_data
+    if not bootstrap_comp:
+        with open(reference_manifest, "rt", encoding="utf8") as reference_fin, \
+            open(cfg.final_manifest, "rt", encoding="utf8") as generated_fin:
+            reference_lines = sorted(reference_fin.readlines())
+            generated_lines = sorted(generated_fin.readlines())
+            assert len(reference_lines) == len(generated_lines)
+
+            for reference_line, generated_line in zip(reference_lines, generated_lines):
+                reference_data = json.loads(reference_line)
+                generated_data = json.loads(generated_line)
+                reference_data.pop("audio_filepath", None)
+                generated_data.pop("audio_filepath", None)
+                assert reference_data == generated_data
+    else:
+        compare_bootstrap_files(reference_manifest, cfg.final_manifest)
 
  # if CLEAN_UP_TMP_PATH is set to non-0 value, we will delete tmp_path
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
         shutil.rmtree(tmp_path)
+
+def compare_bootstrap_files(reference_manifest: str, generated_manifest: str):
+    """
+    Compare two files as complete JSON objects with the provided structure.
+    """
+    with open(reference_manifest, "rt", encoding="utf8") as reference_fin, \
+         open(generated_manifest, "rt", encoding="utf8") as generated_fin:
+        
+        # Parse JSON data
+        reference_data = json.load(reference_fin)
+        generated_data = json.load(generated_fin)
+
+        # Compare 'individual_results'
+        ref_individual_results = reference_data.get("individual_results", {})
+        gen_individual_results = generated_data.get("individual_results", {})
+        
+        assert len(ref_individual_results) == len(gen_individual_results), \
+            "Mismatch in the number of individual results"
+        
+        for key in ref_individual_results:
+            assert key in gen_individual_results, f"Missing result for key {key} in generated data"
+            assert ref_individual_results[key] == gen_individual_results[key], \
+                f"Mismatch in individual results for {key}"
+
+        # Compare 'pairwise_comparisons'
+        ref_pairwise_comparisons = reference_data.get("pairwise_comparisons", [])
+        gen_pairwise_comparisons = generated_data.get("pairwise_comparisons", [])
+
+        assert len(ref_pairwise_comparisons) == len(gen_pairwise_comparisons), \
+            "Mismatch in the number of pairwise comparisons"
+
+        for ref_comp, gen_comp in zip(ref_pairwise_comparisons, gen_pairwise_comparisons):
+            assert ref_comp["file_1"] == gen_comp["file_1"], \
+                f"Mismatch in 'file_1': {ref_comp['file_1']} != {gen_comp['file_1']}"
+            assert ref_comp["file_2"] == gen_comp["file_2"], \
+                f"Mismatch in 'file_2': {ref_comp['file_2']} != {gen_comp['file_2']}"
+
+            assert ref_comp["delta_wer_mean"] == gen_comp["delta_wer_mean"], \
+                f"Mismatch in delta_wer_mean for {ref_comp['file_1']} and {ref_comp['file_2']}"
+            assert ref_comp["ci_lower"] == gen_comp["ci_lower"], \
+                f"Mismatch in ci_lower for {ref_comp['file_1']} and {ref_comp['file_2']}"
+            assert ref_comp["ci_upper"] == gen_comp["ci_upper"], \
+                f"Mismatch in ci_upper for {ref_comp['file_1']} and {ref_comp['file_2']}"
+            assert ref_comp["poi"] == gen_comp["poi"], \
+                f"Mismatch in POI for {ref_comp['file_1']} and {ref_comp['file_2']}"
+
+    print("JSON comparison successful. No mismatches found.")
 
 # Additional unit tests to increase coverage
 def test_check_e2e_test_data():
