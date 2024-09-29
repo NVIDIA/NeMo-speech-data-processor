@@ -1,0 +1,16 @@
+processors_to_run: "0:" 
+
+processors:
+  # Create initial manifests based on pairs of .opus audio + .srt transcript (with ground-truth timestamps)
+  - _target_: sdp.processors.LangIdWhisper
+    input_manifest_file: "/data1/transfer/chunk0001.json"
+    output_manifest_file: "/data1/lang_id/chunk0001.json"
+    pretrained_model: "small"
+    output_lang_key: "small-tiny_lang_id"
+    segment_duration: 11
+    num_segments: 5
+
+
+
+
+
