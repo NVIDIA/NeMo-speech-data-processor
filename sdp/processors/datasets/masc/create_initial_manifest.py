@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+# Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import glob
 import logging
 from pathlib import Path
 import pandas as pd
@@ -107,8 +106,6 @@ class CreateInitialManifestMASC(BaseParallelProcessor):
 
     def prepare(self):
         # Extracting data (unless already done).
-        os.makedirs(self.raw_dataset_dir, exist_ok=True)
-
         if not self.already_extracted:
             tar_gz_filepath = Path(str(self.raw_dataset_dir)) / "masc.tar.gz"
             if not tar_gz_filepath.exists:
@@ -131,7 +128,6 @@ class CreateInitialManifestMASC(BaseParallelProcessor):
         else:
             self.csv_filepath = self.dataset_dir / "subsets" / f"{self.data_split}_meta.csv"
 
-        print(self.csv_filepath)
         if not self.csv_filepath.exists():
             raise FileNotFoundError(f"{self.csv_filepath} not found.")
 

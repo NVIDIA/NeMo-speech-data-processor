@@ -16,14 +16,15 @@ import os
 import logging
 from pydub import AudioSegment
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
-from sdp.processors.datasets.masc.utils import get_audio_segment
+from sdp.processors.datasets.masc.utils import save_audio_segment
 
 class AggregateSegments(BaseParallelProcessor):
     """
     Aggregates short segments into segments with duration not longer than `max_duration`.
+    The algorithm works by iterating from left to right, merging consecutive segments into the current segment until the total duration reaches `max_duration`.
     
-    output_audio_dir (str): Directory where aggregated audio segments will be stored.
-        If `crop_audio_segments` is False, this path is used to create the audio file paths in the manifest.
+    output_audio_dir (str): Directory where aggregated audio segments will be stored, if `save_aggregated_audio_segments` is True.
+        If `save_aggregated_audio_segments` is False, this path is used to create the audio file paths in the manifest.
     input_segments_key (str): The field name that contains list of segments in the input manifest. Defaults to "segments".
     input_audio_filepath_key (str): The field name that contains paths to the audio files in the input manifest.
         Defaults to "audio_filepath".
@@ -32,7 +33,7 @@ class AggregateSegments(BaseParallelProcessor):
     output_audio_filepath_key (str): Field name where aggregated segment audio file paths will be stored.
         Defaults to "audio_filepath".
     max_duration (float): Maximum duration of aggregated segment. Default to 20.0s.
-    crop_audio_segments (bool): Flag indicating whether to crop audio files according to the aggregated segments.
+    save_aggregated_audio_segments (bool): Flag indicating whether to crop audio files according to the aggregated segments.
         Defaults to True.
     verbose (bool): Set to True to enable more detailed logging. Defaults to False.
     """
@@ -45,7 +46,7 @@ class AggregateSegments(BaseParallelProcessor):
         output_duration_key: str = "duration",
         output_audio_filepath_key: str = "audio_filepath",
         max_duration: float = 20.0,
-        crop_audio_segments: bool = True,
+        save_aggregated_audio_segments: bool = True,
         verbose: bool = False,
         **kwargs,
     ):
@@ -53,7 +54,7 @@ class AggregateSegments(BaseParallelProcessor):
         self.max_duration = max_duration
         self.input_audio_filepath_key = input_audio_filepath_key
         self.output_splitted_audio_filepath_key = output_audio_filepath_key
-        self.crop_audio_segments = crop_audio_segments
+        self.save_aggregated_audio_segments = save_aggregated_audio_segments
         self.output_audio_dir = output_audio_dir
         self.input_segments_key = input_segments_key
         self.verbose = verbose
@@ -61,13 +62,13 @@ class AggregateSegments(BaseParallelProcessor):
         self.output_duration_key = output_duration_key
 
     def prepare(self):
-        if self.crop_audio_segments and self.output_audio_dir:
+        if self.save_aggregated_audio_segments and self.output_audio_dir:
             os.makedirs(os.path.join(self.output_audio_dir), exist_ok=True)
 
     def process_dataset_entry(self, data_entry: dict):
         if self.input_segments_key not in data_entry:
             if self.verbose:
-                logging.info(f"No segements in a sample {data_entry[self.input_audio_filepath_key]}.")
+                logging.info(f"No segments in the sample {data_entry[self.input_audio_filepath_key]}.")
             return []
 
         segments = data_entry[self.input_segments_key]
@@ -80,7 +81,7 @@ class AggregateSegments(BaseParallelProcessor):
         agg_segments = []
         aggregated_segment = {**segments[0]}
         for segment in segments[1:]:
-            # checking if after adding segement it's duration will exceed `max_duration`
+            # checking if adding another segment will cause the total duration to exceed max_duration
             if (segment["end_time"] > audio.duration_seconds or segment["start_time"] > audio.duration_seconds):
                 continue
             
@@ -113,9 +114,9 @@ class AggregateSegments(BaseParallelProcessor):
             aggregated_segment[self.output_duration_key] = end_time - start_time
             aggregated_segment[self.output_splitted_audio_filepath_key] = os.path.join(self.output_audio_dir, f"{audio_basename}_{start_time}_{end_time}.wav")
             
-            if self.crop_audio_segments:
+            if self.save_aggregated_audio_segments:
                 try:
-                    get_audio_segment(
+                    save_audio_segment(
                         audio=audio,
                         start_time=start_time,
                         end_time=end_time,
@@ -124,7 +125,7 @@ class AggregateSegments(BaseParallelProcessor):
                     valid_segments.append(aggregated_segment)
                 except IndexError as e:
                     if self.verbose:
-                        logging.warning(f"{audio_basename} Invalid segment boundaries. Skipping...")
+                        logging.warning(f"Invalid segment boundaries in {audio_basename}. Skipping...")
                 
         return [DataEntry(data=segment) for segment in valid_segments]
         

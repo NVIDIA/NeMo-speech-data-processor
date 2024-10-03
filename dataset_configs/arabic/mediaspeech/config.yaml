@@ -2,32 +2,14 @@ documentation: |
   MediaSpeech
   ############
   Dataset must be downloaded manually prior.
+  https://www.openslr.org/108/
 
-  The config performs the following data processing.
-  1. Replaces certain non-supported characters, abbreviations and  punctuation marks with equivalent supported versions.
-  2. Drops any data that contains high/low word occurence.
-  3. Drops any data that contains symbols not in the supported alphabet.
-  4. Can be used to remove punctuation and diacritical marks.
-  5. Can be used to replace positional forms of Arabic letters with general unicodes.
-  6. Can be used to normalize Arabic ligatures.
-  7. Can be used to remove Quranic Tatweel mark.
+  The config creates initial manifest for MediaSpeech dataset.
 
   **Required arguments**.
 
   * **raw_dataset_dir**:  path to the tarred dataset.
   * **workspace_dir**:    specify the workspace folder where all audio files will be stored.
-  * **data_split**:       should be "train", "dev", "test", "clean_train", "clean_dev", "clean_test" or "noisy_train", "noisy_dev", "noisy_test".
-    "train" is same as "clean_train", "dev" is same as "clean_dev", "test" is same as "clean_test". These are added to support end-to-end tests.
-  * **remove_punctuation**: specify whether to remove punctuation or not. Should be "True" or "False". Defaults to False.
-  * **remove_diacritics**: specify whether to remove tatweel marks or not. Should be "True" or "False". Defaults to True.
-  * **remove_tatweel**: specify whether to remove punctuation or not. Should be "True" or "False". Defaults to True.
-  * **normalize_ligature**: specify whether to normalize ligature or not. Should be "True" or "False". Defaults to True.
-  * **apply_nfkc**: Applies NFKC normalization to the text. Find more here https://docs.python.org/3/library/unicodedata.html#unicodedata.normalize.
-    Defaults to True.
-  * **min_duration**: minimal duration of segment in seconds. Defaults to 0.1s.
-  * **max_duration**: maximal duration of segment in seconds. Defaults to 20s.
-  * **min_wordrate**: minimal wordrate. Defaults to 0.8.
-  * **max_wordrate**: maximal wordrate. Defaults to 3.
 
   **Output format**.
 
@@ -38,19 +20,18 @@ documentation: |
   * **text (str)**: transcription.
   * **duration (float)**: audio duration in seconds.
 
-# no punctuation, no tatweel, no diacritics, no dotted letters
-# python main.py --config-path="dataset_configs/arabic/youtube/" --config-name="config_mediaspeech.yaml"
-
 processors_to_run: "0:"
 
-dataset_dir: /home/lgrigoryan/data/datasets/arab/mediaspeech
-workspace_dir: /home/lgrigoryan/data/my_datasets/mediaspeech
+dataset_dir: ??
+workspace_dir: ??
+final_manifest: ${workspace_dir}/manifest.json
 
 processors:
   # 0 creating manifest {sample_id, audio_path}
   - _target_: sdp.processors.CreateInitialManifestMediaSpeech
-    data_dir: ${dataset_dir}
-    output_audio_dir: ${workspace_dir}/audios
+    raw_data_dir: ${dataset_dir}
+    extract_archive_dir: ${workspace_dir}
+    resampled_audios_dir: ${workspace_dir}/audios
     output_manifest_file: ${workspace_dir}/manifest0.json
   
   # 1 calculating durations
@@ -59,7 +40,12 @@ processors:
     duration_key: duration
     output_manifest_file: ${workspace_dir}/manifest1.json
 
-  # 4 dropping non alphabetical symbols
+  # 2 dropping non alphabetical symbols
   - _target_: sdp.processors.DropNonAlphabet
     alphabet: " \u0631\u0630\u062F\u062E\u062D\u062C\u062B\u062A\u0629\u0628\u0627\u0626\u0625\u0624\u0623\u0622\u0621\u064A\u0649\u0648\u0647\u0646\u0645\u0644\u0643\u0642\u0641\u063A\u0639\u0638\u0637\u0636\u0635\u0634\u0633\u0632\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652"
-    output_manifest_file: ${workspace_dir}/manifest.json
+    output_manifest_file: ${workspace_dir}/manifest2.json
+
+  # 3 changing paths to relative
+  - _target_: sdp.processors.ChangeToRelativePath
+    base_dir: ${workspace_dir}
+    output_manifest_file: ${final_manifest}

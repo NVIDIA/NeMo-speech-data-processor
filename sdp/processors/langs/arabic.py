@@ -83,14 +83,14 @@ class ArabicTextPreprocessor(BaseParallelProcessor):
             Processed punctuation marks are: Question mark, Exclamation mark, Colon,Semicolon,
             Hypen-Minus, Full stop, Comma, Arabic Question Mark, Arabic Comma, Arabic Semicolon.
         remove_tatweel (bool):      removes tatweel justification sign from the text. Defaults to False.
-        apply_nfkc (bool):   applies applies compatability decomposition followed by canonical composition.
-            Useful for replacing Arabic letters positional forms with general unicode and ensuring consistend diacritical marks ordering.
+        apply_nfkc (bool):   applies compatability decomposition followed by canonical composition.
+            Useful for replacing Arabic letters positional forms with general unicode and ensuring consistent diacritical marks ordering.
             Find more here https://docs.python.org/3/library/unicodedata.html#unicodedata.normalize.
             Defaults to False.
         normalize (bool): normalizes the input text. Normalization includes:    removing diacritical marks,
             normalization of letter `ALEF`-- `ALEF_HAMZA_BELOW`, `ALEF_HAMZA_ABOVE`, `ALEF_MADDA_ABOVE` will be replaced by `ALEF`,
             normalization of ligatures: `LAM_ALEF`, `LAM_ALEF_HAMZA_ABOVE`, `LAM_ALEF_HAMZA_BELOW`, `LAM_ALEF_MADDA_ABOVE` ligatures will be replaces by two letters `LAM` and `ALEF`.
-            letter `TEH_MARBUTA` will be replaced by `HEH` 
+            letter `TEH_MARBUTA` will be replaced by `HEH`. Defaults to False.
     """
     def __init__(
         self,

@@ -32,7 +32,7 @@ class ASRInference(BaseProcessor):
     ASR predictions will be saved in the ``pred_text`` key.
 
     Args:
-        pretrained_model (str): the name of the pretrained NeMo ASR model
+        pretrained_model (str): the name or the filepath of the pretrained NeMo ASR model
             which will be used to do inference.
         batch_size (int): the batch size to use for ASR inference. Defaults to 32.
 
@@ -44,26 +44,21 @@ class ASRInference(BaseProcessor):
     def __init__(
         self,
         pretrained_model: Optional[str]=None,
-        model_path: Optional[str]=None,
         batch_size: int = 32,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.script_path = Path(__file__).parents[1] / "nemo" / "transcribe_speech.py"
         self.pretrained_model = pretrained_model
-        self.model_path = model_path
         self.batch_size = batch_size
-        
-        if self.model_path==None and self.model_path==None:
-            raise RuntimeError("Either `pretrained_name` or `model_path` parameter must be specified.")
 
     def process(self):
         """This will add "pred_text" key into the output manifest."""
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
-        if self.pretrained_model:
+        if self.pretrained_model.endswith(".nemo"):
             subprocess.run(
                 f"python {self.script_path} "
-                f"pretrained_name={self.pretrained_model} "
+                f"model_path={self.pretrained_model} "
                 f"dataset_manifest={self.input_manifest_file} "
                 f"output_filename={self.output_manifest_file} "
                 f"batch_size={self.batch_size} ",
@@ -73,7 +68,7 @@ class ASRInference(BaseProcessor):
         else:
             subprocess.run(
                 f"python {self.script_path} "
-                f"model_path={self.model_path} "
+                f"pretrained_name={self.pretrained_model} "
                 f"dataset_manifest={self.input_manifest_file} "
                 f"output_filename={self.output_manifest_file} "
                 f"batch_size={self.batch_size} ",

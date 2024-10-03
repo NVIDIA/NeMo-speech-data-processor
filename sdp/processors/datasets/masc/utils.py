@@ -17,7 +17,7 @@ from typing import Optional
 from sdp.processors.datasets.commoncrawl.harv_utils import parse_hours
 from datetime import datetime
 
-def get_audio_segment(audio, start_time: float, end_time: float, output_audio_filepath: Optional[str]):
+def save_audio_segment(audio, start_time: float, end_time: float, output_audio_filepath: Optional[str]):
     """
     Extracts a segment from audio.
     

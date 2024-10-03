@@ -14,8 +14,7 @@ documentation: |
 
   * **raw_dataset_dir**:  path to the tarred dataset.
   * **workspace_dir**:    specify the workspace folder where all audio files will be stored.
-  * **data_split**:       should be "train", "dev", "test", "clean_train", "clean_dev", "clean_test" or "noisy_train", "noisy_dev", "noisy_test".
-                          "train" is same as "clean_train", "dev" is same as "clean_dev", "test" is same as "clean_test". These are added to support end-to-end tests.
+  * **data_split**:       should be on "train", "test", "dev", "invalidated", "other", "reported", "validated".
   * **remove_punctuation**: specify whether to remove punctuation or not. Should be "True" or "False". Defaults to False.
   * **remove_diacritics**: specify whether to remove tatweel marks or not. Should be "True" or "False". Defaults to True.
   * **remove_tatweel**: specify whether to remove punctuation or not. Should be "True" or "False". Defaults to True.

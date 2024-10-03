@@ -14,56 +14,105 @@
 
 import os
 from glob import glob
+from pathlib import Path
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import ffmpeg_convert
+from sdp.utils.common import extract_archive
 
 
 class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
+    """
+    Processor for creating initial manifest for MediaSpeech Arabic dataset.
+    Dataset link: https://www.openslr.org/108/.
+    Prior to calling processor download the tarred dataset and store it under `raw_dataset_dir/AR.tgz`.
+
+    Args:
+        raw_data_dir (str): The root directory of the dataset.
+        extract_archive_dir (str): Directory where the extracted data will be saved.
+        resampled_audios_dir (str): Directory where the resampled audio will be saved.
+        already_extracted (bool): If True, we will not try to extract the raw data. Defaults to False.
+        target_samplerate (int): Sample rate (Hz) to use for resampling. Defaults to 16000.
+        target_nchannels (int): Number of channels to create during resampling process. Defaults to 1.
+        output_manifest_sample_id_key (str): The field name to store sample ID. Defaults to "sample_id".
+        output_manifest_audio_filapath_key (str): The field name to store audio file path. Defaults to "audio_filepath".
+        output_manifest_text_key (str): The field name to store text. Defaults to "text".
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    Returns:
+        This processor generates an initial manifest file with the following fields::
+            {
+                "audio_filepath": <path to the audio file>,
+                "text": <text>
+            }
+    """
     def __init__(
         self,
-        data_dir: str,
-        output_audio_dir: str,
-        audio_file_extenstion: str = "flac",
-        text_file_extenstion: str = "txt",
+        raw_data_dir: str,
+        resampled_audios_dir: str,
+        extract_archive_dir: str,
+        already_extracted: bool = False,
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
+        output_manifest_sample_id_key: str = "sample_id",
+        output_manifest_audio_filapath_key: str = "audio_filepath",
+        output_manifest_text_key: str = "text",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.data_dir = data_dir
-        self.output_audio_dir = output_audio_dir
-        self.audio_file_extenstion = audio_file_extenstion
-        self.text_file_extenstion = text_file_extenstion
+        self.raw_data_dir = Path(raw_data_dir)
+        self.extract_archive_dir = extract_archive_dir
+        self.resampled_audios_dir = Path(resampled_audios_dir)
+        self.already_extracted = already_extracted
+        
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
+        
+        self.output_manifest_sample_id_key = output_manifest_sample_id_key
+        self.output_manifest_audio_filapath_key = output_manifest_audio_filapath_key
+        self.output_manifest_text_key = output_manifest_text_key
 
     def prepare(self):
-        os.makedirs(os.path.join(self.output_audio_dir), exist_ok=True)
+        # Extracting data (unless already done).
+        if not self.already_extracted:
+                tar_gz_filepath = Path(str(self.raw_data_dir)) / "AR.tgz"
+                if not tar_gz_filepath.exists:
+                    raise RuntimeError(
+                        f"Did not find any file matching {tar_gz_filepath}. "
+                        "For MediaSpeech dataset we cannot automatically download the data, so "
+                        "make sure to get the data from https://www.openslr.org/108/"
+                        "and put it in the 'raw_dataset_dir' folder."
+                    )
+
+                self.dataset_dir = Path(extract_archive(tar_gz_filepath, self.extract_archive_dir))
+        else:
+            logger.info("Skipping dataset untarring...")
+            self.dataset_dir = Path(self.extract_archive_dir) / "AR"
+        
+        os.makedirs(self.resampled_audios_dir, exist_ok=True)
 
     def read_manifest(self):
         data_entries = []
-        audio_filepaths = glob(f"{self.data_dir}/*{self.audio_file_extenstion}")
+        audio_filepaths = glob(f"{self.dataset_dir}/*.flac")
 
         for audio_filepath in audio_filepaths:
             sample_id = os.path.basename(audio_filepath).split(".")[0]
             text_filepaths = glob(
-                f"{self.data_dir}/{sample_id}.{self.text_file_extenstion}"
+                f"{self.dataset_dir}/{sample_id}.txt"
             )
 
             if len(text_filepaths) < 1:
                 logger.warning(
-                    f'Sample "{sample_id}" has no related .{self.text_file_extenstion} files. Skipping'
+                    f'Sample "{sample_id}" has no related .txt files. Skipping'
                 )
                 continue
 
             text_filepath = text_filepaths[0]
             if len(text_filepaths) > 1:
                 logger.warning(
-                    f"Sample \"{sample_id}\" has multiple related .{self.text_file_extenstion} files: {', '.join(text_filepaths)}. \
-                               Only first file will be used for parsing - {text_filepaths[0]}, other related .{self.text_file_extenstion} files will be skipped."
-                )
+                    f"Sample \"{sample_id}\" has multiple related .txt files: {', '.join(text_filepaths)}. \
+                               Only first file will be used for parsing - {text_filepaths[0]}, other related .txt files will be skipped.")
             data_entries.append(
                 {
                     "sample_id": sample_id,
@@ -78,21 +127,21 @@ class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
         data = {}
         sample_id = data_entry["sample_id"]
         # Convert source_audio_filepath to .wav
-        data["audio_filepath"] = os.path.join(
-            os.path.join(self.output_audio_dir, f"{sample_id}.wav"),
+        data[self.output_manifest_audio_filapath_key] = os.path.join(
+            os.path.join(self.resampled_audios_dir, f"{sample_id}.wav"),
         )
 
         ffmpeg_convert(
             jpg=data_entry["audio_filepath"],
-            wav=data["audio_filepath"],
+            wav=data[self.output_manifest_audio_filapath_key],
             ar=self.target_samplerate,
             ac=self.target_nchannels,
         )
 
-        if not os.path.exists(data["audio_filepath"]):
+        if not os.path.exists(data[self.output_manifest_audio_filapath_key]):
             return []
 
         text_file = open(data_entry["text_filepath"], "r")
-        data["text"] = text_file.read()
+        data[self.output_manifest_text_key] = text_file.read()
 
         return [DataEntry(data=data)]
