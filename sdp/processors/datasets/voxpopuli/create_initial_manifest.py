@@ -14,10 +14,11 @@
 
 import os
 import subprocess
-from pathlib import Path
+from pathlib import Path, PosixPath
 
 import sox
 from sox import Transformer
+from pydub import AudioSegment
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
