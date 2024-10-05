@@ -153,3 +153,129 @@ class CreateInitialManifestVoxpopuli(BaseParallelProcessor):
             "accent": accent,
         }
         return [DataEntry(data=data)]
+
+
+
+class CreateInitialManifestVoxpopuliUnlabelled(BaseParallelProcessor):
+    """Processor to create initial manifest for the VoxPopuli dataset unlabelled subset.
+
+    Dataset link: https://github.com/facebookresearch/voxpopuli/
+
+    If not already downloaded and segmented, downloads and segments raw VoxPopuli data for the specified language,
+    and creates an initial manifest with the reformated audiofilepaths and their durations.
+
+    .. note::
+        This processor will install a couple of Python packages, including
+        PyTorch, so it might be a good idea to run it in an isolated Python
+        environment. As unlabelled data is huge in volumes, the downloading,
+        segmenting and processing might take a long time.
+
+    Args:
+        raw_data_dir (str): the directory where the downloaded data will be/is saved.
+        language_id (str): the language of the data you wish to be downloaded and/or processed.
+            E.g., "en", "es", "it", "it_v2" etc.
+        resampled_audio_dir (str): the directory where the resampled audio
+            files will be stored.
+        audio_format (str): format in which new audio files will be stored.
+        target_samplerate (int): sample rate (Hz) to use for resampling.
+            Defaults to 16000.
+        target_nchannels (int): number of channels to create during resampling process.
+            Defaults to 1.
+        delete_raw_file (bool): whether initial .ogg files should be deleted or not.
+
+    Returns:
+        This processor generates an initial manifest file with the following fields::
+
+            {
+                "audio_filepath": <path to the audio file>,
+                "duration": <duration of the audio in seconds>,
+            }
+    """
+
+    def __init__(
+        self,
+        raw_data_dir: str,
+        language_id: str,
+        resampled_audio_dir: str,
+        audio_format: str = 'flac',
+        target_samplerate: int = 16000,
+        target_nchannels: int = 1,
+        delete_raw_file: bool = False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.raw_data_dir = Path(raw_data_dir)
+        self.language_id = language_id
+        self.audio_format = audio_format
+        self.target_samplerate = target_samplerate
+        self.target_nchannels = target_nchannels
+        self.delete_raw_file = delete_raw_file
+
+        self.resampled_audio_dir = Path(resampled_audio_dir, self.language_id.replace('_v2', ''))
+        self.output_manifest_file = Path(self.resampled_audio_dir, 'manifest.json').as_posix()
+
+    def prepare(self):
+        """Downloading data (unless already done)"""
+        os.makedirs(self.raw_data_dir, exist_ok=True)
+
+        if not (self.raw_data_dir / "unlabelled_data" / self.language_id.replace('_v2', '')).exists():
+            # TODO: some kind of isolated environment?
+            if not os.path.exists(self.raw_data_dir / 'voxpopuli'):
+                logger.info("Downloading voxpopuli and installing requirements")
+                subprocess.run(f"git clone {VOXPOPULI_URL} {self.raw_data_dir / 'voxpopuli'}", check=True, shell=True)
+            subprocess.run(
+                f"pip install -r {self.raw_data_dir / 'voxpopuli' / 'requirements.txt'}", check=True, shell=True
+            )
+            subprocess.run(f"pip install torch==1.13 torchaudio==0.13", check=True, shell=True)
+            subprocess.run(f"pip uninstall torch-tensorrt torchdata torchvision -y", check=True, shell=True)
+            if not os.path.exists(self.raw_data_dir / 'raw_audios' / self.language_id.replace('_v2', '')):
+                logger.info("Downloading raw audios")
+                subprocess.run(
+                    f"cd {self.raw_data_dir / 'voxpopuli'} && "
+                    f"python -m voxpopuli.download_audios --root {self.raw_data_dir} --subset {self.language_id}",
+                    check=True,
+                    shell=True,
+                )
+
+            logger.info("Segmenting the data")
+            subprocess.run(
+                f"cd {self.raw_data_dir / 'voxpopuli'} && "
+                f"python -m voxpopuli.get_unlabelled_data  --root {self.raw_data_dir} --subset {self.language_id}",
+                check=True,
+                shell=True,
+            )
+
+        if not self.resampled_audio_dir.exists():
+            self.resampled_audio_dir.mkdir(exist_ok=True, parents=True)
+
+    def read_manifest(self):
+        unlabelled_dir = Path(self.raw_data_dir, 'unlabelled_data')
+        return Path(unlabelled_dir, self.language_id.replace('_v2', '')).rglob('*.ogg')
+
+    def process_dataset_entry(self, data_entry: PosixPath):
+        tgt_audio_filepath = Path(self.resampled_audio_dir, data_entry.stem + f".{self.audio_format}")
+
+        try:
+            audio = AudioSegment.from_ogg(data_entry)
+
+            if audio.frame_rate != self.target_samplerate:
+                audio = audio.set_frame_rate(self.target_samplerate)
+
+            if audio.channels != self.target_nchannels:
+                audio = audio.set_channels(self.target_nchannels)
+
+            audio.export(tgt_audio_filepath, format=self.audio_format)
+
+            data = {
+                "audio_filepath": tgt_audio_filepath,
+                "duration": audio.duration_seconds,
+            }
+
+            if self.delete_raw_file:
+                os.remove(data_entry)
+
+        except Exception as e:
+            logger.warning(str(e) + " file: " + data_entry.as_posix())
+            data = None
+
+        return [DataEntry(data=data)]

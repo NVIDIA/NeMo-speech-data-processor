@@ -1,0 +1,37 @@
+documentation: |
+  Voxpopuli unlabelled subset
+  ###########################
+
+  This config can be used to prepare
+  `Voxpopuli dataset unlabelled subset <https://github.com/facebookresearch/voxpopuli/>`_
+  dataset in the NeMo format.
+
+  It creates initial manifest for the specified language. 
+
+  **Required arguments**.
+
+  * **raw_data_dir**: specify the directory where the downloaded data will be/is saved.
+  * **language_id**: specify the language of the data you wish to be downloaded and/or processed.
+  * **resampled_audio_dir**: specify the directory path, where new processed audios should be located.
+  * **delete_raw_file**: specify if the initial raw audio files should be deleted or not.
+
+
+  **Output format**.
+
+  This config dumps the final manifest at ``${resampled_audio_dir}/${language_id}/manifest.json``.
+  The output manifest contains the following fields:
+
+  * **audio_filepath (str)**: path to the processed audio file.
+  * **duration (float)**: duration of the audio in seconds.
+
+processors_to_run: all
+raw_data_dir: ???
+language_id: ???
+resampled_audio_dir: ???
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestVoxpopuliUnlabelled
+    raw_data_dir: ${raw_data_dir}
+    language_id: ${language_id}
+    resampled_audio_dir: ${resampled_audio_dir}
+    delete_raw_file: False
