@@ -197,7 +197,7 @@ class CreateInitialManifestVoxpopuliUnlabelled(BaseParallelProcessor):
         self,
         raw_data_dir: str,
         language_id: str,
-        resampled_audio_dir: str,
+        resampled_data_dir: str,
         audio_format: str = 'flac',
         target_samplerate: int = 16000,
         target_nchannels: int = 1,
@@ -212,8 +212,9 @@ class CreateInitialManifestVoxpopuliUnlabelled(BaseParallelProcessor):
         self.target_nchannels = target_nchannels
         self.delete_raw_file = delete_raw_file
 
-        self.resampled_audio_dir = Path(resampled_audio_dir, self.language_id.replace('_v2', ''))
-        self.output_manifest_file = Path(self.resampled_audio_dir, 'manifest.json').as_posix()
+
+        self.resampled_audio_dir = Path(resampled_data_dir, self.language_id.replace('_v2', ''), 'audios')
+        self.output_manifest_file = self.output_manifest_file.replace('_v2', '')
 
     def prepare(self):
         """Downloading data (unless already done)"""
@@ -268,7 +269,7 @@ class CreateInitialManifestVoxpopuliUnlabelled(BaseParallelProcessor):
             audio.export(tgt_audio_filepath, format=self.audio_format)
 
             data = {
-                "audio_filepath": tgt_audio_filepath,
+                "audio_filepath": tgt_audio_filepath.as_posix(),
                 "duration": audio.duration_seconds,
             }
 

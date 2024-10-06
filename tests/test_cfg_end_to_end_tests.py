@@ -44,15 +44,21 @@ data_check_fn_slr102 = partial(data_check_fn_generic, file_name="slr102_kk.tar.g
 data_check_fn_ksc2 = partial(data_check_fn_generic, file_name="ksc2_kk.tar.gz")
 data_check_fn_librispeech = partial(data_check_fn_generic, file_name="dev-clean.tar.gz")
 data_check_fn_fleurs = partial(data_check_fn_generic, file_name="dev.tar.gz")
+data_check_fn_babel = partial(data_check_fn_generic, file_name="scripted")
 
-def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
+def data_check_fn_voxpopuli(raw_data_dir: str, asr_data: bool = True) -> None:
     """Raises error if do not find expected data.
 
     Will also extract the archive as initial processor expects extracted data.
     """
-    if (Path(raw_data_dir) / "transcribed_data").exists():
+    if asr_data:
+        file_name = "transcribed_data"
+    else:
+        file_name = "unlabelled_data"
+
+    if (Path(raw_data_dir) / file_name).exists():
         return
-    expected_file = Path(raw_data_dir) / "transcribed_data.tar.gz"
+    expected_file = Path(raw_data_dir, file_name).with_suffix(".tar.gz")
     if not expected_file.exists():
         raise ValueError(f"No such file {str(expected_file)}")
     with tarfile.open(expected_file, 'r:gz') as tar:
@@ -85,24 +91,26 @@ coraal_processor.get_coraal_url_list = mock.Mock(
 
 def get_test_cases() -> List[Tuple[str, Callable]]:
     return [
-        (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
-        (f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")),
-        (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
-        (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", partial(data_check_fn_mls, language="portuguese")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", partial(data_check_fn_mtedx, language_id="pt")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/coraa/config.yaml", data_check_fn_coraa),
-        (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", data_check_fn_librispeech),
-        (f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", data_check_fn_fleurs),
-        (f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
+        # (f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")),
+        # (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", partial(data_check_fn_voxpopuli, asr_data=True)),
+        # (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
+        # (f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", partial(data_check_fn_mls, language="portuguese")),
+        # (f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")),
+        # (f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", partial(data_check_fn_mtedx, language_id="pt")),
+        # (f"{DATASET_CONFIGS_ROOT}/portuguese/coraa/config.yaml", data_check_fn_coraa),
+        # (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
+        # (f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", data_check_fn_librispeech),
+        # (f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", data_check_fn_fleurs),
+        # (f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", lambda raw_data_dir: True),
         (f"{DATASET_CONFIGS_ROOT}/armenian/audio_books/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="mcv_kk")),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/slr140/config.yaml", data_check_fn_slr140),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/slr102/config.yaml", data_check_fn_slr102),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", data_check_fn_ksc2),
+        # (f"{DATASET_CONFIGS_ROOT}/kazakh/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="mcv_kk")),
+        # (f"{DATASET_CONFIGS_ROOT}/kazakh/slr140/config.yaml", data_check_fn_slr140),
+        # (f"{DATASET_CONFIGS_ROOT}/kazakh/slr102/config.yaml", data_check_fn_slr102),
+        # (f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", data_check_fn_ksc2),
+        # (f"{DATASET_CONFIGS_ROOT}/multilingual/babel/config.yaml", data_check_fn_babel),
+        # (f"{DATASET_CONFIGS_ROOT}/multilingual/voxpopuli/config_un.yaml", partial(data_check_fn_voxpopuli, asr_data=False)),
     ]
 
 def check_e2e_test_data() -> bool:

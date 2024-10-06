@@ -19,6 +19,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
+    RemoveEmojis
 )
 
 test_params_list = []
@@ -86,6 +87,17 @@ test_params_list.extend(
             {"regex_params_list": [{"pattern": "\s<.*>\s", "repl": " "}]},
             {"text": "hello <cough> world"},
             {"text": "hello world"},
+        ),
+    ]
+)
+
+test_params_list.extend(
+    [
+        (
+            RemoveEmojis,
+            {"text_key": "text"},
+            {"text": "The weather is perfect ☀️, and the trails are calling! Let's enjoy the beauty of nature and make some unforgettable memories 🌲🌿."},
+            {"text": "The weather is perfect, and the trails are calling! Let's enjoy the beauty of nature and make some unforgettable memories."},
         ),
     ]
 )

@@ -25,13 +25,15 @@ documentation: |
   * **duration (float)**: duration of the audio in seconds.
 
 processors_to_run: all
-raw_data_dir: ???
-language_id: ???
-resampled_audio_dir: ???
+workspace_dir: ???
+language_id: hu_v2
+resampled_data_dir: ${workspace_dir}/unlabelled_processed/
+final_manifest: ${workspace_dir}/unlabelled_processed/${language_id}/manifest.json
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestVoxpopuliUnlabelled
-    raw_data_dir: ${raw_data_dir}
+    raw_data_dir: ${workspace_dir}
     language_id: ${language_id}
-    resampled_audio_dir: ${resampled_audio_dir}
+    resampled_data_dir: ${resampled_data_dir}
     delete_raw_file: False
+    output_manifest_file: ${final_manifest}

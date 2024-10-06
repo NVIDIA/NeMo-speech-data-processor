@@ -52,6 +52,7 @@ from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
     CreateInitialManifestVoxpopuli,
     CreateInitialManifestVoxpopuliUnlabelled,
 )
+from sdp.processors.datasets.babel.create_initial_manifest import CreateInitialManifestBabel
 from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )

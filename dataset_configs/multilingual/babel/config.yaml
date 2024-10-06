@@ -38,16 +38,16 @@ documentation: |
   * **duration (float)**: duration of the audio in seconds.
 
 processors_to_run: all
-raw_data_dir: ???
-data_type: ???
-resampled_audio_dir: ???
-data_split: ???
-output_manifest_file: ???
+workspace_dir: ???
+data_type: scripted
+resampled_audio_dir: ${workspace_dir}/processed/${data_type}/${data_split}
+data_split: training
+final_manifest: ${workspace_dir}/processed/${data_type}/${data_split}_manifest.json
 
 processors:
   - _target_: sdp.processors.CreateInitialManifestBabel
-    raw_data_dir: ${raw_data_dir}
+    raw_data_dir: ${workspace_dir}
     data_type: ${data_type}
     data_split: ${data_split}
     resampled_audio_dir: ${resampled_audio_dir}
-    output_manifest_file: ${output_manifest_file}
+    output_manifest_file: ${final_manifest}
