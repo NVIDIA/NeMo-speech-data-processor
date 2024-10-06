@@ -40,6 +40,9 @@ VoxPopuli
 .. autodata:: sdp.processors.CreateInitialManifestVoxpopuli
    :annotation:
 
+.. autodata:: sdp.processors.CreateInitialManifestVoxpopuliUnlabelled
+   :annotation:
+
 .. autodata:: sdp.processors.NormalizeFromNonPCTextVoxpopuli
    :annotation:
 
@@ -58,8 +61,13 @@ Librispeech
 
 .. autodata:: sdp.processors.CreateInitialManifestLibrispeech
    :annotation:
-   
 
+Babel
+'''''''''''
+
+.. autodata:: sdp.processors.CreateInitialManifestBabel
+   :annotation:
+   
 SLR83
 '''''
 
@@ -158,6 +166,18 @@ Data modifications
 .. autodata:: sdp.processors.InverseNormalizeText
    :annotation:
 
+.. autodata:: sdp.processors.RandomSegment
+   :annotation:
+
+.. autodata:: sdp.processors.UntarAudios
+   :annotation:
+
+.. autodata:: sdp.processors.ExtractFilesFromTar
+   :annotation:
+
+.. autodata:: sdp.processors.RemoveEmojis
+   :annotation:
+
 Data filtering
 ''''''''''''''
 
@@ -235,6 +255,9 @@ Data filtering
    :annotation:
 
 .. autodata:: sdp.processors.DropRepeatedFields
+   :annotation:
+
+.. autodata:: sdp.processors.DropCorrupted
    :annotation:
 
 

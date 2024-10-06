@@ -92,12 +92,16 @@ VoxPopuli
 * **Spanish**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/spanish_pc/voxpopuli/config.yaml>`__ |
   :doc:`documentation <config-docs/spanish_pc/voxpopuli/config>`
+* **Multilingual**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/multilingual/voxpopuli/config_un.yaml>`__ |
+  :doc:`documentation <config-docs/multilingual/voxpopuli/config_un>`
 
 .. toctree::
    :hidden:
 
    config-docs/italian/voxpopuli/config
    config-docs/spanish_pc/voxpopuli/config
+   config-docs/multilingual/voxpopuli/config_un
 
 Fisher
 ~~~~~~
@@ -236,6 +240,22 @@ MTEDx
    :hidden:
 
    config-docs/portuguese/mtedx/config
+
+Babel
+~~~~~~
+
+**Dataset link:** https://www.ldc.upenn.edu
+
+**Supported configs**.
+
+* **Multilingual**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/multilingual/babel/config.yaml>`__ |
+  :doc:`documentation <config-docs/multilingual/babel/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/multilingual/babel/config
 
 Kazakh Speech Dataset (SLR140)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
