@@ -30,6 +30,7 @@ templates_path = ["_templates"]
 
 autodoc_mock_imports = [
     "soundfile",
+    "webvtt"
 ]
 
 _skipped_autodoc_mock_imports = []
@@ -59,7 +60,6 @@ for req_path in sorted(list(glob.glob("../../requirements/*.txt"))):
 
 #
 # -- General configuration ------------------------------------------------
-
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -167,3 +167,4 @@ nitpick_ignore = [
     ('py:class', 'sdp.processors.base_processor.DataEntry'),
 ]
 # nitpick_ignore_regex = [('py:class', '*')]
+
