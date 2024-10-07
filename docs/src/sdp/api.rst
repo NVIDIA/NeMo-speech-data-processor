@@ -86,14 +86,14 @@ Coraa
 ..       To control the number of processors we support.
 
 FLEURS
-''''''   
+''''''
 
 .. autodata:: sdp.processors.CreateInitialManifestFleurs
    :annotation:
 
 
 MASC
-'''   
+''''''
 
 .. autodata:: sdp.processors.CreateInitialManifestMASC
    :annotation:
