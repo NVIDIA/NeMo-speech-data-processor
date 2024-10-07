@@ -1,4 +1,4 @@
-# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
     Processor for creating initial manifest for MediaSpeech Arabic dataset.
     Dataset link: https://www.openslr.org/108/.
     Prior to calling processor download the tarred dataset and store it under `raw_dataset_dir/AR.tgz`.
-
+    
     Args:
         raw_data_dir (str): The root directory of the dataset.
         extract_archive_dir (str): Directory where the extracted data will be saved.
@@ -41,11 +41,11 @@ class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Returns:
-        This processor generates an initial manifest file with the following fields:
+        This processor generates an initial manifest file with the following fields::
         
             {
                 "audio_filepath": <path to the audio file>,
-                "text": <text>
+                "text": <text>,
             }
     """
     def __init__(

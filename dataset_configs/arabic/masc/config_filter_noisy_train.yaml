@@ -1,6 +1,6 @@
 documentation: |
-  Massive Arabic Speech Corpus (MASC)
-  ###################################
+  Massive Arabic Speech Corpus (MASC): Extracting clean data from noisy train subset.
+  ###################################################################################
   Dataset must be downloaded manually prior.
 
   The config can be used to extract additional clean train data from MASC noisy train subset.
