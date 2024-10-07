@@ -56,10 +56,10 @@ processors:
   # 0 creating manifest {sample_id, audio_path}
   - _target_: sdp.processors.CreateInitialManifestMCV
     raw_data_dir: ${dataset_dir}
-    extract_archive_dir: ${dataset_dir}
+    extract_archive_dir: ${workspace_dir}
     resampled_audio_dir: ${manifest_dir}/resampled_audios
     data_split: ${data_split}
-    already_extracted: True
+    already_extracted: False
     language_id: ar
     target_samplerate: 16000
     target_nchannels: 1

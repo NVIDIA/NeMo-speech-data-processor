@@ -62,9 +62,9 @@ processors:
   - _target_: sdp.processors.CreateInitialManifestMASC
     raw_data_dir: ${dataset_dir}
     data_split: ${data_split}
-    extract_archive_dir: ${dataset_dir}
+    extract_archive_dir: ${workspace_dir}
     resampled_audios_dir: ${manifest_dir}/resampled_audios
-    already_extracted: True
+    already_extracted: False
     verbose : True
     output_manifest_file: ${manifest_dir}/manifest0.json
 
