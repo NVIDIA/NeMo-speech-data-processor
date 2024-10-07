@@ -2,7 +2,6 @@ documentation: |
   MediaSpeech
   ############
   Dataset must be downloaded manually prior.
-  https://www.openslr.org/108/
 
   The config creates initial manifest for MediaSpeech dataset.
 
@@ -27,7 +26,7 @@ workspace_dir: ??
 final_manifest: ${workspace_dir}/manifest.json
 
 processors:
-  # 0 creating manifest {sample_id, audio_path}
+  # 0 creating initial manifest
   - _target_: sdp.processors.CreateInitialManifestMediaSpeech
     raw_data_dir: ${dataset_dir}
     extract_archive_dir: ${workspace_dir}
