@@ -98,6 +98,19 @@ MASC
 .. autodata:: sdp.processors.CreateInitialManifestMASC
    :annotation:
 
+MediaSpeech
+''''''''''''
+
+.. autodata:: sdp.processors.CreateInitialManifestMediaSpeech
+   :annotation:
+
+
+HuggingFace Datasets
+''''''''''''''''''''
+
+.. autodata:: sdp.processors.CreateInitialManifestHuggingFace
+   :annotation:
+
 Lhotse processors
 #################
 

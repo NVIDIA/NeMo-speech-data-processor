@@ -177,13 +177,20 @@ Few-shot Learning Evaluation of Universal Representations of Speech (FLEURS)
 
 **Dataset link:** https://huggingface.co/datasets/google/fleurs
 
-`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/fleurs/config.yaml>`__ |
-:doc:`documentation <config-docs/armenian/fleurs/config>`
+**Supported configs**.
 
+* **Armenian**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/fleurs/config.yaml>`__ |
+  :doc:`documentation <config-docs/armenian/fleurs/config>`
+* **Arabic**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/arabic/fleurs/config.yaml>`__ |
+  :doc:`documentation <config-docs/arabic/fleurs/config>`
+  
 .. toctree::
    :hidden:
-
+   
    config-docs/armenian/fleurs/config
+   config-docs/arabic/fleurs/config
 
 English LibriSpeech (ELS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -273,10 +280,41 @@ Massive Arabic Speech Corpus (MASC)
 
 **Dataset link:** https://ieee-dataport.org/open-access/masc-massive-arabic-speech-corpus
 
-`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/arabic/masc/config.yaml>`__ |
-:doc:`documentation <config-docs/arabic/masc/config>`
+* **MASC**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/arabic/masc/config.yaml>`__ |
+   :doc:`documentation <config-docs/arabic/masc/config>`
+* **MASC filtering noisy subset**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/arabic/masc/config_filter_noisy_train.yaml>`__ |
+   :doc:`documentation <config-docs/arabic/masc/config_filter_noisy_train>`
 
 .. toctree::
    :hidden:
 
    config-docs/arabic/masc/config
+   config-docs/arabic/masc/config_filter_noisy_train
+
+MediaSpeech
+~~~~~~~~~~~~
+
+**Dataset link:** https://www.openslr.org/108/
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/arabic/mediaspeech/config.yaml>`__ |
+:doc:`documentation <config-docs/arabic/mediaspeech/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/arabic/mediaspeech/config
+
+Tarteel AI's EveryAyah
+~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://huggingface.co/datasets/tarteel-ai/everyayah
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/arabic/everyayah/config.yaml>`__ |
+:doc:`documentation <config-docs/arabic/everyayah/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/arabic/everyayah/config

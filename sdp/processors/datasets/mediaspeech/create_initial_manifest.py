@@ -41,7 +41,8 @@ class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Returns:
-        This processor generates an initial manifest file with the following fields::
+        This processor generates an initial manifest file with the following fields:
+        
             {
                 "audio_filepath": <path to the audio file>,
                 "text": <text>
