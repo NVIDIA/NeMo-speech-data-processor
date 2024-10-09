@@ -85,6 +85,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     ExtractFilesFromTar,
     RandomSegment,
     UntarAudios,
+    RemoveEmojis
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,
