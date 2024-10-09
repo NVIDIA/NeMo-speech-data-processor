@@ -13,7 +13,7 @@ sox
 tqdm
 webvtt-py
 wget
-
+pydub
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
 # for some processers, additionally nemo_text_processing is required
 # for mcv: apt-get update && apt-get upgrade -y && apt-get install -y sox libsox-fmt-all
