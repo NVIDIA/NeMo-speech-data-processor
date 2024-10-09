@@ -42,7 +42,7 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         self.extension = extension
 
     def read_manifest(self):
-        output_file = [str(self.raw_data_dir / file) for file in self.raw_data_dir.rglob('*.' + self.extension)]
+        output_file = [file.as_posix() for file in self.raw_data_dir.rglob('*.' + self.extension)]
         return output_file
 
     def process_dataset_entry(self, data_entry):

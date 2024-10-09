@@ -50,7 +50,9 @@ from sdp.processors.datasets.slr140.create_initial_manifest import (
 )
 from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
     CreateInitialManifestVoxpopuli,
+    CreateInitialManifestVoxpopuliUnlabelled,
 )
+from sdp.processors.datasets.babel.create_initial_manifest import CreateInitialManifestBabel
 from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
@@ -80,6 +82,10 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
+    ExtractFilesFromTar,
+    RandomSegment,
+    UntarAudios,
+    RemoveEmojis
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,
@@ -97,6 +103,7 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropOnAttribute,
     PreserveByValue,
     DropRepeatedFields,
+    DropCorrupted,
 )
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,

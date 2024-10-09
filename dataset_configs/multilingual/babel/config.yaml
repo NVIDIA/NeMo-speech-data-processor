@@ -1,0 +1,53 @@
+documentation: |
+  IARPA Babel Dataset
+  ###################
+
+  This config is designed for the languages of the IARPA Babel Dataset available at https://catalog.ldc.upenn.edu.
+
+  It creates initial manifest for the specified data type and data split. 
+  Further data processing steps should be performed based on the specific langauge.
+
+  **Required arguments**.
+
+  * **raw_data_dir**: specify path of the directory downloaded from LDC.
+  * **data_type**: should be "conversational" or "scripted".
+  * **resampled_audio_dir**: specify the directory path, where new processed audios should be located.
+  * **data_split**: should be "training", "untranscribed-training", "sub-train", "dev" or "eval".
+  * **output_manifest_file**: specify output manifest filepath.
+
+  **Output format**.
+
+  This config dumps the final manifest at ``${output_manifest_file}``.
+  The output manifest contains the following fields:
+
+  * **outputFn (str)**: initial audio filename.
+  * **sessID (str)**: session ID of the recording.
+  * **date (str)**: date of the recording.
+  * **time (str)**: time of the recording.
+  * **spkrCode (str)**: speaker ID.
+  * **lineType (str)**: type of the line (inline or outline).
+  * **dialect (str)**: dialect of the speaker.
+  * **gen (str)**: gender of the speaker.
+  * **envType (str)**: environment (i.e., home, office, etc.).
+  * **age (str)**: age of the speaker.
+  * **network (str)**: name of the telecommunications network.
+  * **phoneModel (str)**: model of the phone.
+  * **sampleCount (str)**: count of the sample.
+  * **sampleRate (str)**: original sample rate of the recording.
+  * **audio_filepath (str)**: path to the processed audio file.
+  * **duration (float)**: duration of the audio in seconds.
+
+processors_to_run: all
+workspace_dir: ???
+data_type: scripted
+resampled_audio_dir: ${workspace_dir}/processed/${data_type}/${data_split}
+data_split: training
+final_manifest: ${workspace_dir}/processed/${data_type}/${data_split}_manifest.json
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestBabel
+    raw_data_dir: ${workspace_dir}
+    data_type: ${data_type}
+    data_split: ${data_split}
+    resampled_audio_dir: ${resampled_audio_dir}
+    output_manifest_file: ${final_manifest}

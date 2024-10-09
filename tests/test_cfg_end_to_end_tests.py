@@ -15,6 +15,7 @@ import json
 import os
 import shutil
 import tarfile
+import logging
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Tuple
@@ -44,15 +45,21 @@ data_check_fn_slr102 = partial(data_check_fn_generic, file_name="slr102_kk.tar.g
 data_check_fn_ksc2 = partial(data_check_fn_generic, file_name="ksc2_kk.tar.gz")
 data_check_fn_librispeech = partial(data_check_fn_generic, file_name="dev-clean.tar.gz")
 data_check_fn_fleurs = partial(data_check_fn_generic, file_name="dev.tar.gz")
+data_check_fn_babel = partial(data_check_fn_generic, file_name="scripted")
 
-def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
+def data_check_fn_voxpopuli(raw_data_dir: str, asr_data: bool = True) -> None:
     """Raises error if do not find expected data.
 
     Will also extract the archive as initial processor expects extracted data.
     """
-    if (Path(raw_data_dir) / "transcribed_data").exists():
+    if asr_data:
+        file_name = "transcribed_data"
+    else:
+        file_name = "unlabelled_data"
+
+    if (Path(raw_data_dir) / file_name).exists():
         return
-    expected_file = Path(raw_data_dir) / "transcribed_data.tar.gz"
+    expected_file = Path(raw_data_dir, file_name).with_suffix(".tar.gz")
     if not expected_file.exists():
         raise ValueError(f"No such file {str(expected_file)}")
     with tarfile.open(expected_file, 'r:gz') as tar:
@@ -87,7 +94,7 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
     return [
         (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
         (f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")),
-        (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
+        (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", partial(data_check_fn_voxpopuli, asr_data=True)),
         (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
         (f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", partial(data_check_fn_mls, language="portuguese")),
         (f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")),
@@ -103,7 +110,17 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         (f"{DATASET_CONFIGS_ROOT}/kazakh/slr140/config.yaml", data_check_fn_slr140),
         (f"{DATASET_CONFIGS_ROOT}/kazakh/slr102/config.yaml", data_check_fn_slr102),
         (f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", data_check_fn_ksc2),
+        (f"{DATASET_CONFIGS_ROOT}/multilingual/babel/config.yaml", data_check_fn_babel),
+        (f"{DATASET_CONFIGS_ROOT}/multilingual/voxpopuli/config_un.yaml", partial(data_check_fn_voxpopuli, asr_data=False)),
     ]
+
+def get_test_names():
+    config_names = [
+        Path(t[0]).parent.relative_to(DATASET_CONFIGS_ROOT).as_posix() for t in get_test_cases()
+        ]
+
+    return config_names
+
 
 def check_e2e_test_data() -> bool:
     """
@@ -124,7 +141,6 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
         return test_data_root
 
     import boto3
-    import logging
 
     s3_resource = boto3.resource(
         "s3",
@@ -145,27 +161,43 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
 
     return os.path.abspath("test_data")
 
-@pytest.mark.skipif(
-    not check_e2e_test_data(),
-    reason="Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY "
-    "and AWS_ACCESS_KEY to run e2e config tests",
-)
-@pytest.mark.parametrize("config_path,data_check_fn", get_test_cases())
-def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
+@pytest.fixture(scope="module", params=get_test_cases(), ids=get_test_names())
+def setup_data(request):
+
+    if not check_e2e_test_data():
+        pytest.fail("Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY "
+    "and AWS_ACCESS_KEY to run e2e config tests")
+        
+    config_path, data_check_fn  = request.param
+
+    rel_path_from_root = Path(config_path).parent.relative_to(DATASET_CONFIGS_ROOT)
+    test_data_root = get_e2e_test_data_path(str(rel_path_from_root))
+    data_dir = Path(test_data_root, rel_path_from_root)
+
+    yield config_path, data_check_fn, data_dir
+    shutil.rmtree(data_dir)
+
+
+def test_data_availability(setup_data):
+
+    _, data_check_fn, data_dir = setup_data
+    try:
+        data_check_fn(raw_data_dir=data_dir)
+    except ValueError as e:
+        pytest.fail(f"Test data not available: {str(e)}")
+
+    reference_manifest = Path(data_dir, "test_data_reference.json")
+
+    if not reference_manifest.exists():
+        pytest.fail(f"Reference manifest not found: {reference_manifest}")
+
+@pytest.mark.dependency(depends=['test_data_availability'])
+def test_configs(setup_data, tmp_path):
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
     # to have the same structure (e.g. <lang>/<dataset>)
-    rel_path_from_root = Path(config_path).parent.relative_to(DATASET_CONFIGS_ROOT)
-    test_data_root = Path(get_e2e_test_data_path(str(rel_path_from_root)))
- 
-    # run data_check_fn - it will raise error if the expected test data is not found
-    try:
-        data_check_fn(raw_data_dir=str(test_data_root / rel_path_from_root))
-    except ValueError as e:
-        pytest.skip(f"Test data not available: {str(e)}")
 
-    reference_manifest = test_data_root / rel_path_from_root / "test_data_reference.json"
-    if not reference_manifest.exists():
-        pytest.skip(f"Reference manifest not found: {reference_manifest}")
+    config_path, _, data_dir = setup_data
+    reference_manifest = data_dir / "test_data_reference.json"
 
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
@@ -173,7 +205,7 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
     cfg.workspace_dir = str(tmp_path)
     cfg.final_manifest = str(tmp_path / "final_manifest.json")
     cfg.data_split = cfg.get("data_split", "train")
-    cfg.processors[0].raw_data_dir = str(test_data_root / rel_path_from_root)
+    cfg.processors[0].raw_data_dir = data_dir.as_posix()
 
     if "already_downloaded" in cfg["processors"][0]:
         cfg["processors"][0]["already_downloaded"] = True
@@ -195,7 +227,6 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
             generated_data.pop("audio_filepath", None)
             assert reference_data == generated_data
 
- # if CLEAN_UP_TMP_PATH is set to non-0 value, we will delete tmp_path
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
         shutil.rmtree(tmp_path)
 

@@ -1,0 +1,35 @@
+processors_to_run: all
+manifest: ???
+resampled_audio_dir: ???
+out_manifest: ???
+char_rate: 10
+min_duration: 1.5
+max_duration: 40.1
+
+processors:
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+    input_manifest_file: ${manifest}
+
+  - _target_: sdp.processors.RandomSegment
+    min_duration: ${min_duration}
+    max_duration: ${max_duration}
+    resampled_audio_dir: ${resampled_audio_dir}
+    audio_format: flac
+
+  - _target_: sdp.processors.ASRInference
+    pretrained_model: nvidia/parakeet-ctc-0.6b
+
+  - _target_: sdp.processors.DropHighLowCharrate
+    low_charrate_threshold: ${char_rate}
+    text_key: pred_text
+    high_charrate_threshold: 10000
+
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    fields_to_keep:
+      - audio_filepath
+      - duration
+
+  - _target_: sdp.processors.DropCorrupted
+    output_manifest_file: ${out_manifest}

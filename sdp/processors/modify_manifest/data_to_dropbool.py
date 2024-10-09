@@ -16,6 +16,7 @@ import collections
 import re
 import os 
 import json
+import soundfile
 from operator import eq, ge, gt, le, lt, ne
 from typing import List, Union
 
@@ -858,6 +859,39 @@ class DropRepeatedFields(BaseParallelProcessor):
         return [DataEntry(data=data_entry, metrics=0)]
     
     def finalize(self, metrics: List):
+        total_counter = 0
+        for counter in metrics:
+            total_counter += counter
+        logger.info("Dropped %d utterances", total_counter)
+        super().finalize(metrics)
+
+
+class DropCorrupted(BaseParallelProcessor):
+    """Drops audios if they are corrupted or empty.
+    Args:
+        audio_filepath_key (str) (Optional): which key to use for audio filepaths. Defaults to ``audio_filepath``
+    """
+
+    def __init__(
+        self,
+        audio_filepath_key: str = 'audio_filepath',
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.audio_filepath_key = audio_filepath_key
+
+    def process_dataset_entry(self, data_entry) -> List:
+        try:
+            data, _ = soundfile.read(data_entry[self.audio_filepath_key])
+        except:
+            return [DataEntry(data=None, metrics=1)]
+
+        if sum(data) == 0:
+            return [DataEntry(data=None, metrics=1)]
+
+        return [DataEntry(data=data_entry, metrics=0)]
+
+    def finalize(self, metrics):
         total_counter = 0
         for counter in metrics:
             total_counter += counter

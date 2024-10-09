@@ -1,3 +1,3 @@
-accelerate
-transformers>=0.2.1
+accelerate==0.34.2
+transformers==4.39
 huggingface_hub>=0.20.3,<0.24.0 # https://github.com/NVIDIA/NeMo/issues/9793

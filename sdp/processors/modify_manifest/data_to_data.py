@@ -15,10 +15,18 @@
 import collections
 import os
 import re
+import json
+import random
+import itertools
+import tarfile
+from tqdm import tqdm
 from typing import Dict, List
+from pathlib import Path, PosixPath
 
 import soundfile
 from sox import Transformer
+from pydub import AudioSegment
+from tqdm.contrib.concurrent import process_map
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
@@ -690,3 +698,291 @@ class InverseNormalizeText(BaseParallelProcessor):
             data_entry[self.input_text_key], verbose=self.verbose
         )
         return [DataEntry(data=data_entry)]
+
+
+class RandomSegment(BaseParallelProcessor):
+    """
+    Processor that randomly segments mini-audios from the main audio, durations of which are uniformely distributed from ``min_duration`` to ``max_duration``.
+    New audios are saved in the following location ``<resampled_audio_dir>/<audio_file>_segment_num.<audio_format>``
+
+    Args:
+        min_duration (float): minimum duration for the newly segmented audio.
+        max_duration (float): maximum duration for the newly segmented audio.
+        resampled_audio_dir (str) (Optional): directory where the resampled audio files will be stored.
+        audio_format (str) (Optional): key to get audio filepath from data entry. Defaults to None.
+        audio_filepath_key (str) (Optional): format of the output audio files. Defaults to `wav`. Defaults to ``audio_filepath``
+        save_other_part (bool) (Optional): whether to save the residual part of the audio after segmentation. Defaults to True.
+        random_seed (int) (Optional): seed for ``random.uniform``. Defaults to 1000.
+        target_samplerate (int) (Optional): the target sample rate for the resampled audio. Defaults to 16000.
+        target_nchannels (int) (Optional): the target number of channels for the resampled audio. Defaults to 1.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        min_duration: float,
+        max_duration: float,
+        resampled_audio_dir: str,
+        audio_format: str = None,
+        audio_filepath_key: str = 'audio_filepath',
+        save_other_part: bool = True,
+        random_seed: int = 1000,
+        target_samplerate: int = 16000,
+        target_nchannels: int = 1,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.min_duration = min_duration
+        self.max_duration = max_duration
+        self.resampled_audio_dir = resampled_audio_dir
+        self.audio_format = audio_format
+        self.audio_filepath_key = audio_filepath_key
+        self.save_other_part = save_other_part
+        self.target_samplerate = target_samplerate
+        self.target_nchannels = target_nchannels
+        random.seed(random_seed)
+
+    def process_dataset_entry(self, data_entry):
+        data_entries = []
+
+        audio = AudioSegment.from_file(data_entry[self.audio_filepath_key])
+        duration = audio.duration_seconds
+
+        if audio.frame_rate != self.target_samplerate:
+            audio = audio.set_frame_rate(self.target_samplerate)
+
+        if audio.channels != self.target_nchannels:
+            audio = audio.set_channels(self.target_nchannels)
+
+        audio_format = self.audio_format if self.audio_format else data_entry[self.audio_filepath_key].suffix
+
+        Path(self.resampled_audio_dir).mkdir(parents=True, exist_ok=True)
+
+        segment_num = 0
+
+        if duration - self.min_duration < self.min_duration:
+            new_filename = Path(self.resampled_audio_dir) / Path(data_entry[self.audio_filepath_key]).stem
+            new_filename = new_filename.as_posix() + f'_{segment_num}.{audio_format}'
+
+            audio.export(new_filename, format=self.audio_format)
+
+            new_data_entry = data_entry.copy()
+            new_data_entry[self.audio_filepath_key] = new_filename
+
+            return [DataEntry(data=new_data_entry)]
+
+        while True:
+            rand_dur = random.uniform(self.min_duration, min(self.max_duration, duration) - self.min_duration)
+            segmented_part = audio[: int(rand_dur * 1000)]
+
+            new_filename = Path(self.resampled_audio_dir) / Path(data_entry[self.audio_filepath_key]).stem
+            new_filename = new_filename.as_posix() + f'_{segment_num}.{audio_format}'
+
+            segmented_part.export(new_filename, format=self.audio_format)
+
+            new_data_entry = data_entry.copy()
+            new_data_entry[self.audio_filepath_key] = new_filename
+            new_data_entry['duration'] = round(rand_dur, 2)
+
+            data_entries.append(DataEntry(data=new_data_entry))
+            segment_num += 1
+
+            if (duration - rand_dur) > self.max_duration:
+                audio = audio[int(rand_dur * 1000) :]
+                duration = duration - rand_dur
+                continue
+
+            if self.save_other_part:
+                other_part = audio[int(rand_dur * 1000) :]
+                new_filename = Path(self.resampled_audio_dir) / Path(data_entry[self.audio_filepath_key]).stem
+                new_filename = new_filename.as_posix() + f'_{segment_num}.{audio_format}'
+
+                other_part.export(new_filename, format=self.audio_format)
+
+                new_data_entry = data_entry.copy()
+                new_data_entry[self.audio_filepath_key] = new_filename
+                new_data_entry['duration'] = round(duration - rand_dur, 2)
+                data_entries.append(DataEntry(data=new_data_entry))
+
+            break
+
+        return data_entries
+
+
+class UntarAudios(BaseParallelProcessor):
+    """Processor that extracts the files from .tar files in ``tar_dir`` to ``resampled_audio_dir``.
+
+    Args:
+        tar_dir (str): directory that contains tarred files.
+        resampled_audio_dir (str): directory where extracted files will be located.
+        remove_tars (bool) (Optional): whether tarred file should be removed after files extraction.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        tar_dir: str,
+        resampled_audio_dir: str,
+        remove_tars: bool = False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.tar_dir = Path(tar_dir)
+        self.resampled_audio_dir = resampled_audio_dir
+        self.remove_tars = remove_tars
+
+    def read_manifest(self):
+        for file in self.tar_dir.glob('*.tar'):
+            yield file
+
+    def process(self):
+        for manifest_chunk in self._chunk_manifest():
+            # this will unroll all inner lists
+            data = itertools.chain(
+                *process_map(
+                    self.process_dataset_entry,
+                    manifest_chunk,
+                    max_workers=self.max_workers,
+                    chunksize=self.chunksize,
+                )
+            )
+
+    def process_dataset_entry(self, data_entry: PosixPath):
+        with tarfile.open(data_entry, 'r') as tar:
+            tar.extractall(self.resampled_audio_dir)
+
+        if self.remove_tars:
+            os.remove(data_entry)
+
+
+class ExtractFilesFromTar(BaseParallelProcessor):
+    """Processor that extracts the files from ``input_manifest_file`` to ``extract_to_dir``.
+
+    Args:
+        tar_dir (str): directory that contains tarred files.
+        extract_to_dir (str): directory where extracted files will be located.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        tar_dir: str,
+        extract_to_dir: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.tar_dir = Path(tar_dir)
+        self.extract_to_dir = extract_to_dir
+
+    def read_manifest(self):
+        if self.input_manifest_file is None:
+            raise ValueError("Manifest with files should be provided!")
+
+        logger.info('Reading Manifest...')
+
+        tar_entries = collections.defaultdict(list)
+
+        with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
+            for line in tqdm(fin):
+                entry = json.loads(line)
+                tar_entries[entry['shard_id']].append(entry)
+
+        for shard_id, entries in tar_entries.items():
+            yield (shard_id, entries)
+
+    def process_dataset_entry(self, data_entry):
+        shard_id, entries = data_entry
+
+        logger.info('Working on shard_id ', shard_id)
+
+        tar_file = Path(self.tar_dir, f"audio_{shard_id}").with_suffix('.tar')
+
+        extracted_entries = []
+
+        with tarfile.open(tar_file, 'r') as tar:
+            for entry in tqdm(entries):
+                extracted_path = Path(self.extract_to_dir, entry['audio_filepath']).as_posix()
+
+                if not os.path.exists(extracted_path):
+                    tar.extract(member=entry['audio_filepath'], path=self.extract_to_dir)
+
+                entry['audio_filepath'] = extracted_path
+                extracted_entries.append(DataEntry(data=entry))
+
+        return extracted_entries
+
+
+class RemoveEmojis(BaseParallelProcessor):
+    """Replaces emojis with empty string.
+
+    .. note:: Emoji patterns are predefined. There might be (new) emojis which are not included in the list.
+
+    Args:
+        text_key (str): a string indicating which key of the data entries
+            should be used to find the utterance transcript. Defaults to "text".
+
+    Returns:
+         The same data as in the input manifest with ``<text_key>`` field without detected emojis.
+    """
+
+    EMOJI_PATTERN = re.compile(
+        r" ?[\U0001F600-\U0001F64F"  # emoticons
+        r"\U0001F300-\U0001F5FF"  # symbols & pictographs
+        r"\U0001F680-\U0001F6FF"  # transport & map symbols
+        r"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+        r"\U00002500-\U00002BEF"  # Chinese characters
+        r"\U00002702-\U000027B0"
+        r"\U00002702-\U000027B0"
+        r"\U000024C2-\U0001F251"
+        r"\U0001f926-\U0001f937"
+        r"\U00010000-\U0010ffff"
+        r"\u2640-\u2642"
+        r"\u2600-\u2B55"
+        r"\u200d"
+        r"\u23cf"
+        r"\u23e9"
+        r"\u231a"
+        r"\ufe0f"  # dingbats
+        r"\u3030"
+        r"]+",
+        flags=re.UNICODE,
+    )
+
+    def __init__(
+        self,
+        text_key: str = "text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.text_key = text_key
+
+    def process_dataset_entry(self, data_entry) -> List:
+        """Replaces each found regex match with a given string."""
+        replace_word_counter = 0
+
+        text_in = data_entry[self.text_key]
+
+        text_in = add_start_end_spaces(text_in)
+        text_out = re.sub(
+            self.EMOJI_PATTERN,
+            repl='',
+            string=text_in,
+        )
+
+        if text_in != text_out:
+            replace_word_counter += 1
+        text_in = text_out
+
+        text_out = remove_extra_spaces(text_out)
+
+        data_entry[self.text_key] = text_out
+
+        return [DataEntry(data=data_entry, metrics=replace_word_counter)]
+
+    def finalize(self, metrics):
+        """Reports how many substitutions were made for each pattern."""
+        super().finalize(metrics)
+
