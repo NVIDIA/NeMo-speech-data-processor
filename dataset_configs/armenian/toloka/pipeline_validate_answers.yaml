@@ -1,0 +1,63 @@
+documentation: |
+  Toloka Armenian
+
+processors_to_run: all
+workspace_dir: ???
+
+processors:
+  - _target_: sdp.processors.GetTolokaResults
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    status: SUBMITTED
+    output_dir: ${workspace_dir}/results
+    output_manifest_file: ${workspace_dir}/result_manifest.json
+
+  - _target_: sdp.processors.ASRFileCheck
+    audio_filepath_key: audio_filepath  
+    corrupted_audio_dir: ${workspace_dir}/curr
+    output_manifest_file: ${workspace_dir}/result_manifest_no_curr.json
+
+  - _target_: sdp.processors.ASRTransformers # pip install accelerate transformers
+    input_manifest_file: ${workspace_dir}/result_manifest_no_curr.json
+    output_manifest_file: ${workspace_dir}/result_manifest_pred.json
+    pretrained_model: "facebook/seamless-m4t-v2-large" 
+    batch_size: 32
+    generate_language: armenian
+    generate_task: transcribe
+    output_text_key: pred_text
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: ${workspace_dir}/result_manifest_pred.json
+    text_key: text
+    regex_params_list:
+      - {"pattern": '[^ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
+      - {"pattern": 'եւ', "repl": "և"}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: text
+
+  - _target_: sdp.processors.SubRegex
+    text_key: pred_text
+    regex_params_list:
+      - {"pattern": '[^ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
+      - {"pattern": 'եւ', "repl": "և"}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: pred_text
+
+  - _target_: sdp.processors.GetWER
+    pred_text_key: pred_text
+    output_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+
+  - _target_: sdp.processors.AcceptIfWERLess
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    input_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+    output_manifest_file: ${workspace_dir}/result_manifest_pred_review.json
+    threshold: 75
+
+  - _target_: sdp.processors.RejectIfBanned
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    input_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+    output_manifest_file: ${workspace_dir}/result_manifest_pred_review.json
