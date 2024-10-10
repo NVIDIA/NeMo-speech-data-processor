@@ -29,12 +29,14 @@ class CreateTolokaPool(BaseParallelProcessor):
         API_KEY: str = None,
         platform: str = None,
         project_id: str = None,  # Optional project_id during initialization
+        lang: str = 'HY',
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.API_KEY = API_KEY or os.getenv('TOLOKA_API_KEY')
         self.platform = platform or os.getenv('TOLOKA_PLATFORM')
         self.project_id = project_id  # Store project_id if provided during initialization
+        self.lang = lang
         self.load_config()
 
     def load_config(self):
@@ -69,7 +71,7 @@ class CreateTolokaPool(BaseParallelProcessor):
                 auto_accept_solutions=False,
                 auto_accept_period_day=14,
                 filter=(
-                    (toloka.client.filter.Languages.in_('HY')) & (toloka.client.filter.ClientType == 'TOLOKA_APP')
+                    (toloka.client.filter.Languages.in_(self.lang)) & (toloka.client.filter.ClientType == 'TOLOKA_APP')
                 ),
             )
             new_pool.set_mixer_config(real_tasks_count=5)
