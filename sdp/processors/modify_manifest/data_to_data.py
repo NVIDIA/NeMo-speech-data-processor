@@ -781,6 +781,25 @@ class ExtractFromBrackets(BaseParallelProcessor):
     A class for extracting text contained within specified bracket types from strings,
     handling nested brackets.
 
+    Example Input:
+        data_entry = {
+            "text": "This is a [test] string with [multiple [nested] brackets]."
+        }
+
+    Example Output:
+        [
+            {
+                "text": "test"
+            },
+            {
+                "text": "multiple [nested] brackets"
+            }
+        ]
+
+    Explanation:
+        - It extracts "test" from the first occurrence of brackets.
+        - It extracts "multiple [nested] brackets" from the second occurrence, handling nested brackets correctly.
+
     Attributes:
         brackets (List[str]): A list where each element is a pair of strings representing
                               the opening and closing brackets.
