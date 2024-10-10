@@ -1,0 +1,171 @@
+documentation: |
+  Librispeech (all)
+  #################
+  
+  This config can be used to prepare
+  `Librispeech <https://www.openslr.org/12/>`_
+  dataset in the NeMo format.
+
+  It produces manifests for the all splits of Libripseech. 
+
+  This config performs the following data processing.
+
+  1. Downloads Librispeech data
+  2. Converts flac files to wav file
+  3. Calculates the length of wav files
+  4. Makes capitalization lowercase
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+
+  Note that you can customize any part of this config either directly or from command-line.
+ 
+  **Output format**.
+
+  This config generates output manifest files for all splits of the data:
+
+  * ``${workspace_dir}/dev-clean.json`` - dev-clean subset.
+  * ``${workspace_dir}/dev-other.json`` - dev-other subset.
+  * ``${workspace_dir}/test-clean.json`` - test-clean subset.
+  * ``${workspace_dir}/test-other.json`` - test-other subset.
+  * ``${workspace_dir}/train-clean-100.json`` - train-clean-100 subset.
+  * ``${workspace_dir}/train-clean-360.json`` - train-clean-360 subset.
+  * ``${workspace_dir}/train-other-500.json`` - train-other-500 subset.
+
+
+  Output manifest contains the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription (lower-case without punctuation).
+  * **duration (float)**: audio duration in seconds.
+
+processors_to_run: all
+workspace_dir: ???
+
+processors:
+  # creating manifest for dev-clean set
+  - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    split: dev-clean
+    raw_data_dir: ${workspace_dir}/raw_data
+
+  - _target_: sdp.processors.SoxConvert
+    converted_audio_dir: ${workspace_dir}/audio
+    input_audio_file_key: "audio_filepath"
+    output_audio_file_key: "audio_filepath"
+    output_format: "wav"
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/dev-clean.json
+
+  # creating manifest for dev-other set
+  - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    split: dev-other
+    raw_data_dir: ${workspace_dir}/raw_data
+
+  - _target_: sdp.processors.SoxConvert
+    converted_audio_dir: ${workspace_dir}/audio
+    input_audio_file_key: "audio_filepath"
+    output_audio_file_key: "audio_filepath"
+    output_format: "wav"
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/dev-other.json
+
+  # creating manifest for test-clean set
+  - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    split: test-clean
+    raw_data_dir: ${workspace_dir}/raw_data
+
+  - _target_: sdp.processors.SoxConvert
+    converted_audio_dir: ${workspace_dir}/audio
+    input_audio_file_key: "audio_filepath"
+    output_audio_file_key: "audio_filepath"
+    output_format: "wav"
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/test-clean.json
+
+  # creating manifest for test-other set
+  - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    split: test-other
+    raw_data_dir: ${workspace_dir}/raw_data
+
+  - _target_: sdp.processors.SoxConvert
+    converted_audio_dir: ${workspace_dir}/audio
+    input_audio_file_key: "audio_filepath"
+    output_audio_file_key: "audio_filepath"
+    output_format: "wav"
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/test-other.json
+
+  # creating manifest for train-clean-100 set
+  - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    split: train-clean-100
+    raw_data_dir: ${workspace_dir}/raw_data
+
+  - _target_: sdp.processors.SoxConvert
+    converted_audio_dir: ${workspace_dir}/audio
+    input_audio_file_key: "audio_filepath"
+    output_audio_file_key: "audio_filepath"
+    output_format: "wav"
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/train-clean-100.json
+
+  # creating manifest for train-clean-360 set
+  - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    split: train-clean-360
+    raw_data_dir: ${workspace_dir}/raw_data
+
+  - _target_: sdp.processors.SoxConvert
+    converted_audio_dir: ${workspace_dir}/audio
+    input_audio_file_key: "audio_filepath"
+    output_audio_file_key: "audio_filepath"
+    output_format: "wav"
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/train-clean-360.json
+
+  # creating manifest for train-other-500 set
+  - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    split: train-other-500
+    raw_data_dir: ${workspace_dir}/raw_data
+
+  - _target_: sdp.processors.SoxConvert
+    converted_audio_dir: ${workspace_dir}/audio
+    input_audio_file_key: "audio_filepath"
+    output_audio_file_key: "audio_filepath"
+    output_format: "wav"
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/train-other-500.json
