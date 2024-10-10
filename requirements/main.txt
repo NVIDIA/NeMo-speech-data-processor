@@ -11,6 +11,7 @@ rarfile
 regex
 sox
 tqdm
+gdown
 webvtt-py
 wget
 

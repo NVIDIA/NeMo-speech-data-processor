@@ -75,6 +75,7 @@ jobs:
         pip install Cython wheel  # need to pre-install to avoid error in nemo installation
         pip install "nemo_toolkit[asr,nlp]"
         python -m pip cache purge
+
     - name: Run all tests
       env:
         AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
