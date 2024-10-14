@@ -181,18 +181,32 @@ Few-shot Learning Evaluation of Universal Representations of Speech (FLEURS)
 
    config-docs/armenian/fleurs/config
 
-English LibriSpeech (ELS)
-~~~~~~~~~~~~~~~~~~~~~~~~~
+LibriSpeech
+~~~~~~~~~~~
 
-**Dataset link:** https://openslr.org/12
+**Dataset links:** https://openslr.org/12 (regular), https://openslr.org/31 (mini Librispeech)
 
-`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/librispeech/config.yaml>`__ |
-:doc:`documentation <config-docs/english/librispeech/config>`
+
+**Supported configs**.
+
+* **config (for processing one specific subset at a time)**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/librispeech/config.yaml>`__ |
+   :doc:`documentation <config-docs/english/librispeech/config>`
+* **mini**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/librispeech/mini.yaml>`__ |
+   :doc:`documentation <config-docs/english/librispeech/mini>`
+* **all (for obtaining all subsets in one go)**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/librispeech/all.yaml>`__ |
+   :doc:`documentation <config-docs/english/librispeech/all>`
+
 
 .. toctree::
    :hidden:
-   
+
    config-docs/english/librispeech/config
+   config-docs/english/librispeech/mini
+   config-docs/english/librispeech/all
+
 
 Coraa Brazilian Portuguese dataset
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
