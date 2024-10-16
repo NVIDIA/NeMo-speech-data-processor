@@ -47,7 +47,7 @@ def get_coraal_url_list():
 class CreateInitialManifestCORAAL(BaseParallelProcessor):
     """Processor to create initial manifest for the Corpus of Regional African American Language (CORAAL) dataset.
 
-    Dataset link: https://oraal.uoregon.edu/coraal/
+    Dataset link: https://oraal.github.io/coraal
 
     Will download all files, extract tars and split wav files based on the
     provided durations in the transcripts.

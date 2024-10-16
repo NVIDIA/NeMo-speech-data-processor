@@ -15,6 +15,7 @@ import json
 import os
 import shutil
 import tarfile
+import logging
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Tuple
@@ -28,6 +29,7 @@ from sdp.run_processors import run_processors
 from sdp.utils.common import extract_tar_with_strip_components
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
+NON_DETERMINISTIC_PROCESSORS = {'sdp.processors.ASRTransformers'}
 
 def data_check_fn_generic(raw_data_dir: str, file_name: str, **kwargs) -> None:
     if callable(file_name):
@@ -105,6 +107,14 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         (f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", data_check_fn_ksc2),
     ]
 
+def get_test_names():
+    config_names = [
+        Path(t[0]).parent.relative_to(DATASET_CONFIGS_ROOT).as_posix() for t in get_test_cases()
+        ]
+
+    return config_names
+
+
 def check_e2e_test_data() -> bool:
     """
     Checks if required environment variables are defined for e2e data.
@@ -124,7 +134,6 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
         return test_data_root
 
     import boto3
-    import logging
 
     s3_resource = boto3.resource(
         "s3",
@@ -145,27 +154,43 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
 
     return os.path.abspath("test_data")
 
-@pytest.mark.skipif(
-    not check_e2e_test_data(),
-    reason="Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY "
-    "and AWS_ACCESS_KEY to run e2e config tests",
-)
-@pytest.mark.parametrize("config_path,data_check_fn", get_test_cases())
-def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
+@pytest.fixture(scope="module", params=get_test_cases(), ids=get_test_names())
+def setup_data(request):
+
+    if not check_e2e_test_data():
+        pytest.fail("Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY "
+    "and AWS_ACCESS_KEY to run e2e config tests")
+        
+    config_path, data_check_fn  = request.param
+
+    rel_path_from_root = Path(config_path).parent.relative_to(DATASET_CONFIGS_ROOT)
+    test_data_root = get_e2e_test_data_path(str(rel_path_from_root))
+    data_dir = Path(test_data_root, rel_path_from_root)
+
+    yield config_path, data_check_fn, data_dir
+    shutil.rmtree(data_dir)
+
+
+def test_data_availability(setup_data):
+
+    _, data_check_fn, data_dir = setup_data
+    try:
+        data_check_fn(raw_data_dir=data_dir)
+    except ValueError as e:
+        pytest.fail(f"Test data not available: {str(e)}")
+
+    reference_manifest = Path(data_dir, "test_data_reference.json")
+
+    if not reference_manifest.exists():
+        pytest.fail(f"Reference manifest not found: {reference_manifest}")
+
+@pytest.mark.dependency(depends=['test_data_availability'])
+def test_configs(setup_data, tmp_path):
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
     # to have the same structure (e.g. <lang>/<dataset>)
-    rel_path_from_root = Path(config_path).parent.relative_to(DATASET_CONFIGS_ROOT)
-    test_data_root = Path(get_e2e_test_data_path(str(rel_path_from_root)))
- 
-    # run data_check_fn - it will raise error if the expected test data is not found
-    try:
-        data_check_fn(raw_data_dir=str(test_data_root / rel_path_from_root))
-    except ValueError as e:
-        pytest.skip(f"Test data not available: {str(e)}")
 
-    reference_manifest = test_data_root / rel_path_from_root / "test_data_reference.json"
-    if not reference_manifest.exists():
-        pytest.skip(f"Reference manifest not found: {reference_manifest}")
+    config_path, _, data_dir = setup_data
+    reference_manifest = data_dir / "test_data_reference.json"
 
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
@@ -173,7 +198,9 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
     cfg.workspace_dir = str(tmp_path)
     cfg.final_manifest = str(tmp_path / "final_manifest.json")
     cfg.data_split = cfg.get("data_split", "train")
-    cfg.processors[0].raw_data_dir = str(test_data_root / rel_path_from_root)
+    cfg.processors[0].raw_data_dir = data_dir.as_posix()
+    processors_used = {processor['_target_'] for processor in cfg.processors}
+    non_det_processors = processors_used.intersection(NON_DETERMINISTIC_PROCESSORS)
 
     if "already_downloaded" in cfg["processors"][0]:
         cfg["processors"][0]["already_downloaded"] = True
@@ -188,14 +215,16 @@ def test_configs(config_path: str, data_check_fn: Callable, tmp_path: Path):
         generated_lines = sorted(generated_fin.readlines())
         assert len(reference_lines) == len(generated_lines)
 
-        for reference_line, generated_line in zip(reference_lines, generated_lines):
-            reference_data = json.loads(reference_line)
-            generated_data = json.loads(generated_line)
-            reference_data.pop("audio_filepath", None)
-            generated_data.pop("audio_filepath", None)
-            assert reference_data == generated_data
+        # if any non-deterministic processors are used (e.g. inference with Whisper), 
+        # we do not test the content of the output
+        if not non_det_processors:
+            for reference_line, generated_line in zip(reference_lines, generated_lines):
+                reference_data = json.loads(reference_line)
+                generated_data = json.loads(generated_line)
+                reference_data.pop("audio_filepath", None)
+                generated_data.pop("audio_filepath", None)
+                assert reference_data == generated_data
 
- # if CLEAN_UP_TMP_PATH is set to non-0 value, we will delete tmp_path
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
         shutil.rmtree(tmp_path)
 

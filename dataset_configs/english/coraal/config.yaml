@@ -93,8 +93,8 @@ processors:
       - {"pattern": '\baksing\b', "repl": "asking"}
       - {"pattern": '\baksed\b', "repl": "asked"}
       # removing unintelligible/redacted flags
-      - {"pattern": '/(?i)unintelligible/', "repl": ""}
-      - {"pattern": '/(?i)inaudible/', "repl": ""}
+      - {"pattern": '(?i)unintelligible/', "repl": ""}
+      - {"pattern": '(?i)inaudible/', "repl": ""}
       - {"pattern": '/RD(.*?)/', "repl": ""}
       - {"pattern": '/(\?)\1*/', "repl": ""}
       # removing non-linguistic markers
