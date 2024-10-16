@@ -107,8 +107,6 @@ class ASRTransformers(BaseProcessor):
             device=self.device,
         )
 
-        print(self.pipe.type)
-
     def process(self):
         json_list = load_manifest(Path(self.input_manifest_file))
         json_list_sorted = sorted(json_list, key=lambda d: d[self.input_duration_key], reverse=True)
