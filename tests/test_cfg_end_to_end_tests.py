@@ -29,6 +29,7 @@ from sdp.run_processors import run_processors
 from sdp.utils.common import extract_tar_with_strip_components
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
+NON_DETERMINISTIC_PROCESSORS = {'sdp.processors.ASRTransformers'}
 
 def data_check_fn_generic(raw_data_dir: str, file_name: str, **kwargs) -> None:
     if callable(file_name):
@@ -198,6 +199,8 @@ def test_configs(setup_data, tmp_path):
     cfg.final_manifest = str(tmp_path / "final_manifest.json")
     cfg.data_split = cfg.get("data_split", "train")
     cfg.processors[0].raw_data_dir = data_dir.as_posix()
+    processors_used = {processor['_target_'] for processor in cfg.processors}
+    non_det_processors = processors_used.intersection(NON_DETERMINISTIC_PROCESSORS)
 
     if "already_downloaded" in cfg["processors"][0]:
         cfg["processors"][0]["already_downloaded"] = True
@@ -212,12 +215,15 @@ def test_configs(setup_data, tmp_path):
         generated_lines = sorted(generated_fin.readlines())
         assert len(reference_lines) == len(generated_lines)
 
-        for reference_line, generated_line in zip(reference_lines, generated_lines):
-            reference_data = json.loads(reference_line)
-            generated_data = json.loads(generated_line)
-            reference_data.pop("audio_filepath", None)
-            generated_data.pop("audio_filepath", None)
-            assert reference_data == generated_data
+        # if any non-deterministic processors are used (e.g. inference with Whisper), 
+        # we do not test the content of the output
+        if not non_det_processors:
+            for reference_line, generated_line in zip(reference_lines, generated_lines):
+                reference_data = json.loads(reference_line)
+                generated_data = json.loads(generated_line)
+                reference_data.pop("audio_filepath", None)
+                generated_data.pop("audio_filepath", None)
+                assert reference_data == generated_data
 
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
         shutil.rmtree(tmp_path)
