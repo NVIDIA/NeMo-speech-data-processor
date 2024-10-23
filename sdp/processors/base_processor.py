@@ -127,10 +127,6 @@ class BaseParallelProcessor(BaseProcessor):
         # need to convert to list to avoid errors in iteration over None
         if self.test_cases is None:
             self.test_cases = []
-
-        print("*" * 100)
-        print(self.__dict__)
-        print("*" * 100)
     
     def process(self):
         """Parallelized implementation of the data processing.
@@ -180,11 +176,6 @@ class BaseParallelProcessor(BaseProcessor):
              </div>
         """
         self.prepare()
-        #os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
-
-        print("-" * 100)
-        print(self.input)
-        print("-" * 100)
     
         for manifest_chunk in self.input.read(self.in_memory_chunksize):
             data = itertools.chain(

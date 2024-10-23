@@ -31,6 +31,9 @@ class Manifest(DataSource):
                 yield json.loads(line)
     
     def write(self, data: List[DataEntry]):
+        if self.write_mode == "w":
+            os.makedirs(os.path.dirname(self.source), exist_ok=True)
+
         with open(self.source, self.write_mode, encoding = 'utf8') as fout:
             for data_entry in tqdm(data):
                 self._add_metrics(data_entry)
@@ -74,7 +77,6 @@ def set_manifests(processors_cfgs: List[Dict], cfg: List[Dict], tmp_dir: str):
             # (2) then link the current processor's output_manifest_file to the next processor's input_manifest_file
             # if it hasn't been specified (and if you are not on the last processor)
             if "input_manifest_file" in processor_cfg:
-                print('A' * 100)
                 processor_cfg["input"] = Manifest(processor_cfg["input_manifest_file"])
             else:
                 if idx > 0:
@@ -82,9 +84,5 @@ def set_manifests(processors_cfgs: List[Dict], cfg: List[Dict], tmp_dir: str):
             
             processor_cfg.pop("input_manifest_file")
             processors_cfgs_to_init.append(processor_cfg)
-
-    print("=" * 100)
-    print(processors_cfgs_to_init)
-    print("=" * 100)
 
     return processors_cfgs_to_init
