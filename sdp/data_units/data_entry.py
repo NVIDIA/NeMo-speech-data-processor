@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, List, Dict, Optional, Iterable
 from abc import ABC, abstractmethod
 

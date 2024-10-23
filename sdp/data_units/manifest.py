@@ -43,7 +43,7 @@ class Manifest(DataSource):
             self.write_mode = 'a'
 
 
-def set_manifests(processors_cfgs: List[Dict], cfg: List[Dict], tmp_dir: str):
+def set_manifests2(processors_cfgs: List[Dict], cfg: List[Dict], tmp_dir: str):
     processors_cfgs_to_init = []
 
     cfg = OmegaConf.to_container(cfg)
@@ -86,3 +86,25 @@ def set_manifests(processors_cfgs: List[Dict], cfg: List[Dict], tmp_dir: str):
             processors_cfgs_to_init.append(processor_cfg)
 
     return processors_cfgs_to_init
+
+def set_manifests(processor_cfg, previous_output, tmp_dir):
+    if "output_manifest_file" in processor_cfg:
+        processor_cfg["output"] = Manifest(processor_cfg["output_manifest_file"])
+    else:
+        tmp_file_path = os.path.join(tmp_dir, str(uuid4()))
+        processor_cfg["output"] = Manifest(tmp_file_path)
+    
+    processor_cfg.pop("output_manifest_file")
+
+    # (2) then link the current processor's output_manifest_file to the next processor's input_manifest_file
+    # if it hasn't been specified (and if you are not on the last processor)
+    if "input_manifest_file" in processor_cfg:
+        processor_cfg["input"] = Manifest(processor_cfg["input_manifest_file"])
+    else:
+        if type(previous_output) is Manifest:
+            processor_cfg["input"] = previous_output
+        else:
+            return ValueError()
+    
+    processor_cfg.pop("input_manifest_file")
+    return processor_cfg

@@ -22,6 +22,7 @@ from omegaconf import OmegaConf, open_dict
 
 from sdp.logging import logger
 from sdp.data_units.manifest import set_manifests
+from sdp.data_units.set_sources import set_sources
 
 # registering new resolvers to simplify config files
 OmegaConf.register_new_resolver("subfield", lambda node, field: node[field])
@@ -110,9 +111,7 @@ def run_processors(cfg):
     with tempfile.TemporaryDirectory() as tmp_dir:
         #use_streams = cfg.get("use_streams", False)
         
-        processors_cfgs = set_manifests(processors_cfgs = processors_cfgs, 
-                                        cfg = cfg, 
-                                        tmp_dir = tmp_dir)
+        processors_cfgs = set_sources(processors_cfgs, cfg, tmp_dir, use_streams=False)
 
         for processor_cfg in  processors_cfgs:
             processor = hydra.utils.instantiate(processor_cfg)
