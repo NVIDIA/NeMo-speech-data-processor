@@ -38,10 +38,12 @@ logger.addHandler(handler)
 logger.propagate = False
 
 class SDPRunner(ManifestsSetter, StreamsSetter):
-    def __init__(self, processors_cfgs: OmegaConf, processors_to_select: str):    
-        self.processors_from_cfg = processors_cfgs       
-        self.processors_cfgs = self.select_processors_to_run(processors_to_select)
+    def __init__(self, cfg: OmegaConf):    
+        self.processors_from_cfg = cfg.processors   
+        self.processors_cfgs = self.select_processors_to_run(cfg.get("processors_to_run", "all"))
         self.processors = []
+
+        self.use_streams = cfg.get("use_streams", False)
         
         super().__init__(self.processors_cfgs)
     
@@ -74,11 +76,11 @@ class SDPRunner(ManifestsSetter, StreamsSetter):
                         self.processors_cfgs[0]["input_manifest_file"] = self.processors_from_cfg[processor_idx - 1]["output_manifest_file"]
                     break
 
-    def set(self, use_streams: bool = False):
+    def set(self):
         self.infer_init_input()
 
         for processor_idx in range(len(self.processors_cfgs)):
-            if not use_streams:
+            if not self.use_streams:
                 self.set_processor_manifests(processor_idx)
             
             else:
@@ -99,9 +101,9 @@ class SDPRunner(ManifestsSetter, StreamsSetter):
         for processor in self.processors:
             processor.test()
     
-    def run(self, use_streams: bool = False):
+    def run(self):
         try:
-            self.set(use_streams = use_streams)
+            self.set()
             logger.info(
                 "Specified to run the following processors:\n %s",
                 (yaml.dump(self.processors_cfgs, default_flow_style=False)),

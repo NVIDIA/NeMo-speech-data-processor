@@ -26,11 +26,8 @@ OmegaConf.register_new_resolver("equal", lambda field, value: field == value)
 
 @hydra.main(version_base=None)
 def main(cfg):
-    processors_to_run = cfg.get("processors_to_run", "all")
-    sdp = SDPRunner(cfg.processors, processors_to_run)
-    
-    use_streams = cfg.get("use_streams", False)
-    sdp.run(use_streams)
+    sdp = SDPRunner(cfg)
+    sdp.run()
     
 
 if __name__ == "__main__":
