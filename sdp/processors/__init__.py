@@ -103,3 +103,5 @@ from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
 )
 from sdp.processors.nemo.asr_inference import ASRInference
 from sdp.processors.nemo.pc_inference import PCInference
+
+from sdp.processors.stream.adapters import StreamToManifest, ManifestToStream

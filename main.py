@@ -15,14 +15,23 @@
 import sys
 
 import hydra
+from omegaconf import OmegaConf
 
-from sdp.run_processors import run_processors
+from sdp.run_processors import SDPRunner
+
+OmegaConf.register_new_resolver("subfield", lambda node, field: node[field])
+OmegaConf.register_new_resolver("not", lambda x: not x)
+OmegaConf.register_new_resolver("equal", lambda field, value: field == value)
 
 
 @hydra.main(version_base=None)
 def main(cfg):
-    run_processors(cfg)
-
+    processors_to_run = cfg.get("processors_to_run", "all")
+    sdp = SDPRunner(cfg.processors, processors_to_run)
+    
+    use_streams = cfg.get("use_streams", False)
+    sdp.run(use_streams)
+    
 
 if __name__ == "__main__":
     # hacking the arguments to always disable hydra's output

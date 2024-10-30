@@ -176,7 +176,7 @@ class BaseParallelProcessor(BaseProcessor):
              </div>
         """
         self.prepare()
-    
+        
         for manifest_chunk in self.input.read(self.in_memory_chunksize):
             data = itertools.chain(
                     *process_map(
