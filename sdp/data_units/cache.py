@@ -9,7 +9,7 @@ class CacheDir:
             self.cache_dir = TemporaryDirectory(dir = cache_dirpath, prefix = prefix, suffix = suffix)
     
     def make_tmp_filepath(self):
-        return os.path.join(self.cache_dir, uuid4())
+        return os.path.join(self.cache_dir.name, str(uuid4()))
     
     def cleanup(self):
         self.cache_dir.cleanup()

@@ -55,13 +55,15 @@ class ManifestsSetter(DataSetter):
     
     def is_manifest_resolvable(self, processor_idx: int):
         processor_cfg = self.processors_cfgs[processor_idx]
+        print(processor_idx)
+        print(processor_cfg)
 
         if "input_manifest_file" not in processor_cfg:
             if processor_idx == 0:
-                pass
+                return
 
-            if not("output" in self.processors_cfgs[processor_idx - 1] and
-                   isinstance(self.processors_cfgs[processor_idx - 1]["output"]) is Manifest):
+            if not ("output" in self.processors_cfgs[processor_idx - 1] and
+                   isinstance(self.processors_cfgs[processor_idx - 1]["output"], Manifest)):
                 raise ValueError()
             
     def set_processor_manifests(self, processor_idx: int):
@@ -73,7 +75,10 @@ class ManifestsSetter(DataSetter):
             input_manifest = Manifest(processor_cfg.pop("input_manifest_file"))
         else:
             #1 st processor
-            input_manifest = self.processors_cfgs[processor_idx - 1]["output"]
+            if processor_idx == 0:
+                input_manifest = None
+            else:
+                input_manifest = self.processors_cfgs[processor_idx - 1]["output"]
         
         processor_cfg["input"] = input_manifest
         

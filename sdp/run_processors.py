@@ -38,7 +38,8 @@ logger.addHandler(handler)
 logger.propagate = False
 
 class SDPRunner(ManifestsSetter, StreamsSetter):
-    def __init__(self, cfg: OmegaConf):    
+    def __init__(self, cfg: OmegaConf): 
+        OmegaConf.resolve(cfg)
         self.processors_from_cfg = cfg.processors   
         self.processors_cfgs = self.select_processors_to_run(cfg.get("processors_to_run", "all"))
         self.processors = []
