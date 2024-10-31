@@ -44,9 +44,10 @@ class Manifest(DataSource):
         with open(self.source, self.write_mode, encoding = 'utf8') as fout:
             for data_entry in tqdm(data):
                 self._add_metrics(data_entry)
-                json.dump(data_entry.data, fout, ensure_ascii=False)
-                fout.write("\n")
-            
+                if data_entry.data:
+                    json.dump(data_entry.data, fout, ensure_ascii=False)
+                    fout.write("\n")
+                    
             self.write_mode = 'a'
 
 class ManifestsSetter(DataSetter):
@@ -55,11 +56,9 @@ class ManifestsSetter(DataSetter):
     
     def is_manifest_resolvable(self, processor_idx: int):
         processor_cfg = self.processors_cfgs[processor_idx]
-        print(processor_idx)
-        print(processor_cfg)
 
         if "input_manifest_file" not in processor_cfg:
-            if processor_idx == 0:
+            if processor_idx == 0: ## ToDo
                 return
 
             if not ("output" in self.processors_cfgs[processor_idx - 1] and
@@ -76,7 +75,7 @@ class ManifestsSetter(DataSetter):
         else:
             #1 st processor
             if processor_idx == 0:
-                input_manifest = None
+                input_manifest = None ##ToDo
             else:
                 input_manifest = self.processors_cfgs[processor_idx - 1]["output"]
         

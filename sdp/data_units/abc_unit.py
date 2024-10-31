@@ -20,10 +20,11 @@ class DataSource(ABC):
             self._add_metrics(data_entry)
 
     def _add_metrics(self, data_entry: DataEntry):
-        self.metrics.append(data_entry.metrics)
+        if data_entry.metrics is not None:
+            self.metrics.append(data_entry.metrics)
+        if data_entry.data is not None:
+            self.total_duration += data_entry.data.get("duration", 0)
         self.number_of_entries += 1
-        self.total_duration += data_entry.data.get("duration", 0)
-
 
 class DataSetter(ABC):
     def __init__(self, processors_cfgs: List[Dict]):

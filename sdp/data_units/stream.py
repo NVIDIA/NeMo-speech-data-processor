@@ -35,7 +35,7 @@ class Stream(DataSource):
         for entry in data:
             self._add_metrics(entry)
 
-        pickle.dump([entry.data for entry in data], self.source)
+        pickle.dump([entry.data for entry in data if entry.data], self.source)
     
     def reset(self):
         self.source.truncate(0)
