@@ -29,4 +29,7 @@ class DataSource(ABC):
 class DataSetter(ABC):
     def __init__(self, processors_cfgs: List[Dict]):
         self.processors_cfgs = processors_cfgs
+    
+    def get_resolvable_link(*args):
+        return f"${{{'.' + '.'.join(list(map(str, args)))}}}"
 
