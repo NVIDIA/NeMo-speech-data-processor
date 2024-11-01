@@ -24,13 +24,11 @@ class Stream(DataSource):
 
     @rw_control
     def read(self, *args, **kwargs):
-        self.source.seek(0)
         data = [pickle.load(self.source)]
         return data
 
     @rw_control
     def write(self, data: List[DataEntry]):
-        self.source.seek(0)
         data = list(data)
         for entry in data:
             self._add_metrics(entry)
