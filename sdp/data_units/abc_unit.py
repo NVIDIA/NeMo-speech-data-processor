@@ -26,11 +26,6 @@ class DataSource(ABC):
     @abstractmethod
     def write_entries(self, data_entries: List[DataEntry]):
         pass
-        
-    #@abstractmethod
-    #def write(self, data_entries: Iterable):
-    #    for data_entry in data_entries:
-    #        self._add_metrics(data_entry)
 
     def update_metrics(self, data_entry: DataEntry):
         if data_entry.metrics is not None:

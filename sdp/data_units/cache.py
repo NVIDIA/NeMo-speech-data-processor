@@ -10,6 +10,10 @@ class CacheDir:
     
     def make_tmp_filepath(self):
         return os.path.join(self.cache_dir.name, str(uuid4()))
+
+    def makedir(self, **kwargs): 
+         tmp_dir = CacheDir(cache_dirpath = self.cache_dir.name, **kwargs)
+         return tmp_dir
     
     def cleanup(self):
         self.cache_dir.cleanup()
