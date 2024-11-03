@@ -1,14 +1,19 @@
 from io import BytesIO
 from typing import List
 import pickle
+import json
+from tqdm import tqdm
 
 from sdp.data_units.data_entry import DataEntry
 from sdp.data_units.abc_unit import DataSource, DataSetter
 from sdp.data_units.manifest import Manifest
+
+
 class Stream(DataSource):
     def __init__(self):
         self.rw_amount = 0
         self.rw_limit = 1
+        self.encoding = "utf8"
 
         super().__init__(BytesIO())
     
@@ -18,25 +23,30 @@ class Stream(DataSource):
             result = func(self, *args, **kwargs)
             self.rw_amount += 1
             if self.rw_amount >= self.rw_limit:
-                self.reset()
+                self.source.truncate(0)
             return result
         return wrapper
 
-    @rw_control
-    def read(self, *args, **kwargs):
-        data = [pickle.load(self.source)]
-        return data
+    def read_entry(self): 
+        for line in self.source:
+            yield json.loads(line.decode(self.encoding))
 
     @rw_control
-    def write(self, data: List[DataEntry]):
-        data = list(data)
-        for entry in data:
-            self._add_metrics(entry)
-
-        pickle.dump([entry.data for entry in data if entry.data], self.source)
+    def read_entries(self, in_memory_chunksize = None):
+        data_entries = [entry for entry in self.read_entry()]
+        if in_memory_chunksize:
+            data_entries = [data_entries]
+        return data_entries
     
-    def reset(self):
-        self.source.truncate(0)
+    def write_entry(self, data_entry):
+        self.update_metrics(data_entry)
+        if data_entry.data:
+            self.source.write((json.dumps(data_entry.data) + '\n').encode(self.encoding))
+
+    @rw_control
+    def write_entries(self, data_entries):
+        for data_entry in tqdm(data_entries):
+            self.write_entry(data_entry)
 
 
 class StreamsSetter(DataSetter):
@@ -54,8 +64,6 @@ class StreamsSetter(DataSetter):
         for key in key_chain: 
             if key.isdigit():
                 key = int(key)
-            
-            
             #TODO: replace io_stream fields to "input" / "output"
             if isinstance(key, str) and key.endswith("_stream"):
                 key = key.replace("_stream", "")
@@ -178,7 +186,7 @@ class StreamsSetter(DataSetter):
                 raise ValueError()
         
         else:
-            if not(hasattr(self.processors_cfgs[processor_idx - 1], "output") and 
+            if not("output" in self.processors_cfgs[processor_idx - 1] and 
                    isinstance(self.processors_cfgs[processor_idx - 1]["output"], Stream)
             ):
                 if dry_run:
@@ -206,10 +214,17 @@ class StreamsSetter(DataSetter):
             processor_cfg = self.processors_cfgs[processor_idx]
             processor_cfg = self.traverse_processor(processor_cfg)
             
-            processor_cfg["input"] = processor_cfg.pop("input_stream")
+            if "input_stream" in processor_cfg:
+                input_stream = processor_cfg.pop("input_stream")
+            else:
+                input_stream = self.processors_cfgs[processor_idx - 1]["output"]
+                self.processors_cfgs[processor_idx - 1]["output"].rw_limit += 1
+
+            processor_cfg["input"] = input_stream
             processor_cfg["output"] = processor_cfg.pop("output_stream", Stream())
             
         self.processors_cfgs[processor_idx] = processor_cfg
+        print(processor_idx, processor_cfg)
         #return processor_cfg
     
     #raise ValueError("Expected a Stream object for 'input'")

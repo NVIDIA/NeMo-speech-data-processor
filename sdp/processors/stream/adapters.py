@@ -13,8 +13,8 @@ class ManifestToStream(BaseProcessor):
                          input = input)
 
     def process(self):        
-        data = [DataEntry(data_entry) for data_entry in self.input.read()]
-        self.output.write(data)
+        data = [DataEntry(data_entry) for data_entry in self.input.read_entry()]
+        self.output.write_entries(data)
 
     def test(self):
         assert type(self.input) is Manifest, ""
@@ -30,9 +30,9 @@ class StreamToManifest(BaseProcessor):
                          input = input)
     
     def process(self):
-        data = [DataEntry(data) for data in self.input.read()[-1]]
-        self.output.write(data)
+        data = [DataEntry(data) for data in self.input.read_entry()]
+        self.output.write_entries(data)
 
     def test(self):
-        assert type(self.input) is Stream, ""
+        assert type(self.input) is Stream, f""
         assert type(self.output) is Manifest, ""    

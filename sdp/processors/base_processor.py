@@ -69,7 +69,7 @@ class BaseProcessor(ABC):
         pass
 
     def test(self):
-        assert type(self.input) == type(self.output), f"Input ({type(self.input)}) and output ({type(self.output)}) types do not match."
+        #assert type(self.input) == type(self.output), f"Input ({type(self.input)}) and output ({type(self.output)}) types do not match."
         """This method can be used to perform "runtime" tests.
 
         This can be any kind of self-consistency tests, but are usually
@@ -177,7 +177,7 @@ class BaseParallelProcessor(BaseProcessor):
         """
         self.prepare()
         
-        for manifest_chunk in self.input.read(self.in_memory_chunksize):
+        for manifest_chunk in self.input.read_entries(self.in_memory_chunksize):
             data = itertools.chain(
                     *process_map(
                         self.process_dataset_entry,
@@ -187,7 +187,7 @@ class BaseParallelProcessor(BaseProcessor):
                     )
                 )
             
-            self.output.write(data)
+            self.output.write_entries(data)
             self.number_of_entries = self.output.number_of_entries
             self.total_duration = self.output.total_duration
                 

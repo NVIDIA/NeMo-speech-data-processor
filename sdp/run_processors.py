@@ -86,7 +86,7 @@ class SDPRunner(ManifestsSetter, StreamsSetter):
             
             else:
                 if (self.is_manifest_to_stream(processor_idx, dry_run = True) or 
-                    self.is_manifest_to_stream(processor_idx, dry_run = True) or
+                    self.is_stream_to_manifest(processor_idx, dry_run = True) or
                     self.is_stream_resolvable(processor_idx, dry_run = True)):
                     self.set_processor_streams(processor_idx)
                 else:
