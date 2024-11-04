@@ -18,8 +18,9 @@ import tarfile
 import logging
 from functools import partial
 from pathlib import Path
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Optional, Union
 from unittest import mock
+from dataclasses import dataclass, field
 
 import pytest
 from omegaconf import OmegaConf
@@ -29,7 +30,14 @@ from sdp.run_processors import run_processors
 from sdp.utils.common import extract_tar_with_strip_components
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
-NON_DETERMINISTIC_PROCESSORS = {'sdp.processors.ASRTransformers'}
+
+@dataclass
+class TestCase:
+    """Class for keeping track of test cases."""
+    config_path: str
+    data_check_fn: Callable
+    # Fields in the manifest to ignore (can be set when non-deterministic processor was used)
+    fields_to_ignore: List[str] = field(default_factory=list)
 
 def data_check_fn_generic(raw_data_dir: str, file_name: str, **kwargs) -> None:
     if callable(file_name):
@@ -42,8 +50,6 @@ data_check_fn_mls = partial(data_check_fn_generic, file_name=lambda language, **
 data_check_fn_mcv = partial(data_check_fn_generic, file_name=lambda archive_file_stem, **kwargs: f"{archive_file_stem}.tar.gz")
 data_check_fn_mtedx = partial(data_check_fn_generic, file_name=lambda language_id, **kwargs: f"mtedx_{language_id}.tgz")
 data_check_fn_coraa = partial(data_check_fn_generic, file_name="train_dividido/train.part1.rar")
-data_check_fn_slr102 = partial(data_check_fn_generic, file_name="slr102_kk.tar.gz")
-data_check_fn_ksc2 = partial(data_check_fn_generic, file_name="ksc2_kk.tar.gz")
 data_check_fn_librispeech = partial(data_check_fn_generic, file_name="dev-clean.tar.gz")
 data_check_fn_fleurs = partial(data_check_fn_generic, file_name="dev.tar.gz")
 
@@ -87,29 +93,84 @@ coraal_processor.get_coraal_url_list = mock.Mock(
 
 def get_test_cases() -> List[Tuple[str, Callable]]:
     return [
-        (f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", partial(data_check_fn_mls, language="spanish")),
-        (f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")),
-        (f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", data_check_fn_voxpopuli),
-        (f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", partial(data_check_fn_mls, language="italian")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", partial(data_check_fn_mls, language="portuguese")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", partial(data_check_fn_mtedx, language_id="pt")),
-        (f"{DATASET_CONFIGS_ROOT}/portuguese/coraa/config.yaml", data_check_fn_coraa),
-        (f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", data_check_fn_librispeech),
-        (f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", data_check_fn_fleurs),
-        (f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/armenian/audio_books/config.yaml", lambda raw_data_dir: True),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/mcv/config.yaml", partial(data_check_fn_mcv, archive_file_stem="mcv_kk")),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/slr140/config.yaml", data_check_fn_slr140),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/slr102/config.yaml", data_check_fn_slr102),
-        (f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", data_check_fn_ksc2),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", 
+            data_check_fn=partial(data_check_fn_mls, language="spanish"),
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", 
+            data_check_fn=partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", 
+            data_check_fn=data_check_fn_voxpopuli
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", 
+            data_check_fn=partial(data_check_fn_mls, language="italian")
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", 
+            data_check_fn=partial(data_check_fn_mls, language="portuguese")
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", 
+            data_check_fn=partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", 
+            data_check_fn=partial(data_check_fn_mtedx, language_id="pt")
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/coraa/config.yaml", 
+            data_check_fn=data_check_fn_coraa
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", 
+            data_check_fn=lambda raw_data_dir: True
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", 
+            data_check_fn=lambda raw_data_dir: True
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", 
+            data_check_fn=data_check_fn_librispeech
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", 
+            data_check_fn=data_check_fn_fleurs
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", 
+            data_check_fn=lambda raw_data_dir: True
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/audio_books/config.yaml", 
+            data_check_fn=lambda raw_data_dir: True,
+            fields_to_ignore=['text'],
+            ),
+        TestCase(
+            f"{DATASET_CONFIGS_ROOT}/kazakh/mcv/config.yaml", 
+            partial(data_check_fn_mcv, archive_file_stem="mcv_kk")
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/kazakh/slr140/config.yaml", 
+            data_check_fn=data_check_fn_slr140
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/kazakh/slr102/config.yaml", 
+            data_check_fn=partial(data_check_fn_generic, file_name="slr102_kk.tar.gz")
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", 
+            data_check_fn=partial(data_check_fn_generic, file_name="ksc2_kk.tar.gz")
+            ),
     ]
 
 def get_test_names():
     config_names = [
-        Path(t[0]).parent.relative_to(DATASET_CONFIGS_ROOT).as_posix() for t in get_test_cases()
+        Path(t.config_path).parent.relative_to(DATASET_CONFIGS_ROOT).as_posix() for t in get_test_cases()
         ]
 
     return config_names
@@ -161,19 +222,21 @@ def setup_data(request):
         pytest.fail("Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY "
     "and AWS_ACCESS_KEY to run e2e config tests")
         
-    config_path, data_check_fn  = request.param
+    config_path, data_check_fn, fields_to_ignore  = (request.param.config_path, 
+                                                     request.param.data_check_fn, 
+                                                     request.param.fields_to_ignore)
 
     rel_path_from_root = Path(config_path).parent.relative_to(DATASET_CONFIGS_ROOT)
     test_data_root = get_e2e_test_data_path(str(rel_path_from_root))
     data_dir = Path(test_data_root, rel_path_from_root)
 
-    yield config_path, data_check_fn, data_dir
+    yield config_path, data_check_fn, data_dir, fields_to_ignore
     shutil.rmtree(data_dir)
 
 
 def test_data_availability(setup_data):
 
-    _, data_check_fn, data_dir = setup_data
+    _, data_check_fn, data_dir, _ = setup_data
     try:
         data_check_fn(raw_data_dir=data_dir)
     except ValueError as e:
@@ -189,7 +252,7 @@ def test_configs(setup_data, tmp_path):
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
     # to have the same structure (e.g. <lang>/<dataset>)
 
-    config_path, _, data_dir = setup_data
+    config_path, _, data_dir, fields_to_ignore = setup_data
     reference_manifest = data_dir / "test_data_reference.json"
 
     cfg = OmegaConf.load(config_path)
@@ -199,15 +262,15 @@ def test_configs(setup_data, tmp_path):
     cfg.final_manifest = str(tmp_path / "final_manifest.json")
     cfg.data_split = cfg.get("data_split", "train")
     cfg.processors[0].raw_data_dir = data_dir.as_posix()
-    processors_used = {processor['_target_'] for processor in cfg.processors}
-    non_det_processors = processors_used.intersection(NON_DETERMINISTIC_PROCESSORS)
 
     if "already_downloaded" in cfg["processors"][0]:
         cfg["processors"][0]["already_downloaded"] = True
 
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
-    # reference file (ignoring the file paths)
+    # reference file (ignoring the file paths and additional fields explicitly specified to ignore)
+
+    fields_to_ignore += ['audio_filepath']
     
     with open(reference_manifest, "rt", encoding="utf8") as reference_fin, \
          open(cfg.final_manifest, "rt", encoding="utf8") as generated_fin:
@@ -215,15 +278,13 @@ def test_configs(setup_data, tmp_path):
         generated_lines = sorted(generated_fin.readlines())
         assert len(reference_lines) == len(generated_lines)
 
-        # if any non-deterministic processors are used (e.g. inference with Whisper), 
-        # we do not test the content of the output
-        if not non_det_processors:
-            for reference_line, generated_line in zip(reference_lines, generated_lines):
-                reference_data = json.loads(reference_line)
-                generated_data = json.loads(generated_line)
-                reference_data.pop("audio_filepath", None)
-                generated_data.pop("audio_filepath", None)
-                assert reference_data == generated_data
+        for reference_line, generated_line in zip(reference_lines, generated_lines):
+            reference_data = json.loads(reference_line)
+            generated_data = json.loads(generated_line)
+            for field in fields_to_ignore:
+                reference_data.pop(field, None)
+                generated_data.pop(field, None)
+            assert reference_data == generated_data
 
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
         shutil.rmtree(tmp_path)
