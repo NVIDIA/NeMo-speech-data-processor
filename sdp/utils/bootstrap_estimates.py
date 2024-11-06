@@ -22,31 +22,80 @@ from . import metrics_computation as metrics
 
 class BootstrapProcessor(BaseProcessor):
     """
-    Performs bootstrapped metric computation (WER, CER, WMR, etc.) on speech predictions
-    and computes the probability of improvement (POI) between models if `calculate_pairwise`
-    is set to True.
+    The `BootstrapProcessor` class is designed to evaluate Automatic Speech Recognition (ASR) performance metrics using bootstrapped confidence intervals. This includes metrics such as Word Error Rate (WER), Character Error Rate (CER), Word Match Rate (WMR), character rate (`charrate`), and word rate (`wordrate`). Additionally, if `calculate_pairwise` is set to `True`, the class computes the Probability of Improvement (POI) between different ASR models, giving insights into comparative performance.
 
-    Args:
-        bootstrap_manifest_files (List[str]): List of file paths to manifest (JSONL) files for metric calculation
-        raw_data_dir (str): Directory of data files
-        num_bootstraps (int): Number of bootstrap iterations for metric computation
-        dataset_size (float): Proportion of dataset size for each bootstrap sample
-        output_manifest_file (str): Path to the output JSON file to save results
-        calculate_pairwise (bool): Whether to calculate pairwise metric difference and POI (default: True)
-        metric_type (str): The type of metric to calculate, options include 'wer', 'cer', 'wmr', 'charrate', 'wordrate' (default: 'wer')
-        text_key (str): The key in the manifest that contains the ground truth text (default: 'text')
-        pred_text_key (str): The key in the manifest that contains the predicted text (default: 'pred_text')
-        ci_lower (float): Lower bound percentile for confidence intervals (default: 2.5)
-        ci_upper (float): Upper bound percentile for confidence intervals (default: 97.5)
-        random_state (int): Random state of the program
-    """
+    This implementation leverages bootstrapping to provide robust confidence intervals for each metric, which helps in understanding the variability in metric estimates and the likelihood that one model performs better than another.
+
+    **Reference:** Bootstrap estimates for confidence intervals in ASR performance evaluation: <https://ieeexplore.ieee.org/document/1326009>
+
+    ### Args:
+        - `bootstrap_manifest_files` (List[str]): A list of file paths to manifest files (in JSON Lines format) used for metric calculation. Each manifest file contains the ground truth and predicted transcriptions.
+        - `raw_data_dir` (str): The directory containing the data files referenced in the manifests.
+        - `num_bootstraps` (int): The number of bootstrap iterations to perform, which determines the reliability of the confidence intervals (default: 1000).
+        - `bootstrap_sample_ratio` (float): Proportion of the dataset size used for each bootstrap sample, allowing sub-sampling or over-sampling (default: 1.0, meaning full dataset).
+        - `output_file` (str): Path to the output JSON file where results will be saved.
+        - `calculate_pairwise` (bool): Whether to calculate pairwise differences in metric values between models and compute the Probability of Improvement (default: True).
+        - `metric_type` (str): Specifies the metric to calculate. Options include 'wer', 'cer', 'wmr', 'charrate', and 'wordrate' (default: 'wer').
+        - `text_key` (str): Key in the manifest that contains the ground truth text (default: 'text').
+        - `pred_text_key` (str): Key in the manifest that contains the predicted text (default: 'pred_text').
+        - `ci_lower` (float): The lower bound percentile for the confidence intervals (default: 2.5).
+        - `ci_upper` (float): The upper bound percentile for the confidence intervals (default: 97.5).
+        - `random_state` (int, optional): Sets a random state for reproducibility of bootstrap sampling.
+
+    ### Output Format
+    The results are saved in a JSON file at the specified `output_file` path, containing the following structure:
+
+    ```json
+    {
+        "individual_results": {
+            "<manifest_filename>": {
+                "mean_<metric_type>": <float>,          # Mean value of the specified metric across bootstrap samples
+                "ci_lower": <float>,                    # Lower confidence interval bound for the metric
+                "ci_upper": <float>                     # Upper confidence interval bound for the metric
+            },
+            ...
+        },
+        "pairwise_comparisons": [
+            {
+                "file_1": "<manifest_filename_1>",      # Name of the first file being compared
+                "file_2": "<manifest_filename_2>",      # Name of the second file being compared
+                "delta_<metric_type>_mean": <float>,    # Mean difference in metric value between the two files
+                "ci_lower": <float>,                    # Lower confidence interval bound for the metric difference
+                "ci_upper": <float>,                    # Upper confidence interval bound for the metric difference
+                "poi": <float>                          # Probability of Improvement (proportion of times file_2 outperformed file_1 in metric)
+            },
+            ...
+        ]
+    }
+    ```
+
+    - **`individual_results`**: Contains individual metric computations for each manifest file.
+        - **`<manifest_filename>`**: Name of the manifest file being analyzed.
+            - **`mean_<metric_type>`**: Average of the specified metric computed across all bootstrap samples (e.g., `mean_wer` for WER).
+            - **`ci_lower`**: Lower bound of the confidence interval for the metric, typically at the `ci_lower` percentile (default: 2.5th percentile).
+            - **`ci_upper`**: Upper bound of the confidence interval for the metric, typically at the `ci_upper` percentile (default: 97.5th percentile).
+
+    - **`pairwise_comparisons`**: Contains pairwise comparisons between each model if `calculate_pairwise` is enabled.
+        - **`file_1`**: Name of the first file in the comparison.
+        - **`file_2`**: Name of the second file in the comparison.
+        - **`delta_<metric_type>_mean`**: Mean difference in metric values between `file_1` and `file_2`.
+        - **`ci_lower`**: Lower bound of the confidence interval for the difference in metric values.
+        - **`ci_upper`**: Upper bound of the confidence interval for the difference in metric values.
+        - **`poi`**: Probability of Improvement (POI), representing the proportion of times the metric for `file_2` was better than `file_1` across bootstrap samples.
+
+    ### Notes
+    - The `BootstrapProcessor` class supports multiple metrics, and the output file's field names will reflect the chosen `metric_type`.
+    - Pairwise comparisons will only be computed if there are at least two files in `bootstrap_manifest_files` and `calculate_pairwise` is `True`.
+    - Confidence intervals are bootstrapped for robust estimates, providing better insights into metric variability.
+"""
 
     def __init__(
         self,
         bootstrap_manifest_files: List[str],
         raw_data_dir: str,
+        output_file: str, 
         num_bootstraps: int = 1000,
-        dataset_size: float = 1.0,
+        bootstrap_sample_ratio: float = 1.0,
         calculate_pairwise: bool = True, 
         metric_type: str = 'wer',
         text_key: str = 'text',
@@ -60,8 +109,9 @@ class BootstrapProcessor(BaseProcessor):
 
         self.bootstrap_manifest_files = bootstrap_manifest_files
         self.raw_data_dir = raw_data_dir
+        self.output_file = output_file
         self.num_bootstraps = num_bootstraps
-        self.dataset_size = dataset_size
+        self.bootstrap_sample_ratio = bootstrap_sample_ratio
         self.calculate_pairwise = calculate_pairwise
         self.metric_type = metric_type.lower()
         self.text_key = text_key
@@ -117,7 +167,7 @@ class BootstrapProcessor(BaseProcessor):
             np.ndarray: Bootstrapped metric values
         """
         n = len(hypotheses)
-        sample_size = int(n * self.dataset_size)
+        sample_size = int(n * self.bootstrap_sample_ratio)
 
         metric_bootstrap = []
         for _ in tqdm(range(self.num_bootstraps), desc=f"Bootstrapping {self.metric_type.upper()}"):
@@ -150,7 +200,7 @@ class BootstrapProcessor(BaseProcessor):
                 - float: Probability of Improvement (POI)
         """
         n = len(references)
-        sample_size = int(n * self.dataset_size)
+        sample_size = int(n * self.bootstrap_sample_ratio)
         delta_metric_bootstrap = []
 
         for _ in tqdm(range(self.num_bootstraps), desc=f"Bootstrapping {self.metric_type.upper()} difference"):
@@ -173,11 +223,16 @@ class BootstrapProcessor(BaseProcessor):
         poi = np.mean(np.array(delta_metric_bootstrap) > 0)
         return np.array(delta_metric_bootstrap), poi
 
+    def prepare(self):
+        output_path = Path(self.output_file)
+        output_path.parent.mkdir(exist_ok=True, parents=True)
+
     def process(self):
         """
         Main processing function that loads data, performs metric bootstrapping and optionally 
         pairwise comparison, and saves the results to a JSON file.
         """
+        self.prepare()
         results = {}
 
         # Load ground truth and predictions
@@ -241,10 +296,7 @@ class BootstrapProcessor(BaseProcessor):
                         "poi": poi
                     })
 
-        output_path = Path(self.output_manifest_file)
-        output_path.parent.mkdir(exist_ok=True, parents=True)
+        output_path = Path(self.output_file)
         with output_path.open('w') as out_file:
             json.dump(results, out_file, indent=4)
-
-        print(f"Results saved to {self.output_manifest_file}")
 

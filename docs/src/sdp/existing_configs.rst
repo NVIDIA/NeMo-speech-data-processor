@@ -277,16 +277,3 @@ Kazakh Speech Corpus 2 (KSC2)
    :hidden:
 
    config-docs/kazakh/ksc2/config
-
-
-Bootstrap Estimation
-~~~~~~~~~~~~~~~~~~~~
-
-
-`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/metrics_configs/bootstrap/config.yaml>`__ |
-:doc:`documentation <config-docs/bootstrap/config>`
-
-.. toctree::
-   :hidden:
-
-   config-docs/bootstrap/config
