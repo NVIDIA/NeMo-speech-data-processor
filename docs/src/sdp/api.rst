@@ -187,6 +187,11 @@ ASR-based processors
     ``text_key`` (defaults to "text") and ``pred_text_key`` (defaults to "text_pred")
     to control which fields contain transcription and ASR model predictions.
 
+Metric calculation
+''''''''''''''''''
+.. autodata:: sdp.utils.BootstrapProcessor
+   :annotation:
+
 Data modifications
 ''''''''''''''''''
 
