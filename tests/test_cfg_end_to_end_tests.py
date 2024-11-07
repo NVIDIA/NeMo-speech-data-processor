@@ -108,7 +108,6 @@ coraal_processor.get_coraal_url_list = mock.Mock(
 
 def get_test_cases() -> List[Tuple[str, Callable]]:
     return [
-<<<<<<< HEAD
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", 
             data_check_fn=partial(data_check_fn_mls, language="spanish"),
