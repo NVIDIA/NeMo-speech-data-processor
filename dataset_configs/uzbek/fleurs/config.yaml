@@ -53,13 +53,15 @@ processors:
 
     regex_params_list:
       - {"pattern": ":", "repl": ''}
-
+      
+      # replace all the inconsistent apostrophy characters for oʻ ang gʻ with ʻ
       - {"pattern": "(?<=o|g|O|G)‘", "repl": "ʻ"}
       - {"pattern": "(?<=o|g|O|G)’", "repl": "ʻ"}
       - {"pattern": "(?<=o|g|O|G)`", "repl": "ʻ"}
       - {"pattern": "(?<=o|g|O|G)'", "repl": "ʻ"}
       - {"pattern": '(?<=o|g|O|G)ʼ', "repl": "ʻ"}
 
+      # rreplace all the inconsistent apostrophy characters besides oʻ ang gʻ with ’
       - {"pattern": "‘", "repl": "’"}
       - {"pattern": "`", "repl": "’"}
       - {"pattern": "'", "repl": "’"}
