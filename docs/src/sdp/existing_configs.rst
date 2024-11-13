@@ -37,7 +37,10 @@ download the data archive and specify its location with the ``raw_data_dir`` par
 * **Georgian**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/georgian/mcv/config.yaml>`__ |
   :doc:`documentation <config-docs/georgian/mcv/config>`
-
+* **Uzbek**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/uzbek/mcv/config.yaml>`__ |
+  :doc:`documentation <config-docs/uzbek/mcv/config>`
+  
 .. toctree:: 
    :hidden:
 
@@ -46,6 +49,7 @@ download the data archive and specify its location with the ``raw_data_dir`` par
    config-docs/portuguese/mcv/config
    config-docs/kazakh/mcv/config
    config-docs/georgian/mcv/config
+   config-docs/uzbek/mcv/config
 
 Multilingual LibriSpeech (MLS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -173,13 +177,19 @@ Few-shot Learning Evaluation of Universal Representations of Speech (FLEURS)
 
 **Dataset link:** https://huggingface.co/datasets/google/fleurs
 
+* **Armenian**:
 `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/fleurs/config.yaml>`__ |
 :doc:`documentation <config-docs/armenian/fleurs/config>`
+
+* **Uzbek**:
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/uzbek/fleurs/config.yaml>`__ |
+:doc:`documentation <config-docs/uzbek/fleurs/config>`
 
 .. toctree::
    :hidden:
 
    config-docs/armenian/fleurs/config
+   config-docs/uzbek/fleurs/config
 
 LibriSpeech
 ~~~~~~~~~~~
@@ -277,3 +287,18 @@ Kazakh Speech Corpus 2 (KSC2)
    :hidden:
 
    config-docs/kazakh/ksc2/config
+
+UzbekVoice
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://corpus.uzbekvoice.ai/en-US
+
+**Required manual steps:** You need to download the dataset from the google drive provided on the website.
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/uzbek/uzbekvoice/config.yaml>`__ |
+:doc:`documentation <config-docs/uzbek/uzbekvoice/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/uzbek/uzbekvoice/config
