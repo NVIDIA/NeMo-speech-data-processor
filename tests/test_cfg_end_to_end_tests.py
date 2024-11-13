@@ -76,14 +76,7 @@ def data_check_fn_slr140(raw_data_dir: str) -> None:
     if not expected_file.exists():
         raise ValueError(f"No such file {str(expected_file)}")
 
-    extract_tar_with_strip_components(expected_file, tgt_dir, strip_components=1)
-
-def data_check_fn_librispeech(raw_data_dir: str) -> None:
-    expected_file = Path(raw_data_dir) / "dev-clean.tar.gz"
-    if expected_file.exists():
-        return
-    else:
-        raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
+    extract_tar_with_strip_components(expected_file, tgt_dir, strip_components=1)  
 
 def data_check_fn_uzbekvoice(raw_data_dir: str) -> None:
     expected_files = [Path(raw_data_dir) / "clips.zip", Path(raw_data_dir) / "uzbekvoice-dataset.zip"]

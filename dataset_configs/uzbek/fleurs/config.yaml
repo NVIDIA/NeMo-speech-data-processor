@@ -32,8 +32,9 @@ documentation: |
   * **duration (float)**: audio duration in seconds.
 processors_to_run: '0:'
 workspace_dir: ???
-data_split: ???
-save_dir: ???
+data_split: dev
+save_dir: ${workspace_dir}
+final_manifest: ${workspace_dir}/${data_split}_manifest.json
 
 processors:
   # creating manifest for uzbek dev set
@@ -45,11 +46,9 @@ processors:
   - _target_: sdp.processors.GetAudioDuration
     audio_filepath_key: audio_filepath
     duration_key: duration
-    output_manifest_file: ${save_dir}/${data_split}_manifest_1.json
 
   - _target_: sdp.processors.SubRegex
     text_key: text
-    output_manifest_file: ${save_dir}/${data_split}_manifest_2.json
 
     regex_params_list:
       - {"pattern": ":", "repl": ''}
@@ -75,7 +74,6 @@ processors:
 
   - _target_: sdp.processors.SubRegex
     text_key: text
-    output_manifest_file: ${save_dir}/${data_split}_manifest_3.json
 
     regex_params_list:
       - {"pattern": ":", "repl": ""}
@@ -144,5 +142,5 @@ processors:
       - { input: { text: "Bir sigir 2 katta qashshoqlikni yopadi" }, output: null }
 
       - { input: { text: "Bu vaqtga qadar u oʻzi yoqtirmagan kasbda faoliyat yuritgan." }, output: { text: "Bu vaqtga qadar u oʻzi yoqtirmagan kasbda faoliyat yuritgan." } }
-    output_manifest_file: ${save_dir}/${data_split}_manifest_final.json
+    output_manifest_file: ${final_manifest}
     
