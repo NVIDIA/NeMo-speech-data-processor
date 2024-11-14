@@ -93,22 +93,8 @@ class ASRTransformers(BaseProcessor):
             self.pretrained_model, torch_dtype=self.torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
         )
         self.model.to(self.device)
-
-        self.model.generation_config.language = self.generate_language
-
         self.processor = AutoProcessor.from_pretrained(self.pretrained_model)
-        self.pipe = pipeline(
-            "automatic-speech-recognition",
-            model=self.model,
-            tokenizer=self.processor.tokenizer,
-            feature_extractor=self.processor.feature_extractor,
-            max_new_tokens=None,
-            chunk_length_s=self.chunk_length_s,
-            batch_size=self.batch_size,
-            return_timestamps=True,
-            torch_dtype=self.torch_dtype,
-            device=self.device,
-        )
+
 
     def process(self):
         json_list = load_manifest(Path(self.input_manifest_file))
@@ -124,7 +110,7 @@ class ASRTransformers(BaseProcessor):
         transcriptions = []
 
         start_index = 0
-        for _ in tqdm(range(len(json_list_sorted) // self.batch_size)):
+        for _ in tqdm(range((len(json_list_sorted) // self.batch_size) + 1)):
             audio = dataset[start_index : start_index + self.batch_size]["audio_filepath"]
             start_index += self.batch_size
 
@@ -142,11 +128,11 @@ class ASRTransformers(BaseProcessor):
                                                 task=self.generate_task,
                                                 num_beams=self.beam_size,
                                                 **inputs)
+
             transcription = self.processor.batch_decode(generated_ids, skip_special_tokens=True)
             transcriptions.extend(transcription)
 
 
-        print(len(json_list_sorted), len(transcriptions))
         with Path(self.output_manifest_file).open("w") as f:
             for item, transcription in zip(json_list_sorted, transcriptions):
                 item[self.output_text_key] = transcription

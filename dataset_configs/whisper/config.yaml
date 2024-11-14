@@ -1,7 +1,7 @@
 processors_to_run: all
-output_manifest_file: ""
-input_manifest_file: ""
-
+output_manifest_file: ???
+input_manifest_file: ???
+device: ???
 
 processors:
   - _target_: sdp.processors.ChangeToAbsolutePath
@@ -15,3 +15,4 @@ processors:
     batch_size: 8
     beam_size: 1
     output_text_key: text
+    device: ${device}
