@@ -1,0 +1,16 @@
+processors_to_run: all
+output_manifest_file: ""
+input_manifest_file: ""
+
+
+processors:
+  - _target_: sdp.processors.ChangeToAbsolutePath
+    input_manifest_file: ${input_manifest_file}
+
+  - _target_: sdp.processors.ASRTransformers # pip install accelerate transformers
+    output_manifest_file: ${output_manifest_file}
+    pretrained_model: "openai/whisper-large-v3"
+    generate_language: english
+    generate_task: transcribe
+    batch_size: 8
+    output_text_key: text
