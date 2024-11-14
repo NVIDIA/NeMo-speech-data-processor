@@ -280,7 +280,34 @@ class ChangeToRelativePath(BaseParallelProcessor):
         data_entry["audio_filepath"] = os.path.relpath(data_entry["audio_filepath"], self.base_dir)
 
         return [DataEntry(data=data_entry)]
+    
+class ChangeToAbsolutePath(BaseParallelProcessor):
+    """This processor changes the audio filepaths to be absolute.
 
+    Returns:
+         The same data as in the input manifest with ``audio_filepath`` key
+         changed to contain absolute path given that relative paths are with respect
+         to the ``input_manifest_file``'s parent directory.
+    """
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.parent_dir = Path(self.input_manifest_file).parent
+
+    def process_dataset_entry(self, data_entry: Dict):
+
+        if Path(data_entry["audio_filepath"]).is_absolute():
+            return [DataEntry(data=data_entry)]
+        
+        abs_path = Path(self.parent_dir, data_entry["audio_filepath"])
+
+        if abs_path.exists():
+            data_entry["audio_filepath"] = abs_path.as_posix()
+
+        return [DataEntry(data=data_entry)]
 
 class SortManifest(BaseProcessor):
     """Processor which will sort the manifest by some specified attribute.
