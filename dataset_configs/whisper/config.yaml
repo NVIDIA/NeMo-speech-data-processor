@@ -10,7 +10,8 @@ processors:
   - _target_: sdp.processors.ASRTransformers # pip install accelerate transformers
     output_manifest_file: ${output_manifest_file}
     pretrained_model: "openai/whisper-large-v3"
-    generate_language: english
+    generate_language: croatian
     generate_task: transcribe
     batch_size: 8
+    beam_size: 1
     output_text_key: text

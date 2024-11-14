@@ -17,6 +17,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
+from datasets import load_dataset, Audio, Dataset
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import load_manifest
@@ -48,6 +49,7 @@ class ASRTransformers(BaseProcessor):
         input_duration_key: str = "duration",
         device: str = None,
         batch_size: int = 1,
+        beam_size: int = 1,
         chunk_length_s: int = 0,
         torch_dtype: str = "float32",
         generate_task: str = "transcribe",
@@ -69,6 +71,7 @@ class ASRTransformers(BaseProcessor):
         self.input_duration_key = input_duration_key
         self.device = device
         self.batch_size = batch_size
+        self.beam_size = beam_size
         self.chunk_length_s = chunk_length_s
         self.generate_task = generate_task
         self.generate_language = generate_language
@@ -93,12 +96,12 @@ class ASRTransformers(BaseProcessor):
 
         self.model.generation_config.language = self.generate_language
 
-        processor = AutoProcessor.from_pretrained(self.pretrained_model)
+        self.processor = AutoProcessor.from_pretrained(self.pretrained_model)
         self.pipe = pipeline(
             "automatic-speech-recognition",
             model=self.model,
-            tokenizer=processor.tokenizer,
-            feature_extractor=processor.feature_extractor,
+            tokenizer=self.processor.tokenizer,
+            feature_extractor=self.processor.feature_extractor,
             max_new_tokens=None,
             chunk_length_s=self.chunk_length_s,
             batch_size=self.batch_size,
@@ -111,18 +114,41 @@ class ASRTransformers(BaseProcessor):
         json_list = load_manifest(Path(self.input_manifest_file))
         json_list_sorted = sorted(json_list, key=lambda d: d[self.input_duration_key], reverse=True)
 
+        #dataset = load_dataset("json", data_files=self.input_manifest_file)
+        dataset = Dataset.from_list(json_list_sorted)
+        dataset = dataset.cast_column("audio_filepath", Audio(sampling_rate=16000))
+
+
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
 
-        with Path(self.output_manifest_file).open("w") as f:
-            start_index = 0
-            for _ in tqdm(range(len(json_list_sorted) // self.batch_size)):
-                batch = json_list_sorted[start_index : start_index + self.batch_size]
-                start_index += self.batch_size
-                audio_files = [item[self.input_audio_key] for item in batch]
-                results = self.pipe(
-                    audio_files, generate_kwargs={"language": self.generate_language, "task": self.generate_task}
-                )
+        transcriptions = []
 
-                for i, item in enumerate(batch):
-                    item[self.output_text_key] = results[i]["text"]
-                    f.write(json.dumps(item, ensure_ascii=False) + "\n")
+        start_index = 0
+        for _ in tqdm(range(len(json_list_sorted) // self.batch_size)):
+            audio = dataset[start_index : start_index + self.batch_size]["audio_filepath"]
+            start_index += self.batch_size
+
+            audio = [x["array"] for x in audio]
+
+            inputs = self.processor(audio, return_tensors="pt", truncation=False, padding="longest", return_attention_mask=True, sampling_rate=16_000)
+
+            if inputs.input_features.shape[-1] < 3000:
+                # we in-fact have short-form -> pre-process accordingly
+                inputs = self.processor(audio, return_tensors="pt", sampling_rate=16_000)
+            
+            inputs = inputs.to(self.device)
+
+            generated_ids = self.model.generate(language=self.generate_language,
+                                                task=self.generate_task,
+                                                num_beams=self.beam_size,
+                                                **inputs)
+            transcription = self.processor.batch_decode(generated_ids, skip_special_tokens=True)
+            transcriptions.extend(transcription)
+
+
+        print(len(json_list_sorted), len(transcriptions))
+        with Path(self.output_manifest_file).open("w") as f:
+            for item, transcription in zip(json_list_sorted, transcriptions):
+                item[self.output_text_key] = transcription
+                json.dump(item, f, ensure_ascii=False)
+                f.write("\n")
