@@ -1,5 +1,33 @@
 documentation: |
-  Toloka Armenian
+  Validation of responses Armenian
+  ################################
+
+  This configuration represents the second stage of processing Armenian language datasets for the Toloka platform. 
+  It focuses on validating and refining the results of completed tasks, leveraging speech-to-text models and quality metrics to ensure high-quality data for subsequent processing.
+
+  **Stage Overview**:
+  This stage includes the following steps:
+  1. Downloading results of completed tasks from Toloka.
+  2. Validating the audio files and filtering out corrupted files.
+  3. Transcribing Armenian audio to text using a HuggingFace model.
+  4. Cleaning ground truth text by:
+     - Dropping all non-Armenian alphabetical characters.
+     - Replacing the double Armenian symbol "եւ" with the single symbol "և".
+     - Converting text to lowercase.
+  5. Cleaning model-predicted text using the same steps as the ground truth text.
+  6. Calculating Word Error Rate (WER) between the predicted text and the ground truth text.
+  7. Filtering out responses with high WER and accepting those with low WER.
+  8. Rejecting responses from previously banned Tolokers.
+
+  **Required Arguments**:
+  - `workspace_dir`: Specify the directory for storing intermediate and final output files.
+
+  **Output Files**:
+  - `${workspace_dir}/result_manifest.json`: Manifest of results downloaded from Toloka.
+  - `${workspace_dir}/result_manifest_no_curr.json`: Manifest after removing corrupted files.
+  - `${workspace_dir}/result_manifest_pred.json`: Manifest with model-predicted transcriptions.
+  - `${workspace_dir}/result_manifest_pred_clean.json`: Manifest with cleaned predicted transcriptions.
+  - `${workspace_dir}/result_manifest_pred_review.json`: Final manifest after quality checks, ready for review and acceptance.
 
 processors_to_run: all
 workspace_dir: ???

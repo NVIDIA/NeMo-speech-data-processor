@@ -1,5 +1,34 @@
 documentation: |
-  Toloka Armenian
+  Start Toloka for Armenian
+  #########################
+
+  This configuration represents the first of three stages for processing Armenian language datasets for the Toloka platform. 
+  It sets up the foundation for creating structured tasks by initializing a new Toloka project, preparing pools, and processing textual data to generate a clean and organized corpus.
+
+  **Stage Overview**:
+  This stage focuses on preparing and refining the dataset through the following steps:
+  1. Creating a new Toloka project.
+  2. Creating a new pool for the project.
+  3. Generating an initial dataset manifest by saving file paths of a docs corpus.
+  4. Extracting text lines from `.docx` files.
+  5. Processing Armenian punctuation and converting it to English equivalents.
+  6. Extracting text within brackets to form an additional corpus.
+  7. Separating sentences in utterances in the additional corpus.
+  8. Separating sentences in utterances in the main corpus.
+  9. Merging the main and additional corpuses into a combined dataset.
+  10. Counting the number of words in each sentence.
+  11. Filtering out long sentences.
+  12. Filtering out short sentences.
+  13. Removing duplicate utterances.
+  14. Submitting the cleaned and processed data to the Toloka pool.
+
+  **Required Arguments**:
+  - `workspace_dir`: Specify the directory for storing intermediate and final output files.
+
+  **Output Files**:
+  - `${workspace_dir}/data_file.json`: Manifest with metadata of the Toloka project.
+  - `${workspace_dir}/taskpool.json`: Manifest with metadata of the Toloka pool.
+  - `${workspace_dir}/tasks_clear.json`: Final manifest of the clean text corpus.
 
 processors_to_run: all
 workspace_dir: ???

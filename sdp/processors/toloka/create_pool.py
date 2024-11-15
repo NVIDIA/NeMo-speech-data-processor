@@ -24,6 +24,33 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
 class CreateTolokaPool(BaseParallelProcessor):
+    """
+    CreateTolokaPool is a class for creating pools on the Toloka crowdsourcing platform.
+    This class uses Toloka's API to create pools for a given project, based on user-provided configurations.
+
+    Attributes:
+    ----------
+    API_KEY : str, optional
+        The API key used to authenticate with Toloka's API. Defaults to None, in which case it tries to
+        load the key from environment variables or config file.
+    platform : str, optional
+        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). Defaults to None, meaning it will
+        try to load from environment variables or the config file.
+    project_id : str, optional
+        The ID of the project for which the pool will be created. This can be provided during initialization
+        or loaded from the configuration file.
+    lang : str, optional
+        The language filter for the pool. Defaults to 'HY'.
+
+    Methods:
+    -------
+    load_config()
+        Loads configuration data from a manifest file to populate API_KEY, platform, and project_id attributes.
+    process_dataset_entry(data_entry)
+        Creates a new Toloka pool based on the provided dataset entry.
+    setup_quality_control(pool)
+        Sets up quality control rules for the pool to ensure data quality.
+    """
     def __init__(
         self,
         API_KEY: str = None,
@@ -32,6 +59,20 @@ class CreateTolokaPool(BaseParallelProcessor):
         lang: str = 'HY',
         **kwargs,
     ):
+        """
+        Constructs the necessary attributes for the CreateTolokaPool class.
+
+        Parameters:
+        ----------
+        API_KEY : str, optional
+            The API key used to authenticate with Toloka's API. If not provided, it is retrieved from the environment.
+        platform : str, optional
+            Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). If not provided, it is retrieved from the environment.
+        project_id : str, optional
+            The ID of the project for which the pool will be created. Defaults to None.
+        lang : str, optional
+            The language filter for the pool. Defaults to 'HY'.
+        """
         super().__init__(**kwargs)
         self.API_KEY = API_KEY or os.getenv('TOLOKA_API_KEY')
         self.platform = platform or os.getenv('TOLOKA_PLATFORM')
@@ -40,6 +81,12 @@ class CreateTolokaPool(BaseParallelProcessor):
         self.load_config()
 
     def load_config(self):
+        """
+        Loads configuration data from the output manifest file to populate API_KEY, platform, and project_id attributes.
+
+        This method attempts to read from a JSON configuration file. If the file is missing or improperly
+        formatted, an appropriate error is logged.
+        """
         try:
             with open(self.output_manifest_file, 'r') as file:
                 config = json.load(file)
@@ -52,6 +99,24 @@ class CreateTolokaPool(BaseParallelProcessor):
             logger.error("Error decoding JSON from the configuration file.")
 
     def process_dataset_entry(self, data_entry):
+        """
+        Creates a new Toloka pool based on the provided dataset entry.
+
+        This method retrieves necessary information such as API key, project ID, and platform from the
+        dataset entry or defaults to the instance's attributes. It then uses Toloka's API to create a
+        new pool for the specified project and returns the pool details.
+
+        Parameters:
+        ----------
+        data_entry : dict
+            A dictionary containing the data entry information, which may include overrides for API_KEY,
+            project_id, or platform.
+
+        Returns:
+        -------
+        list
+            A list containing a DataEntry object with the new pool ID if successful, or an empty list if failed.
+        """
         API_KEY = data_entry.get("API_KEY", self.API_KEY)  # Retrieve API_KEY from data_entry or use self.API_KEY
         project_id = data_entry.get(
             "project_id", self.project_id
@@ -85,6 +150,14 @@ class CreateTolokaPool(BaseParallelProcessor):
             return []
 
     def setup_quality_control(self, pool):
+        """
+        Sets up quality control rules for the Toloka pool to ensure high-quality task results.
+
+        Parameters:
+        ----------
+        pool : toloka.client.Pool
+            The pool object for which quality control rules will be set up.
+        """
         # Control for skipped tasks in a row
         pool.quality_control.add_action(
             collector=toloka.client.collectors.SkippedInRowAssignments(),

@@ -21,6 +21,42 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
 class GetTolokaResults(BaseParallelProcessor):
+    """
+    GetTolokaResults is a class for retrieving results from the Toloka crowdsourcing platform.
+    This class uses Toloka's API to fetch and store results for a specified pool based on certain conditions.
+
+    Attributes:
+    ----------
+    input_data_file : str
+        The path to the input data file containing API configurations.
+    input_pool_file : str
+        The path to the input pool file containing pool configurations.
+    output_dir : str
+        The directory where the output results will be stored.
+    status : str, optional
+        The status filter for assignments to retrieve. Defaults to 'ACCEPTED'.
+    config_file : str, optional
+        The path to the configuration file. Defaults to None.
+    API_KEY : str, optional
+        The API key used to authenticate with Toloka's API. Defaults to None, in which case it tries to
+        load the key from environment variables or config file.
+    platform : str, optional
+        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). Defaults to None, meaning it will
+        try to load from environment variables or the config file.
+    pool_id : str, optional
+        The ID of the pool from which results will be retrieved. Defaults to None.
+
+    Methods:
+    -------
+    load_config()
+        Loads configuration data from a config file to populate API_KEY, platform, and pool_id attributes.
+    prepare()
+        Prepares the class by loading API configuration, pool configuration, and initializing Toloka client.
+    read_manifest()
+        Retrieves and yields task information from Toloka based on the specified pool and assignment status.
+    process_dataset_entry(data_entry)
+        Downloads and processes individual task results.
+    """
     def __init__(
         self,
         input_data_file: str,
@@ -33,6 +69,28 @@ class GetTolokaResults(BaseParallelProcessor):
         pool_id: str = None,
         **kwargs
     ):
+        """
+        Constructs the necessary attributes for the GetTolokaResults class.
+
+        Parameters:
+        ----------
+        input_data_file : str
+            The path to the input data file containing API configurations.
+        input_pool_file : str
+            The path to the input pool file containing pool configurations.
+        output_dir : str
+            The directory where the output results will be stored.
+        status : str, optional
+            The status filter for assignments to retrieve. Defaults to 'ACCEPTED'.
+        config_file : str, optional
+            The path to the configuration file. Defaults to None.
+        API_KEY : str, optional
+            The API key used to authenticate with Toloka's API. If not provided, it is retrieved from the environment.
+        platform : str, optional
+            Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). If not provided, it is retrieved from the environment.
+        pool_id : str, optional
+            The ID of the pool from which results will be retrieved. Defaults to None.
+        """
         super().__init__(**kwargs)
         self.input_data_file = input_data_file
         self.input_pool_file = input_pool_file
@@ -46,6 +104,12 @@ class GetTolokaResults(BaseParallelProcessor):
             self.load_config()
 
     def load_config(self):
+        """
+        Loads configuration data from the specified config file.
+
+        This method attempts to read configuration details such as API key, platform, and pool ID from a JSON file.
+        If the file is missing or improperly formatted, an appropriate error is logged.
+        """
         try:
             with open(self.config_file, 'r') as file:
                 config = json.load(file)
@@ -58,6 +122,11 @@ class GetTolokaResults(BaseParallelProcessor):
             logger.error("Error decoding JSON from the configuration file.")
 
     def prepare(self):
+        """
+        Prepares the class by loading API configuration, pool configuration, and initializing Toloka client.
+
+        This method loads necessary configurations and initializes the Toloka client to interact with Toloka's API.
+        """
         if not self.API_KEY or not self.platform or not self.pool_id:
             try:
                 with open(self.input_data_file, 'r') as file:
@@ -82,14 +151,20 @@ class GetTolokaResults(BaseParallelProcessor):
         return super().prepare()
 
     def read_manifest(self):
+        """
+        Retrieves and yields task information from Toloka based on the specified pool and assignment status.
+
+        This method retrieves assignments from Toloka for a given pool and yields task information for
+        each assignment that matches the specified status.
+
+        Yields:
+        ------
+        dict
+            A dictionary containing task information such as task ID, text, attachment ID, status, etc.
+        """
         for assignment in self.toloka_client.get_assignments(pool_id=self.pool_id):
             if str(assignment.status) == 'Status.' + self.status:
-                # ACCEPTED — Accepted by the requester.
-                # ACTIVE — Being picked up by a Toloker.
-                # EXPIRED — The time for completing the tasks expired.
-                # REJECTED — Rejected by the requester.
-                # SKIPPED — Skipped by the Toloker.
-                # SUBMITTED — Completed but not checked.
+                # ACCEPTED, ACTIVE, EXPIRED, REJECTED, SKIPPED, SUBMITTED
                 if (
                     str(assignment.status) == 'Status.ACCEPTED'
                     or str(assignment.status) == 'Status.REJECTED'
@@ -134,6 +209,22 @@ class GetTolokaResults(BaseParallelProcessor):
                         yield task_info
 
     def process_dataset_entry(self, data_entry):
+        """
+        Downloads and processes individual task results.
+
+        This method takes a data entry, retrieves the corresponding attachment, and stores it in the
+        specified output directory. The task information is then returned.
+
+        Parameters:
+        ----------
+        data_entry : dict
+            A dictionary containing the data entry information.
+
+        Returns:
+        -------
+        list
+            A list containing a DataEntry object with the task information.
+        """
         user_id = data_entry["user_id"]
         task_id = data_entry["task_id"]
         text = data_entry["text"]
@@ -160,3 +251,4 @@ class GetTolokaResults(BaseParallelProcessor):
         }
 
         return [DataEntry(data=task_info)]
+

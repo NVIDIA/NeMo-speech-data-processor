@@ -1,5 +1,29 @@
 documentation: |
-  Toloka Armenian
+  Getting final resuts from Toloka
+  ################################
+
+  This configuration represents the final stage of processing Armenian language datasets for the Toloka platform. 
+  It processes all accepted results from the Toloka pool and prepares the data for training by refining and resampling audio files and ensuring text formatting consistency.
+
+  **Stage Overview**:
+  This stage includes the following steps:
+  1. Downloading all the ACCEPTED results from the Toloka platform.
+  2. Filtering out damaged audio files.
+  3. Resampling audio files to ensure compatibility with ASR models (16 kHz, mono channel).
+  4. Ensuring all utterances end with a proper Armenian end symbol; adding `:` if not.
+  5. Dropping all unnecessary fields, keeping only `text` and `audio_filepath` for training.
+  6. Calculating the audio duration for each utterance.
+
+  **Required Arguments**:
+  - `workspace_dir`: Specify the directory for storing intermediate and final output files.
+
+  **Output Files**:
+  - `${workspace_dir}/manifest-1.json`: Manifest of all accepted results.
+  - `${workspace_dir}/manifest0.json`: Manifest after filtering out damaged audio files.
+  - `${workspace_dir}/manifest1.json`: Manifest with resampled audio files.
+  - `${workspace_dir}/manifest3.json`: Manifest with text formatting corrections.
+  - `${workspace_dir}/manifest4.json`: Manifest with only the necessary fields (`text`, `audio_filepath`).
+  - `${workspace_dir}/results.json`: Final manifest with audio durations.
 
 processors_to_run: all
 workspace_dir: ???

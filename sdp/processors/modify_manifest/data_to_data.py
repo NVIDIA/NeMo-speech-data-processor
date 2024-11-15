@@ -916,14 +916,49 @@ class MakeSentence(BaseParallelProcessor):
 
 
 class ASRFileCheck(BaseProcessor):
+    """
+    ASRFileCheck is a class for validating audio files listed in a manifest file.
+    This class checks if each audio file can be successfully loaded with the `torchaudio` library, marking
+    and optionally moving corrupted files to a specified directory.
+
+    Attributes:
+    ----------
+    audio_filepath_key : str, optional
+        The key in the manifest entries used to retrieve the path to the audio file. Defaults to 'audio_filepath'.
+    corrupted_audio_dir : str, optional
+        The directory where corrupted audio files will be moved. If not provided, corrupted files are deleted.
+    failed_files : list
+        A list of file paths for audio files that failed to load.
+
+    Methods:
+    -------
+    process()
+        Checks each file listed in the manifest to ensure it can be loaded with torchaudio.
+        Moves or deletes corrupted files and outputs a new manifest with only valid entries.
+    """
     def __init__(self, audio_filepath_key: str = "audio_filepath", corrupted_audio_dir: str = None, **kwargs):
+        """
+        Constructs the necessary attributes for the ASRFileCheck class.
+
+        Parameters:
+        ----------
+        audio_filepath_key : str, optional
+            The key in the manifest entries used to retrieve the path to the audio file. Defaults to 'audio_filepath'.
+        corrupted_audio_dir : str, optional
+            The directory where corrupted audio files will be moved. If not provided, corrupted files are deleted.
+        """
         super().__init__(**kwargs)
         self.audio_filepath_key = audio_filepath_key
         self.corrupted_audio_dir = corrupted_audio_dir
         self.failed_files = []
 
     def process(self):
-        """Check each file listed in the manifest to ensure it can be loaded with torchaudio."""
+        """
+        Check each file listed in the manifest to ensure it can be loaded with torchaudio.
+
+        This method reads through the manifest file, attempts to load each audio file using torchaudio,
+        and moves or deletes corrupted files. A new manifest file is created with only the valid entries.
+        """
         with open(self.input_manifest_file, 'r') as f:
             lines = f.readlines()
 
@@ -962,6 +997,7 @@ class ASRFileCheck(BaseProcessor):
 
         if self.failed_files:
             print(f"Failed to process the following files: {self.failed_files}")
+
 
 
 class AudioResampler(BaseParallelProcessor):

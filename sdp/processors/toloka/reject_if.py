@@ -24,6 +24,36 @@ from sdp.processors.base_processor import BaseProcessor
 
 
 class RejectIfBanned(BaseProcessor):
+    """
+    RejectIfBanned is a class for rejecting Toloka assignments if the user is banned.
+    This class uses Toloka's API to identify banned users and reject their assignments.
+
+    Attributes:
+    ----------
+    input_data_file : str
+        The path to the input data file containing API configurations.
+    input_pool_file : str
+        The path to the input pool file containing pool configurations.
+    config_file : str, optional
+        The path to the configuration file. Defaults to None.
+    API_KEY : str, optional
+        The API key used to authenticate with Toloka's API. Defaults to None, in which case it tries to
+        load the key from environment variables or config file.
+    platform : str, optional
+        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). Defaults to None, meaning it will
+        try to load from environment variables or the config file.
+    pool_id : str, optional
+        The ID of the pool from which assignments will be retrieved. Defaults to None.
+
+    Methods:
+    -------
+    load_config()
+        Loads configuration data from a config file to populate API_KEY, platform, and pool_id attributes.
+    prepare()
+        Prepares the class by loading API configuration, pool configuration, and initializing Toloka client.
+    process()
+        Rejects Toloka assignments if the user is in the banned list.
+    """
     def __init__(
         self,
         input_data_file: str,
@@ -34,6 +64,24 @@ class RejectIfBanned(BaseProcessor):
         pool_id: str = None,
         **kwargs
     ):
+        """
+        Constructs the necessary attributes for the RejectIfBanned class.
+
+        Parameters:
+        ----------
+        input_data_file : str
+            The path to the input data file containing API configurations.
+        input_pool_file : str
+            The path to the input pool file containing pool configurations.
+        config_file : str, optional
+            The path to the configuration file. Defaults to None.
+        API_KEY : str, optional
+            The API key used to authenticate with Toloka's API. If not provided, it is retrieved from the environment.
+        platform : str, optional
+            Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). If not provided, it is retrieved from the environment.
+        pool_id : str, optional
+            The ID of the pool from which assignments will be retrieved. Defaults to None.
+        """
         super().__init__(**kwargs)
         self.input_data_file = input_data_file
         self.input_pool_file = input_pool_file
@@ -45,6 +93,12 @@ class RejectIfBanned(BaseProcessor):
             self.load_config()
 
     def load_config(self):
+        """
+        Loads configuration data from the specified config file.
+
+        This method attempts to read configuration details such as API key, platform, and pool ID from a JSON file.
+        If the file is missing or improperly formatted, an appropriate error is logged.
+        """
         try:
             with open(self.config_file, 'r') as file:
                 config = json.load(file)
@@ -57,6 +111,11 @@ class RejectIfBanned(BaseProcessor):
             print("Error decoding JSON from the configuration file.")
 
     def prepare(self):
+        """
+        Prepares the class by loading API configuration, pool configuration, and initializing Toloka client.
+
+        This method loads necessary configurations and initializes the Toloka client to interact with Toloka's API.
+        """
         if not self.API_KEY or not self.platform or not self.pool_id:
             try:
                 with open(self.input_data_file, 'r') as file:
@@ -80,6 +139,12 @@ class RejectIfBanned(BaseProcessor):
         self.toloka_client = toloka.client.TolokaClient(self.API_KEY, self.platform)
 
     def process(self):
+        """
+        Rejects Toloka assignments if the user is in the banned list.
+
+        This method retrieves the list of banned users and rejects assignments from these users if they have
+        submitted assignments that are still in the 'SUBMITTED' status.
+        """
         self.prepare()
         list_of_banned = []
         reject_list = []
@@ -98,3 +163,4 @@ class RejectIfBanned(BaseProcessor):
         print("REJECTION LIST -------------------------", reject_list)
         for assignment_id in tqdm(reject_list, desc="Rejecting assignments"):
             self.toloka_client.reject_assignment(assignment_id=assignment_id, public_comment='Bad quality of audio.')
+
