@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import collections
 import os
 import re
 from typing import Dict, List
 
+
+import tarfile
 import soundfile
 from sox import Transformer
+from pathlib import Path
+from tqdm import tqdm
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
@@ -690,3 +695,64 @@ class InverseNormalizeText(BaseParallelProcessor):
             data_entry[self.input_text_key], verbose=self.verbose
         )
         return [DataEntry(data=data_entry)]
+
+
+
+class ExtractFilesFromTar(BaseParallelProcessor):
+    """Processor that extracts the files from ``input_manifest_file`` to ``extract_to_dir``.
+
+    Args:
+        tar_dir (str): directory that contains tarred files.
+        extract_to_dir (str): directory where extracted files will be located.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        tar_dir: str,
+        extract_to_dir: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.tar_dir = Path(tar_dir)
+        self.extract_to_dir = extract_to_dir
+
+
+    def read_manifest(self):
+        if self.input_manifest_file is None:
+            raise ValueError("Manifest with files should be provided!")
+
+        logger.info('Reading Manifest...')
+
+        tar_entries = collections.defaultdict(list)
+
+        with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
+            for line in tqdm(fin):
+                entry = json.loads(line)
+                tar_entries[entry['shard_id']].append(entry)
+
+        for shard_id, entries in tar_entries.items():
+            yield (shard_id, entries)
+
+
+    def process_dataset_entry(self, data_entry):
+        shard_id, entries = data_entry
+
+        logger.info(f'Working on shard_id {shard_id}')
+
+        tar_file = Path(self.tar_dir, f"audio_{shard_id}").with_suffix('.tar')
+
+        extracted_entries = []
+
+        with tarfile.open(tar_file, 'r') as tar:
+            for entry in tqdm(entries):
+                extracted_path = Path(self.extract_to_dir, entry['audio_filepath']).as_posix()
+
+                if not os.path.exists(extracted_path):
+                    tar.extract(member=entry['audio_filepath'], path=self.extract_to_dir)
+
+                entry['audio_filepath'] = extracted_path
+                extracted_entries.append(DataEntry(data=entry))
+
+        return extracted_entries

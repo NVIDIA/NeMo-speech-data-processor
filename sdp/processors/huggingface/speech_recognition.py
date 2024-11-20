@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import torch
 import json
 from pathlib import Path
 
@@ -59,7 +60,6 @@ class ASRTransformers(BaseProcessor):
     ):
         super().__init__(**kwargs)
         try:
-            import torch
             from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
         except:
             raise ImportError("Need to install transformers: pip install accelerate transformers")
@@ -90,10 +90,9 @@ class ASRTransformers(BaseProcessor):
                 self.device = "cpu"
 
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
-            self.pretrained_model, torch_dtype=self.torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+            self.pretrained_model, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, use_safetensors=True, attn_implementation="flash_attention_2", device_map=self.device
         )
-        self.model.to(self.device)
-        self.processor = AutoProcessor.from_pretrained(self.pretrained_model)
+        self.processor = AutoProcessor.from_pretrained(self.pretrained_model, torch_dtype=torch.bfloat16)
 
 
     def process(self):
@@ -116,13 +115,13 @@ class ASRTransformers(BaseProcessor):
 
             audio = [x["array"] for x in audio]
 
-            inputs = self.processor(audio, return_tensors="pt", truncation=False, padding="longest", return_attention_mask=True, sampling_rate=16_000)
+            inputs = self.processor(audio, return_tensors="pt", torch_dtype=torch.bfloat16, truncation=False, padding="longest", return_attention_mask=True, sampling_rate=16_000)
 
             if inputs.input_features.shape[-1] < 3000:
                 # we in-fact have short-form -> pre-process accordingly
                 inputs = self.processor(audio, return_tensors="pt", sampling_rate=16_000)
             
-            inputs = inputs.to(self.device)
+            inputs = inputs.to(self.device).to(torch.bfloat16)
 
             generated_ids = self.model.generate(language=self.generate_language,
                                                 task=self.generate_task,
