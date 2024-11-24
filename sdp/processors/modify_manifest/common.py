@@ -349,7 +349,18 @@ class KeepOnlySpecifiedFields(BaseProcessor):
 
 
 class ApplyInnerJoin(BaseProcessor):
-    """Applies inner join to two manifests, i.e. creates a manifest from records that have matching values in both manifests.
+    def __init__(
+        self,
+        left_manifest_file: Optional[str],
+        right_manifest_file: str,
+        column_id: Union[str, List[str], None] = None,
+        **kwargs,
+    ):
+        raise DeprecationWarning("Use processor ApplyMerge instead")
+
+
+class ApplyMerge(BaseProcessor):
+    """Applies merge to two manifests, i.e. creates a manifest from records that have matching values in both manifests.
     For more information, please refer to the Pandas merge function documentation:
     https://pandas.pydata.org/docs/reference/api/pandas.merge.html#pandas.merge
 
@@ -358,11 +369,13 @@ class ApplyInnerJoin(BaseProcessor):
         column_id (Union[str, List[str], None]): Field names to join on. These must be found in both manifests.
             If `column_id` is None then this defaults to the intersection of the columns in both manifests.
             Defaults to None.
+        how (str): Similar to "how" parameter in DataFrame.merge(how=""), can be "left", "right", "outer", "inner", "cross", default "inner".
+            See more https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.merge.html
         left_manifest_file (Optional[str]): path to the left manifest. Defaults to `input_manifest_file`.
         right_manifest_file (str): path to the right manifest.
 
     Returns:
-        Inner join of two manifests.
+        Merge of two manifests.
     """
 
     def __init__(
