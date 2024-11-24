@@ -13,17 +13,18 @@
 # limitations under the License.
 
 import json
-from pathlib import Path
 from collections import Counter
-
-from tqdm import tqdm
-import soundfile as sf
-import numpy as np
+from pathlib import Path
 from typing import Optional
+
+import numpy as np
+import soundfile as sf
+from tqdm import tqdm
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import load_manifest
+
 
 class LangIdWhisper(BaseProcessor):
     """
@@ -79,7 +80,6 @@ class LangIdWhisper(BaseProcessor):
                 item[self.output_lang_key] = pred_lang
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
-    
     def get_label(self, path2audio_file):
         audio, sample_rate = sf.read(path2audio_file)
         audio = np.float32(audio)
@@ -100,7 +100,7 @@ class LangIdWhisper(BaseProcessor):
         else:
             if segments_in_audio > self.num_segments:
                 segments_in_audio = self.num_segments
-            
+
             long_segment_duration = int(audio_length / segments_in_audio)
 
             for segment_no in range(segments_in_audio):
@@ -110,15 +110,14 @@ class LangIdWhisper(BaseProcessor):
                 segment_end = segment_start + audio_segment_samples
                 segment_starts.append(segment_start)
                 segment_ends.append(segment_end)
-            
-        
+
         label_id_list = []
 
         n_mels = 80
 
         if self.pretrained_model == "large-v3":
-            n_mels=128
-        
+            n_mels = 128
+
         for segment_start, segment_end in zip(segment_starts, segment_ends):
             audio_segement = audio[segment_start:segment_end]
             audio_segement = self.whisper.pad_or_trim(audio_segement)
@@ -131,7 +130,7 @@ class LangIdWhisper(BaseProcessor):
         m_label_id = Counter(label_id_list).most_common(1)[0][0]
         return m_label_id
 
-            
+
 class ASRWhisper(BaseProcessor):
     """
     Simple example to transcribe using ASR Whisper model from HuggingFace.
@@ -214,6 +213,8 @@ class ASRTransformers(BaseProcessor):
         input_duration_key (str): Audio duration key. Defaults to "duration".
         device (str): Inference device.
         batch_size (int): Inference batch size. Defaults to 1.
+        chunk_length_s (int): Length of the chunks (in seconds) into which the input audio should be divided.
+            Note: Some models perform the chunking on their own (for instance, Whisper chunks into 30s segments also by maintaining the context of the previous chunks).
         torch_dtype (str): Tensor data type. Default to "float32"
         max_new_tokens (Optional[int]): The maximum number of new tokens to generate.
             If not specified, there is no hard limit on the number of tokens generated, other than model-specific constraints.
@@ -227,6 +228,7 @@ class ASRTransformers(BaseProcessor):
         input_duration_key: str = "duration",
         device: str = None,
         batch_size: int = 1,
+        chunk_length_s: int = 0,
         torch_dtype: str = "float32",
         generate_task: str = "transcribe",
         generate_language: str = "english",
@@ -247,6 +249,7 @@ class ASRTransformers(BaseProcessor):
         self.input_duration_key = input_duration_key
         self.device = device
         self.batch_size = batch_size
+        self.chunk_length_s = chunk_length_s
         self.generate_task = generate_task
         self.generate_language = generate_language
         self.max_new_tokens = max_new_tokens
@@ -268,6 +271,8 @@ class ASRTransformers(BaseProcessor):
         )
         self.model.to(self.device)
 
+        self.model.generation_config.language = self.generate_language
+
         processor = AutoProcessor.from_pretrained(self.pretrained_model)
         self.pipe = pipeline(
             "automatic-speech-recognition",
@@ -275,7 +280,7 @@ class ASRTransformers(BaseProcessor):
             tokenizer=processor.tokenizer,
             feature_extractor=processor.feature_extractor,
             max_new_tokens=None,
-            chunk_length_s=30,
+            chunk_length_s=self.chunk_length_s,
             batch_size=self.batch_size,
             return_timestamps=True,
             torch_dtype=self.torch_dtype,
