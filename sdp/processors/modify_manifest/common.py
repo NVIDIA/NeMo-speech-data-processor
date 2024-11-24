@@ -15,17 +15,19 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 from tqdm import tqdm
 
+from sdp.logging import logger
 from sdp.processors.base_processor import (
     BaseParallelProcessor,
     BaseProcessor,
     DataEntry,
 )
 from sdp.utils.common import load_manifest
+
 
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.
@@ -368,18 +370,22 @@ class ApplyInnerJoin(BaseProcessor):
         left_manifest_file: Optional[str],
         right_manifest_file: str,
         column_id: Union[str, List[str], None] = None,
+        how: str = "inner",
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.left_manifest_file = left_manifest_file if left_manifest_file != None else self.input_manifest_file
         self.right_manifest_file = right_manifest_file
         self.column_id = column_id
+        self.how = how
 
     def process(self):
         m1 = pd.DataFrame.from_records(load_manifest(Path(self.left_manifest_file)))
         m2 = pd.DataFrame.from_records(load_manifest(Path(self.right_manifest_file)))
-        m3 = pd.merge(m1, m2, on=self.column_id, how="inner")
+        m3 = pd.merge(m1, m2, on=self.column_id, how=self.how)
 
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for _, line in m3.iterrows():
                 fout.write(json.dumps(dict(line), ensure_ascii=False) + "\n")
+
+        logger.info("Total number of entries after join: " + str(m3.shape[0]))
