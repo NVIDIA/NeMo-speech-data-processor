@@ -1,7 +1,7 @@
 processors_to_run: all
 output_manifest_file: ???
 input_manifest_file: ???
-device: ???
+out_dir: ???
 
 processors:
   - _target_: sdp.processors.ChangeToAbsolutePath
@@ -13,6 +13,7 @@ processors:
     generate_language: slovak
     generate_task: transcribe
     batch_size: 16
-    beam_size: 5
+    beam_size: 1
     output_text_key: text
-    device: ${device}
+    torch_dtype: bfloat16
+    out_dir: ${out_dir}
