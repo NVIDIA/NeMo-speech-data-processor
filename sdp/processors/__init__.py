@@ -58,6 +58,7 @@ from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
 from sdp.processors.huggingface.speech_recognition import ASRTransformers
+from sdp.processors.huggingface.whisper_hallucinations import WhisperHallucinationFeatures
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ApplyInnerJoin,
