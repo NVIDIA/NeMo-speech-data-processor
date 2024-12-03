@@ -58,6 +58,7 @@ from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
 from sdp.processors.huggingface.speech_recognition import ASRTransformers
+from sdp.processors.huggingface.qwen_cleaning import QwenGenerationFiltering
 from sdp.processors.huggingface.whisper_hallucinations import WhisperHallucinationFeatures
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
@@ -70,6 +71,7 @@ from sdp.processors.modify_manifest.common import (
     RenameFields,
     SortManifest,
     SplitOnFixedDuration,
+    RemoveFields
 )
 from sdp.processors.modify_manifest.create_manifest import CreateInitialManifestByExt
 from sdp.processors.modify_manifest.data_to_data import (
@@ -103,6 +105,7 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropOnAttribute,
     PreserveByValue,
     DropRepeatedFields,
+    DropDuplicates
 )
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
