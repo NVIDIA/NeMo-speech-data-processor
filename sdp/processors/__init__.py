@@ -73,6 +73,7 @@ from sdp.processors.inference.engines.vllm.vllm import vLLMInference
 from sdp.processors.inference.engines.post_processing.whisper_hallucinations import WhisperHallucinationFeatures
 
 from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
+from sdp.processors.huggingface.qwen_cleaning import QwenGenerationFiltering
 
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
@@ -84,6 +85,7 @@ from sdp.processors.modify_manifest.common import (
     RenameFields,
     SortManifest,
     SplitOnFixedDuration,
+    RemoveFields
 )
 from sdp.processors.modify_manifest.create_manifest import CreateInitialManifestByExt
 from sdp.processors.modify_manifest.data_to_data import (
@@ -118,6 +120,7 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropOnAttribute,
     PreserveByValue,
     DropRepeatedFields,
+    DropDuplicates
 )
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,

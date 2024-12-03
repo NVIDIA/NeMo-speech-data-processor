@@ -169,7 +169,7 @@ processors:
       - duration
       - pred_text
   
-  - _target_: sdp.processors.llm.vllm.vLLMInference
+  - _target_: sdp.processors.vLLMInference
     output_manifest_file: /ameister/YODAS_PR/manifest_24.json
     prompt_file: /ameister/YODAS_PR/dataset_configs/multilingual/yodas2/prompts/pnc_restoration/en.yaml
     model:
@@ -191,6 +191,7 @@ processors:
       tokenize: False
       add_generation_prompt: True
 
+  
   
   
 
