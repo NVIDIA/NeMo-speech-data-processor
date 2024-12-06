@@ -16,7 +16,8 @@ import collections
 import os
 import re
 import yaml
-from typing import Dict, List
+from typing import Dict, List, Union
+from functools import partial
 
 import soundfile
 from sox import Transformer
@@ -26,6 +27,7 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
+from sdp.utils.apply_operators import evaluate_expression
 
 
 class GetAudioDuration(BaseParallelProcessor):
@@ -538,7 +540,7 @@ class SubRegex(BaseParallelProcessor):
     def __init__(
         self,
         regex_params: Union[List[Dict] | str],
-        regex_params_list = None
+        regex_params_list: List[Dict] = None,
         text_key: str = "text",
         **kwargs,
     ):
@@ -581,7 +583,7 @@ class SubRegex(BaseParallelProcessor):
     def _from_yaml(self, regex_params_yaml):
         with open(regex_params_yaml, 'r') as params_file:
             params = yaml.load(params_file, Loader=yaml.SafeLoader)
-            return params['regex_params']
+            return params['regex_params_list']
     
     def process_dataset_entry(self, data_entry) -> List:
         """Replaces each found regex match with a given string."""
@@ -718,3 +720,36 @@ class InverseNormalizeText(BaseParallelProcessor):
             data_entry[self.input_text_key], verbose=self.verbose
         )
         return [DataEntry(data=data_entry)]
+
+
+class LambdaExpression(BaseParallelProcessor):
+    def __init__(
+        self,
+        new_field: str,
+        expression: str,
+        lambda_param_name: str = "entry",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.new_field = new_field
+        self.expression = expression
+        self.lambda_param_name = lambda_param_name
+
+    def _get_values(self, match, data_entry):
+        field = match.group(1)
+        return str(data_entry.get(field))
+
+    def process_dataset_entry(self, data_entry) -> List[DataEntry]:
+        _get_values = partial(self._get_values, data_entry=data_entry)
+        
+        entry_expression = re.sub(
+            rf'{self.lambda_param_name}\.(\w+)', 
+            _get_values, 
+            self.expression
+        )
+        
+        data_entry[self.new_field] = evaluate_expression(entry_expression)
+        return [DataEntry(data=data_entry)]
+
+    def finalize(self, metrics):
+        super().finalize(metrics)
