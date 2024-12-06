@@ -15,6 +15,7 @@
 import collections
 import os
 import re
+import yaml
 from typing import Dict, List
 
 import soundfile
@@ -536,25 +537,52 @@ class SubRegex(BaseParallelProcessor):
 
     def __init__(
         self,
-        regex_params_list: List[Dict],
+        regex_params: Union[List[Dict] | str],
+        regex_params_list = None
         text_key: str = "text",
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.regex_params_list = regex_params_list
+        if regex_params_list: 
+            logging.warning("The argument `regex_params_list` will be removed soon. Please use `regex_params` instead.")
+            if regex_params is None:
+                regex_params = regex_params_list
+            else:
+                raise ValueError("The arguments `regex_params_list` and `regex_params` are mutually exclusive and cannot be set simultaneously.")
+
+        if type(regex_params) is str:
+            if not regex_params.endswith('.yaml'):
+                raise ValueError("The regex parameters file must be in .yaml format.")
+            
+            if not os.path.exists(regex_params):
+                raise FileNotFoundError(f"The regex parameters file ({regex_params}) was not found.")
+            
+            self.regex_params = self._from_yaml(regex_params)
+        
+        elif type(regex_params) is list:
+            self.regex_params = regex_params
+        
+        else:
+            raise ValueError(f"The current type of `regex_params` ({type(regex_params)}) is not supported.")
+
         self.text_key = text_key
 
         # verify all dicts in regex_params_list have "pattern" and "repl" keys
-        for regex_params_dict in self.regex_params_list:
+        for regex_params_dict in self.regex_params:
             if not "pattern" in regex_params_dict.keys():
                 raise ValueError(
-                    f"Need to have key 'pattern' in all entries of `regex_params_list`: {self.regex_params_list}"
+                    f"Need to have key 'pattern' in all entries of `regex_params`: {self.regex_params}"
                 )
             if not "repl" in regex_params_dict.keys():
                 raise ValueError(
-                    f"Need to have key 'repl' in all entries of `regex_params_list`: {self.regex_params_list}"
+                    f"Need to have key 'repl' in all entries of `regex_params`: {self.regex_params}"
                 )
 
+    def _from_yaml(self, regex_params_yaml):
+        with open(regex_params_yaml, 'r') as params_file:
+            params = yaml.load(params_file, Loader=yaml.SafeLoader)
+            return params['regex_params']
+    
     def process_dataset_entry(self, data_entry) -> List:
         """Replaces each found regex match with a given string."""
         replace_word_counter = collections.defaultdict(int)
@@ -562,7 +590,7 @@ class SubRegex(BaseParallelProcessor):
         text_in = data_entry[self.text_key]
 
         text_in = add_start_end_spaces(text_in)
-        for regex_params in self.regex_params_list:
+        for regex_params in self.regex_params:
             text_out = re.sub(
                 pattern=regex_params["pattern"],
                 repl=regex_params["repl"],
