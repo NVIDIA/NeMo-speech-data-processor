@@ -291,8 +291,6 @@ Kazakh Speech Corpus 2 (KSC2)
 UzbekVoice
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Dataset link:** https://huggingface.co/datasets/DavronSherbaev/uzbekvoice-filtered
-
 **Required manual steps:** You need to download the dataset from the google drive provided on the website.
 
 `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/uzbek/uzbekvoice/config.yaml>`__ |
