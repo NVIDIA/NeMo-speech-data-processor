@@ -178,11 +178,11 @@ Few-shot Learning Evaluation of Universal Representations of Speech (FLEURS)
 **Dataset link:** https://huggingface.co/datasets/google/fleurs
 
 * **Armenian**:
-`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/fleurs/config.yaml>`__ |
-:doc:`documentation <config-docs/armenian/fleurs/config>`
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/fleurs/config.yaml>`__ |
+   :doc:`documentation <config-docs/armenian/fleurs/config>`
 * **Uzbek**:
-`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/uzbek/fleurs/config.yaml>`__ |
-:doc:`documentation <config-docs/uzbek/fleurs/config>`
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/uzbek/fleurs/config.yaml>`__ |
+   :doc:`documentation <config-docs/uzbek/fleurs/config>`
 
 
 .. toctree::
