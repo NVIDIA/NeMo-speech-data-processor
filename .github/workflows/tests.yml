@@ -73,7 +73,7 @@ jobs:
         sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
         pip install nemo_text_processing
         pip install Cython wheel  # need to pre-install to avoid error in nemo installation
-        pip install git+https://github.com/NVIDIA/NeMo#egg=NeMo
+        pip install git+https://github.com/NVIDIA/NeMo#egg=nemo-toolkit[asr,nlp]
         python -m pip cache purge
 
     - name: Run all tests
