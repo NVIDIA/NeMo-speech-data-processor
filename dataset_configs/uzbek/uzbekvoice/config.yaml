@@ -1,6 +1,6 @@
 documentation: |
   uzbekvoice
-  ######
+  ##########
   This config can be used to prepare
   `https://huggingface.co/datasets/DavronSherbaev/uzbekvoice-filtered>`_
   dataset in the NeMo format.
