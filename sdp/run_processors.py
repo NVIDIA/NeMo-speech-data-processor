@@ -23,6 +23,8 @@ from omegaconf import OmegaConf, open_dict
 
 from sdp.logging import logger
 
+from sdp.utils.import_manager import ImportManager
+
 # registering new resolvers to simplify config files
 OmegaConf.register_new_resolver("subfield", lambda node, field: node[field])
 OmegaConf.register_new_resolver("not", lambda x: not x)
@@ -41,6 +43,22 @@ handler.setFormatter(formatter)
 logger.handlers
 logger.addHandler(handler)
 logger.propagate = False
+
+def update_processor_imports(config_path: str, init_file: str = None):
+    """
+    Update processor imports based on config file.
+    
+    Args:
+        config_path: Path to the YAML config file
+        init_file: Optional path to __init__.py file to update
+    """
+    try:
+        manager = ImportManager()
+        manager.sync_with_config(config_path, init_file)
+        logger.info(f"Successfully updated imports for config: {config_path}")
+    except Exception as e:
+        logger.error(f"Failed to update imports: {str(e)}")
+        raise
 
 
 def select_subset(input_list: List, select_str: str) -> List:
@@ -87,6 +105,18 @@ def select_subset(input_list: List, select_str: str) -> List:
 
 def run_processors(cfg):
     logger.info(f"Hydra config: {OmegaConf.to_yaml(cfg)}")
+
+    if cfg.get("use_import_manager", False):
+        try:
+            #absolute path to the config directory
+            yaml_path = os.path.join(os.getcwd(), 'dataset_configs/english/test.yaml')
+            
+            logger.info(f"Managing imports for config: {yaml_path}")
+            manager = ImportManager()
+            manager.sync_with_config(yaml_path)
+        except Exception as e:
+            logger.warning(f"Import management failed: {e}")
+
     processors_to_run = cfg.get("processors_to_run", "all")
 
     if processors_to_run == "all":
