@@ -91,6 +91,11 @@ FLEURS
 .. autodata:: sdp.processors.CreateInitialManifestFleurs
    :annotation:
 
+UzbekVoice
+''''''''''
+.. autodata:: sdp.processors.CreateInitialManifestUzbekvoice
+   :annotation:
+
 
 MASC
 ''''''

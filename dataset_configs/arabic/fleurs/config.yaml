@@ -38,9 +38,8 @@ documentation: |
 
 processors_to_run: all
 workspace_dir: ???
-data_split: test
-manifest_dir: ${workspace_dir}/${data_split}
-final_manifest: ${manifest_dir}/manifest.json
+data_split: dev
+final_manifest: ${workspace_dir}/manifest.json
 
 min_duration: 0.1 # minimal duration of the segment
 max_duration: 20.0 # maximal duration of the segment
@@ -58,21 +57,21 @@ processors:
   - _target_: sdp.processors.CreateInitialManifestFleurs
     lang: "ar_eg"
     split: ${data_split}
-    raw_data_dir: ${workspace_dir}/${data_split}
-    output_manifest_file: ${manifest_dir}/manifest0.json
+    raw_data_dir: ${workspace_dir}
+    output_manifest_file: ${workspace_dir}/manifest0.json
 
   # 1 calculating durations
   - _target_: sdp.processors.GetAudioDuration
     audio_filepath_key: audio_filepath
     duration_key: duration
-    output_manifest_file: ${manifest_dir}/manifest1.json
+    output_manifest_file: ${workspace_dir}/manifest1.json
 
   # 2 dropping too short and too long segments
   - _target_: sdp.processors.DropHighLowDuration
     high_duration_threshold: ${max_duration}
     low_duration_threshold: ${min_duration}
     duration_key: duration
-    output_manifest_file: ${manifest_dir}/manifest2.json
+    output_manifest_file: ${workspace_dir}/manifest2.json
 
   # 3 applying text normalization
   - _target_: sdp.processors.NormalizeText
@@ -80,7 +79,7 @@ processors:
     input_language: "ar"
     input_case: "cased"
     output_text_key: "text"
-    output_manifest_file: ${manifest_dir}/manifest3.json
+    output_manifest_file: ${workspace_dir}/manifest3.json
 
   # 4 replacing/removing special marks
   - _target_: sdp.processors.SubRegex
@@ -104,7 +103,7 @@ processors:
       - { "pattern": "\u0670", "repl": "" }                   # removing small Superscript Alif
       - { "pattern": "\u06CC", "repl": "\u064A" }             # replacing Persian letter Yeh with Arabic letter Yeh
       - { "pattern": "\u06A9", "repl": "\u063A" }             # replacing Persian letter Kaf with Arabic letter Kaf
-    output_manifest_file: ${manifest_dir}/manifest4.json
+    output_manifest_file: ${workspace_dir}/manifest4.json
     test_cases:
       - { input: { text: "  test   " }, output: { text: "test" } }
     
@@ -132,7 +131,7 @@ processors:
       - { "pattern": "\\.+", "repl": "." }
       - { "pattern": "،+", "repl": "،" }
       - { "pattern": "؟+", "repl": "؟" }
-    output_manifest_file: ${manifest_dir}/manifest5.json
+    output_manifest_file: ${workspace_dir}/manifest5.json
     test_cases:
       - { input: { text: "..." }, output: { text: "." } }
       - { input: { text: "test..." }, output: { text: "test." } }
@@ -149,25 +148,25 @@ processors:
     remove_tatweel: ${remove_tatweel}
     normalize_ligature: ${normalize_ligature}
     apply_nfkc: ${apply_nfkc}
-    output_manifest_file: ${manifest_dir}/manifest6.json
+    output_manifest_file: ${workspace_dir}/manifest6.json
 
   # 7 removing high low wordrate samples
   - _target_: sdp.processors.DropHighLowWordrate
     text_key: text
     high_wordrate_threshold: ${max_wordrate}
     low_wordrate_threshold: ${min_wordrate}
-    output_manifest_file: ${manifest_dir}/manifest7.json
+    output_manifest_file: ${workspace_dir}/manifest7.json
 
   # 8 dropping non alphabetical symbols
   - _target_: sdp.processors.DropNonAlphabet
     alphabet: "؟.،  \u0631\u0630\u062F\u062E\u062D\u062C\u062B\u062A\u0629\u0628\u0627\u0626\u0625\u0624\u0623\u0622
                     \u0621\u064A\u0649\u0648\u0647\u0646\u0645\u0644\u0643\u0642\u0641\u063A\u0639\u0638\u0637\u0636
                     \u0635\u0634\u0633\u0632\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652"
-    output_manifest_file: ${manifest_dir}/manifest8.json
+    output_manifest_file: ${workspace_dir}/manifest8.json
 
   # 9 changing paths to relative
   - _target_: sdp.processors.ChangeToRelativePath
-    base_dir: ${manifest_dir}
+    base_dir: ${workspace_dir}
     output_manifest_file: ${final_manifest}
 
 
