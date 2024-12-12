@@ -52,7 +52,6 @@ data_check_fn_mtedx = partial(data_check_fn_generic, file_name=lambda language_i
 data_check_fn_coraa = partial(data_check_fn_generic, file_name="train_dividido/train.part1.rar")
 data_check_fn_librispeech = partial(data_check_fn_generic, file_name="dev-clean.tar.gz")
 data_check_fn_fleurs = partial(data_check_fn_generic, file_name="dev.tar.gz")
-data_check_fn_masc = partial(data_check_fn_generic, file_name="masc.tar.gz")
 
 def data_check_fn_voxpopuli(raw_data_dir: str) -> None:
     """Raises error if do not find expected data.
@@ -189,7 +188,7 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         #     ),        
         # TestCase(
         #     config_path=f"{DATASET_CONFIGS_ROOT}/arabic/masc/config.yaml", 
-        #     data_check_fn=data_check_fn_masc
+        #     data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz")
         #     ),
         # TestCase(
         #     config_path=f"{DATASET_CONFIGS_ROOT}/arabic/mcv/config.yaml", 
@@ -197,7 +196,11 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         #     ),
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/arabic/fleurs/config.yaml", 
-            data_check_fn=partial(data_check_fn_mcv, archive_file_stem="dev")
+            data_check_fn=data_check_fn_fleurs
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/arabic/mediaspeech/config.yaml", 
+            data_check_fn=partial(data_check_fn_generic, file_name="AR.tar.gz")
             )
     ]
 
@@ -268,7 +271,6 @@ def setup_data(request):
 
 
 def test_data_availability(setup_data):
-
     _, data_check_fn, data_dir, _ = setup_data
     try:
         data_check_fn(raw_data_dir=data_dir)

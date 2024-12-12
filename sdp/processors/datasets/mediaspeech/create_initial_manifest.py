@@ -26,7 +26,7 @@ class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
     """
     Processor for creating initial manifest for MediaSpeech Arabic dataset.
     Dataset link: https://www.openslr.org/108/.
-    Prior to calling processor download the tarred dataset and store it under `raw_dataset_dir/AR.tgz`.
+    Prior to calling processor download the tarred dataset and store it under `raw_dataset_dir/AR.tgz` or `raw_dataset_dir/AR.tar.gz`.
     
     Args:
         raw_data_dir (str): The root directory of the dataset.
@@ -77,16 +77,20 @@ class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
     def prepare(self):
         # Extracting data (unless already done).
         if not self.already_extracted:
-                tar_gz_filepath = Path(str(self.raw_data_dir)) / "AR.tgz"
-                if not tar_gz_filepath.exists:
-                    raise RuntimeError(
-                        f"Did not find any file matching {tar_gz_filepath}. "
-                        "For MediaSpeech dataset we cannot automatically download the data, so "
-                        "make sure to get the data from https://www.openslr.org/108/"
-                        "and put it in the 'raw_dataset_dir' folder."
-                    )
+            tar_gz_filepath = Path(str(self.raw_data_dir)) / "AR.tgz"
+            if not tar_gz_filepath.exists():
+                # necessary to check in tests
+                tar_gz_filepath = Path(str(self.raw_data_dir)) / "AR.tar.gz"
 
-                self.dataset_dir = Path(extract_archive(tar_gz_filepath, self.extract_archive_dir))
+            if not tar_gz_filepath.exists():
+                raise RuntimeError(
+                    '''Did not find any file matching `AR.tgz` or `AR.tar.gz`. 
+                    For MediaSpeech dataset we cannot automatically download the data, so 
+                    make sure to get the data from https://www.openslr.org/108/ 
+                    and put it in the `raw_data_dir` folder.'''
+                )
+
+            self.dataset_dir = Path(extract_archive(tar_gz_filepath, self.extract_archive_dir))
         else:
             logger.info("Skipping dataset untarring...")
             self.dataset_dir = Path(self.extract_archive_dir) / "AR"
@@ -99,21 +103,14 @@ class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
 
         for audio_filepath in audio_filepaths:
             sample_id = os.path.basename(audio_filepath).split(".")[0]
-            text_filepaths = glob(
-                f"{self.dataset_dir}/{sample_id}.txt"
-            )
 
-            if len(text_filepaths) < 1:
+            text_filepath = f"{self.dataset_dir}/{sample_id}.txt"
+            if not os.path.exists(text_filepath):
                 logger.warning(
                     f'Sample "{sample_id}" has no related .txt files. Skipping'
                 )
                 continue
 
-            text_filepath = text_filepaths[0]
-            if len(text_filepaths) > 1:
-                logger.warning(
-                    f"Sample \"{sample_id}\" has multiple related .txt files: {', '.join(text_filepaths)}. \
-                               Only first file will be used for parsing - {text_filepaths[0]}, other related .txt files will be skipped.")
             data_entries.append(
                 {
                     "sample_id": sample_id,
