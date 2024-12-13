@@ -26,9 +26,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("Preparing TarteelAI's EveryAyah test data")
     parser.add_argument("--dataset_name", required=True, help="Hugging Face dataset name. E.g., 'tarteel-ai/everyayah'")
     parser.add_argument(
-        "--sampled_dataset_name",
+        "--archive_file_stem",
         required=True,
-        help="What the stem (ie without the 'tar.gz' bit) of the new archive file should be",
+        help="What the stem (ie without the '.hf' bit) of the new archive file should be",
     )
     parser.add_argument("--data_split", default="test", help="Dataset data split")
     parser.add_argument("--num_entries", default=20, type=int, help="How many entries to keep (in each split)")
@@ -43,6 +43,4 @@ if __name__ == "__main__":
         dataset = load_dataset(args.dataset_name, split="train", streaming=True)
         sampled_dataset = list(itertools.islice(dataset, args.num_entries))
         sampled_dataset = Dataset.from_list(sampled_dataset)
-        sampled_dataset.save_to_disk(os.path.join(args.test_data_folder, f"{args.sampled_dataset_name}"))
-        
-        load_from_disk(os.path.join(args.test_data_folder, f"{args.sampled_dataset_name}"))
+        sampled_dataset.save_to_disk(os.path.join(args.test_data_folder, f"{args.archive_file_stem}.hf"))

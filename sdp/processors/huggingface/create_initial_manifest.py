@@ -1,4 +1,5 @@
 import os
+import glob
 
 import soundfile as sf
 
@@ -58,7 +59,8 @@ class CreateInitialManifestHuggingFace(BaseParallelProcessor):
         # checking if dataset should be loaded from disk
         if self.already_downloaded:
             if os.path.exists(self.raw_data_dir):
-                self.dataset = datasets.load_from_disk(os.path.join(self.raw_data_dir))
+                hf_files = glob.glob(f'{self.raw_data_dir}/*.hf')
+                self.dataset = datasets.load_from_disk(os.path.join(self.raw_data_dir, hf_files[0]))
             else:
                 logger.info("Dataset not found locally. Initiating download from Hugging Face.")
         else:
