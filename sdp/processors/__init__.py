@@ -58,6 +58,7 @@ from sdp.processors.huggingface.speech_recognition import ASRTransformers
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ApplyInnerJoin,
+    ApplyMerge,
     ChangeToRelativePath,
     CombineSources,
     DuplicateFields,
@@ -95,8 +96,8 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropLowWordMatchRate,
     DropNonAlphabet,
     DropOnAttribute,
-    PreserveByValue,
     DropRepeatedFields,
+    PreserveByValue,
 )
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,

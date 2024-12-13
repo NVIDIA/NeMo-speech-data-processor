@@ -274,7 +274,7 @@ Miscellaneous
 .. autodata:: sdp.processors.CreateInitialManifestByExt
    :annotation:
 
-.. autodata:: sdp.processors.ApplyInnerJoin
+.. autodata:: sdp.processors.ApplyMerge
    :annotation:
 
 .. _sdp-base-classes:
