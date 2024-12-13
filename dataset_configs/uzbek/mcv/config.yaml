@@ -1,0 +1,151 @@
+documentation: |
+  MCV Uzbek
+  ###########
+
+  This config is designed for the
+  `Mozilla Common Voice (MCV) <https://commonvoice.mozilla.org/>`_ dataset
+  17.0 release, but should work for any subsequent releases as well.
+
+  It performs the following data processing.
+
+  1. Extracts and converts all data to the specified manifest format.
+  2. Gets audio durations and then keeps only instances with the duration greater than 0.
+  3. Adjusts the text by removing punctuation marks and replacing some inconsistent characters.
+
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files will be stored.
+    You need to manually place the downloaded .tar files data inside
+    ``<workspace dir>`` folder.
+  * **data_split**: should be "train", "dev" or "test".
+
+  Note that you can customize any part of this config either directly or from command-line.
+  Here are some common customizations to consider:
+
+  * **remove_pc**: set to True if P&C is not needed. Defaults to True.
+  * **remove_hyphen**: set to True if hyphens is not needed. Defaults to True.
+
+  **Output format**.
+
+  This config dumps the final manifest at ``${workspace_dir}/${data_split}_manifest.json``.
+  The output manifest contains the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription, including punctuation ".,?" and capitalization.
+  * **duration (float)**: audio duration in seconds.
+
+processors_to_run: '0:'
+workspace_dir: ???
+data_split: ???
+final_manifest: ${workspace_dir}/${data_split}_manifest.json
+save_dir: ${workspace_dir}
+remove_pc: False
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifestMCV
+    language_id: uz
+    extract_archive_dir: ${workspace_dir}/raw_data
+    resampled_audio_dir: ${workspace_dir}/${data_split}/audio/
+    data_split: ${data_split}
+    raw_data_dir: ${workspace_dir}
+    output_manifest_file: ${save_dir}/${data_split}_manifest_1.json
+
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    output_manifest_file: ${save_dir}/${data_split}_manifest_2.json
+
+    regex_params_list:
+      - {"pattern": ":", "repl": ''}
+      
+      # replace all the inconsistent apostrophy characters for oʻ ang gʻ with ʻ
+      - {"pattern": "(?<=o|g|O|G)‘", "repl": "ʻ"}
+      - {"pattern": "(?<=o|g|O|G)’", "repl": "ʻ"}
+      - {"pattern": "(?<=o|g|O|G)`", "repl": "ʻ"}
+      - {"pattern": "(?<=o|g|O|G)'", "repl": "ʻ"}
+      - {"pattern": '(?<=o|g|O|G)ʼ', "repl": "ʻ"}
+
+      # rreplace all the inconsistent apostrophy characters besides oʻ ang gʻ with ’
+      - {"pattern": "‘", "repl": "’"}
+      - {"pattern": "`", "repl": "’"}
+      - {"pattern": "'", "repl": "’"}
+      - {"pattern": 'ʼ', "repl": "’"}
+      - {"pattern": '(?<!o|g|O|G)ʻ', "repl": "’"}
+
+    test_cases:
+      - { input: { text: "Bir sig’ir ka'tta qashshoqlikni yopadi." }, output:  { text: "Bir sigʻir ka’tta qashshoqlikni yopadi." }}
+      - { input: { text: "O‘shanda yapon universiteti ta’lim grantini yutib olgandim." }, output: { text: "Oʻshanda yapon universiteti ta’lim grantini yutib olgandim." }}
+
+
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    output_manifest_file: ${save_dir}/${data_split}_manifest_3.json
+
+    regex_params_list:
+      - {"pattern": ":", "repl": ""}
+
+      - {"pattern": "!", "repl": "."}
+      - {"pattern": "\r", "repl": ""}
+
+      - {"pattern": '―', "repl": "-"}
+      - {"pattern": '—', "repl": "-"}
+      - {"pattern": '⁻', "repl": "-"}
+      - {"pattern": '‑', "repl": "-"}
+      - {"pattern": '–', "repl": "-"}
+      
+      - {"pattern": '"', "repl": ""}
+      - {"pattern": '“', "repl": ""}
+      - {"pattern": '”', "repl": ""}
+      - {"pattern": '„', "repl": ""}
+      - {"pattern": '‟', "repl": ""}
+      - {"pattern": ';', "repl": ","}
+      - {"pattern": '…', "repl": "."}
+      - {"pattern": '\.\.\.', "repl": "."}
+
+      # for Ŏ ŏ Ó ó Ō ō Õ õ 
+      - {"pattern": "Ŏ", "repl": "Oʻ"}
+      - {"pattern": "ŏ", "repl": "oʻ"}
+      - {"pattern": "Ó", "repl": "Oʻ"}
+      - {"pattern": "ó", "repl": "oʻ"}
+      - {"pattern": "Ō", "repl": "Oʻ"}
+      - {"pattern": "ō", "repl": "oʻ"}
+      - {"pattern": "Õ", "repl": "Oʻ"}
+      - {"pattern": "õ", "repl": "oʻ"}
+
+      #for Ğ ğ Ǵ ǵ Ḡ ḡ Ğ ğ 
+      - {"pattern": "Ğ", "repl": "Gʻ"}
+      - {"pattern": "ğ", "repl": "gʻ"}
+      - {"pattern": "Ǵ", "repl": "Gʻ"}
+      - {"pattern": "ǵ", "repl": "gʻ"}
+      - {"pattern": "Ḡ", "repl": "Gʻ"}
+      - {"pattern": "ḡ", "repl": "gʻ"}
+      - {"pattern": "Ğ", "repl": "Gʻ"}
+      - {"pattern": "ğ", "repl": "gʻ"}
+      
+      #for Ş ş Ç ç Ñ ñ
+      - {"pattern": "Ş", "repl": "Sh"}
+      - {"pattern": "ş", "repl": "sh"}
+      - {"pattern": "Ç", "repl": "Ch"}
+      - {"pattern": "ç", "repl": "ch"}
+      - {"pattern": "Ñ", "repl": "Ng"}
+      - {"pattern": "ñ", "repl": "ng"}
+
+    test_cases:
+        - { input: { text: "Bir siḡir katta; qashshoqlikni yopadi." }, output:  { text: "Bir sigʻir katta, qashshoqlikni yopadi." }}
+
+
+  - _target_: sdp.processors.DropIfNoneOfRegexMatch
+    regex_patterns: ["^( [A-Z])(.)+"]
+    test_cases:
+      - { input: { text: "one One" }, output: null }
+      - { input: { text: "One one" }, output: { text: "One one" } }
+
+
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZʻ’.,-? "
+    test_cases:
+      - { input: { text: "• Bir sigir katta qashshoqlikni yopadi." }, output: null }
+      - { input: { text: "Bir sigir 2 katta qashshoqlikni yopadi" }, output: null }
+
+      - { input: { text: "Bu vaqtga qadar u oʻzi yoqtirmagan kasbda faoliyat yuritgan." }, output: { text: "Bu vaqtga qadar u oʻzi yoqtirmagan kasbda faoliyat yuritgan." } }
+    output_manifest_file: ${final_manifest}

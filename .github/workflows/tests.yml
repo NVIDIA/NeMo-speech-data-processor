@@ -71,10 +71,12 @@ jobs:
         pip install -r requirements/huggingface.txt
         sudo apt-get update
         sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
-        pip install nemo_text_processing
+        pip install pytorch_lightning
         pip install Cython wheel  # need to pre-install to avoid error in nemo installation
-        pip install "nemo_toolkit[asr,nlp]"
+        pip install nemo-toolkit[asr,nlp]==1.23.0
+        pip install nemo_text_processing
         python -m pip cache purge
+
     - name: Run all tests
       env:
         AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
