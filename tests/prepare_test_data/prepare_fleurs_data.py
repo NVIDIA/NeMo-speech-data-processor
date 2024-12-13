@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Will take the downloaded tar file and create a version with only X entries."""
+"""Will take the downloaded .tsv file and audios directory and create a version with only X entries."""
 
 import argparse
 import os

@@ -34,12 +34,13 @@ documentation: |
 processors_to_run: "0:"
 
 data_split: test # specify dataset type (clean_train, clean_test, ...)
-raw_dataset_dir: ???
-dataset_dir: ???
 workspace_dir: ???
 
 min_duration: 0.1 # minimal duration of the segment
 max_duration: 20.0 # maximal duration of the segment
+
+raw_data_dir: ${workspace_dir} 
+already_downloaded: True
 
 remove_punctuation: False
 remove_diacritics: True
@@ -56,6 +57,8 @@ processors:
     data_split: ${data_split}
     target_samplerate: 16000
     resampled_audio_dir: ${workspace_dir}/${data_split}/audios
+    raw_data_dir: ${raw_data_dir}
+    already_downloaded: ${already_downloaded}
     output_manifest_file: ${workspace_dir}/${data_split}/manifest0.json
 
   # 1 Dropping too short and too long segments

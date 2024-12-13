@@ -186,14 +186,14 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         #     config_path=f"{DATASET_CONFIGS_ROOT}/uzbek/fleurs/config.yaml", 
         #     data_check_fn=data_check_fn_fleurs
         #     ),        
-        # TestCase(
-        #     config_path=f"{DATASET_CONFIGS_ROOT}/arabic/masc/config.yaml", 
-        #     data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz")
-        #     ),
-        # TestCase(
-        #     config_path=f"{DATASET_CONFIGS_ROOT}/arabic/mcv/config.yaml", 
-        #     data_check_fn=partial(data_check_fn_mcv, archive_file_stem="mcv.ar")
-        #     ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/arabic/masc/config.yaml", 
+            data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz")
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/arabic/mcv/config.yaml", 
+            data_check_fn=partial(data_check_fn_mcv, archive_file_stem="mcv.ar")
+            ),
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/arabic/fleurs/config.yaml", 
             data_check_fn=data_check_fn_fleurs
@@ -201,7 +201,11 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/arabic/mediaspeech/config.yaml", 
             data_check_fn=partial(data_check_fn_generic, file_name="AR.tar.gz")
-            )
+            ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/arabic/everyayah/config.yaml", 
+            data_check_fn=partial(data_check_fn_generic, file_name="everyayah")
+        )
     ]
 
 def get_test_names():
@@ -267,7 +271,8 @@ def setup_data(request):
     data_dir = Path(test_data_root, rel_path_from_root)
 
     yield config_path, data_check_fn, data_dir, fields_to_ignore
-    shutil.rmtree(data_dir)
+    if os.getenv("CLEAN_UP_DATA_DIR", "0") != "0":
+        shutil.rmtree(data_dir)
 
 
 def test_data_availability(setup_data):
