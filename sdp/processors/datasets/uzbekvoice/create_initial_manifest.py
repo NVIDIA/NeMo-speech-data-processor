@@ -24,12 +24,8 @@ from sdp.logging import logger
 
 
 class CreateInitialManifestUzbekvoice(BaseProcessor):
-    URL = "https://drive.google.com/drive/folders/18N5i7GD0LmUnNQok6BP3EC8PYov7pZDW"
-
     """
     Processor to create initial manifest for the Uzbekvoice dataset.
-
-    Dataset link: https://uzbekvoice.ai/en-US
 
     Will download all files, extract them, and create a manifest file with the
     "audio_filepath", "text" and "duration" fields.

@@ -184,6 +184,8 @@ Few-shot Learning Evaluation of Universal Representations of Speech (FLEURS)
 * **Armenian**:
    `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/fleurs/config.yaml>`__ |
    :doc:`documentation <config-docs/armenian/fleurs/config>`
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/fleurs/config.yaml>`__ |
+   :doc:`documentation <config-docs/armenian/fleurs/config>`
 * **Uzbek**:
    `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/uzbek/fleurs/config.yaml>`__ |
    :doc:`documentation <config-docs/uzbek/fleurs/config>`
@@ -298,8 +300,6 @@ Kazakh Speech Corpus 2 (KSC2)
 
 UzbekVoice
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Dataset link:** https://corpus.uzbekvoice.ai/en-US
 
 **Required manual steps:** You need to download the dataset from the google drive provided on the website.
 
