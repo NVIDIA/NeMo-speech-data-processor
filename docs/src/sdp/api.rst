@@ -239,9 +239,14 @@ Data filtering
 .. autodata:: sdp.processors.DropHighLowDuration
    :annotation:
 
+<<<<<<< HEAD
 .. autodata:: sdp.processors.DropRepeatedFields
    :annotation:
 
+=======
+.. autodata:: sdp.processors.DropDuplicates
+   :annotation:
+>>>>>>> 718eb2f (Toloka support for armenian)
 
 Miscellaneous
 #############
