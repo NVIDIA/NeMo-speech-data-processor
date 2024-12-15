@@ -18,21 +18,17 @@ import multiprocessing
 import os
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Union, Dict, List, Optional
 
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Process, Queue
 
 from sdp.logging import logger
-
-
-@dataclass
-class DataEntry:
-    """A wrapper for data entry + any additional metrics."""
-
-    data: Optional[Dict]  # can be None to drop the entry
-    metrics: Any = None
+from sdp.data_units.data_entry import DataEntry
+from sdp.data_units.manifest import Manifest
+from sdp.data_units.stream import Stream
 
 
 class BaseProcessor(ABC):
@@ -57,15 +53,15 @@ class BaseProcessor(ABC):
             as ``input_manifest_file``.
     """
 
-    def __init__(self, output_manifest_file: str, input_manifest_file: Optional[str] = None):
+    def __init__(self, output: Union[Manifest | Stream], input: Optional[Union[Manifest | Stream]] = None):
 
-        if output_manifest_file and input_manifest_file and (output_manifest_file == input_manifest_file):
+        if output and input and (output == input):
             # we cannot have the same input and output manifest file specified because we need to be able to
             # read from the input_manifest_file and write to the output_manifest_file at the same time
-            raise ValueError("A processor's specified input_manifest_file and output_manifest_file cannot be the same")
+            raise ValueError("A processor's specified input and output cannot be the same.")
 
-        self.output_manifest_file = output_manifest_file
-        self.input_manifest_file = input_manifest_file
+        self.output = output
+        self.input = input
 
     @abstractmethod
     def process(self):
@@ -73,6 +69,7 @@ class BaseProcessor(ABC):
         pass
 
     def test(self):
+        #assert type(self.input) == type(self.output), f"Input ({type(self.input)}) and output ({type(self.output)}) types do not match."
         """This method can be used to perform "runtime" tests.
 
         This can be any kind of self-consistency tests, but are usually
@@ -130,7 +127,7 @@ class BaseParallelProcessor(BaseProcessor):
         # need to convert to list to avoid errors in iteration over None
         if self.test_cases is None:
             self.test_cases = []
-
+    
     def process(self):
         """Parallelized implementation of the data processing.
 
@@ -179,13 +176,9 @@ class BaseParallelProcessor(BaseProcessor):
              </div>
         """
         self.prepare()
-        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
-        metrics = []
-
-        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
-            for manifest_chunk in self._chunk_manifest():
-                # this will unroll all inner lists
-                data = itertools.chain(
+        
+        for manifest_chunk in self.input.read_entries(self.in_memory_chunksize):
+            data = itertools.chain(
                     *process_map(
                         self.process_dataset_entry,
                         manifest_chunk,
@@ -193,16 +186,12 @@ class BaseParallelProcessor(BaseProcessor):
                         chunksize=self.chunksize,
                     )
                 )
-                for data_entry in tqdm(data):
-                    metrics.append(data_entry.metrics)
-                    if data_entry.data is None:
-                        continue
-                    json.dump(data_entry.data, fout, ensure_ascii=False)
-                    self.number_of_entries += 1
-                    self.total_duration += data_entry.data.get("duration", 0)
-                    fout.write("\n")
-
-        self.finalize(metrics)
+            
+            self.output.write_entries(data)
+            self.number_of_entries = self.output.number_of_entries
+            self.total_duration = self.output.total_duration
+                
+        self.finalize(self.output.metrics)
 
     def prepare(self):
         """Can be used in derived classes to prepare the processing in any way.
@@ -211,30 +200,6 @@ class BaseParallelProcessor(BaseProcessor):
         starting processing the data.
         """
 
-    def _chunk_manifest(self):
-        """Splits the manifest into smaller chunks defined by ``in_memory_chunksize``."""
-        manifest_chunk = []
-        for idx, data_entry in enumerate(self.read_manifest(), 1):
-            manifest_chunk.append(data_entry)
-            if idx % self.in_memory_chunksize == 0:
-                yield manifest_chunk
-                manifest_chunk = []
-        if len(manifest_chunk) > 0:
-            yield manifest_chunk
-
-    def read_manifest(self):
-        """Reading the input manifest file.
-
-        .. note::
-            This function should be overridden in the "initial" class creating
-            manifest to read from the original source of data.
-        """
-        if self.input_manifest_file is None:
-            raise NotImplementedError("Override this method if the processor creates initial manifest")
-
-        with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
-            for line in fin:
-                yield json.loads(line)
 
     @abstractmethod
     def process_dataset_entry(self, data_entry) -> List[DataEntry]:
@@ -299,6 +264,8 @@ class BaseParallelProcessor(BaseProcessor):
 
     def test(self):
         """Applies processing to "test_cases" and raises an error in case of mismatch."""
+        super().test()
+
         for test_case in self.test_cases:
             generated_outputs = self.process_dataset_entry(test_case["input"].copy())
             expected_outputs = (
