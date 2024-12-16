@@ -113,16 +113,33 @@ def select_subset(input_list: List, select_str: str) -> List:
 def run_processors(cfg):
     logger.info(f"Hydra config: {OmegaConf.to_yaml(cfg)}")
 
+
     if cfg.get("use_import_manager", False):
+        '''code block dynamically manages imports based on a YAML configuration if use_import_manager is enabled.'''
         try:
-            #absolute path to the config directory
-            yaml_path = os.path.join(os.getcwd(), 'dataset_configs/english/example.yaml')
+            #check yaml file path
+            yaml_path = cfg.get("config_path")
+            if not yaml_path:
+                raise ValueError("No configuration path provided in 'config_path'. Please specify the path.")
+
+            if not os.path.exists(yaml_path):
+                raise FileNotFoundError(f"Configuration file not found: {yaml_path}")
             
             logger.info(f"Managing imports for config: {yaml_path}")
             manager = ImportManager()
             manager.sync_with_config(yaml_path)
+        except FileNotFoundError as e:
+            logger.error(f"File not found: {e}")
+        except ValueError as e:
+            logger.error(f"Invalid configuration: {e}")
+        except yaml.YAMLError as e:
+            logger.error(f"Error parsing YAML file: {e}")
+        except ImportError as e:
+            logger.error(f"Import-related error: {e}")
         except Exception as e:
-            logger.warning(f"Import management failed: {e}")
+            logger.error(f"An unexpected error occurred during management of imports: {e}")
+
+
 
     processors_to_run = cfg.get("processors_to_run", "all")
 
