@@ -277,8 +277,6 @@ def setup_data(request):
 
 def test_data_availability(setup_data):
     _, data_check_fn, data_dir, _ = setup_data
-    print("S"*10)
-    print(data_dir)
     try:
         data_check_fn(raw_data_dir=data_dir)
     except ValueError as e:
