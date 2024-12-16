@@ -56,9 +56,16 @@ def update_processor_imports(config_path: str, init_file: str = None):
         manager = ImportManager()
         manager.sync_with_config(config_path, init_file)
         logger.info(f"Successfully updated imports for config: {config_path}")
-    except Exception as e:
-        logger.error(f"Failed to update imports: {str(e)}")
-        raise
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {e}")
+    except yaml.YAMLError as e:
+        logger.error(f"Error parsing YAML config: {e}")
+    except ImportError as e:
+        logger.error(f"Import error: {e}")
+    except ValueError as e:  # For unexpected data structures in the YAML config
+        logger.error(f"Invalid value encountered: {e}")
+    except Exception as e:  # For any other unexpected errors
+        logger.error(f"An unexpected error occurred: {e}")
 
 
 def select_subset(input_list: List, select_str: str) -> List:
