@@ -116,7 +116,7 @@ def run_processors(cfg):
     if cfg.get("use_import_manager", False):
         try:
             #absolute path to the config directory
-            yaml_path = os.path.join(os.getcwd(), 'dataset_configs/english/test.yaml')
+            yaml_path = os.path.join(os.getcwd(), 'dataset_configs/english/example.yaml')
             
             logger.info(f"Managing imports for config: {yaml_path}")
             manager = ImportManager()

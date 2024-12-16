@@ -1,0 +1,19 @@
+use_import_manager: True
+processors_to_run: ":"  # Run all processors
+workspace_dir: /home/  # Replace with your workspace directory
+processors:
+  - _target_: sdp.processors.modify_manifest.common.DuplicateFields
+    input_manifest_file: ${workspace_dir}/test1.json
+    output_manifest_file: ${workspace_dir}/test2.json
+    duplicate_fields: {"text":"answer"}
+
+  - _target_: sdp.processors.modify_manifest.common.RenameFields
+    input_manifest_file: ${workspace_dir}/test2.json
+    output_manifest_file: ${workspace_dir}/test3.json
+    rename_fields: {"text":"text2test"}
+
+  - _target_: sdp.processors.modify_manifest.data_to_data.GetAudioDuration
+    input_manifest_file: ${workspace_dir}/test3.json
+    output_manifest_file: ${workspace_dir}/test4.json
+    audio_filepath_key: "audio_filepath"
+    duration_key: "duration"
