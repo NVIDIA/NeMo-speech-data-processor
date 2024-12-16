@@ -9,6 +9,17 @@ import yaml
 from sdp.logging import logger
 
 class ImportManager:
+    """
+    The ImportManager class is a utility designed to manage dynamic imports for a specific Python package based on a provided YAML configuration.
+    This class simplifies the process of selectively importing only the necessary components,
+    enabling the creation of a custom __init__.py file with imports for required processors. 
+    By doing so, it ensures that users only need to install the libraries they actually use, 
+    reducing unnecessary dependencies.
+    
+    To eable the ImportManager, set the `use_import_manager` key to `True` in the YAML config file. (Or provide it as an argument to main.py)
+    use_import_manager: True
+
+    """
     def __init__(self, base_package: str = "sdp"):
         self.base_package = base_package
         self.package_path = self._find_package_path()
