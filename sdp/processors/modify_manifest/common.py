@@ -144,7 +144,7 @@ class DuplicateFields(BaseParallelProcessor):
 
     Returns:
         The same data as in the input manifest with duplicated fields
-        as specified in the ``duplicate_fields`` input dictionary.
+        as specified in the ``duplicate_fields`` input dictionary. 
     
     Example:
         .. code-block:: yaml
