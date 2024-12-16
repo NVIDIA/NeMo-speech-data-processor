@@ -39,9 +39,20 @@ class ImportManager:
         try:
             module_path, class_name = target.rsplit('.', 1)
             return f"from {module_path} import {class_name}"
+        except ValueError as e:
+        # Raised if the target does not contain a '.'
+            logger.warning(f"Invalid target format for import: '{target}'. Expected '<module>.<class>'. Error: {e}")
+        except AttributeError as e:
+        # Raised if the target module or class does not exist
+            logger.warning(f"Invalid target type for import: {type(target)}. Error: {e}")
         except Exception as e:
             logger.warning(f"Could not process import for {target}: {e}")
-            return None
+        return None
+
+
+
+
+
 
     def get_required_imports(self, yaml_config: str) -> Set[str]:
         with open(yaml_config, 'r') as f:
