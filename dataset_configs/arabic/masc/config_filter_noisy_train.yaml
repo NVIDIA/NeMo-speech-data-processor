@@ -48,9 +48,9 @@ documentation: |
 
 processors_to_run: "0:"
 
-dataset_dir: ???  # dataset 
+dataset_dir: ??? # dataset
 workspace_dir: ???
-data_split: noisy_train   # specify dataset type (clean_train, clean_test, ...)
+data_split: test   # specify dataset type (clean_train, clean_test, ...)
 manifest_dir: ${workspace_dir}
 final_manifest: ${manifest_dir}/manifest.json
 
@@ -67,14 +67,14 @@ apply_nfkc: True
 
 max_wer: 60
 max_cer: 30
-pretrained_model: ???
+pretrained_model: nvidia/stt_ar_fastconformer_hybrid_large_pc_v1.0
 
 processors:
   # 0 creating manifest {sample_id, audio_path}
   - _target_: sdp.processors.CreateInitialManifestMASC
     raw_data_dir: ${dataset_dir}
     data_split: ${data_split}
-    extract_archive_dir: ${dataset_dir}
+    extract_archive_dir: ${workspace_dir}
     resampled_audios_dir: ${manifest_dir}/resampled_audios
     already_extracted: False
     verbose : True

@@ -37,6 +37,7 @@ class TestCase:
     config_path: str
     data_check_fn: Callable
     # Fields in the manifest to ignore (can be set when non-deterministic processor was used)
+    reference_manifest_filename: str = "test_data_reference.json"
     fields_to_ignore: List[str] = field(default_factory=list)
 
 def data_check_fn_generic(raw_data_dir: str, file_name: str, **kwargs) -> None:
@@ -191,6 +192,11 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
             data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz")
             ),
         TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/arabic/masc/config_filter_noisy_train.yaml", 
+            data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz"),
+            reference_manifest_filename="test_data_reference_filter.json"
+            ),
+        TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/arabic/mcv/config.yaml", 
             data_check_fn=partial(data_check_fn_mcv, archive_file_stem="mcv.ar")
             ),
@@ -257,32 +263,32 @@ def get_e2e_test_data_path(rel_path_from_root: str) -> str:
 
 @pytest.fixture(scope="module", params=get_test_cases(), ids=get_test_names())
 def setup_data(request):
-
     if not check_e2e_test_data():
         pytest.fail("Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY "
     "and AWS_ACCESS_KEY to run e2e config tests")
         
-    config_path, data_check_fn, fields_to_ignore  = (request.param.config_path, 
+    config_path, data_check_fn, reference_manifest_filename, fields_to_ignore  = (request.param.config_path,                             
                                                      request.param.data_check_fn, 
+                                                     request.param.reference_manifest_filename,  
                                                      request.param.fields_to_ignore)
 
     rel_path_from_root = Path(config_path).parent.relative_to(DATASET_CONFIGS_ROOT)
     test_data_root = get_e2e_test_data_path(str(rel_path_from_root))
     data_dir = Path(test_data_root, rel_path_from_root)
 
-    yield config_path, data_check_fn, data_dir, fields_to_ignore
+    yield config_path, data_check_fn, reference_manifest_filename, data_dir, fields_to_ignore
     if os.getenv("CLEAN_UP_DATA_DIR", "0") != "0":
         shutil.rmtree(data_dir)
 
 
 def test_data_availability(setup_data):
-    _, data_check_fn, data_dir, _ = setup_data
+    _, data_check_fn, reference_manifest_filename, data_dir, _ = setup_data
     try:
         data_check_fn(raw_data_dir=data_dir)
     except ValueError as e:
         pytest.fail(f"Test data not available: {str(e)}")
 
-    reference_manifest = Path(data_dir, "test_data_reference.json")
+    reference_manifest = Path(data_dir, reference_manifest_filename)
 
     if not reference_manifest.exists():
         pytest.fail(f"Reference manifest not found: {reference_manifest}")
@@ -292,8 +298,8 @@ def test_configs(setup_data, tmp_path):
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
     # to have the same structure (e.g. <lang>/<dataset>)
 
-    config_path, _, data_dir, fields_to_ignore = setup_data
-    reference_manifest = data_dir / "test_data_reference.json"
+    config_path,  _, reference_manifest_filename, data_dir, fields_to_ignore = setup_data
+    reference_manifest = data_dir / reference_manifest_filename
 
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
