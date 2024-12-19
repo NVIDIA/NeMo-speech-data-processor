@@ -373,8 +373,8 @@ class ApplyInnerJoin(BaseProcessor):
 
     def __init__(
         self,
-        left_manifest_file: Optional[str],
         right_manifest_file: str,
+        left_manifest_file: Optional[str] = None,
         column_id: Union[str, List[str], None] = None,
         **kwargs,
     ):

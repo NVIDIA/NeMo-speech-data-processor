@@ -1,0 +1,49 @@
+documentation: |
+  MediaSpeech
+  ############
+  Dataset must be downloaded manually prior.
+
+  The config creates initial manifest for MediaSpeech dataset.
+
+  **Required arguments**.
+
+  * **raw_data_dir**:     path to the tarred dataset.
+  * **workspace_dir**:    specify the workspace folder where all audio files will be stored.
+
+  **Output format**.
+
+  This config dumps the final manifest at ``${manifest_dir}/manifest.json`` and wav files ``${manifest_dir}/audios``.
+  The output manifest contains the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription.
+  * **duration (float)**: audio duration in seconds.
+
+processors_to_run: "0:"
+
+workspace_dir: ??
+final_manifest: ${workspace_dir}/manifest.json
+
+processors:
+  # 0 creating initial manifest
+  - _target_: sdp.processors.CreateInitialManifestMediaSpeech
+    raw_data_dir: ${workspace_dir}
+    extract_archive_dir: ${workspace_dir}
+    resampled_audios_dir: ${workspace_dir}/audios
+    output_manifest_file: ${workspace_dir}/manifest0.json
+  
+  # 1 calculating durations
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+    output_manifest_file: ${workspace_dir}/manifest1.json
+
+  # 2 dropping non alphabetical symbols
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: " \u0631\u0630\u062F\u062E\u062D\u062C\u062B\u062A\u0629\u0628\u0627\u0626\u0625\u0624\u0623\u0622\u0621\u064A\u0649\u0648\u0647\u0646\u0645\u0644\u0643\u0642\u0641\u063A\u0639\u0638\u0637\u0636\u0635\u0634\u0633\u0632\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652"
+    output_manifest_file: ${workspace_dir}/manifest2.json
+
+  # 3 changing paths to relative
+  - _target_: sdp.processors.ChangeToRelativePath
+    base_dir: ${workspace_dir}
+    output_manifest_file: ${final_manifest}
