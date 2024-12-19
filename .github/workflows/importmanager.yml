@@ -1,4 +1,4 @@
-name: SDP Tests
+name: ImportManager Test
 
 on:
   pull_request:

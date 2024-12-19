@@ -80,4 +80,3 @@ def test_import_manager_with_workspace():
         assert not test3_path.exists(), "test3.json should not be overwritten yet"
 
         
-        print("ImportManager test passed successfully!")
