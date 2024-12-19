@@ -67,8 +67,7 @@ apply_nfkc: True
 
 max_wer: 60
 max_cer: 30
-# pretrained_model: nvidia/stt_ar_fastconformer_hybrid_large_pc_v1.0
-pretrained_model: nvidia/stt_ru_fastconformer_hybrid_large_pc
+pretrained_model: nvidia/stt_ar_fastconformer_hybrid_large_pc_v1.0
 
 processors:
   # 0 creating manifest {sample_id, audio_path}
