@@ -13,16 +13,18 @@
 # limitations under the License.
 
 import sys
-
 import hydra
+from omegaconf import DictConfig
 
-from sdp.run_processors import run_processors
+from sdp.run_processors import run_processors, update_processor_imports
 
 
 @hydra.main(version_base=None)
-def main(cfg):
-    run_processors(cfg)
-
+def main(cfg: DictConfig):
+    if hasattr(cfg, 'mode') and cfg.mode == 'update_imports':
+        update_processor_imports(cfg.config_path)
+    else:
+        run_processors(cfg)
 
 if __name__ == "__main__":
     # hacking the arguments to always disable hydra's output
