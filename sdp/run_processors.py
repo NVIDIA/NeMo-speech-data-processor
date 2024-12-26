@@ -23,6 +23,8 @@ from omegaconf import OmegaConf, open_dict
 
 from sdp.logging import logger
 
+from sdp.utils.import_manager import ImportManager
+
 # registering new resolvers to simplify config files
 OmegaConf.register_new_resolver("subfield", lambda node, field: node[field])
 OmegaConf.register_new_resolver("not", lambda x: not x)
@@ -41,6 +43,29 @@ handler.setFormatter(formatter)
 logger.handlers
 logger.addHandler(handler)
 logger.propagate = False
+
+def update_processor_imports(config_path: str, init_file: str = None):
+    """
+    Update processor imports based on config file.
+    
+    Args:
+        config_path: Path to the YAML config file
+        init_file: Optional path to __init__.py file to update
+    """
+    try:
+        manager = ImportManager()
+        manager.sync_with_config(config_path, init_file)
+        logger.info(f"Successfully updated imports for config: {config_path}")
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {e}")
+    except yaml.YAMLError as e:
+        logger.error(f"Error parsing YAML config: {e}")
+    except ImportError as e:
+        logger.error(f"Import error: {e}")
+    except ValueError as e:  # For unexpected data structures in the YAML config
+        logger.error(f"Invalid value encountered: {e}")
+    except Exception as e:  # For any other unexpected errors
+        logger.error(f"An unexpected error occurred: {e}")
 
 
 def select_subset(input_list: List, select_str: str) -> List:
@@ -87,6 +112,35 @@ def select_subset(input_list: List, select_str: str) -> List:
 
 def run_processors(cfg):
     logger.info(f"Hydra config: {OmegaConf.to_yaml(cfg)}")
+
+
+    if cfg.get("use_import_manager", False):
+        '''code block dynamically manages imports based on a YAML configuration if use_import_manager is enabled.'''
+        try:
+            #check yaml file path
+            yaml_path = cfg.get("config_path")
+            if not yaml_path:
+                raise ValueError("No configuration path provided in 'config_path'. Please specify the path.")
+
+            if not os.path.exists(yaml_path):
+                raise FileNotFoundError(f"Configuration file not found: {yaml_path}")
+            
+            logger.info(f"Managing imports for config: {yaml_path}")
+            manager = ImportManager()
+            manager.sync_with_config(yaml_path)
+        except FileNotFoundError as e:
+            logger.error(f"File not found: {e}")
+        except ValueError as e:
+            logger.error(f"Invalid configuration: {e}")
+        except yaml.YAMLError as e:
+            logger.error(f"Error parsing YAML file: {e}")
+        except ImportError as e:
+            logger.error(f"Import-related error: {e}")
+        except Exception as e:
+            logger.error(f"An unexpected error occurred during management of imports: {e}")
+
+
+
     processors_to_run = cfg.get("processors_to_run", "all")
 
     if processors_to_run == "all":

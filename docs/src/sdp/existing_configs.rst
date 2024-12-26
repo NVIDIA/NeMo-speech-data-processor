@@ -37,7 +37,10 @@ download the data archive and specify its location with the ``raw_data_dir`` par
 * **Georgian**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/georgian/mcv/config.yaml>`__ |
   :doc:`documentation <config-docs/georgian/mcv/config>`
-
+* **Uzbek**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/uzbek/mcv/config.yaml>`__ |
+  :doc:`documentation <config-docs/uzbek/mcv/config>`
+  
 .. toctree:: 
    :hidden:
 
@@ -46,6 +49,7 @@ download the data archive and specify its location with the ``raw_data_dir`` par
    config-docs/portuguese/mcv/config
    config-docs/kazakh/mcv/config
    config-docs/georgian/mcv/config
+   config-docs/uzbek/mcv/config
 
 Multilingual LibriSpeech (MLS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -173,26 +177,46 @@ Few-shot Learning Evaluation of Universal Representations of Speech (FLEURS)
 
 **Dataset link:** https://huggingface.co/datasets/google/fleurs
 
-`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/fleurs/config.yaml>`__ |
-:doc:`documentation <config-docs/armenian/fleurs/config>`
+* **Armenian**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/fleurs/config.yaml>`__ |
+   :doc:`documentation <config-docs/armenian/fleurs/config>`
+* **Uzbek**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/uzbek/fleurs/config.yaml>`__ |
+   :doc:`documentation <config-docs/uzbek/fleurs/config>`
+
 
 .. toctree::
    :hidden:
 
    config-docs/armenian/fleurs/config
+   config-docs/uzbek/fleurs/config
 
-English LibriSpeech (ELS)
-~~~~~~~~~~~~~~~~~~~~~~~~~
+LibriSpeech
+~~~~~~~~~~~
 
-**Dataset link:** https://openslr.org/12
+**Dataset links:** https://openslr.org/12 (regular), https://openslr.org/31 (mini Librispeech)
 
-`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/librispeech/config.yaml>`__ |
-:doc:`documentation <config-docs/english/librispeech/config>`
+
+**Supported configs**.
+
+* **config (for processing one specific subset at a time)**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/librispeech/config.yaml>`__ |
+   :doc:`documentation <config-docs/english/librispeech/config>`
+* **mini**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/librispeech/mini.yaml>`__ |
+   :doc:`documentation <config-docs/english/librispeech/mini>`
+* **all (for obtaining all subsets in one go)**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/librispeech/all.yaml>`__ |
+   :doc:`documentation <config-docs/english/librispeech/all>`
+
 
 .. toctree::
    :hidden:
-   
+
    config-docs/english/librispeech/config
+   config-docs/english/librispeech/mini
+   config-docs/english/librispeech/all
+
 
 Coraa Brazilian Portuguese dataset
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -263,3 +287,16 @@ Kazakh Speech Corpus 2 (KSC2)
    :hidden:
 
    config-docs/kazakh/ksc2/config
+
+UzbekVoice
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Required manual steps:** You need to download the dataset from the google drive provided on the website.
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/uzbek/uzbekvoice/config.yaml>`__ |
+:doc:`documentation <config-docs/uzbek/uzbekvoice/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/uzbek/uzbekvoice/config
