@@ -49,6 +49,7 @@ class ExtractTar(BaseParallelProcessor):
             os.makedirs(output_folder, exist_ok=True)
             
             try:
+                logger.warning(f"Started {tar_filepath}")
                 with tarfile.open(tar_filepath) as file:
                     file.extractall(output_folder)
                     os.rename(tar_filepath, tar_filepath+"_processed")
