@@ -1,0 +1,216 @@
+processors_to_run: "0:" 
+lang: fr
+base_dir: /path/to/dataset/folder
+workspace_dir: ${base_dir}/${lang}
+
+processors:
+  - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
+    input_manifest_file: ${base_dir}/manifest11.json
+    output_manifest_file: ${workspace_dir}/manifest0.json
+    input_field: audio_lang
+    target_value: ${lang}
+
+  - _target_: sdp.processors.datasets.commoncrawl.PreserveByValue
+    output_manifest_file: ${workspace_dir}/manifest1.json
+    input_field: text_lang
+    target_value: ${lang}
+
+  - _target_: sdp.processors.DuplicateFields
+    output_manifest_file: ${workspace_dir}/manifest2.json
+    duplicate_fields: {"text":"orig_text"}
+
+  - _target_: sdp.processors.ASRInference
+    output_manifest_file: ${workspace_dir}/manifest3.json
+    pretrained_model: nvidia/stt_fr_fastconformer_hybrid_large_pc
+    batch_size: 32
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    output_manifest_file: ${workspace_dir}/manifest4.json
+    regex_patterns:
+      - '\\x'
+
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest5.json
+    text_key: text
+    regex_params_list:
+      - {"pattern": '\[(.*?)\]', "repl": ' '}
+      - {"pattern": '\((.*?)\)', "repl": ' '}
+      - {"pattern": "^[\\s]*\\*(.*?)\\*[\\s]*$", "repl": "\\1"}
+      - {"pattern": "\\\\x[a-f\\d]{1,}", "repl": " "}
+      - {"pattern": '‚', "repl": ","}
+      - {"pattern": "’", "repl": "'"}
+      - {"pattern": "[-–—]", "repl": " "}
+      - {"pattern": '―', "repl": "-"}
+      - {"pattern": '—', "repl": "-"}
+      - {"pattern": '⁺', "repl": "+"}
+      - {"pattern": '“', "repl": '"'}
+      - {"pattern": '”', "repl": '"'}
+      - {"pattern": '…', "repl": '.'}
+      - {"pattern": '‘', "repl": "'"}
+      - {"pattern": '′', "repl": "'"}
+      - {"pattern": '`', "repl": "'"}
+      - {"pattern": '⁻', "repl": "-"}
+      - {"pattern": '‑', "repl": "-"}
+      - {"pattern": '¶', "repl": ' '}
+      - {"pattern": '«', "repl": '"'}
+      - {"pattern": '»', "repl": '"'}
+      - {"pattern": '„', "repl": '"'}
+      - {"pattern": '®', "repl": ' '}
+      - {"pattern": '@', "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
+
+  - _target_: sdp.processors.DropHighLowWordrate
+    output_manifest_file: ${workspace_dir}/manifest6.json
+    text_key: text
+    high_wordrate_threshold: 100
+    low_wordrate_threshold: 0.01
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    output_manifest_file: ${workspace_dir}/manifest7.json
+    text_key: text
+    regex_patterns:
+      - "^\\s*$"
+
+  - _target_: sdp.processors.datasets.commoncrawl.Subprocess
+    output_manifest_file: ${workspace_dir}/manifest8.json
+    input_manifest_arg: "--manifest"
+    output_manifest_arg: "--output_filename"
+    arg_separator: "="
+    cmd: "python /home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
+        --language=${lang} --n_jobs=-1 --batch_size=600 --manifest_text_field=text  --cache_dir=${workspace_dir}/cache \
+        --whitelist=/home/nkarpov/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/${lang}/data/whitelist.tsv"
+
+  - _target_: sdp.processors.RenameFields
+    output_manifest_file: ${workspace_dir}/manifest9.json
+    rename_fields: {"normalized":"text"}
+
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest10.json
+    regex_params_list:
+      - {"pattern": "^\\s*'+\\s(.*?)\\s*'+\\s*$", "repl": "\\1"}
+      - {"pattern": "^\\s*'*\\s*", "repl": ""}
+      - {"pattern": "'{2,}", "repl": "'"}
+      - {"pattern": '\s(\\x[a-h][0-9]){1,}\s', "repl": ' '}
+      - {"pattern": '(\\x[a-h][0-9]){1,}', "repl": ''}
+      - {"pattern": '\.{3}', "repl": '.'}
+      - {"pattern": '\$', "repl": ""}
+      - {"pattern": "[^a-zA-ZàâçéèêëîïôûùüÿæœÀÂÇÉÈÊËÎÏÔÛÙÜŸÆŒ.,?'-]", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
+
+  - _target_: sdp.processors.DuplicateFields
+    output_manifest_file: ${workspace_dir}/manifest11.json
+    duplicate_fields: {"text":"text_pc"}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/manifest12.json
+    text_key: text
+
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest13.json
+    text_key: text
+    regex_params_list:
+      - {"pattern": "[\\?\\.]", "repl": " "}
+      - {"pattern": ",", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    output_manifest_file: ${workspace_dir}/manifest14.json
+    text_key: text
+    regex_patterns:
+      - "^\\s*$"
+
+  - _target_: sdp.processors.DuplicateFields
+    output_manifest_file: ${workspace_dir}/manifest15.json
+    duplicate_fields: {"pred_text":"pred_text_pc"}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/manifest16.json
+    text_key: pred_text
+
+  - _target_: sdp.processors.SubRegex
+    output_manifest_file: ${workspace_dir}/manifest17.json
+    text_key: pred_text
+    regex_params_list:
+      - {"pattern": "[\\?\\.]", "repl": " "}
+      - {"pattern": ",", "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
+
+  - _target_: sdp.processors.DropHighWER
+    output_manifest_file: ${workspace_dir}/manifest18.json
+    text_key: text
+    pred_text_key: pred_text
+    wer_threshold: 75
+
+  - _target_: sdp.processors.DropHighCER
+    output_manifest_file: ${workspace_dir}/manifest19.json
+    text_key: text
+    pred_text_key: pred_text
+    cer_threshold: 30
+    
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    fields_to_keep: ["audio_filepath", "duration", "text_pc"]
+
+  - _target_: sdp.processors.RenameFields
+    rename_fields: {"text_pc":"text"}
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    text_key: text
+    regex_params_list:
+      - {"pattern": "\\s+\\?", "repl": "?"}
+      - {"pattern": "\\s+\\.", "repl": "."}
+      - {"pattern": "\\s+,", "repl": ","}
+      - {"pattern": "\\s+", "repl": " "}
+
+  - _target_: sdp.processors.datasets.commoncrawl.ManifestToUtf8
+
+  - _target_: sdp.processors.AddConstantFields
+    output_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    fields: {"lang": '${lang}'}
+
+  - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
+    output_manifest_file: ${workspace_dir}/manifest_${lang}_train.json
+    lang: ${lang}
+    data_split: train
+
+  - _target_: sdp.processors.datasets.commoncrawl.CopyFiles
+    file_field: audio_filepath
+    path_to_copy: ${base_dir}/splited_manifests/${lang}_train/
+    path_levels: 2
+    
+  - _target_: sdp.processors.datasets.commoncrawl.DropAbsPath
+    output_manifest_file: ${base_dir}/splited_manifests/${lang}_train.json 
+    path_key: audio_filepath
+    abs_path_to_drop: ${base_dir}/splited_manifests/
+
+  - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    output_manifest_file: ${workspace_dir}/manifest_${lang}_dev.json
+    lang: ${lang}
+    data_split: dev
+
+  - _target_: sdp.processors.datasets.commoncrawl.CopyFiles
+    file_field: audio_filepath
+    path_to_copy: ${base_dir}/splited_manifests/${lang}_dev/
+    path_levels: 2
+  
+  - _target_: sdp.processors.datasets.commoncrawl.DropAbsPath
+    output_manifest_file: ${base_dir}/splited_manifests/${lang}_dev.json 
+    path_key: audio_filepath
+    abs_path_to_drop: ${base_dir}/splited_manifests/
+
+  - _target_: sdp.processors.datasets.commoncrawl.TrainDevTestSplitCC
+    input_manifest_file: ${workspace_dir}/manifest_${lang}.json
+    output_manifest_file: ${workspace_dir}/manifest_${lang}_test.json
+    lang: ${lang}
+    data_split: test
+
+  - _target_: sdp.processors.datasets.commoncrawl.CopyFiles
+    file_field: audio_filepath
+    path_to_copy: ${base_dir}/splited_manifests/${lang}_test/
+    path_levels: 2
+  
+  - _target_: sdp.processors.datasets.commoncrawl.DropAbsPath
+    output_manifest_file: ${base_dir}/splited_manifests/${lang}_test.json 
+    path_key: audio_filepath
+    abs_path_to_drop: ${base_dir}/splited_manifests/
