@@ -12,9 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
 
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+import pandas as pd
+
+from sdp.processors.base_processor import (
+    BaseParallelProcessor,
+    BaseProcessor,
+    DataEntry,
+)
 
 
 class CreateInitialManifestByExt(BaseParallelProcessor):
@@ -48,3 +55,35 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
     def process_dataset_entry(self, data_entry):
         data = {self.output_file_key: data_entry}
         return [DataEntry(data=data)]
+
+
+class ReadCsv(BaseProcessor):
+    """
+    Processor for reading a CSV file and converting its content into a JSON lines format.
+
+    This class reads a CSV file using pandas, processes each row, and writes the output to a specified manifest file in JSON lines format.
+
+    Args:
+        header (int, optional): Row number to use as the column names. Defaults to None, meaning no header.
+        sep (str, optional): Delimiter to use for separating values in the CSV file. Defaults to ','.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
+
+    Methods:
+        process(): Reads the input CSV file and writes its content as JSON lines to the output manifest file.
+    """
+
+    def __init__(
+        self,
+        header: int = None,
+        sep: str = ",",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.header = header
+        self.sep = sep
+
+    def process(self):
+        df1 = pd.read_csv(self.input_manifest_file, header=self.header, sep=self.sep)
+        with open(self.output_manifest_file, "w") as out_file:
+            for j, row in df1.iterrows():
+                out_file.write(json.dumps(dict(row), ensure_ascii=False) + "\n")
