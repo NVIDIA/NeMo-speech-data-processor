@@ -24,6 +24,7 @@ from sdp.processors.base_processor import (
     BaseParallelProcessor,
     BaseProcessor,
     DataEntry,
+    DaskParallelProcessor,
 )
 from sdp.utils.common import load_manifest
 
@@ -128,6 +129,42 @@ class AddConstantFields(BaseParallelProcessor):
     def process_dataset_entry(self, data_entry: Dict):
         data_entry.update(self.fields)
         return [DataEntry(data=data_entry)]
+
+
+class AddConstantFields_Dask(DaskParallelProcessor):
+    """
+    Processor for adding constant fields to all manifest entries using DaskParallelProcessor.
+
+    Args:
+        fields: dictionary with any additional information to add. E.g.::
+
+            fields = {
+                "label": "en",
+                "metadata": "mcv-11.0-2022-09-21",
+            }
+
+    Returns:
+        The same data as in the input manifest with added fields
+        as specified in the ``fields`` input dictionary.
+    """
+
+    def __init__(self, fields: Dict, **kwargs):
+        super().__init__(**kwargs)
+        self.fields = fields
+
+    def process_dataset_entry(self, data_entry: Dict):
+        """
+        Add constant fields to a single manifest entry.
+
+        Args:
+            data_entry (dict): A manifest entry.
+
+        Returns:
+            List[DataEntry]: A list containing the updated manifest entry.
+        """
+        data_entry.update(self.fields)
+        return [DataEntry(data=data_entry)]
+
 
 
 class DuplicateFields(BaseParallelProcessor):

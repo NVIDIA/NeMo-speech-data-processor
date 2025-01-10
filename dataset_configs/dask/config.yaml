@@ -1,0 +1,15 @@
+processors_to_run: all
+use_import_manager: True
+#workspace_dir: ???
+
+processors:
+  - _target_: sdp.processors.modify_manifest.common.RenameFields_Dask
+    input_manifest_file: ../test_tot.json_out11
+    output_manifest_file: ../test_tot.json.json_out21
+    rename_fields: {"text_pc_origin": "Daskrename"}
+
+  - _target_: sdp.processors.modify_manifest.common.RenameFields
+    input_manifest_file: ../test_tot.json_out12
+    output_manifest_file: ../test_tot.json.json_out22
+    rename_fields: {"text_pc_origin": "Daskrename"}
+
