@@ -21,3 +21,4 @@ from tolokan.processors.create_project import CreateTolokaProject
 from tolokan.processors.create_sentence_set import CreateSentenceSet
 from tolokan.processors.download_responces import GetTolokaResults
 from tolokan.processors.reject_if import RejectIfBanned
+from tolokan.processors.ToUTF8 import ManifestToUtf8

@@ -4,9 +4,11 @@ documentation: |
 processors_to_run: all
 workspace_dir: ???
 API_KEY: "1V0v8tbFtwPhDVMbN3cvcQ.045e.k93FVRUudCOHplT6OHcDNjc-k8V_rSFr8l5_jLyo4rLT9W4fgabM40EyompNakPZ0uU-_sgc0hKHzrEge5AJNy5MwZCu93BHoTJGOS1lwqE"
-# pool_id: 42824822
-# pool_id: 42939416
-pool_id: 42949209
+pool_id: 42824822 # evn1
+# pool_id: 42939416 # evn2
+# pool_id: 42949209 # evn3 
+# pool_id: 43002967 # evn4
+
 
 processors:
   - _target_: tolokan.processors.GetTolokaResults
@@ -38,6 +40,27 @@ processors:
   #   output_manifest_file: ${workspace_dir}/result_manifest_pred.json
   #   limit: 100
 
+  # - _target_: sdp.processors.DropIfRegexMatch
+  #   # input_manifest_file: ${workspace_dir}/${data_split}_manifest_not_norm.json
+  #   # output_manifest_file: ${workspace_dir}/fleurs_${data_split}_manifest_not_norm.json
+  #   # output_manifest_file: ${final_manifest}
+  #   regex_patterns:
+  #     - '[0-9]'
+  #     - '\('
+  #     - '\)'
+  #     - '\['
+  #     - '\]'
+  #     - '\*'
+  #     - '"'
+  #     - '[А-Яа-я]'
+  #     - '[A-Za-z]'
+  #     - '\+'
+  #     - '='
+  #     - '¬'
+  #     - '&'
+  #     - '«'
+  #     - '»'
+
   - _target_: sdp.processors.DropIfRegexMatch
     output_manifest_file: ${workspace_dir}/manifest2.json
     text_key: "user_id"
@@ -59,6 +82,7 @@ processors:
       - "e3be16058c9898084bbad5282167c7ff"
       - "2b97303bb6dc587988016e130c71bbb5"
       - "86e79eda49665b1810ed07084ca5fe2c"
+      - "c7852f83f65911033d0ee9981d9fd0e7"
 
   - _target_: sdp.processors.MakeSentence
     text_key: "text"

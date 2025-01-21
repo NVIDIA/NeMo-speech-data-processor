@@ -1,7 +1,9 @@
-documentation: |
+_documentation: |
   Seamless Armenian
 
 processors_to_run: all
+# initial_file: test_manifest
+initial_file: fleurs_test_manifest
 workspace_dir: ???
 
 processors:
@@ -14,12 +16,40 @@ processors:
   #   data_split: train
   #   raw_data_dir: ${workspace_dir}
 
-  - _target_: sdp.processors.ASRSeamless
-    input_manifest_file: ${workspace_dir}/test_manifest.json
-    output_manifest_file: ${workspace_dir}/test_manifest_seamless.json
-    input_field: audio_filepath
-    output_field: pred_text
-    limit: 100
+  # - _target_: sdp.processors.ASRSeamless
+  #   # input_manifest_file: ${workspace_dir}/test_manifest_pred_ev.json
+  #   # output_manifest_file: ${workspace_dir}/test_manifest_pred_ev_seamless.json
+  #   input_manifest_file: ${workspace_dir}/${initial_file}_clear_av.json
+  #   input_field: audio_filepath
+  #   output_field: pred_text
+  #   limit: 100
+
+  # - _target_: sdp.processors.DropIfRegexMatch
+  #   # output_manifest_file: ${workspace_dir}/test_manifest_pred_ev_seamless_drop_nums.json
+  #   # input_manifest_file: ${workspace_dir}/test_manifest_pred_ev_seamless.json
+  #   output_manifest_file: ${workspace_dir}/${initial_file}_pred.json
+  #   text_key: pred_text
+  #   regex_patterns:
+  #     - '[0-9]'
+
+
+  - _target_: sdp.processors.ASRTransformers # pip install accelerate transformers
+    input_manifest_file: ${workspace_dir}/${initial_file}_clear_av.json
+    # output_manifest_file: ${workspace_dir}/test_manifest_pred_ev_whisper-large-v3.json
+    pretrained_model: "openai/whisper-large-v3" #  distil-whisper/distil-large-v2 openai/whisper-large-v2 openai/whisper-large-v3
+    batch_size: 32
+    generate_language: armenian
+    generate_task: transcribe
+    output_text_key: pred_text
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    # output_manifest_file: ${workspace_dir}/test_manifest_pred_ev_whisper-large-v3_drop_nums.json
+    # input_manifest_file: ${workspace_dir}/test_manifest_pred_ev_whisper-large-v3.json
+    output_manifest_file: ${workspace_dir}/${initial_file}_pred.json
+    text_key: pred_text
+    regex_patterns:
+      - '[0-9]'
+    
 
   # - _target_: sdp.processors.SubRegex
   #   input_manifest_file: ${workspace_dir}/manifest1.json

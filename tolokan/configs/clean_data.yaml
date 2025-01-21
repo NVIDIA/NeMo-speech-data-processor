@@ -2,17 +2,64 @@ documentation: |
   Toloka Armenian
 
 processors_to_run: all
+input_manifest: data_test/test_manifest
+text_key: text
 workspace_dir: ???
-API_KEY: "1V0v8tbFtwPhDVMbN3cvcQ.045e.k93FVRUudCOHplT6OHcDNjc-k8V_rSFr8l5_jLyo4rLT9W4fgabM40EyompNakPZ0uU-_sgc0hKHzrEge5AJNy5MwZCu93BHoTJGOS1lwqE"
 
 processors:
-  - _target_: sdp.processors.DropHighWER
-    input_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
-    output_manifest_file: ${workspace_dir}/result_manifest_pred_accepted.json
-    text_key: text
-    pred_text_key: model_transcribed_text
-    wer_threshold: 75
+  - _target_: sdp.processors.MakeSentence
+    text_key: ${text_key}
+    end_symbol: ":"
+    make_uppercase: True
+    input_manifest_file: ${workspace_dir}/${input_manifest}.json
+    # output_manifest_file: ${workspace_dir}/manifest_stage-3.json
 
-  - _target_: sdp.processors.CopyManifestData
-    copy_path: ${workspace_dir}/clean_data
-    input_manifest_file: ${workspace_dir}/result_manifest_pred_accepted.json
+  # - _target_: sdp.processors.KeepOnlySpecifiedFields
+  #   fields_to_keep: ["text", "audio_filepath", "duration"]
+  #   # output_manifest_file: ${workspace_dir}/manifest_stage-2.json
+
+  # - _target_: sdp.processors.GetAudioDuration
+  #   audio_filepath_field: audio_filepath
+  #   duration_field: duration
+  #   # output_manifest_file: ${workspace_dir}/manifest_stage-1.json
+
+  - _target_: sdp.processors.SubRegex
+    text_key: ${text_key}
+    regex_params_list:
+      - {"pattern": '։', "repl": ':'}
+      - {"pattern": '․', "repl": "."}
+      - {"pattern": '—', "repl": "-"}
+      - {"pattern": '–', "repl": "-"}
+      - {"pattern": '_', "repl": "-"}
+      - {"pattern": '―', "repl": "-"} 
+      - {"pattern": '\.\.\.', "repl": "…"}
+      - {"pattern": '՝', "repl": "`"}
+      - {"pattern": '/', "repl": " "}
+      - {"pattern": '\|', "repl": " "}
+      - {"pattern": '●', "repl": " "}
+      - {"pattern": '~', "repl": ""}
+      - {"pattern": '#', "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
+    # output_manifest_file: ${workspace_dir}/manifest_stage0.json
+
+  - _target_: sdp.processors.SubRegex
+    text_key: ${text_key}
+    regex_params_list:
+      - {"pattern": ':', "repl": '։'}
+      - {"pattern": '-', "repl": "֊"}
+      - {"pattern": "`", "repl": "՝"}
+      - {"pattern": "ʹ", "repl": "՛"}
+      - {"pattern": "´", "repl": "՛"}
+      - {"pattern": "《", "repl": "«"}
+      - {"pattern": "》", "repl": "»"}  
+      - {"pattern": "“", "repl": "«"}
+      - {"pattern": "”", "repl": "»"}  
+      - {"pattern": "եւ", "repl": "և"}  
+      - {"pattern": "\u200b", "repl": ""}
+      - {"pattern": "\\s+", "repl": " "} 
+    # output_manifest_file: ${workspace_dir}/manifest_stage1.json
+      
+    
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ՛ ՜ ՝ ՞ ։	֊ ՙ ՚ . … « » , ( )"
+    output_manifest_file: ${workspace_dir}/${input_manifest}_clear.json

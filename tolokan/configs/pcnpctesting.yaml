@@ -1,0 +1,137 @@
+documentation: |
+
+processors_to_run: all
+# initial_file: fleurs_test_manifest_pred
+# initial_file: test_manifest_pred
+# initial_file: test_MCV_RNNT_MCV_FLEURS_CROWD__YOUTUBE_BOOKS
+initial_file: ???
+workspace_dir: ???
+
+processors:
+
+  # - _target_: sdp.processors.SubRegex
+  #   text_key: audio_filepath
+  #   input_manifest_file: ${workspace_dir}/${initial_file}.json
+  #   regex_params_list:
+  #     - {"pattern": '/data_test', "repl": "/home/aayrapetyan/Desktop/armenian_training/data_toloka_pc/data_test"}
+
+  - _target_: tolokan.processors.ManifestToUtf8
+    input_manifest_file: ${workspace_dir}/${initial_file}.json
+
+  - _target_: sdp.processors.MakeSentence
+    text_key: text
+    end_symbol: ":"
+    make_uppercase: True
+
+  - _target_: sdp.processors.MakeSentence
+    text_key: pred_text
+    end_symbol: ":"
+    make_uppercase: True
+
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    regex_params_list:
+      - {"pattern": '։', "repl": ':'}
+      - {"pattern": '․', "repl": "."}
+      - {"pattern": '—', "repl": "-"}
+      - {"pattern": '–', "repl": "-"}
+      - {"pattern": '_', "repl": "-"}
+      - {"pattern": '―', "repl": "-"} 
+      - {"pattern": '\.\.\.', "repl": "…"}
+      - {"pattern": '՝', "repl": "`"}
+      - {"pattern": '/', "repl": " "}
+      - {"pattern": '\|', "repl": " "}
+      - {"pattern": '●', "repl": " "}
+      - {"pattern": '~', "repl": ""}
+      - {"pattern": '#', "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
+
+  - _target_: sdp.processors.SubRegex
+    text_key: pred_text
+    regex_params_list:
+      - {"pattern": '։', "repl": ':'}
+      - {"pattern": '․', "repl": "."}
+      - {"pattern": '—', "repl": "-"}
+      - {"pattern": '–', "repl": "-"}
+      - {"pattern": '_', "repl": "-"}
+      - {"pattern": '―', "repl": "-"} 
+      - {"pattern": '\.\.\.', "repl": "…"}
+      - {"pattern": '՝', "repl": "`"}
+      - {"pattern": '/', "repl": " "}
+      - {"pattern": '\|', "repl": " "}
+      - {"pattern": '●', "repl": " "}
+      - {"pattern": '~', "repl": ""}
+      - {"pattern": '#', "repl": " "}
+      - {"pattern": "\\s+", "repl": " "}
+
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    regex_params_list:
+      - {"pattern": ':', "repl": '։'}
+      - {"pattern": '-', "repl": "֊"}
+      - {"pattern": "`", "repl": "՝"}
+      - {"pattern": "ʹ", "repl": "՛"}
+      - {"pattern": "´", "repl": "՛"}
+      - {"pattern": "《", "repl": "«"}
+      - {"pattern": "》", "repl": "»"}  
+      - {"pattern": "“", "repl": "«"}
+      - {"pattern": "”", "repl": "»"}  
+      - {"pattern": "եւ", "repl": "և"}  
+      - {"pattern": "\u200b", "repl": ""}
+      - {"pattern": "\\s+", "repl": " "} 
+
+  - _target_: sdp.processors.SubRegex
+    text_key: pred_text
+    regex_params_list:
+      - {"pattern": ':', "repl": '։'}
+      - {"pattern": '-', "repl": "֊"}
+      - {"pattern": "`", "repl": "՝"}
+      - {"pattern": "ʹ", "repl": "՛"}
+      - {"pattern": "´", "repl": "՛"}
+      - {"pattern": "《", "repl": "«"}
+      - {"pattern": "》", "repl": "»"}  
+      - {"pattern": "“", "repl": "«"}
+      - {"pattern": "”", "repl": "»"}  
+      - {"pattern": "եւ", "repl": "և"}  
+      - {"pattern": "\u200b", "repl": ""}
+      - {"pattern": "\\s+", "repl": " "} 
+      
+    
+  - _target_: sdp.processors.DropNonAlphabet
+    text_key: text
+    alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ՛ ՜ ՝ ՞ ։	֊ ՙ ՚ . … « » , ( )"
+    
+  - _target_: sdp.processors.DropNonAlphabet
+    text_key: pred_text
+    alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ՛ ՜ ՝ ՞ ։	֊ ՙ ՚ . … « » , ( )"
+
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    regex_params_list:
+      - {"pattern": 'եւ', "repl": "և"}
+
+  - _target_: sdp.processors.SubRegex
+    text_key: pred_text
+    regex_params_list:
+      - {"pattern": 'եւ', "repl": "և"}
+    output_manifest_file: ${workspace_dir}/${initial_file}_ev_pc.json
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: text
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: pred_text
+
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    regex_params_list:
+      - {"pattern": '[^աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
+      - {"pattern": 'եւ', "repl": "և"}
+
+  - _target_: sdp.processors.SubRegex
+    text_key: pred_text
+    regex_params_list:
+      - {"pattern": '[^աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
+      - {"pattern": 'եւ', "repl": "և"}
+    output_manifest_file: ${workspace_dir}/${initial_file}_ev_npc.json
+
