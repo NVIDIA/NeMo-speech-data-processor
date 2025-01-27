@@ -1,0 +1,173 @@
+documentation: |
+  FLEURS
+  ######
+  The config creates manifest for FLEURS dataset Arabic subset.
+
+  The config performs the following data processing.
+  1. Replaces certain non-supported characters, abbreviations and punctuation marks with equivalent supported versions.
+  2. Drops any data that contains high/low word occurence.
+  3. Drops any data that contains symbols not in the supported alphabet.
+  4. Can be used to remove punctuation and diacritical marks.
+  5. Can be used to replace positional forms of Arabic letters with general unicodes.
+  6. Can be used to normalize Arabic ligatures.
+  7. Can be used to remove Quranic Tatweel mark.
+
+  **Required arguments**.
+
+  * **raw_dataset_dir**:  path to the tarred dataset.
+  * **workspace_dir**:    specify the workspace folder where all audio files will be stored.
+  * **data_split**:       should be "train", "dev", "test".
+  * **remove_diacritics**: specify whether to remove tatweel marks or not. Should be "True" or "False". Defaults to True.
+  * **remove_tatweel**: specify whether to remove punctuation or not. Should be "True" or "False". Defaults to True.
+  * **normalize_ligature**: specify whether to normalize ligature or not. Should be "True" or "False". Defaults to True.
+  * **apply_nfkc**: Applies NFKC normalization to the text. Find more here https://docs.python.org/3/library/unicodedata.html#unicodedata.normalize.
+    Defaults to True.
+  * **min_duration**: minimal duration of segment in seconds. Defaults to 0.1s.
+  * **max_duration**: maximal duration of segment in seconds. Defaults to 20s.
+  * **min_wordrate**: minimal wordrate. Defaults to 0.8.
+  * **max_wordrate**: maximal wordrate. Defaults to 3.
+
+  **Output format**.
+
+  This config dumps the final manifest at ``${workspace_dir}/${data_split}/manifest.json`` and wav files ``${workspace_dir}/${data_split}/audios``.
+  The output manifest contains the following fields:
+
+  * **audio_filepath (str)**: relative path to the audio files.
+  * **text (str)**: transcription.
+  * **duration (float)**: audio duration in seconds.
+
+processors_to_run: all
+workspace_dir: ???
+data_split: dev
+final_manifest: ${workspace_dir}/manifest.json
+
+min_duration: 0.1 # minimal duration of the segment
+max_duration: 20.0 # maximal duration of the segment
+min_wordrate: 0.8 # minimal wordrate
+max_wordrate: 3 # maximal wordrate
+
+remove_punctuation: False
+remove_diacritics: True
+remove_tatweel: True
+normalize_ligature: True
+apply_nfkc: True
+
+processors:
+  # 0 creating initial manifest
+  - _target_: sdp.processors.CreateInitialManifestFleurs
+    lang: "ar_eg"
+    split: ${data_split}
+    raw_data_dir: ${workspace_dir}
+    output_manifest_file: ${workspace_dir}/manifest0.json
+
+  # 1 calculating durations
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+    output_manifest_file: ${workspace_dir}/manifest1.json
+
+  # 2 dropping too short and too long segments
+  - _target_: sdp.processors.DropHighLowDuration
+    high_duration_threshold: ${max_duration}
+    low_duration_threshold: ${min_duration}
+    duration_key: duration
+    output_manifest_file: ${workspace_dir}/manifest2.json
+
+  # 3 applying text normalization
+  - _target_: sdp.processors.NormalizeText
+    input_text_key: "text"
+    input_language: "ar"
+    input_case: "cased"
+    output_text_key: "text"
+    output_manifest_file: ${workspace_dir}/manifest3.json
+
+  # 4 replacing/removing special marks
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    regex_params_list:
+      - { "pattern": "&lrm;", "repl": "" }                    # removing left-to-right mark
+      - { "pattern": "&rlm;", "repl": "" }                    # removing right-to-left mark
+      - { "pattern": "'", "repl": "" }                        # removing single quote mark
+      - { "pattern": '"', "repl": "" }                        # removing double quote mark
+      - { "pattern": "’", "repl": "" }                        # removing right apostrophe
+      - { "pattern": "‘", "repl": "" }                        # removing left apostrophe
+      - { "pattern": "«", "repl": " " }                       # removing left-pointing double angle quotation mark
+      - { "pattern": "»", "repl": " " }                       # removing right-pointing double angle quotation mark
+      - { "pattern": "“", "repl": " " }                       # removing left double quotation mark
+      - { "pattern": "”", "repl": " " }                       # removing right double quotation mark
+      - { "pattern": "٬", "repl": "" }                        # removing arabic thousands separator
+      - { "pattern": "…", "repl": "." }                       # replacing elipsis with final stop
+      - { "pattern": "☭", "repl": "" }                        # removing hammer and sickle symbol
+      - { "pattern": "•", "repl": "" }                        # removing bullet (is used in lists)
+      - { "pattern": "\\s+", "repl": " " }                    # replacing one or more whitespace characters with single space
+      - { "pattern": "\u0670", "repl": "" }                   # removing small Superscript Alif
+      - { "pattern": "\u06CC", "repl": "\u064A" }             # replacing Persian letter Yeh with Arabic letter Yeh
+      - { "pattern": "\u06A9", "repl": "\u063A" }             # replacing Persian letter Kaf with Arabic letter Kaf
+    output_manifest_file: ${workspace_dir}/manifest4.json
+    test_cases:
+      - { input: { text: "  test   " }, output: { text: "test" } }
+    
+  # 5 replacing English punctuation marks with Arabic ones
+  # Only Final stop, Arabic Comma and Arabic Question marks are supported
+  - _target_: sdp.processors.SubRegex
+    text_key: text
+    regex_params_list:
+    # replacing/removing puntuation marks
+      - { "pattern": ",", "repl": "،" }
+      - { "pattern": "\\?", "repl": "؟" }
+      - { "pattern": "-", "repl": " " }
+      - { "pattern": "؛", "repl": " " }
+      - { "pattern": ";", "repl": " " }
+      - { "pattern": ":", "repl": " " }
+      - { "pattern": "!", "repl": "." }
+
+    # removing whitespaces before puntuation marks
+      - { "pattern": "\\s+\\.", "repl": "." }
+      - { "pattern": "\\s+؟", "repl": "؟" }
+      - { "pattern": "\\s+،", "repl": "،" }
+      - { "pattern": "\\s+", "repl": " " }
+
+    # replacing duplicate punctuation marks with one mark
+      - { "pattern": "\\.+", "repl": "." }
+      - { "pattern": "،+", "repl": "،" }
+      - { "pattern": "؟+", "repl": "؟" }
+    output_manifest_file: ${workspace_dir}/manifest5.json
+    test_cases:
+      - { input: { text: "..." }, output: { text: "." } }
+      - { input: { text: "test..." }, output: { text: "test." } }
+      - { input: { text: "test. . ." }, output: { text: "test." } }
+      - { input: { text: "test. . . ؟؟؟" }, output: { text: "test.؟" } }
+      - { input: { text: "test-test" }, output: { text: "test test" } }
+      - { input: { text: "test ." }, output: { text: "test." } }
+
+  # 6 removing punctuation, diacritics, dotted letters and tatweel
+  - _target_: sdp.processors.langs.arabic.ArabicTextPreprocessor
+    input_text_key: text
+    remove_diacritics: ${remove_diacritics}
+    remove_punctuation: ${remove_punctuation}
+    remove_tatweel: ${remove_tatweel}
+    normalize_ligature: ${normalize_ligature}
+    apply_nfkc: ${apply_nfkc}
+    output_manifest_file: ${workspace_dir}/manifest6.json
+
+  # 7 removing high low wordrate samples
+  - _target_: sdp.processors.DropHighLowWordrate
+    text_key: text
+    high_wordrate_threshold: ${max_wordrate}
+    low_wordrate_threshold: ${min_wordrate}
+    output_manifest_file: ${workspace_dir}/manifest7.json
+
+  # 8 dropping non alphabetical symbols
+  - _target_: sdp.processors.DropNonAlphabet
+    alphabet: "؟.،  \u0631\u0630\u062F\u062E\u062D\u062C\u062B\u062A\u0629\u0628\u0627\u0626\u0625\u0624\u0623\u0622
+                    \u0621\u064A\u0649\u0648\u0647\u0646\u0645\u0644\u0643\u0642\u0641\u063A\u0639\u0638\u0637\u0636
+                    \u0635\u0634\u0633\u0632\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652"
+    output_manifest_file: ${workspace_dir}/manifest8.json
+
+  # 9 changing paths to relative
+  - _target_: sdp.processors.ChangeToRelativePath
+    base_dir: ${workspace_dir}
+    output_manifest_file: ${final_manifest}
+
+
+
