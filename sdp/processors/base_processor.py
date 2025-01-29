@@ -25,7 +25,7 @@ from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from sdp.logging import logger
-
+import dask.bag as db
 
 @dataclass
 class DataEntry:
@@ -83,6 +83,123 @@ class BaseProcessor(ABC):
         """
 
 
+class DaskParallelProcessor(BaseProcessor):
+  
+    """
+    Processor class which allows operations on each entry to be parallelized using Dask.
+
+    Parallelization is done by distributing the workload using Dask bags inside
+    the :meth:`process` method. 
+    
+    Actual processing should be defined on a per-example basis inside the :meth:`process_dataset_entry` method.
+    C
+
+    Args:
+        max_workers (int): Maximum number of workers for Dask.
+        chunksize (int): The size of the chunks sent to workers during processing.
+        in_memory_chunksize (int): Maximum number of entries to read and process in memory at a time.
+        test_cases (list[dict]): Optional test cases to verify processor behavior.
+    """
+
+    def __init__(
+        self,
+        max_workers: int = -1,
+        chunksize: int = 100,
+        in_memory_chunksize: int = 100000,
+        test_cases: Optional[List[Dict]] = None,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        if max_workers == -1:
+            max_workers = multiprocessing.cpu_count()
+        self.max_workers = max_workers
+        self.chunksize = chunksize
+        self.in_memory_chunksize = in_memory_chunksize
+        self.number_of_entries = 0
+        self.total_duration = 0
+        self.start_time = time.time()
+
+        self.test_cases = test_cases or []
+
+    def process(self):
+        """Data processing using Dask"""
+        self.prepare() 
+
+        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
+        metrics = []
+
+        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
+            # chunks
+            for manifest_chunk in self._chunk_manifest():
+                # Dask bag 
+                bag = db.from_sequence(manifest_chunk, partition_size=self.chunksize)
+
+                # Process entries in parallel using Dask
+                results = bag.map(self.process_dataset_entry).compute(num_workers=self.max_workers)
+
+                # Flatten the results and write them to the output
+                flattened_results = itertools.chain.from_iterable(results)
+                for data_entry in flattened_results:
+                    metrics.append(data_entry.metrics)
+                    if data_entry.data is None:
+                        continue
+                    json.dump(data_entry.data, fout, ensure_ascii=False)
+                    fout.write("\n")
+                    self.number_of_entries += 1
+                    self.total_duration += data_entry.data.get("duration", 0)
+
+        self.finalize(metrics)
+
+    def prepare(self):
+        """Can be used in derived classes to prepare the processing."""
+        pass
+
+    def _chunk_manifest(self):
+        """Splits the manifest into smaller chunks defined by `in_memory_chunksize`."""
+        manifest_chunk = []
+        for idx, data_entry in enumerate(self.read_manifest(), 1):
+            manifest_chunk.append(data_entry)
+            if idx % self.in_memory_chunksize == 0:
+                yield manifest_chunk
+                manifest_chunk = []
+        if manifest_chunk:
+            yield manifest_chunk
+
+    def read_manifest(self):
+        """Read entries from the input manifest file."""
+        if not self.input_manifest_file:
+            raise ValueError("Input manifest file is not specified.")
+
+        with open(self.input_manifest_file, "r", encoding="utf-8") as fin:
+            for line in fin:
+                yield json.loads(line)
+
+    def write_output_manifest(self, results):
+        """Writes the processed results to the output manifest."""
+        with open(self.output_manifest_file, "w", encoding="utf-8") as fout:
+            for result in results:
+                json.dump(result.data, fout, ensure_ascii=False)
+                fout.write("\n")
+
+    def process_dataset_entry(self, data_entry) -> List[DataEntry]:
+        """Override this method in derived classes to define processing logic."""
+        raise NotImplementedError("Derived classes must implement `process_dataset_entry`.")
+
+    def finalize(self, metrics: List[Any]):
+        """Outputs metrics about the processed data."""
+        logger.info("Total number of entries after processing: %d", self.number_of_entries)
+        if self.total_duration != 0:
+            logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
+        else:
+            logger.info(
+                "Unable to calculate total audio duration (hours) after processing. "
+                "Ensure that the manifest file includes a 'duration' key."
+            )
+        logger.info("Processor completed in (seconds): %.2f", time.time() - self.start_time)
+
+
+
+
 class BaseParallelProcessor(BaseProcessor):
     """Processor class which allows operations on each utterance to be parallelized.
 
@@ -112,7 +229,7 @@ class BaseParallelProcessor(BaseProcessor):
         self,
         max_workers: int = -1,
         chunksize: int = 100,
-        in_memory_chunksize: int = 1000000,
+        in_memory_chunksize: int = 100000,
         test_cases: Optional[List[Dict]] = None,
         **kwargs,
     ):
