@@ -348,17 +348,6 @@ class KeepOnlySpecifiedFields(BaseProcessor):
                 fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")
 
 
-class ApplyInnerJoin(BaseProcessor):
-    def __init__(
-        self,
-        left_manifest_file: Optional[str],
-        right_manifest_file: str,
-        column_id: Union[str, List[str], None] = None,
-        **kwargs,
-    ):
-        raise DeprecationWarning("Use processor ApplyMerge instead")
-
-
 class ApplyMerge(BaseProcessor):
     """Applies merge to two manifests, i.e. creates a manifest from records that have matching values in both manifests.
     For more information, please refer to the Pandas merge function documentation:
@@ -402,3 +391,6 @@ class ApplyMerge(BaseProcessor):
                 fout.write(json.dumps(dict(line), ensure_ascii=False) + "\n")
 
         logger.info("Total number of entries after join: " + str(m3.shape[0]))
+
+
+ApplyInnerJoin = ApplyMerge
