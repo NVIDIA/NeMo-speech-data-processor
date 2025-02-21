@@ -86,9 +86,34 @@ Coraa
 ..       To control the number of processors we support.
 
 FLEURS
-''''''   
+''''''
 
 .. autodata:: sdp.processors.CreateInitialManifestFleurs
+   :annotation:
+
+UzbekVoice
+''''''''''
+.. autodata:: sdp.processors.CreateInitialManifestUzbekvoice
+   :annotation:
+
+
+MASC
+''''''
+
+.. autodata:: sdp.processors.CreateInitialManifestMASC
+   :annotation:
+
+MediaSpeech
+''''''''''''
+
+.. autodata:: sdp.processors.CreateInitialManifestMediaSpeech
+   :annotation:
+
+
+HuggingFace Datasets
+''''''''''''''''''''
+
+.. autodata:: sdp.processors.CreateInitialManifestHuggingFace
    :annotation:
 
 Lhotse processors

@@ -1,23 +1,12 @@
 documentation: |
-  Librispeech
-  ###########
+  Librispeech (mini)
+  ##################
   
   This config can be used to prepare
-  `Librispeech <https://openslr.org/12>`_
+  `Librispeech mini <https://www.openslr.org/31/>`_
   dataset in the NeMo format.
 
-  It produces manifests for the dev-clean split (for other splits, please configure). 
-  The options are:
-
-  - ``"dev-clean"``
-  - ``"dev-other"``
-  - ``"test-clean"``
-  - ``"test-other"``
-  - ``"train-clean-100"``
-  - ``"train-clean-360"``
-  - ``"train-other-500"``
-  - ``"dev-clean-2"``
-  - ``"train-clean-5"``
+  It produces manifests for the mini split of Libripseech. 
 
   This config performs the following data processing.
 
@@ -34,9 +23,10 @@ documentation: |
  
   **Output format**.
 
-  This config generates output manifest file:
+  This config generates 2 output manifest files:
 
-  * ``${workspace_dir}/manifest.json`` - dev-clean subset of the data.
+  * ``${workspace_dir}/dev-clean-2.json`` - mini dev-clean subset of the data.
+  * ``${workspace_dir}/train-clean-5.json`` - mini train-clean subset of the data.
 
   Output manifest contains the following fields:
 
@@ -46,13 +36,11 @@ documentation: |
 
 processors_to_run: all
 workspace_dir: ???
-data_split: "dev-clean"
-final_manifest: ${workspace_dir}/manifest.json
 
 processors:
-  # creating manifest for dev-clean set
+  # creating manifest for mini dev-clean set
   - _target_: sdp.processors.CreateInitialManifestLibrispeech
-    split: ${data_split}
+    split: dev-clean-2
     raw_data_dir: ${workspace_dir}/raw_data
 
   - _target_: sdp.processors.SoxConvert
@@ -66,4 +54,22 @@ processors:
     duration_key: duration
 
   - _target_: sdp.processors.SubMakeLowercase
-    output_manifest_file: ${final_manifest}
+    output_manifest_file: ${workspace_dir}/dev-clean-2.json
+
+  # creating manifest for mini traio-clean set
+  - _target_: sdp.processors.CreateInitialManifestLibrispeech
+    split: train-clean-5
+    raw_data_dir: ${workspace_dir}/raw_data
+
+  - _target_: sdp.processors.SoxConvert
+    converted_audio_dir: ${workspace_dir}/audio
+    input_audio_file_key: "audio_filepath"
+    output_audio_file_key: "audio_filepath"
+    output_format: "wav"
+
+  - _target_: sdp.processors.GetAudioDuration
+    audio_filepath_key: audio_filepath
+    duration_key: duration
+
+  - _target_: sdp.processors.SubMakeLowercase
+    output_manifest_file: ${workspace_dir}/train-clean-5.json

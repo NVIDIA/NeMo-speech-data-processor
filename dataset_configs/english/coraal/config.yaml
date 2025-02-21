@@ -3,7 +3,7 @@ documentation: |
   ######
 
   This config can be used to prepare
-  `Corpus of Regional African American Language (CORAAL) <https://oraal.uoregon.edu/coraal>`_
+  `Corpus of Regional African American Language (CORAAL) <https://oraal.github.io/coraal>`_
   dataset in the NeMo format.
   It produces 3 manifests for train/dev/test splits as well as a single
   manifest with all the data. The original data does not contain any
@@ -93,8 +93,8 @@ processors:
       - {"pattern": '\baksing\b', "repl": "asking"}
       - {"pattern": '\baksed\b', "repl": "asked"}
       # removing unintelligible/redacted flags
-      - {"pattern": '/(?i)unintelligible/', "repl": ""}
-      - {"pattern": '/(?i)inaudible/', "repl": ""}
+      - {"pattern": '(?i)unintelligible/', "repl": ""}
+      - {"pattern": '(?i)inaudible/', "repl": ""}
       - {"pattern": '/RD(.*?)/', "repl": ""}
       - {"pattern": '/(\?)\1*/', "repl": ""}
       # removing non-linguistic markers

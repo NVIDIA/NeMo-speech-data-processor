@@ -211,9 +211,17 @@ class DuplicateFields(BaseParallelProcessor):
 
     Returns:
         The same data as in the input manifest with duplicated fields
-        as specified in the ``duplicate_fields`` input dictionary.
-    """
+        as specified in the ``duplicate_fields`` input dictionary. 
+    
+    Example:
+        .. code-block:: yaml
 
+            - _target_: sdp.processors.modify_manifest.common.DuplicateFields
+              input_manifest_file: ${workspace_dir}/test1.json
+              output_manifest_file: ${workspace_dir}/test2.json
+              duplicate_fields: {"text":"answer"}
+
+    """
     def __init__(
         self,
         duplicate_fields: Dict,
@@ -432,8 +440,8 @@ class ApplyInnerJoin(BaseProcessor):
 
     def __init__(
         self,
-        left_manifest_file: Optional[str],
         right_manifest_file: str,
+        left_manifest_file: Optional[str] = None,
         column_id: Union[str, List[str], None] = None,
         **kwargs,
     ):
