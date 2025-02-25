@@ -84,15 +84,14 @@ class BaseProcessor(ABC):
 
 
 class DaskParallelProcessor(BaseProcessor):
-  
     """
     Processor class which allows operations on each entry to be parallelized using Dask.
 
     Parallelization is done by distributing the workload using Dask bags inside
     the :meth:`process` method. 
-    
-    Actual processing should be defined on a per-example basis inside the :meth:`process_dataset_entry` method.
-    C
+
+    Actual processing should be defined on a per-example basis inside the
+    :meth:`process_dataset_entry` method.
 
     Args:
         max_workers (int): Maximum number of workers for Dask.
@@ -118,69 +117,103 @@ class DaskParallelProcessor(BaseProcessor):
         self.number_of_entries = 0
         self.total_duration = 0
         self.start_time = time.time()
-
         self.test_cases = test_cases or []
 
-    def process(self):
-        """Data processing using Dask"""
-        self.prepare() 
 
+    def process__(self):
+        from dask.distributed import Client, as_completed
+        from dask import config
+        from tqdm import tqdm
+        import dask.bag as db
+        import multiprocessing
+        import psutil
+
+        self.prepare()
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         metrics = []
 
-        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
-            # chunks
-            for manifest_chunk in self._chunk_manifest():
-                # Dask bag 
-                bag = db.from_sequence(manifest_chunk, partition_size=self.chunksize)
+        #count total entries fpr a progbar bar.
+        bag_for_count = db.read_text(self.input_manifest_file, encoding="utf-8", blocksize="8MB")
+        total_entries = bag_for_count.count().compute()
 
-                # Process entries in parallel using Dask
-                results = bag.map(self.process_dataset_entry).compute(num_workers=self.max_workers)
+        # Auto-detect available CPU cores and total system memory.
+        # If max_workers is -1 then use the full CPU count.
+        num_cpus = self.max_workers
+        total_memory = psutil.virtual_memory().total
+        # Divide total memory equally among workers
+        mem_per_worker = total_memory // num_cpus
+        # Convert memory per worker
+        mem_per_worker_mb = mem_per_worker // (1024 * 1024)
+        memory_limit = f"{mem_per_worker_mb}MB"
 
-                # Flatten the results and write them to the output
-                flattened_results = itertools.chain.from_iterable(results)
-                for data_entry in flattened_results:
-                    metrics.append(data_entry.metrics)
-                    if data_entry.data is None:
-                        continue
-                    json.dump(data_entry.data, fout, ensure_ascii=False)
-                    fout.write("\n")
-                    self.number_of_entries += 1
-                    self.total_duration += data_entry.data.get("duration", 0)
+        logger.info(f"Auto-detected resources: {num_cpus} workers, each with memory limit {memory_limit}")
 
-        self.finalize(metrics)
+        #Dask configuration.
+        with config.set({
+            "distributed.worker.heartbeat-interval": "5s",
+            "distributed.scheduler.worker-ttl": "120s",
+            "distributed.worker.memory.target": 0.8,
+            "distributed.worker.memory.spill": 0.9,
+            "distributed.comm.retry.count": 10,
+            "distributed.comm.timeouts.connect": "30s",
+            "distributed.comm.timeouts.tcp": "30s"
+        }):
+            # Create the Dask client
+            client = Client(n_workers=num_cpus, processes=True, threads_per_worker=2, memory_limit=memory_limit)
+            try:
+                # Read manifest to dask
+                bag = db.read_text(self.input_manifest_file, encoding="utf-8", blocksize="8MB")
+                bag = bag.map(json.loads)
+
+                def process_partition(partition):
+                    results = []
+                    for data_entry in partition:
+                        try:
+                            ret = self.process_dataset_entry(data_entry)
+                            if not isinstance(ret, list):
+                                ret = [ret]
+                            results.extend(ret)
+                        except Exception as e:
+                            logger.warning(f"Error processing entry: {e}")
+                    return results
+
+                bag = bag.map_partitions(process_partition)
+                delayed_results = bag.to_delayed()
+                futures = client.compute(delayed_results)
+
+                flattened_results = []
+                #TQDM
+                with tqdm(total=total_entries, desc="Processing entries", unit="entry",
+                        mininterval=0.5, miniters=10) as pbar:
+                    for future in as_completed(futures):
+                        partition_result = future.result()
+                        flattened_results.extend(partition_result)
+                        pbar.update(len(partition_result))
+
+                # Writing the results
+                with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
+                    for data_entry in flattened_results:
+                        metrics.append(data_entry.metrics)
+                        if data_entry.data is None:
+                            continue
+                        json.dump(data_entry.data, fout, ensure_ascii=False)
+                        fout.write("\n")
+                        self.number_of_entries += 1
+                        self.total_duration += data_entry.data.get("duration", 0)
+
+                self.finalize(metrics)
+
+            except Exception as e:
+                logger.error(f"Error during processing: {e}")
+                raise
+            finally:
+                logger.info("Shutting down Dask client...")
+                client.close(timeout="60s")
+                logger.info("Dask client shutdown complete")
 
     def prepare(self):
         """Can be used in derived classes to prepare the processing."""
         pass
-
-    def _chunk_manifest(self):
-        """Splits the manifest into smaller chunks defined by `in_memory_chunksize`."""
-        manifest_chunk = []
-        for idx, data_entry in enumerate(self.read_manifest(), 1):
-            manifest_chunk.append(data_entry)
-            if idx % self.in_memory_chunksize == 0:
-                yield manifest_chunk
-                manifest_chunk = []
-        if manifest_chunk:
-            yield manifest_chunk
-
-    def read_manifest(self):
-        """Read entries from the input manifest file."""
-        if not self.input_manifest_file:
-            raise ValueError("Input manifest file is not specified.")
-
-        with open(self.input_manifest_file, "r", encoding="utf-8") as fin:
-            for line in fin:
-                yield json.loads(line)
-
-    def write_output_manifest(self, results):
-        """Writes the processed results to the output manifest."""
-        with open(self.output_manifest_file, "w", encoding="utf-8") as fout:
-            for result in results:
-                json.dump(result.data, fout, ensure_ascii=False)
-                fout.write("\n")
-
     def process_dataset_entry(self, data_entry) -> List[DataEntry]:
         """Override this method in derived classes to define processing logic."""
         raise NotImplementedError("Derived classes must implement `process_dataset_entry`.")
@@ -196,8 +229,6 @@ class DaskParallelProcessor(BaseProcessor):
                 "Ensure that the manifest file includes a 'duration' key."
             )
         logger.info("Processor completed in (seconds): %.2f", time.time() - self.start_time)
-
-
 
 
 class BaseParallelProcessor(BaseProcessor):
