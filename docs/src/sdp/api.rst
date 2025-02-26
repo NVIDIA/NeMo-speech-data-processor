@@ -116,6 +116,12 @@ HuggingFace Datasets
 .. autodata:: sdp.processors.CreateInitialManifestHuggingFace
    :annotation:
 
+YTC Datasets
+''''''''''''''''''''
+
+.. autodata:: sdp.processors.CreateInitialManifestYTC
+   :annotation:
+
 Lhotse processors
 #################
 
@@ -144,6 +150,7 @@ used in the downstream processing for additional enhancement or filtering.
 
 .. autodata:: sdp.processors.ASRTransformers
    :annotation:
+
 
 Text-only processors
 ####################

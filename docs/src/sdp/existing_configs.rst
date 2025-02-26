@@ -365,6 +365,13 @@ Armenian Toloka
 * **Pipeline Get Final**:
    `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/toloka/pipeline_get_final_res.yaml>`__ |
    :doc:`documentation <config-docs/armenian/toloka/pipeline_get_final_res>`
+YouTube Commons (YTC)
+~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://huggingface.co/datasets/PleIAs/YouTube-Commons
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/tts/ytc/config.yaml>`__ |
+:doc:`documentation <config-docs/tts/ytc/config>`
 
 .. toctree::
    :hidden:
@@ -373,3 +380,4 @@ Armenian Toloka
    config-docs/armenian/toloka/pipeline_validate_answers
    config-docs/armenian/toloka/pipeline_get_final_res
 
+   config-docs/tts/ytc/config
