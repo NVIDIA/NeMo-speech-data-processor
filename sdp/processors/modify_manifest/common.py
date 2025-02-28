@@ -131,7 +131,7 @@ class AddConstantFields(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
-class AddConstantFields_Dask(DaskParallelProcessor):
+class AddConstantFields(DaskParallelProcessor):
     """
     Processor for adding constant fields to all manifest entries using DaskParallelProcessor.
 
