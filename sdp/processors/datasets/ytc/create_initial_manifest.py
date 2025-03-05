@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ndjson
+
 import os
 import soundfile as sf
 from pathlib import Path
@@ -33,6 +33,7 @@ class CreateInitialManifestYTC(BaseParallelProcessor):
         target_format (str): Desired format for the output audio files
         target_nchannels (int): Desired number of channels for the output audio files
     """
+    import ndjson
     def __init__(
             self,
             raw_data_dir: str,
