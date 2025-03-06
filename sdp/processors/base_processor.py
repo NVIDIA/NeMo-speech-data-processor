@@ -126,13 +126,17 @@ class BaseParallelProcessor(BaseProcessor):
         import multiprocessing
         import psutil
 
+        
+        os.environ.setdefault("PATH", os.defpath)
+        default_path = os.environ["PATH"]
+
         self.prepare()
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         metrics = []
 
-        # If no input manifest is provided, use an empty bag.
-        if self.input_manifest_file is None:
-            logger.info("No input manifest file provided; skipping file-based manifest reading.")
+        # Check if input manifest file is provided and exists.
+        if not self.input_manifest_file or not os.path.exists(self.input_manifest_file):
+            logger.info("No input manifest file provided or file not found; using empty bag.")
             total_entries = 0
             bag = db.from_sequence([])
         else:
@@ -160,7 +164,14 @@ class BaseParallelProcessor(BaseProcessor):
             "distributed.comm.timeouts.connect": "30s",
             "distributed.comm.timeouts.tcp": "30s"
         }):
-            client = Client(n_workers=num_cpus, processes=True, threads_per_worker=2, memory_limit=memory_limit)
+            # Optionally, pass environment variables to workers if supported.
+            client = Client(
+                n_workers=num_cpus,
+                processes=True,
+                threads_per_worker=2,
+                memory_limit=memory_limit,
+                env={"PATH": default_path}
+            )
             try:
                 def process_partition(partition):
                     results = []
@@ -178,10 +189,10 @@ class BaseParallelProcessor(BaseProcessor):
                 delayed_results = bag.to_delayed()
                 futures = client.compute(delayed_results)
 
-                # Open output file and process futures.
+                # Open output file before starting to process futures.
                 with open(self.output_manifest_file, "wt", encoding="utf8") as fout, \
-                     tqdm(total=total_entries, desc="Processing entries", unit="entry",
-                          mininterval=0.5, miniters=10) as pbar:
+                    tqdm(total=total_entries, desc="Processing entries", unit="entry",
+                        mininterval=0.5, miniters=10) as pbar:
                     for future in as_completed(futures):
                         partition_result = future.result()
                         for data_entry in partition_result:
