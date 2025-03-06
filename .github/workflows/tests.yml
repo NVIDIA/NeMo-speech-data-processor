@@ -76,6 +76,7 @@ jobs:
         pip install nemo_text_processing
         pip install -r requirements/huggingface.txt
         pip install dask
+        pip install distributed
         python -m pip cache purge
 
     - name: Run all tests
