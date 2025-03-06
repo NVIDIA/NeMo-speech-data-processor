@@ -134,17 +134,23 @@ class BaseParallelProcessor(BaseProcessor):
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         metrics = []
 
-        # Check if input manifest file is provided and exists.
-        if not self.input_manifest_file or not os.path.exists(self.input_manifest_file):
-            logger.info("No input manifest file provided or file not found; using empty bag.")
+        # Check if input manifest file is provided, exists, and is non-empty.
+        if (not self.input_manifest_file or 
+            not os.path.exists(self.input_manifest_file) or 
+            os.path.getsize(self.input_manifest_file) == 0):
+            logger.info("No input manifest file provided, file not found, or file is empty; using empty bag.")
             total_entries = 0
             bag = db.from_sequence([])
         else:
             # Compute the total line count.
             with open(self.input_manifest_file, "rb") as f:
                 total_entries = sum(1 for _ in f)
-            bag = db.read_text(self.input_manifest_file, encoding="utf-8", blocksize="8MB")
-            bag = bag.map(json.loads)
+            if total_entries == 0:
+                logger.info("Input manifest file is empty; using empty bag.")
+                bag = db.from_sequence([])
+            else:
+                bag = db.read_text(self.input_manifest_file, encoding="utf-8", blocksize="8MB")
+                bag = bag.map(json.loads)
 
         # Set up resources.
         num_cpus = multiprocessing.cpu_count() if self.max_workers == -1 else self.max_workers
@@ -214,6 +220,7 @@ class BaseParallelProcessor(BaseProcessor):
                 logger.info("Shutting down Dask client...")
                 client.close(timeout="60s")
                 logger.info("Dask client shutdown complete")
+
 
     def prepare(self):
         """Can be used in derived classes to prepare the processing."""
