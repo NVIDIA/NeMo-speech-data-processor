@@ -103,32 +103,31 @@ class AddConstantFields(DaskParallelProcessor):
     """
     This processor adds constant fields to all manifest entries using DaskParallelProcessor.
     It is useful when you want to attach fixed information (e.g., a language label or metadata)
-    to each entry for downstream processing tasks such as language identification model training.
+    to each entry for downstream tasks such as language identification model training.
     
     Args:
-        fields (dict): Dictionary containing key-value pairs of fields to add to each manifest entry.
-            For example:
-                fields = {
+        fields (dict): A dictionary containing key-value pairs of fields to add to each manifest entry.
+            For example::
+    
+                {
                     "label": "en",
-                    "metadata": "mcv-11.0-2022-09-21",
+                    "metadata": "mcv-11.0-2022-09-21"
                 }
-            Or:
-            fields: {"label": "Daskrename", "taskname": "asr"}
     
     Returns:
-        The same data as in the input manifest with the added constant fields as specified in the
-        `fields` dictionary.
+        dict: The same data as in the input manifest with the added constant fields as specified in
+        the ``fields`` dictionary.
     
     Example:
+    
         .. code-block:: yaml
+    
             - _target_: sdp.processors.modify_manifest.common.AddConstantFields
               input_manifest_file: ${workspace_dir}/input_manifest.json
               output_manifest_file: ${workspace_dir}/output_manifest.json
-              fields: {"label": "Daskrename", "taskname": "asr"}
+              fields:
                 label: "en"
                 metadata: "mcv-11.0-2022-09-21"
-        
-        
     """
 
     def __init__(self, fields: Dict, **kwargs):
