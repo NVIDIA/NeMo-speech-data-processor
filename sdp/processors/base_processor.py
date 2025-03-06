@@ -81,7 +81,6 @@ class BaseProcessor(ABC):
 
         There are not tests by default.
         """
-
 class BaseParallelProcessor(BaseProcessor):
     """
     Processor class which allows operations on each entry to be parallelized using Dask.
@@ -118,7 +117,6 @@ class BaseParallelProcessor(BaseProcessor):
         self.start_time = time.time()
         self.test_cases = test_cases or []
 
-
     def process(self):
         from dask.distributed import Client, as_completed
         from dask import config
@@ -126,7 +124,6 @@ class BaseParallelProcessor(BaseProcessor):
         import dask.bag as db
         import multiprocessing
         import psutil
-
 
         self.prepare()
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
@@ -178,7 +175,7 @@ class BaseParallelProcessor(BaseProcessor):
                 # Open output file before starting to process futures.
                 with open(self.output_manifest_file, "wt", encoding="utf8") as fout, \
                     tqdm(total=total_entries, desc="Processing entries", unit="entry",
-                        mininterval=0.5, miniters=10) as pbar:
+                         mininterval=0.5, miniters=10) as pbar:
                     for future in as_completed(futures):
                         partition_result = future.result()
                         # Write results immediately (as soon as available) 
@@ -249,7 +246,29 @@ class BaseParallelProcessor(BaseProcessor):
             )
         logger.info("Processor completed in (seconds): %.2f", time.time() - self.start_time)
 
+    def test(self):
+        """Applies processing to each test case and raises an error if the generated output does not match the expected output.
 
+        Each test case in ``self.test_cases`` should be a dictionary with keys:
+            - "input": the test input for process_dataset_entry.
+            - "output": the expected output; can be a single dict or a list of dicts.
+        """
+        for test_case in self.test_cases:
+            input_data = test_case["input"].copy() if isinstance(test_case["input"], dict) else test_case["input"]
+            generated_outputs = self.process_dataset_entry(input_data)
+            expected_outputs = (
+                [test_case["output"]] if not isinstance(test_case["output"], list)
+                else test_case["output"]
+            )
+            for generated_output, expected_output in zip(generated_outputs, expected_outputs):
+                generated_data = generated_output.data if hasattr(generated_output, "data") else generated_output
+                if generated_data != expected_output:
+                    raise RuntimeError(
+                        "Runtime test failed.\n"
+                        f"Test input: {test_case['input']}\n"
+                        f"Generated output: {generated_data}\n"
+                        f"Expected output: {expected_output}"
+                    )
 
 class LegacyParallelProcessor(BaseProcessor):
     """Processor class which allows operations on each utterance to be parallelized.
