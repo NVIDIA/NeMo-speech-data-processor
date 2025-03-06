@@ -610,7 +610,7 @@ class SubRegex(BaseParallelProcessor):
 
 class NormalizeText(BaseParallelProcessor):
     """This processor applies text normalization (TN) to the text. I.e. converts text from written form into its verbalized form.
-    E.g., “$123” is converted to “one hundred and twenty-three dollars.”
+    E.g., "$123" is converted to "one hundred and twenty-three dollars."
 
     Args:
         input_text_key (str): the text field that will be the input to the Normalizer. Defaults to: text.
@@ -657,7 +657,7 @@ class NormalizeText(BaseParallelProcessor):
 
 class InverseNormalizeText(BaseParallelProcessor):
     """This processor applies inverse text normalization (ITN) to the text. I.e. transforms spoken forms of numbers, dates, etc into their written equivalents.
-    E.g., “one hundred and twenty-three dollars.” is converted to “$123”.
+    E.g., "one hundred and twenty-three dollars." is converted to "$123".
 
     Args:
         input_text_key (str): the text field that will be the input to the InverseNormalizer. Defaults to: text.
@@ -919,14 +919,14 @@ class ASRFileCheck(BaseProcessor):
     """
     ASRFileCheck is a class for validating audio files listed in a manifest file.
     This class checks if each audio file can be successfully loaded with the `torchaudio` library, marking
-    and optionally moving corrupted files to a specified directory.
+    and moving corrupted files to a specified directory.
 
     Attributes:
     ----------
     audio_filepath_key : str, optional
         The key in the manifest entries used to retrieve the path to the audio file. Defaults to 'audio_filepath'.
-    corrupted_audio_dir : str, optional
-        The directory where corrupted audio files will be moved. If not provided, corrupted files are deleted.
+    corrupted_audio_dir : str
+        The directory where corrupted audio files will be moved. This is a required parameter.
     failed_files : list
         A list of file paths for audio files that failed to load.
 
@@ -934,7 +934,7 @@ class ASRFileCheck(BaseProcessor):
     -------
     process()
         Checks each file listed in the manifest to ensure it can be loaded with torchaudio.
-        Moves or deletes corrupted files and outputs a new manifest with only valid entries.
+        Moves corrupted files and outputs a new manifest with only valid entries.
     """
     def __init__(self, audio_filepath_key: str = "audio_filepath", corrupted_audio_dir: str = None, **kwargs):
         """
@@ -944,11 +944,15 @@ class ASRFileCheck(BaseProcessor):
         ----------
         audio_filepath_key : str, optional
             The key in the manifest entries used to retrieve the path to the audio file. Defaults to 'audio_filepath'.
-        corrupted_audio_dir : str, optional
-            The directory where corrupted audio files will be moved. If not provided, corrupted files are deleted.
+        corrupted_audio_dir : str
+            The directory where corrupted audio files will be moved. This is required.
         """
         super().__init__(**kwargs)
         self.audio_filepath_key = audio_filepath_key
+        
+        if corrupted_audio_dir is None:
+            raise ValueError("corrupted_audio_dir parameter is required. Please specify a directory to move corrupted files.")
+        
         self.corrupted_audio_dir = corrupted_audio_dir
         self.failed_files = []
 
@@ -957,37 +961,54 @@ class ASRFileCheck(BaseProcessor):
         Check each file listed in the manifest to ensure it can be loaded with torchaudio.
 
         This method reads through the manifest file, attempts to load each audio file using torchaudio,
-        and moves or deletes corrupted files. A new manifest file is created with only the valid entries.
+        and moves corrupted files. A new manifest file is created with only the valid entries.
+        
+        Specific errors handled:
+        - FileNotFoundError: File doesn't exist
+        - RuntimeError: File format issues or codec problems
+        - Other exceptions: General issues with file loading
         """
+        from sdp.logging import logger
+        
         with open(self.input_manifest_file, 'r') as f:
             lines = f.readlines()
 
         entries = []
         total_lines = len(lines)
 
+        # Ensure the corrupted files directory exists
+        os.makedirs(self.corrupted_audio_dir, exist_ok=True)
+
         for idx in tqdm(range(total_lines), desc="Checking Audio Files"):
             line = lines[idx]
             entry = json.loads(line)
+            audio_path = entry[self.audio_filepath_key]
+            
             try:
                 # Attempt to load the audio file to check if it is corrupted
-                torchaudio.load(entry[self.audio_filepath_key])
+                torchaudio.load(audio_path)
                 entries.append(entry)  # File is good, append to entries list
+            except FileNotFoundError:
+                logger.warning(f"File not found: {audio_path}")
+                self.failed_files.append(audio_path)
+            except RuntimeError as e:
+                logger.warning(f"Audio format error in {audio_path}: {e}")
+                self.failed_files.append(audio_path)
+                
+                # Move the corrupted audio file
+                if os.path.exists(audio_path):
+                    dest_path = os.path.join(self.corrupted_audio_dir, os.path.basename(audio_path))
+                    os.rename(audio_path, dest_path)
+                    logger.info(f"Moved corrupted file to: {dest_path}")
             except Exception as e:
-                print(f"Failed to load {entry[self.audio_filepath_key]}: {e}")
-                self.failed_files.append(entry[self.audio_filepath_key])  # Log failed file path
-
-                # Move or delete the corrupted audio file
-                if self.corrupted_audio_dir:
-                    # Ensure the directory exists
-                    os.makedirs(self.corrupted_audio_dir, exist_ok=True)
-                    dest_path = os.path.join(
-                        self.corrupted_audio_dir, os.path.basename(entry[self.audio_filepath_key])
-                    )
-                    os.rename(entry[self.audio_filepath_key], dest_path)
-                    print(f"Moved corrupted file to: {dest_path}")
-                else:
-                    os.remove(entry[self.audio_filepath_key])
-                    print(f"Deleted corrupted file: {entry[self.audio_filepath_key]}")
+                logger.warning(f"Unknown error loading {audio_path}: {e}")
+                self.failed_files.append(audio_path)
+                
+                # Move the corrupted audio file
+                if os.path.exists(audio_path):
+                    dest_path = os.path.join(self.corrupted_audio_dir, os.path.basename(audio_path))
+                    os.rename(audio_path, dest_path)
+                    logger.info(f"Moved corrupted file to: {dest_path}")
 
         # Output non-corrupted entries to a new manifest file
         with open(self.output_manifest_file, 'w', encoding='utf-8') as f_out:
@@ -996,59 +1017,5 @@ class ASRFileCheck(BaseProcessor):
                 f_out.write("\n")
 
         if self.failed_files:
-            print(f"Failed to process the following files: {self.failed_files}")
-
-
-
-class AudioResampler(BaseParallelProcessor):
-    """
-    Class to handle resampling of audio files.
-
-    Args:
-        resampled_audio_dir (str): Directory where resampled audio files will be saved.
-        target_samplerate (int): Desired sample rate (Hz).
-        target_nchannels (int): Desired number of audio channels.
-
-    Methods:
-        process_dataset_entry(data_entry): Processes a single data entry to resample audio.
-    """
-
-    def __init__(
-        self,
-        resampled_audio_dir: str,
-        audio_filepath_key: str = "audio_filepath",
-        target_samplerate: int = 16000,
-        target_nchannels: int = 1,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.audio_filepath_key = audio_filepath_key
-        self.resampled_audio_dir = resampled_audio_dir
-        self.target_samplerate = target_samplerate
-        self.target_nchannels = target_nchannels
-        os.makedirs(resampled_audio_dir, exist_ok=True)
-
-    def process_dataset_entry(self, data_entry):
-        """
-        Resamples a single audio file based on the specified sample rate and number of channels.
-
-        Args:
-            data_entry (tuple): A tuple containing the original audio file path and its transcription.
-
-        Returns:
-            dict: A dictionary containing the path to the resampled audio file, its duration, and the transcription text.
-        """
-        file_name = os.path.splitext(os.path.basename(data_entry[self.audio_filepath_key]))[0]
-
-        audio_path = data_entry[self.audio_filepath_key]
-        output_wav_path = os.path.join(self.resampled_audio_dir, file_name + ".wav")
-
-        if not os.path.exists(output_wav_path):
-            tfm = Transformer()
-            tfm.rate(samplerate=self.target_samplerate)
-            tfm.channels(n_channels=self.target_nchannels)
-            tfm.build(input_filepath=audio_path, output_filepath=output_wav_path)
-
-        data_entry[self.audio_filepath_key] = output_wav_path
-
-        return [DataEntry(data=data_entry)]
+            logger.warning(f"Failed to process {len(self.failed_files)} files.")
+            logger.debug(f"Failed files: {self.failed_files}")

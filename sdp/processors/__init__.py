@@ -84,7 +84,6 @@ from sdp.processors.modify_manifest.create_manifest import (
 )
 from sdp.processors.modify_manifest.data_to_data import (
     ASRFileCheck,
-    AudioResampler,
     CopyManifestData,
     CountNumWords,
     ExtractFromBrackets,

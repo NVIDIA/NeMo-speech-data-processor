@@ -53,9 +53,6 @@ class CreateTolokaPool(BaseParallelProcessor):
     """
     def __init__(
         self,
-        API_KEY: str = None,
-        platform: str = None,
-        project_id: str = None,  # Optional project_id during initialization
         lang: str = 'HY',
         **kwargs,
     ):
@@ -64,67 +61,47 @@ class CreateTolokaPool(BaseParallelProcessor):
 
         Parameters:
         ----------
-        API_KEY : str, optional
-            The API key used to authenticate with Toloka's API. If not provided, it is retrieved from the environment.
-        platform : str, optional
-            Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). If not provided, it is retrieved from the environment.
-        project_id : str, optional
-            The ID of the project for which the pool will be created. Defaults to None.
         lang : str, optional
             The language filter for the pool. Defaults to 'HY'.
         """
         super().__init__(**kwargs)
-        self.API_KEY = API_KEY or os.getenv('TOLOKA_API_KEY')
-        self.platform = platform or os.getenv('TOLOKA_PLATFORM')
-        self.project_id = project_id  # Store project_id if provided during initialization
+        self.API_KEY = os.getenv('TOLOKA_API_KEY')
+        if not self.API_KEY:
+            raise ValueError("TOLOKA_API_KEY environment variable is not set")
+            
+        self.platform = os.getenv('TOLOKA_PLATFORM')
+        if not self.platform:
+            raise ValueError("TOLOKA_PLATFORM environment variable is not set")
+            
+        # Project ID will be read from the input manifest file in process_dataset_entry
+        self.project_id = None
         self.lang = lang
-        self.load_config()
-
-    def load_config(self):
-        """
-        Loads configuration data from the output manifest file to populate API_KEY, platform, and project_id attributes.
-
-        This method attempts to read from a JSON configuration file. If the file is missing or improperly
-        formatted, an appropriate error is logged.
-        """
-        try:
-            with open(self.output_manifest_file, 'r') as file:
-                config = json.load(file)
-                self.API_KEY = config.get('API_KEY', self.API_KEY)
-                self.platform = config.get('platform', self.platform)
-                self.project_id = config.get('project_id', self.project_id)
-        except FileNotFoundError:
-            logger.error("Configuration file not found.")
-        except json.JSONDecodeError:
-            logger.error("Error decoding JSON from the configuration file.")
 
     def process_dataset_entry(self, data_entry):
         """
         Creates a new Toloka pool based on the provided dataset entry.
 
-        This method retrieves necessary information such as API key, project ID, and platform from the
-        dataset entry or defaults to the instance's attributes. It then uses Toloka's API to create a
-        new pool for the specified project and returns the pool details.
+        This method retrieves the project ID from the dataset entry and uses Toloka's API
+        to create a new pool for the specified project and returns the pool details.
 
         Parameters:
         ----------
         data_entry : dict
-            A dictionary containing the data entry information, which may include overrides for API_KEY,
-            project_id, or platform.
+            A dictionary containing the data entry information, which should include project_id.
 
         Returns:
         -------
         list
             A list containing a DataEntry object with the new pool ID if successful, or an empty list if failed.
         """
-        API_KEY = data_entry.get("API_KEY", self.API_KEY)  # Retrieve API_KEY from data_entry or use self.API_KEY
-        project_id = data_entry.get(
-            "project_id", self.project_id
-        )  # Retrieve project_id from data_entry or use self.project_id
-        platform = data_entry.get("platform", self.platform)
+        # Get project_id from the data entry
+        project_id = data_entry.get("project_id")
+        if not project_id:
+            logger.error("No project_id found in data entry")
+            return []
 
         try:
-            toloka_client = toloka.client.TolokaClient(API_KEY, platform)
+            toloka_client = toloka.client.TolokaClient(self.API_KEY, self.platform)
 
             new_pool = toloka.client.Pool(
                 project_id=project_id,

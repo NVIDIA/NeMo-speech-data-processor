@@ -42,12 +42,15 @@ processors:
     corrupted_audio_dir: ${workspace_dir}/curr
     output_manifest_file: ${workspace_dir}/manifest0.json
 
-  - _target_: sdp.processors.AudioResampler
+  - _target_: sdp.processors.SoxConvert
     output_manifest_file: ${workspace_dir}/manifest1.json
-    resampled_audio_dir: ${workspace_dir}/16k
-    audio_filepath_key: "audio_filepath"
-    target_samplerate: 16000
-    target_nchannels: 1
+    converted_audio_dir: ${workspace_dir}/16k
+    input_audio_file_key: "audio_filepath"
+    output_audio_file_key: "audio_filepath"
+    output_format: "wav"
+    transform_options:
+      rate: 16000
+      channels: 1
 
   - _target_: sdp.processors.MakeSentence
     text_key: "text"

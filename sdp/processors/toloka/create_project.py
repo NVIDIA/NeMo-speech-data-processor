@@ -36,18 +36,12 @@ class CreateTolokaProject(BaseProcessor):
     project_instructions : str
         Instructions that will be provided to the workers on how to complete tasks for the project.
     API_KEY : str, optional
-        The API key used to authenticate with Toloka's API. Defaults to None, in which case it tries to
-        load the key from environment variables or config file.
+        The API key used to authenticate with Toloka's API, retrieved from the TOLOKA_API_KEY environment variable.
     platform : str, optional
-        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). Defaults to None, meaning it will
-        try to load from environment variables or the config file.
-    save_api_key_to_config : bool, optional
-        If True, saves the API key to the configuration file for future use. Defaults to False.
+        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'), retrieved from the TOLOKA_PLATFORM environment variable.
 
     Methods:
     -------
-    load_config()
-        Loads configuration data from a manifest file to populate API_KEY and platform attributes.
     process()
         Creates a Toloka project based on provided configurations, saving project details to a file.
     """
@@ -56,9 +50,6 @@ class CreateTolokaProject(BaseProcessor):
         project_name: str,
         project_description: str,
         project_instructions: str,
-        API_KEY: str = None,
-        platform: str = None,
-        save_api_key_to_config: bool = False,  # Parameter to control saving API key
         **kwargs,
     ):
         """
@@ -72,49 +63,29 @@ class CreateTolokaProject(BaseProcessor):
             A description of the project that will be shown to the Toloka workers.
         project_instructions : str
             Instructions that will be provided to the workers on how to complete tasks for the project.
-        API_KEY : str, optional
-            The API key used to authenticate with Toloka's API. If not provided, it is retrieved from the environment.
-        platform : str, optional
-            Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). If not provided, it is retrieved from the environment.
-        save_api_key_to_config : bool, optional
-            Determines if the API key should be saved to the configuration file. Defaults to False.
         """
         super().__init__(**kwargs)
-        self.API_KEY = API_KEY or os.getenv('TOLOKA_API_KEY')
-        self.platform = platform or os.getenv('TOLOKA_PLATFORM')
+        self.API_KEY = os.getenv('TOLOKA_API_KEY')
+        if not self.API_KEY:
+            raise ValueError("TOLOKA_API_KEY environment variable is not set")
+            
+        self.platform = os.getenv('TOLOKA_PLATFORM')
+        if not self.platform:
+            raise ValueError("TOLOKA_PLATFORM environment variable is not set")
+            
         self.project_name = project_name
         self.project_description = project_description
         self.project_instructions = project_instructions
-        self.save_api_key_to_config = save_api_key_to_config  # Initialize the parameter
-        self.load_config()
-
-    def load_config(self):
-        """
-        Loads configuration data from the output manifest file to populate API_KEY and platform attributes.
-
-        This method attempts to read from a JSON configuration file. If the file is missing or improperly
-        formatted, an appropriate error is logged.
-        """
-        try:
-            with open(self.output_manifest_file, 'r') as file:
-                config = json.load(file)
-                self.API_KEY = config.get('API_KEY', self.API_KEY)
-                self.platform = config.get('platform', self.platform)
-        except FileNotFoundError:
-            logger.error("Configuration file not found.")
-        except json.JSONDecodeError:
-            logger.error("Error decoding JSON from the configuration file.")
 
     def process(self):
         """
         Processes the creation of a Toloka project.
 
-        This method establishes a connection to the Toloka API using the provided API key and platform,
+        This method establishes a connection to the Toloka API using the API key and platform from environment variables,
         then creates a new project with the specified name, description, and instructions. It also defines
         the task specifications including the input and output fields, and then submits the project to Toloka.
 
         After creating the project, it saves the project details (including the project ID) to a specified file.
-        Optionally, the API key can also be saved to the configuration file.
         """
         logger.info("Processing Toloka project creation...")
 
@@ -155,15 +126,13 @@ class CreateTolokaProject(BaseProcessor):
         # Create the project in Toloka
         created_project = toloka_client.create_project(new_project)
 
-        # Always save project details and possibly the API key to a file
+        # Always save project details to a file
         data_file = self.output_manifest_file
         directory = os.path.dirname(data_file)
         if not os.path.exists(directory):
             os.makedirs(directory)
 
         data = {"project_id": created_project.id, "platform": self.platform}
-        if self.save_api_key_to_config:
-            data["API_KEY"] = self.API_KEY
 
         with open(data_file, "w") as fout:
             fout.write(json.dumps(data) + "\n")

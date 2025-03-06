@@ -76,27 +76,4 @@ class CreateCombinedManifests(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
-class ExcelToJsonConverter(BaseProcessor):
-    def __init__(self, input_excel_file: str, column_keys: list = None, **kwargs):
-        super().__init__(**kwargs)
-        self.input_excel_file = input_excel_file
-        self.column_keys = column_keys if column_keys is not None else []
 
-    def process(self):
-        df = pandas.read_excel(self.input_excel_file, header=0)
-
-        if not self.column_keys:
-            self.column_keys = list(df.columns)
-
-        if len(self.column_keys) != len(df.columns):
-            raise ValueError("The number of provided keys does not match the number of columns in the Excel file.")
-
-        data_entries = []
-
-        for _, row in df.iterrows():
-            data_entry = {self.column_keys[i]: row.values[i] for i in range(len(self.column_keys))}
-            data_entries.append(data_entry)
-
-        with open(self.output_manifest_file, "wt", encoding='utf-8') as fout:
-            for m in data_entries:
-                fout.write(json.dumps(m, ensure_ascii=False) + "\n")

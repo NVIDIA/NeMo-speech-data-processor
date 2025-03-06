@@ -38,21 +38,17 @@ class CreateTolokaTaskSet(BaseProcessor):
         The path to the input pool file containing pool configurations.
     limit : float, optional
         The percentage limit of tasks to read from the manifest file. Defaults to 100.
-    API_KEY : str, optional
-        The API key used to authenticate with Toloka's API. Defaults to None, in which case it tries to
-        load the key from environment variables or config file.
-    platform : str, optional
-        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). Defaults to None, meaning it will
-        try to load from environment variables or the config file.
-    pool_id : str, optional
-        The ID of the pool to which tasks will be added. Defaults to None, meaning it should be provided in a config file.
+    API_KEY : str
+        The API key used to authenticate with Toloka's API, retrieved from the TOLOKA_API_KEY environment variable.
+    platform : str
+        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'), retrieved from the TOLOKA_PLATFORM environment variable.
+    pool_id : str
+        The ID of the pool to which tasks will be added, read from the input_pool_file.
 
     Methods:
     -------
     prepare()
-        Prepares the class by loading API configuration, pool configuration, and initializing Toloka client.
-    load_api_config()
-        Loads API configuration data from the input data file.
+        Prepares the class by loading pool configuration and initializing Toloka client.
     load_pool_config()
         Loads pool configuration data from the input pool file.
     read_manifest() -> List[dict]
@@ -65,9 +61,6 @@ class CreateTolokaTaskSet(BaseProcessor):
         input_data_file: str,
         input_pool_file: str,
         limit: float = 100,
-        API_KEY: Optional[str] = None,
-        platform: Optional[str] = None,
-        pool_id: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -76,69 +69,61 @@ class CreateTolokaTaskSet(BaseProcessor):
         Parameters:
         ----------
         input_data_file : str
-            The path to the input data file containing API configurations.
+            The path to the input data file containing project configurations.
         input_pool_file : str
             The path to the input pool file containing pool configurations.
         limit : float, optional
             The percentage limit of tasks to read from the manifest file. Defaults to 100.
-        API_KEY : str, optional
-            The API key used to authenticate with Toloka's API. If not provided, it is retrieved from the environment.
-        platform : str, optional
-            Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). If not provided, it is retrieved from the environment.
-        pool_id : str, optional
-            The ID of the pool to which tasks will be added. Defaults to None.
         """
         super().__init__(**kwargs)
         self.input_data_file = input_data_file
         self.input_pool_file = input_pool_file
         self.limit = limit
-        self.API_KEY = API_KEY or os.getenv('TOLOKA_API_KEY')
-        self.platform = platform or os.getenv('TOLOKA_PLATFORM')
-        self.pool_id = pool_id
+        self.pool_id = None
+        
+        # Get API key and platform from environment variables
+        self.API_KEY = os.getenv('TOLOKA_API_KEY')
+        if not self.API_KEY:
+            raise ValueError("TOLOKA_API_KEY environment variable is not set")
+            
+        self.platform = os.getenv('TOLOKA_PLATFORM')
+        if not self.platform:
+            raise ValueError("TOLOKA_PLATFORM environment variable is not set")
+        
+        self.toloka_client = None
 
     def prepare(self):
         """
-        Prepares the class by loading API configuration, pool configuration, and initializing Toloka client.
+        Prepares the class by loading pool configuration and initializing Toloka client.
 
-        This method loads necessary configurations and initializes the Toloka client to interact with Toloka's API.
+        This method sets up the necessary components for task creation, including loading the
+        pool configuration and initializing the Toloka client.
         """
-        logger.info("Preparing task set...")
-        self.load_api_config()
         self.load_pool_config()
         self.toloka_client = toloka.client.TolokaClient(self.API_KEY, self.platform)
-
-    def load_api_config(self):
-        """
-        Loads API configuration data from the input data file.
-
-        This method attempts to read API configuration, such as API key and platform, from a JSON file.
-        If the file is missing or improperly formatted, an appropriate error is logged.
-        """
-        try:
-            with open(self.input_data_file, 'r') as file:
-                data = json.load(file)
-                self.API_KEY = data.get("API_KEY", self.API_KEY)
-                self.platform = data.get("platform", self.platform)
-        except FileNotFoundError:
-            logger.error("API config file not found.")
-        except json.JSONDecodeError:
-            logger.error("Error decoding JSON from the API config file.")
 
     def load_pool_config(self):
         """
         Loads pool configuration data from the input pool file.
 
-        This method attempts to read pool configuration, such as pool ID, from a JSON file.
-        If the file is missing or improperly formatted, an appropriate error is logged.
+        This method reads the pool configuration from the specified file and extracts the
+        pool ID for use in task creation.
+
+        Raises:
+        ------
+        ValueError
+            If the input pool file does not contain a pool ID.
         """
         try:
             with open(self.input_pool_file, 'r') as file:
-                data = json.load(file)
-                self.pool_id = data.get("pool_id", self.pool_id)
+                pool_config = json.load(file)
+                self.pool_id = pool_config.get('pool_id')
+                if not self.pool_id:
+                    raise ValueError("No pool ID found in the pool configuration file.")
         except FileNotFoundError:
-            logger.error("Pool config file not found.")
+            raise ValueError(f"Pool configuration file {self.input_pool_file} not found.")
         except json.JSONDecodeError:
-            logger.error("Error decoding JSON from the pool config file.")
+            raise ValueError(f"Error decoding JSON from the pool configuration file {self.input_pool_file}.")
 
     def read_manifest(self) -> List[dict]:
         """
@@ -164,11 +149,20 @@ class CreateTolokaTaskSet(BaseProcessor):
         """
         Creates Toloka tasks based on manifest data and adds them to the specified pool.
 
-        This method reads the manifest data, creates tasks for each data entry, and adds those tasks to the
-        specified Toloka pool. It also writes the manifest data to an output file after tasks have been created.
+        This method reads the input manifest, creates task objects for Toloka, and submits
+        them to the specified pool. It also writes the manifest data to an output file after 
+        tasks have been created.
+
+        Raises:
+        ------
+        ValueError
+            If no pool ID is available or if there are issues with the Toloka API.
         """
         logger.info("Processing tasks...")
         self.prepare()
+
+        if not self.pool_id:
+            raise ValueError("No pool ID available. Cannot create tasks.")
 
         entries = self.read_manifest()
         tasks = [
@@ -176,9 +170,14 @@ class CreateTolokaTaskSet(BaseProcessor):
             for data_entry in entries
         ]
 
-        self.toloka_client.create_tasks(tasks, allow_defaults=True)
-        logger.info(f"Created {len(tasks)} tasks.")
+        try:
+            self.toloka_client.create_tasks(tasks, allow_defaults=True)
+            logger.info(f"Created {len(tasks)} tasks.")
+        except Exception as e:
+            logger.error(f"Error creating tasks: {e}")
+            raise ValueError(f"Failed to create tasks: {e}")
 
+        # Write the manifest data to the output file
         with open(self.output_manifest_file, "wt", encoding='utf-8') as fout:
             for entry in entries:
                 fout.write(json.dumps(entry, ensure_ascii=False) + "\n")
