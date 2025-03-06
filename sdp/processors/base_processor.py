@@ -82,7 +82,7 @@ class BaseProcessor(ABC):
         There are not tests by default.
         """
 
-class DaskParallelProcessor(BaseProcessor):
+class BaseParallelProcessor(BaseProcessor):
     """
     Processor class which allows operations on each entry to be parallelized using Dask.
 
@@ -251,7 +251,7 @@ class DaskParallelProcessor(BaseProcessor):
 
 
 
-class BaseParallelProcessor(BaseProcessor):
+class LegacyParallelProcessor(BaseProcessor):
     """Processor class which allows operations on each utterance to be parallelized.
 
     Parallelization is done using ``tqdm.contrib.concurrent.process_map`` inside
