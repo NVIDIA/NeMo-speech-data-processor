@@ -50,8 +50,8 @@ class ASRTransformers(BaseProcessor):
         batch_size: int = 1,
         chunk_length_s: int = 0,
         torch_dtype: str = "float32",
-        generate_task: str = "transcribe",
-        generate_language: str = "english",
+        generate_task: str = None,
+        generate_language: str = None,
         max_new_tokens: Optional[int] = None,
         **kwargs,
     ):
@@ -91,22 +91,24 @@ class ASRTransformers(BaseProcessor):
         )
         self.model.to(self.device)
 
-        self.model.generation_config.language = self.generate_language
+        # Check if using Whisper/Seamless or NVIDIA model based on the model name
+        self.is_whisper_or_seamless = any(x in self.pretrained_model.lower() for x in ['whisper', 'seamless'])
+        
+        # Only set language in generation config for Whisper/Seamless models
+        if self.is_whisper_or_seamless and self.generate_language:
+            self.model.generation_config.language = self.generate_language
 
         processor = AutoProcessor.from_pretrained(self.pretrained_model)
-
-        # Check if the model is Whisper
-        is_whisper = 'whisper' in self.pretrained_model.lower()
 
         self.pipe = pipeline(
             "automatic-speech-recognition",
             model=self.model,
             tokenizer=processor.tokenizer,
             feature_extractor=processor.feature_extractor,
-            max_new_tokens=None,
+            max_new_tokens=self.max_new_tokens,
             chunk_length_s=self.chunk_length_s,
             batch_size=self.batch_size,
-            return_timestamps=is_whisper,  # Only set return_timestamps if the model is Whisper
+            return_timestamps=self.is_whisper_or_seamless,  # Only set return_timestamps for Whisper/Seamless models
             torch_dtype=self.torch_dtype,
             device=self.device,
         )
@@ -123,9 +125,14 @@ class ASRTransformers(BaseProcessor):
                 batch = json_list_sorted[start_index : start_index + self.batch_size]
                 start_index += self.batch_size
                 audio_files = [item[self.input_audio_key] for item in batch]
-                results = self.pipe(
-                    audio_files, generate_kwargs={"language": self.generate_language, "task": self.generate_task}
-                )
+                
+                # Only pass generate_kwargs for Whisper/Seamless models
+                if self.is_whisper_or_seamless and self.generate_language and self.generate_task:
+                    results = self.pipe(
+                        audio_files, generate_kwargs={"language": self.generate_language, "task": self.generate_task}
+                    )
+                else:
+                    results = self.pipe(audio_files)
 
                 for i, item in enumerate(batch):
                     item[self.output_text_key] = results[i]["text"]

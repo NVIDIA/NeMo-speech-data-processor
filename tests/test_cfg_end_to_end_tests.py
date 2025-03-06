@@ -39,6 +39,7 @@ class TestCase:
     # Fields in the manifest to ignore (can be set when non-deterministic processor was used)
     reference_manifest_filename: str = "test_data_reference.json"
     fields_to_ignore: List[str] = field(default_factory=list)
+    processors_to_run: str = ""
 
 def data_check_fn_generic(raw_data_dir: str, file_name: str, **kwargs) -> None:
     if callable(file_name):
@@ -86,6 +87,15 @@ def data_check_fn_uzbekvoice(raw_data_dir: str) -> None:
             return
         else:
             raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
+
+def data_check_fn_armenian_toloka(raw_data_dir: str) -> None:
+    """Checks for the Armenian Toloka test data.
+    
+    For testing Toloka pipelines, we need a sample docx file to process.
+    """
+    expected_dir = Path(raw_data_dir) / "arm_docs"
+    if not expected_dir.exists() or not any(expected_dir.glob("*.docx")):
+        raise ValueError(f"No docx files found in {str(expected_dir)}")
 
 # using Mock so coraal_processor will only try to use the files listed.
 # To reduce the amount of storage required by the test data, the S3 bucket contains
@@ -191,7 +201,7 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
             config_path=f"{DATASET_CONFIGS_ROOT}/arabic/masc/config.yaml", 
             data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz")
             ),
-        TestCase(
+        TestCase( 
             config_path=f"{DATASET_CONFIGS_ROOT}/arabic/masc/config_filter_noisy_train.yaml", 
             data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz"),
             reference_manifest_filename="test_data_reference_filter.json"
@@ -211,6 +221,24 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/arabic/everyayah/config.yaml", 
             data_check_fn=partial(data_check_fn_generic, file_name="everyayah.hf")
+        ),
+        # Armenian Toloka test cases - using processor slices to skip Toloka API components
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_start.yaml", 
+            data_check_fn=data_check_fn_armenian_toloka,
+            fields_to_ignore=['source_filepath'],  # Ignore source filepath as it may be different in test environment
+            # Custom processors_to_run override for pipeline_start.yaml - skipping Toloka-specific processors (0-2)
+            # Only run processors 3-13 which are the data processing components
+            processors_to_run="3:14"
+        ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_get_final_res.yaml", 
+            data_check_fn=data_check_fn_armenian_toloka,
+            reference_manifest_filename="test_data_reference_final.json",
+            fields_to_ignore=['audio_filepath', 'duration'],  # Ignore audio filepath and duration as they may differ
+            # Custom processors_to_run override for pipeline_get_final_res.yaml
+            # Skip Toloka API processor (0) and audio processors (1-2, 5)
+            processors_to_run="3:5"
         )
     ]
 
@@ -267,22 +295,23 @@ def setup_data(request):
         pytest.fail("Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY "
     "and AWS_ACCESS_KEY to run e2e config tests")
         
-    config_path, data_check_fn, reference_manifest_filename, fields_to_ignore  = (request.param.config_path,                             
+    config_path, data_check_fn, reference_manifest_filename, fields_to_ignore, processors_to_run = (request.param.config_path,                             
                                                      request.param.data_check_fn, 
                                                      request.param.reference_manifest_filename,  
-                                                     request.param.fields_to_ignore)
+                                                     request.param.fields_to_ignore,
+                                                     request.param.processors_to_run)
 
     rel_path_from_root = Path(config_path).parent.relative_to(DATASET_CONFIGS_ROOT)
     test_data_root = get_e2e_test_data_path(str(rel_path_from_root))
     data_dir = Path(test_data_root, rel_path_from_root)
 
-    yield config_path, data_check_fn, reference_manifest_filename, data_dir, fields_to_ignore
+    yield config_path, data_check_fn, reference_manifest_filename, data_dir, fields_to_ignore, processors_to_run
     if os.getenv("CLEAN_UP_DATA_DIR", "0") != "0":
         shutil.rmtree(data_dir)
 
 
 def test_data_availability(setup_data):
-    _, data_check_fn, reference_manifest_filename, data_dir, _ = setup_data
+    _, data_check_fn, reference_manifest_filename, data_dir, fields_to_ignore, _ = setup_data
     try:
         data_check_fn(raw_data_dir=data_dir)
     except ValueError as e:
@@ -298,12 +327,13 @@ def test_configs(setup_data, tmp_path):
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
     # to have the same structure (e.g. <lang>/<dataset>)
 
-    config_path,  _, reference_manifest_filename, data_dir, fields_to_ignore = setup_data
+    config_path, _, reference_manifest_filename, data_dir, fields_to_ignore, processors_to_run = setup_data
     reference_manifest = data_dir / reference_manifest_filename
 
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
-    cfg.processors_to_run = "all"
+    # Use custom processors_to_run if specified, otherwise use "all"
+    cfg.processors_to_run = processors_to_run if processors_to_run else "all"
     cfg.workspace_dir = str(tmp_path)
     cfg.final_manifest = str(tmp_path / "final_manifest.json")
     cfg.data_split = cfg.get("data_split", "train")

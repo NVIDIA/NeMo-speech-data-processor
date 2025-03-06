@@ -45,13 +45,14 @@ processors:
     corrupted_audio_dir: ${workspace_dir}/curr
     output_manifest_file: ${workspace_dir}/result_manifest_no_curr.json
 
-  - _target_: sdp.processors.ASRTransformers # pip install accelerate transformers
+  # WARNING: This processor requires GPU resources for optimal performance
+  # Model: nvidia/stt_hy_fastconformer_hybrid_large_pc is a FastConformer ASR model for Armenian
+  # This processor is skipped during automated tests
+  - _target_: sdp.processors.ASRTransformers 
     input_manifest_file: ${workspace_dir}/result_manifest_no_curr.json
     output_manifest_file: ${workspace_dir}/result_manifest_pred.json
-    pretrained_model: "facebook/seamless-m4t-v2-large" 
+    pretrained_model: "nvidia/stt_hy_fastconformer_hybrid_large_pc" 
     batch_size: 32
-    generate_language: armenian
-    generate_task: transcribe
     output_text_key: pred_text
 
   - _target_: sdp.processors.SubRegex
