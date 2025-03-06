@@ -88,14 +88,23 @@ def data_check_fn_uzbekvoice(raw_data_dir: str) -> None:
         else:
             raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
 
-def data_check_fn_armenian_toloka(raw_data_dir: str) -> None:
+def data_check_fn_armenian_toloka_pipeline_start(raw_data_dir: str) -> None:
     """Checks for the Armenian Toloka test data.
     
     For testing Toloka pipelines, we need a sample docx file to process.
     """
-    expected_dir = Path(raw_data_dir) / "arm_docs"
+    expected_dir = Path(raw_data_dir) / "pipeline_start" / "arm_docs"
     if not expected_dir.exists() or not any(expected_dir.glob("*.docx")):
         raise ValueError(f"No docx files found in {str(expected_dir)}")
+
+def data_check_fn_armenian_toloka_pipeline_get_final_res(raw_data_dir: str) -> None:
+    """Checks for the Armenian Toloka test data.
+    
+    For testing Toloka pipelines, we need a sample docx file to process.
+    """
+    expected_dir = Path(raw_data_dir) / "pipeline_get_final_res"
+    if not expected_dir.exists():
+        raise ValueError(f"Directory not found: {str(expected_dir)}")
 
 # using Mock so coraal_processor will only try to use the files listed.
 # To reduce the amount of storage required by the test data, the S3 bucket contains
@@ -222,23 +231,19 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
             config_path=f"{DATASET_CONFIGS_ROOT}/arabic/everyayah/config.yaml", 
             data_check_fn=partial(data_check_fn_generic, file_name="everyayah.hf")
         ),
-        # Armenian Toloka test cases - using processor slices to skip Toloka API components
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_start.yaml", 
-            data_check_fn=data_check_fn_armenian_toloka,
-            fields_to_ignore=['source_filepath'],  # Ignore source filepath as it may be different in test environment
-            # Custom processors_to_run override for pipeline_start.yaml - skipping Toloka-specific processors (0-2)
-            # Only run processors 3-13 which are the data processing components
-            processors_to_run="3:14"
+            data_check_fn=data_check_fn_armenian_toloka_pipeline_start,
+            fields_to_ignore=['source_filepath'],
+            processors_to_run="2:14",
+            reference_manifest_filename="pipeline_start/test_data_reference.json"
         ),
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_get_final_res.yaml", 
-            data_check_fn=data_check_fn_armenian_toloka,
-            reference_manifest_filename="test_data_reference_final.json",
-            fields_to_ignore=['audio_filepath', 'duration'],  # Ignore audio filepath and duration as they may differ
-            # Custom processors_to_run override for pipeline_get_final_res.yaml
-            # Skip Toloka API processor (0) and audio processors (1-2, 5)
-            processors_to_run="3:5"
+            data_check_fn=data_check_fn_armenian_toloka_pipeline_get_final_res,
+            reference_manifest_filename="pipeline_get_final_res/test_data_reference.json",
+            fields_to_ignore=['audio_filepath', 'duration'],
+            processors_to_run="1:6"
         )
     ]
 
@@ -338,9 +343,19 @@ def test_configs(setup_data, tmp_path):
     cfg.final_manifest = str(tmp_path / "final_manifest.json")
     cfg.data_split = cfg.get("data_split", "train")
     cfg.processors[0].raw_data_dir = data_dir.as_posix()
+    
 
     if "already_downloaded" in cfg["processors"][0]:
         cfg["processors"][0]["already_downloaded"] = True
+
+    if "armenian/toloka/pipeline_start" in config_path:
+        cfg.processors[2].raw_data_dir = (data_dir / "pipeline_start" / "arm_docs").as_posix()
+
+    if "armenian/toloka/pipeline_get_final_res" in config_path:
+        cfg.processors[1].workspace_dir = (data_dir / "pipeline_get_final_res").as_posix()
+        cfg.processors[2].workspace_dir = (data_dir / "pipeline_get_final_res").as_posix()
+        # Set input_manifest_file for ASRFileCheck to use the existing manifest.json
+        cfg.processors[1].input_manifest_file = (data_dir / "pipeline_get_final_res" / "manifest.json").as_posix()
 
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the

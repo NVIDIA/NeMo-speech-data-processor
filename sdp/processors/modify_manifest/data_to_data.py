@@ -15,13 +15,14 @@
 import collections
 import os
 import re
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import soundfile
 import torchaudio
 from docx import Document
 from sox import Transformer
 from tqdm import tqdm
+import json
 
 from sdp.logging import logger
 from sdp.processors.base_processor import (
@@ -183,44 +184,76 @@ class ReadTxtLines(BaseParallelProcessor):
 
 
 class SoxConvert(BaseParallelProcessor):
-    """
-    Processor for converting audio files from one format to another using Sox,
-    and updating the dataset with the path to the converted audio files.
+    """Processor for Sox to convert audio files to specified format.
 
     Args:
-        converted_audio_dir (str): Directory to store the converted audio files.
-        input_audio_file_key (str): Field in the dataset representing the path to input audio files.
-        output_audio_file_key (str): Field to store the path to the converted audio files in the dataset.
-        output_format (str): Format of the output audio files (e.g., 'wav', 'mp3').
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        output_manifest_file (str): Path to the output manifest file.
+        input_audio_file_key (str): Key in the manifest file that contains the path to the input audio file.
+        output_audio_file_key (str): Key in the manifest file that contains the path to the output audio file.
+        converted_audio_dir (str): Path to the directory where the converted audio files will be stored.
+        output_format (str): Format of the output audio file.
+        rate (int): Sample rate of the output audio file.
+        channels (int): Number of channels of the output audio file.
+        workspace_dir (str, optional): Path to the workspace directory. Defaults to None.
     """
 
     def __init__(
         self,
         converted_audio_dir: str,
-        input_audio_file_key: str,
-        output_audio_file_key: str,
-        output_format: str,
+        input_audio_file_key: str = "audio_filepath",
+        output_audio_file_key: str = "audio_filepath",
+        output_format: str = "wav",
+        rate: int = 16000,
+        channels: int = 1,
+        workspace_dir: Optional[str] = None,
         **kwargs,
     ):
+        # Extract workspace_dir from kwargs to avoid passing it to BaseProcessor
+        if "workspace_dir" in kwargs:
+            workspace_dir = kwargs.pop("workspace_dir")
+            
         super().__init__(**kwargs)
         self.input_audio_file_key = input_audio_file_key
         self.output_audio_file_key = output_audio_file_key
         self.converted_audio_dir = converted_audio_dir
         self.output_format = output_format
+        self.workspace_dir = workspace_dir
+
+        # Store the new parameters for later use:
+        self.rate = rate
+        self.channels = channels
 
     def prepare(self):
+        # Debug print for workspace_dir
+        logger.info(f"SoxConvert workspace_dir: {self.workspace_dir}")
         os.makedirs(self.converted_audio_dir, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        audio_file = data_entry[self.input_audio_file_key]
+        audio_path = data_entry[self.input_audio_file_key]
+        
+        # If workspace_dir is provided, join it with audio_path to get absolute path
+        if self.workspace_dir is not None:
+            full_audio_path = os.path.join(self.workspace_dir, audio_path)
+        else:
+            full_audio_path = audio_path
+            
+        # Debug print first file path
+        if not hasattr(self, '_debug_printed'):
+            logger.info(f"First audio_path from manifest: {audio_path}")
+            logger.info(f"First full_audio_path: {full_audio_path}")
+            logger.info(f"Path exists: {os.path.exists(full_audio_path)}")
+            self._debug_printed = True
 
-        key = os.path.splitext(audio_file)[0].split("/")[-1]
+        key = os.path.splitext(audio_path)[0].split("/")[-1]
         converted_file = os.path.join(self.converted_audio_dir, key) + f".{self.output_format}"
 
         if not os.path.isfile(converted_file):
             transformer = Transformer()
-            transformer.build(audio_file, converted_file)
+
+            transformer.rate(self.rate)
+            transformer.channels(self.channels)
+
+            transformer.build(full_audio_path, converted_file)
 
         data_entry[self.output_audio_file_key] = converted_file
         return [DataEntry(data=data_entry)]
@@ -927,6 +960,9 @@ class ASRFileCheck(BaseProcessor):
         The key in the manifest entries used to retrieve the path to the audio file. Defaults to 'audio_filepath'.
     corrupted_audio_dir : str
         The directory where corrupted audio files will be moved. This is a required parameter.
+    workspace_dir : str, optional
+        The base directory where audio files are stored. If provided, audio file paths will be resolved
+        relative to this directory. Defaults to None.
     failed_files : list
         A list of file paths for audio files that failed to load.
 
@@ -936,7 +972,7 @@ class ASRFileCheck(BaseProcessor):
         Checks each file listed in the manifest to ensure it can be loaded with torchaudio.
         Moves corrupted files and outputs a new manifest with only valid entries.
     """
-    def __init__(self, audio_filepath_key: str = "audio_filepath", corrupted_audio_dir: str = None, **kwargs):
+    def __init__(self, audio_filepath_key: str = "audio_filepath", corrupted_audio_dir: str = None, workspace_dir: str = None, **kwargs):
         """
         Constructs the necessary attributes for the ASRFileCheck class.
 
@@ -946,6 +982,9 @@ class ASRFileCheck(BaseProcessor):
             The key in the manifest entries used to retrieve the path to the audio file. Defaults to 'audio_filepath'.
         corrupted_audio_dir : str
             The directory where corrupted audio files will be moved. This is required.
+        workspace_dir : str, optional
+            The base directory where audio files are stored. If provided, audio file paths will be resolved
+            relative to this directory. Defaults to None.
         """
         super().__init__(**kwargs)
         self.audio_filepath_key = audio_filepath_key
@@ -954,6 +993,7 @@ class ASRFileCheck(BaseProcessor):
             raise ValueError("corrupted_audio_dir parameter is required. Please specify a directory to move corrupted files.")
         
         self.corrupted_audio_dir = corrupted_audio_dir
+        self.workspace_dir = workspace_dir
         self.failed_files = []
 
     def process(self):
@@ -970,6 +1010,9 @@ class ASRFileCheck(BaseProcessor):
         """
         from sdp.logging import logger
         
+        # Debug print to show workspace_dir
+        logger.info(f"ASRFileCheck workspace_dir: {self.workspace_dir}")
+        
         with open(self.input_manifest_file, 'r') as f:
             lines = f.readlines()
 
@@ -984,30 +1027,45 @@ class ASRFileCheck(BaseProcessor):
             entry = json.loads(line)
             audio_path = entry[self.audio_filepath_key]
             
+            # Debug print first file path
+            if idx == 0:
+                logger.info(f"First audio_path from manifest: {audio_path}")
+            
+            # If workspace_dir is provided, join it with audio_path to get absolute path
+            if self.workspace_dir is not None:
+                full_audio_path = os.path.join(self.workspace_dir, audio_path)
+            else:
+                full_audio_path = audio_path
+            
+            # Debug print first full path
+            if idx == 0:
+                logger.info(f"First full_audio_path: {full_audio_path}")
+                logger.info(f"Path exists: {os.path.exists(full_audio_path)}")
+            
             try:
                 # Attempt to load the audio file to check if it is corrupted
-                torchaudio.load(audio_path)
+                torchaudio.load(full_audio_path)
                 entries.append(entry)  # File is good, append to entries list
             except FileNotFoundError:
-                logger.warning(f"File not found: {audio_path}")
+                logger.warning(f"File not found: {full_audio_path}")
                 self.failed_files.append(audio_path)
             except RuntimeError as e:
                 logger.warning(f"Audio format error in {audio_path}: {e}")
                 self.failed_files.append(audio_path)
                 
                 # Move the corrupted audio file
-                if os.path.exists(audio_path):
+                if os.path.exists(full_audio_path):
                     dest_path = os.path.join(self.corrupted_audio_dir, os.path.basename(audio_path))
-                    os.rename(audio_path, dest_path)
+                    os.rename(full_audio_path, dest_path)
                     logger.info(f"Moved corrupted file to: {dest_path}")
             except Exception as e:
                 logger.warning(f"Unknown error loading {audio_path}: {e}")
                 self.failed_files.append(audio_path)
                 
                 # Move the corrupted audio file
-                if os.path.exists(audio_path):
+                if os.path.exists(full_audio_path):
                     dest_path = os.path.join(self.corrupted_audio_dir, os.path.basename(audio_path))
-                    os.rename(audio_path, dest_path)
+                    os.rename(full_audio_path, dest_path)
                     logger.info(f"Moved corrupted file to: {dest_path}")
 
         # Output non-corrupted entries to a new manifest file

@@ -23,10 +23,11 @@ documentation: |
   - `${workspace_dir}/manifest1.json`: Manifest with resampled audio files.
   - `${workspace_dir}/manifest3.json`: Manifest with text formatting corrections.
   - `${workspace_dir}/manifest4.json`: Manifest with only the necessary fields (`text`, `audio_filepath`).
-  - `${workspace_dir}/results.json`: Final manifest with audio durations.
+  - `${final_manifest}`: Final manifest with audio durations.
 
 processors_to_run: all
 workspace_dir: ???
+final_manifest: ${workspace_dir}/results.json
 
 processors:
   - _target_: sdp.processors.GetTolokaResults
@@ -39,6 +40,7 @@ processors:
 
   - _target_: sdp.processors.ASRFileCheck
     audio_filepath_key: audio_filepath  
+    workspace_dir: ${workspace_dir}
     corrupted_audio_dir: ${workspace_dir}/curr
     output_manifest_file: ${workspace_dir}/manifest0.json
 
@@ -48,9 +50,9 @@ processors:
     input_audio_file_key: "audio_filepath"
     output_audio_file_key: "audio_filepath"
     output_format: "wav"
-    transform_options:
-      rate: 16000
-      channels: 1
+    rate: 16000
+    channels: 1
+    workspace_dir: ${workspace_dir}
 
   - _target_: sdp.processors.MakeSentence
     text_key: "text"
@@ -65,6 +67,6 @@ processors:
   - _target_: sdp.processors.GetAudioDuration
     audio_filepath_key: audio_filepath
     duration_key: duration
-    output_manifest_file: ${workspace_dir}/results.json
+    output_manifest_file: ${final_manifest}
 
 

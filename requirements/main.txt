@@ -15,9 +15,7 @@ gdown
 webvtt-py
 wget
 python-docx
-sentencepiece
-toloka-kit
-transformers
+# toloka-kit # Is not support currently by toloka
 pydub
 dask
 distributed
