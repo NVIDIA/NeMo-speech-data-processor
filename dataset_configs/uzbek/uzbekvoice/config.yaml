@@ -1,9 +1,7 @@
 documentation: |
   uzbekvoice
-  ######
-  This config can be used to prepare
-  `uzbekvoice <https://corpus.uzbekvoice.ai/en-US>`_
-  dataset in the NeMo format.
+  ##########
+  This config can be used to prepare UzbekVoice dataset in the NeMo format.
   It produces manifest for uzbek language.
   This config performs the following data processing.
 

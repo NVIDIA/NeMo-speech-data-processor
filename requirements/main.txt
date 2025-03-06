@@ -15,14 +15,10 @@ gdown
 webvtt-py
 wget
 python-docx
-rarfile
-regex
 sentencepiece
-sox
 toloka-kit
-tqdm
 transformers
-wget
+pydub
 
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
 # for some processers, additionally nemo_text_processing is required
