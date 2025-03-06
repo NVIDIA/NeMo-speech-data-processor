@@ -49,8 +49,10 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         self.extension = extension
 
     def read_manifest(self):
-        output_file = [str(self.raw_data_dir / file) for file in self.raw_data_dir.rglob('*.' + self.extension)]
-        return output_file
+        # Get all files with the specified extension
+        files = list(self.raw_data_dir.rglob('*.' + self.extension))
+        # Get relative paths and then rebuild proper paths to avoid duplication
+        return [str(self.raw_data_dir / file.relative_to(self.raw_data_dir)) for file in files]
 
     def process_dataset_entry(self, data_entry):
         data = {self.output_file_key: data_entry}
