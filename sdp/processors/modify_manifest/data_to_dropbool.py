@@ -803,7 +803,7 @@ class DropIfSubstringInInsertion(BaseParallelProcessor):
             logger.info(f"{insertion}, {count}")
         super().finalize(metrics)
 
-<<<<<<< HEAD
+
 class DropRepeatedFields(BaseParallelProcessor):
     """Drops utterances from the current manifest if their text fields are present in other manifests.
 
@@ -869,7 +869,7 @@ class DropRepeatedFields(BaseParallelProcessor):
             total_counter += counter
         logger.info("Dropped %d utterances", total_counter)
         super().finalize(metrics)
-=======
+
 
 class DropDuplicates(BaseProcessor):
     """
@@ -904,4 +904,3 @@ class DropDuplicates(BaseProcessor):
 
         logger.info(f"Total number of entries after processing: {len(unique_entries)}")
         return unique_entries
->>>>>>> 718eb2f (Toloka support for armenian)
