@@ -101,19 +101,34 @@ class CombineSources(BaseParallelProcessor):
 
 class AddConstantFields(DaskParallelProcessor):
     """
-    Processor for adding constant fields to all manifest entries using DaskParallelProcessor.
-
+    This processor adds constant fields to all manifest entries using DaskParallelProcessor.
+    It is useful when you want to attach fixed information (e.g., a language label or metadata)
+    to each entry for downstream processing tasks such as language identification model training.
+    
     Args:
-        fields: dictionary with any additional information to add. E.g.::
-
-            fields = {
-                "label": "en",
-                "metadata": "mcv-11.0-2022-09-21",
-            }
-
+        fields (dict): Dictionary containing key-value pairs of fields to add to each manifest entry.
+            For example:
+                fields = {
+                    "label": "en",
+                    "metadata": "mcv-11.0-2022-09-21",
+                }
+            Or:
+            fields: {"label": "Daskrename", "taskname": "asr"}
+    
     Returns:
-        The same data as in the input manifest with added fields
-        as specified in the ``fields`` input dictionary.
+        The same data as in the input manifest with the added constant fields as specified in the
+        `fields` dictionary.
+    
+    Example:
+        .. code-block:: yaml
+            - _target_: sdp.processors.modify_manifest.common.AddConstantFields
+              input_manifest_file: ${workspace_dir}/input_manifest.json
+              output_manifest_file: ${workspace_dir}/output_manifest.json
+              fields: {"label": "Daskrename", "taskname": "asr"}
+                label: "en"
+                metadata: "mcv-11.0-2022-09-21"
+        
+        
     """
 
     def __init__(self, fields: Dict, **kwargs):
@@ -121,15 +136,6 @@ class AddConstantFields(DaskParallelProcessor):
         self.fields = fields
 
     def process_dataset_entry(self, data_entry: Dict):
-        """
-        Add constant fields to a single manifest entry.
-
-        Args:
-            data_entry (dict): A manifest entry.
-
-        Returns:
-            List[DataEntry]: A list containing the updated manifest entry.
-        """
         data_entry.update(self.fields)
         return [DataEntry(data=data_entry)]
 
