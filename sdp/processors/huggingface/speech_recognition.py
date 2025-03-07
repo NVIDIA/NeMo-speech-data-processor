@@ -50,8 +50,8 @@ class ASRTransformers(BaseProcessor):
         batch_size: int = 1,
         chunk_length_s: int = 0,
         torch_dtype: str = "float32",
-        generate_task: str = None,
-        generate_language: str = None,
+        generate_task: str = "transcribe",
+        generate_language: str = "english",
         max_new_tokens: Optional[int] = None,
         **kwargs,
     ):
