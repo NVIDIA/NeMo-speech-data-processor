@@ -118,6 +118,7 @@ class BaseParallelProcessor(BaseProcessor):
         self.start_time = time.time()
         self.test_cases = test_cases or []
 
+
     def process(self):
         from dask.distributed import Client, as_completed
         from dask import config
@@ -126,7 +127,6 @@ class BaseParallelProcessor(BaseProcessor):
         import multiprocessing
         import psutil
 
-        
         os.environ.setdefault("PATH", os.defpath)
         default_path = os.environ["PATH"]
 
@@ -134,25 +134,33 @@ class BaseParallelProcessor(BaseProcessor):
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         metrics = []
 
-        # Check if input manifest file is provided, exists, and is non-empty.
-        if (not self.input_manifest_file or 
-            not os.path.exists(self.input_manifest_file) or 
-            os.path.getsize(self.input_manifest_file) == 0):
-            logger.info("No input manifest file provided, file not found, or file is empty; using empty bag.")
-            total_entries = 0
-            bag = db.from_sequence([])
-        else:
-            # Compute the total line count.
-            with open(self.input_manifest_file, "rb") as f:
-                total_entries = sum(1 for _ in f)
+        # If no input manifest file is provided, use the read_manifest() method to get entries.
+        if self.input_manifest_file is None:
+            manifest_entries = list(self.read_manifest())
+            total_entries = len(manifest_entries)
             if total_entries == 0:
-                logger.info("Input manifest file is empty; using empty bag.")
+                logger.info("No input manifest entries found; using empty bag.")
                 bag = db.from_sequence([])
             else:
-                bag = db.read_text(self.input_manifest_file, encoding="utf-8", blocksize="8MB")
-                bag = bag.map(json.loads)
+                bag = db.from_sequence(manifest_entries)
+        else:
+            # Check if input manifest file exists and is non-empty.
+            if (not os.path.exists(self.input_manifest_file) or os.path.getsize(self.input_manifest_file) == 0):
+                logger.info("Input manifest file not found or empty; using empty bag.")
+                total_entries = 0
+                bag = db.from_sequence([])
+            else:
+                # Compute total line count.
+                with open(self.input_manifest_file, "rb") as f:
+                    total_entries = sum(1 for _ in f)
+                if total_entries == 0:
+                    logger.info("Input manifest file is empty; using empty bag.")
+                    bag = db.from_sequence([])
+                else:
+                    bag = db.read_text(self.input_manifest_file, encoding="utf-8", blocksize="8MB")
+                    bag = bag.map(json.loads)
 
-        # Set up resources.
+        # Set up worker resources.
         num_cpus = multiprocessing.cpu_count() if self.max_workers == -1 else self.max_workers
         total_memory = psutil.virtual_memory().total
         mem_per_worker = total_memory // num_cpus
@@ -170,7 +178,6 @@ class BaseParallelProcessor(BaseProcessor):
             "distributed.comm.timeouts.connect": "30s",
             "distributed.comm.timeouts.tcp": "30s"
         }):
-            # Optionally, pass environment variables to workers if supported.
             client = Client(
                 n_workers=num_cpus,
                 processes=True,
@@ -195,7 +202,6 @@ class BaseParallelProcessor(BaseProcessor):
                 delayed_results = bag.to_delayed()
                 futures = client.compute(delayed_results)
 
-                # Open output file before starting to process futures.
                 with open(self.output_manifest_file, "wt", encoding="utf8") as fout, \
                     tqdm(total=total_entries, desc="Processing entries", unit="entry",
                         mininterval=0.5, miniters=10) as pbar:
@@ -220,7 +226,6 @@ class BaseParallelProcessor(BaseProcessor):
                 logger.info("Shutting down Dask client...")
                 client.close(timeout="60s")
                 logger.info("Dask client shutdown complete")
-
 
     def prepare(self):
         """Can be used in derived classes to prepare the processing."""
