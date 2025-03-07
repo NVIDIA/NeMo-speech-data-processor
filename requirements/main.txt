@@ -14,6 +14,9 @@ tqdm
 gdown
 webvtt-py
 wget
+python-docx
+# toloka-kit # Is not support currently by toloka
+# httpx==0.23.1 # Version for depricated toloka-kit
 pydub
 dask
 distributed
