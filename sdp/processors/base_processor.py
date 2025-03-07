@@ -82,12 +82,12 @@ class BaseProcessor(ABC):
         There are not tests by default.
         """
 
-class DaskParallelProcessor(BaseProcessor):
+class BaseParallelProcessor(BaseProcessor):
     """
     Processor class which allows operations on each entry to be parallelized using Dask.
 
     Parallelization is done by distributing the workload using Dask bags inside
-    the :meth:`process` method. 
+    the :meth:`process` method.
 
     Actual processing should be defined on a per-example basis inside the
     :meth:`process_dataset_entry` method.
@@ -127,16 +127,40 @@ class DaskParallelProcessor(BaseProcessor):
         import multiprocessing
         import psutil
 
+        os.environ.setdefault("PATH", os.defpath)
+        default_path = os.environ["PATH"]
 
         self.prepare()
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         metrics = []
 
-        # total line count.
-        with open(self.input_manifest_file, "rb") as f:
-            total_entries = sum(1 for _ in f)
+        # If no input manifest file is provided, use the read_manifest() method to get entries.
+        if self.input_manifest_file is None:
+            manifest_entries = list(self.read_manifest())
+            total_entries = len(manifest_entries)
+            if total_entries == 0:
+                logger.info("No input manifest entries found; using empty bag.")
+                bag = db.from_sequence([])
+            else:
+                bag = db.from_sequence(manifest_entries)
+        else:
+            # Check if input manifest file exists and is non-empty.
+            if (not os.path.exists(self.input_manifest_file) or os.path.getsize(self.input_manifest_file) == 0):
+                logger.info("Input manifest file not found or empty; using empty bag.")
+                total_entries = 0
+                bag = db.from_sequence([])
+            else:
+                # Compute total line count.
+                with open(self.input_manifest_file, "rb") as f:
+                    total_entries = sum(1 for _ in f)
+                if total_entries == 0:
+                    logger.info("Input manifest file is empty; using empty bag.")
+                    bag = db.from_sequence([])
+                else:
+                    bag = db.read_text(self.input_manifest_file, encoding="utf-8", blocksize="8MB")
+                    bag = bag.map(json.loads)
 
-        # check that we did not set different amount of cpu.
+        # Set up worker resources.
         num_cpus = multiprocessing.cpu_count() if self.max_workers == -1 else self.max_workers
         total_memory = psutil.virtual_memory().total
         mem_per_worker = total_memory // num_cpus
@@ -154,11 +178,14 @@ class DaskParallelProcessor(BaseProcessor):
             "distributed.comm.timeouts.connect": "30s",
             "distributed.comm.timeouts.tcp": "30s"
         }):
-            client = Client(n_workers=num_cpus, processes=True, threads_per_worker=2, memory_limit=memory_limit)
+            client = Client(
+                n_workers=num_cpus,
+                processes=True,
+                threads_per_worker=2,
+                memory_limit=memory_limit,
+                env={"PATH": default_path}
+            )
             try:
-                bag = db.read_text(self.input_manifest_file, encoding="utf-8", blocksize="8MB")
-                bag = bag.map(json.loads)
-
                 def process_partition(partition):
                     results = []
                     for data_entry in partition:
@@ -175,13 +202,11 @@ class DaskParallelProcessor(BaseProcessor):
                 delayed_results = bag.to_delayed()
                 futures = client.compute(delayed_results)
 
-                # Open output file before starting to process futures.
                 with open(self.output_manifest_file, "wt", encoding="utf8") as fout, \
                     tqdm(total=total_entries, desc="Processing entries", unit="entry",
                         mininterval=0.5, miniters=10) as pbar:
                     for future in as_completed(futures):
                         partition_result = future.result()
-                        # Write results immediately (as soon as available) 
                         for data_entry in partition_result:
                             metrics.append(data_entry.metrics)
                             if data_entry.data is None:
@@ -218,10 +243,14 @@ class DaskParallelProcessor(BaseProcessor):
             yield manifest_chunk
 
     def read_manifest(self):
-        """Read entries from the input manifest file."""
-        if not self.input_manifest_file:
-            raise ValueError("Input manifest file is not specified.")
+        """Read entries from the input manifest file.
 
+        Returns an iterator over JSON objects. If no input manifest file is set,
+        returns an empty iterator.
+        """
+        if not self.input_manifest_file:
+            logger.info("No input manifest file specified; returning empty manifest iterator.")
+            return iter([])
         with open(self.input_manifest_file, "r", encoding="utf-8") as fin:
             for line in fin:
                 yield json.loads(line)
@@ -249,9 +278,28 @@ class DaskParallelProcessor(BaseProcessor):
             )
         logger.info("Processor completed in (seconds): %.2f", time.time() - self.start_time)
 
+    def test(self):
+        """Applies processing to each test case and raises an error if the output does not match expected output."""
+        for test_case in self.test_cases:
+            input_data = test_case["input"].copy() if isinstance(test_case["input"], dict) else test_case["input"]
+            generated_outputs = self.process_dataset_entry(input_data)
+            expected_outputs = (
+                [test_case["output"]] if not isinstance(test_case["output"], list)
+                else test_case["output"]
+            )
+            for generated_output, expected_output in zip(generated_outputs, expected_outputs):
+                generated_data = generated_output.data if hasattr(generated_output, "data") else generated_output
+                if generated_data != expected_output:
+                    raise RuntimeError(
+                        "Runtime test failed.\n"
+                        f"Test input: {test_case['input']}\n"
+                        f"Generated output: {generated_data}\n"
+                        f"Expected output: {expected_output}"
+                    )
 
 
-class BaseParallelProcessor(BaseProcessor):
+
+class LegacyParallelProcessor(BaseProcessor):
     """Processor class which allows operations on each utterance to be parallelized.
 
     Parallelization is done using ``tqdm.contrib.concurrent.process_map`` inside
