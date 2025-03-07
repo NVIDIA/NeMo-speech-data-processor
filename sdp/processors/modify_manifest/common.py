@@ -24,6 +24,7 @@ from sdp.processors.base_processor import (
     BaseParallelProcessor,
     BaseProcessor,
     DataEntry,
+    DaskParallelProcessor,
 )
 from sdp.utils.common import load_manifest
 
@@ -98,36 +99,45 @@ class CombineSources(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
-class AddConstantFields(BaseParallelProcessor):
-    """This processor adds constant fields to all manifest entries.
-
-    E.g., can be useful to add fixed ``label: <language>`` field for downstream
-    language identification model training.
-
+class AddConstantFields(DaskParallelProcessor):
+    """
+    This processor adds constant fields to all manifest entries using DaskParallelProcessor.
+    It is useful when you want to attach fixed information (e.g., a language label or metadata)
+    to each entry for downstream tasks such as language identification model training.
+    
     Args:
-        fields: dictionary with any additional information to add. E.g.::
-
-            fields = {
-                "label": "en",
-                "metadata": "mcv-11.0-2022-09-21",
-            }
-
+        fields (dict): A dictionary containing key-value pairs of fields to add to each manifest entry.
+            For example::
+    
+                {
+                    "label": "en",
+                    "metadata": "mcv-11.0-2022-09-21"
+                }
+    
     Returns:
-        The same data as in the input manifest with added fields
-        as specified in the ``fields`` input dictionary.
+        dict: The same data as in the input manifest with the added constant fields as specified in
+        the ``fields`` dictionary.
+    
+    Example:
+    
+        .. code-block:: yaml
+    
+            - _target_: sdp.processors.modify_manifest.common.AddConstantFields
+              input_manifest_file: ${workspace_dir}/input_manifest.json
+              output_manifest_file: ${workspace_dir}/output_manifest.json
+              fields:
+                label: "en"
+                metadata: "mcv-11.0-2022-09-21"
     """
 
-    def __init__(
-        self,
-        fields: Dict,
-        **kwargs,
-    ):
+    def __init__(self, fields: Dict, **kwargs):
         super().__init__(**kwargs)
         self.fields = fields
 
     def process_dataset_entry(self, data_entry: Dict):
         data_entry.update(self.fields)
         return [DataEntry(data=data_entry)]
+
 
 
 class DuplicateFields(BaseParallelProcessor):
@@ -144,9 +154,17 @@ class DuplicateFields(BaseParallelProcessor):
 
     Returns:
         The same data as in the input manifest with duplicated fields
-        as specified in the ``duplicate_fields`` input dictionary.
-    """
+        as specified in the ``duplicate_fields`` input dictionary. 
+    
+    Example:
+        .. code-block:: yaml
 
+            - _target_: sdp.processors.modify_manifest.common.DuplicateFields
+              input_manifest_file: ${workspace_dir}/test1.json
+              output_manifest_file: ${workspace_dir}/test2.json
+              duplicate_fields: {"text":"answer"}
+
+    """
     def __init__(
         self,
         duplicate_fields: Dict,
@@ -365,8 +383,8 @@ class ApplyInnerJoin(BaseProcessor):
 
     def __init__(
         self,
-        left_manifest_file: Optional[str],
         right_manifest_file: str,
+        left_manifest_file: Optional[str] = None,
         column_id: Union[str, List[str], None] = None,
         **kwargs,
     ):

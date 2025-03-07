@@ -11,8 +11,12 @@ rarfile
 regex
 sox
 tqdm
+gdown
 webvtt-py
 wget
+pydub
+dask
+distributed
 
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
 # for some processers, additionally nemo_text_processing is required
