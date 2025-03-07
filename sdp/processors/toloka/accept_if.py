@@ -16,14 +16,22 @@ import json
 import os
 from collections import defaultdict
 
-import toloka.client
-import toloka.client.project.template_builder
+from sdp.logging import logger
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+
+try:
+    import toloka.client
+    import toloka.client.project.template_builder
+    TOLOKA_AVAILABLE = True
+except ImportError:
+    logger.warning("Toloka is currently not supported. AcceptIf processor functionality will be limited.")
+    TOLOKA_AVAILABLE = False
+    toloka = None
+
 from tqdm import tqdm
 
-from sdp.processors.base_processor import BaseProcessor
 
-
-class AcceptIfWERLess(BaseProcessor):
+class AcceptIfWERLess(BaseParallelProcessor):
     """
     AcceptIfWERLess is a class for accepting Toloka assignments if the Word Error Rate (WER) is below a specified threshold.
     This class uses Toloka's API to evaluate the WER of assignments and accept them if they meet the criteria.

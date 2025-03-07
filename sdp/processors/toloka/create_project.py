@@ -15,14 +15,20 @@
 import json
 import os
 
-import toloka.client
-import toloka.client.project.template_builder
-
 from sdp.logging import logger
-from sdp.processors.base_processor import BaseProcessor
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+
+try:
+    import toloka.client
+    import toloka.client.project.template_builder
+    TOLOKA_AVAILABLE = True
+except ImportError:
+    logger.warning("Toloka is currently not supported. CreateTolokaProject processor functionality will be limited.")
+    TOLOKA_AVAILABLE = False
+    toloka = None
 
 
-class CreateTolokaProject(BaseProcessor):
+class CreateTolokaProject(BaseParallelProcessor):
     """
     CreateTolokaProject is a class for creating projects on the Toloka crowdsourcing platform.
     This class leverages Toloka's API to create a project based on user-provided configurations.

@@ -15,9 +15,17 @@
 import json
 import os
 
-import toloka.client
-
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+
+try:
+    import toloka.client
+    TOLOKA_AVAILABLE = True
+except ImportError:
+    logger.warning("Toloka is currently not supported. DownloadResponses processor functionality will be limited.")
+    TOLOKA_AVAILABLE = False
+    toloka = None
+
 
 
 class GetTolokaResults(BaseParallelProcessor):

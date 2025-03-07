@@ -16,16 +16,22 @@ import json
 import os
 from typing import List, Optional
 
-import toloka.client
-import toloka.client.project.template_builder
-
-from sdp.logging import (
-    logger,  # Assuming the logger is properly configured in this module
-)
-from sdp.processors.base_processor import BaseProcessor
+from sdp.logging import logger
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
-class CreateTolokaTaskSet(BaseProcessor):
+try:
+    import toloka.client
+    import toloka.client.project.template_builder
+    TOLOKA_AVAILABLE = True
+except ImportError:
+    logger.warning("Toloka is currently not supported. CreateTaskSet processor functionality will be limited.")
+    TOLOKA_AVAILABLE = False
+    toloka = None
+
+
+
+class CreateTolokaTaskSet(BaseParallelProcessor):
     """
     CreateTolokaTaskSet is a class for creating task sets on the Toloka crowdsourcing platform.
     This class uses Toloka's API to create task sets based on user-provided configurations and input data.
