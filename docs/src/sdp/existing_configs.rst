@@ -352,3 +352,16 @@ Tarteel AI's EveryAyah
    :hidden:
 
    config-docs/arabic/everyayah/config
+
+YouTube Commons (YTC)
+~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://huggingface.co/datasets/PleIAs/YouTube-Commons
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/tts/ytc/config.yaml>`__ |
+:doc:`documentation <config-docs/tts/ytc/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/tts/ytc/config
