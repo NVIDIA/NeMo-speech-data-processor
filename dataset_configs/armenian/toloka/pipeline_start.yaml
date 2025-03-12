@@ -6,6 +6,7 @@ documentation: |
   It sets up the foundation for creating structured tasks by initializing a new Toloka project, preparing pools, and processing textual data to generate a clean and organized corpus.
 
   **Stage Overview**:
+  
   This stage focuses on preparing and refining the dataset through the following steps:
   1. Creating a new Toloka project.
   2. Creating a new pool for the project.

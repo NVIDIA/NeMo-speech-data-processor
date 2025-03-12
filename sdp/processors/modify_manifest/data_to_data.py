@@ -739,8 +739,30 @@ class InverseNormalizeText(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
-
 class CopyManifestData(BaseParallelProcessor):
+    """This processor copies files specified in the manifest to a new location.
+
+    It is useful for creating a consolidated dataset by gathering files from different sources
+    into a single directory.
+
+    Args:
+        copy_path (str): The destination directory where files will be copied.
+        source_filepath (str): The key in the manifest that contains the path to 
+            the file to be copied. Default: "audio_path".
+
+    Returns:
+        The same data as in the input manifest, but the files referenced in the manifest
+        will have been copied to the specified destination directory.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.modify_manifest.data_to_data.CopyManifestData
+              input_manifest_file: ${workspace_dir}/dataset.json
+              output_manifest_file: ${workspace_dir}/dataset_copied.json
+              copy_path: ${workspace_dir}/consolidated_data
+              source_filepath: "audio_filepath"
+    """
     def __init__(
         self,
         copy_path: str,
@@ -906,6 +928,18 @@ class ExtractFromBrackets(BaseParallelProcessor):
 
 
 class GetWER(BaseParallelProcessor):
+    """This processor calculates Word Error Rate (WER) between predicted text and ground truth text.
+
+    It computes the WER for each entry in the manifest and adds the result as a new field.
+    
+    Args:
+        text_key (str): Key for the ground truth text field in the manifest. Default: "text".
+        pred_text_key (str): Key for the predicted text field in the manifest. Default: "pred_text".
+    
+    Returns:
+        The same data as in the input manifest with an additional 'wer' field containing 
+        the calculated Word Error Rate between the specified text fields.
+    """
     def __init__(
         self,
         text_key: str = "text",
@@ -922,11 +956,33 @@ class GetWER(BaseParallelProcessor):
 
 
 class MakeSentence(BaseParallelProcessor):
-    """
-    Processes a text string by capitalizing its first character (if enabled) and appending 
-    an end_symbol if the text does not already end with punctuation.
-    """
+    """This processor formats text strings into proper sentences.
 
+    It capitalizes the first character of the text (if enabled) and appends
+    an end symbol if the text does not already end with punctuation.
+
+    Args:
+        text_key (str): The key in the manifest containing the text to be processed.
+            Default: "text".
+        end_symbol (str): The punctuation symbol to add at the end of the text if it
+            doesn't already have one. Default: ":".
+        make_uppercase (bool): Whether to capitalize the first character of the text.
+            Default: True.
+
+    Returns:
+        The same data as in the input manifest with the text field modified to have
+        proper sentence formatting.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.modify_manifest.data_to_data.MakeSentence
+              input_manifest_file: ${workspace_dir}/dataset.json
+              output_manifest_file: ${workspace_dir}/dataset_formatted.json
+              text_key: "transcript"
+              end_symbol: "."
+              make_uppercase: true
+    """
     def __init__(
         self,
         text_key: str = "text",
@@ -949,30 +1005,22 @@ class MakeSentence(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
-
 class ASRFileCheck(BaseProcessor):
-    """
-    ASRFileCheck is a class for validating audio files listed in a manifest file.
-    This class checks if each audio file can be successfully loaded with the `torchaudio` library, marking
-    and moving corrupted files to a specified directory.
+    """This processor validates audio files in the manifest and identifies corrupted files.
 
-    Attributes:
-    ----------
-    audio_filepath_key : str, optional
-        The key in the manifest entries used to retrieve the path to the audio file. Defaults to 'audio_filepath'.
-    corrupted_audio_dir : str
-        The directory where corrupted audio files will be moved. This is a required parameter.
-    workspace_dir : str, optional
-        The base directory where audio files are stored. If provided, audio file paths will be resolved
-        relative to this directory. Defaults to None.
-    failed_files : list
-        A list of file paths for audio files that failed to load.
+    It attempts to load each audio file using the torchaudio library and moves corrupted
+    files to a specified directory.
 
-    Methods:
-    -------
-    process()
-        Checks each file listed in the manifest to ensure it can be loaded with torchaudio.
-        Moves corrupted files and outputs a new manifest with only valid entries.
+    Args:
+        audio_filepath_key (str): The key in the manifest that contains the path to
+            the audio file. Default: "audio_filepath".
+        corrupted_audio_dir (str): The directory where corrupted audio files will be moved.
+        workspace_dir (str, optional): The base directory for resolving relative paths.
+            Default: None.
+
+    Returns:
+        A manifest with corrupted audio files removed.
+
     """
     def __init__(self, audio_filepath_key: str = "audio_filepath", corrupted_audio_dir: str = None, workspace_dir: str = None, **kwargs):
         """

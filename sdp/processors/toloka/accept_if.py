@@ -32,37 +32,32 @@ from tqdm import tqdm
 
 
 class AcceptIfWERLess(BaseParallelProcessor):
-    """
-    AcceptIfWERLess is a class for accepting Toloka assignments if the Word Error Rate (WER) is below a specified threshold.
-    This class uses Toloka's API to evaluate the WER of assignments and accept them if they meet the criteria.
+    """This processor accepts Toloka assignments if the Word Error Rate (WER) is below a threshold.
 
-    Attributes:
-    ----------
-    input_data_file : str
-        The path to the input data file containing API configurations.
-    input_pool_file : str
-        The path to the input pool file containing pool configurations.
-    threshold : float, optional
-        The WER threshold below which assignments are accepted. Defaults to 75.
-    config_file : str, optional
-        The path to the configuration file. Defaults to None.
-    API_KEY : str, optional
-        The API key used to authenticate with Toloka's API. Defaults to None, in which case it tries to
-        load the key from environment variables or config file.
-    platform : str, optional
-        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). Defaults to None, meaning it will
-        try to load from environment variables or the config file.
-    pool_id : str, optional
-        The ID of the pool from which assignments will be retrieved. Defaults to None.
+    It evaluates the WER between ground truth and predicted text for each assignment
+    and accepts those that meet the specified threshold criteria.
 
-    Methods:
-    -------
-    load_config()
-        Loads configuration data from a config file to populate API_KEY, platform, and pool_id attributes.
-    prepare()
-        Prepares the class by loading API configuration, pool configuration, and initializing Toloka client.
-    process()
-        Accepts Toloka assignments if their Word Error Rate (WER) is below the specified threshold.
+    Args:
+        input_data_file (str): Path to the input data file containing API configurations.
+        input_pool_file (str): Path to the input pool file containing pool configurations.
+        threshold (float): The WER threshold below which assignments are accepted. Default: 75.
+        config_file (str, optional): Path to the configuration file. Default: None.
+        API_KEY (str, optional): The API key for authenticating with Toloka's API. Default: None.
+        platform (str, optional): The Toloka platform to use. Default: None.
+        pool_id (str, optional): The ID of the Toloka pool. Default: None.
+
+    Returns:
+        A manifest with accepted assignments from Toloka based on the WER threshold.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.toloka.accept_if.AcceptIfWERLess
+              input_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+              output_manifest_file: ${workspace_dir}/result_manifest_pred_review.json
+              input_data_file: ${workspace_dir}/data_file.json
+              input_pool_file: ${workspace_dir}/taskpool.json
+              threshold: 50
     """
     def __init__(
         self,

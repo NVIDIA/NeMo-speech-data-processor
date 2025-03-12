@@ -7,6 +7,7 @@ documentation: |
 
   **Stage Overview**:
   This stage includes the following steps:
+  
   1. Downloading results of completed tasks from Toloka.
   2. Validating the audio files and filtering out corrupted files.
   3. Transcribing Armenian audio to text using a HuggingFace model.

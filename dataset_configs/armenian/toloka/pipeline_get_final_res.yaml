@@ -6,6 +6,7 @@ documentation: |
   It processes all accepted results from the Toloka pool and prepares the data for training by refining and resampling audio files and ensuring text formatting consistency.
 
   **Stage Overview**:
+  
   This stage includes the following steps:
   1. Downloading all the ACCEPTED results from the Toloka platform.
   2. Filtering out damaged audio files.
