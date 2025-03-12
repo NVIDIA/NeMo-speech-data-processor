@@ -923,7 +923,8 @@ class GetWER(BaseParallelProcessor):
 
 class MakeSentence(BaseParallelProcessor):
     """
-    Takes string from text string, makes first symbol uppercae and adds end_symbol if last symbol is alpha.
+    Processes a text string by capitalizing its first character (if enabled) and appending 
+    an end_symbol if the text does not already end with punctuation.
     """
 
     def __init__(
@@ -942,10 +943,11 @@ class MakeSentence(BaseParallelProcessor):
         if self.make_uppercase:
             data_entry[self.text_key] = data_entry[self.text_key][0].upper() + data_entry[self.text_key][1:]
 
-        # Check if the last character is not a punctuation and if so, add the end_symbol
+        # Append end_symbol only if the text doesn't end with punctuation
         if data_entry[self.text_key][-1].isalpha():
             data_entry[self.text_key] += self.end_symbol
         return [DataEntry(data=data_entry)]
+
 
 
 class ASRFileCheck(BaseProcessor):
