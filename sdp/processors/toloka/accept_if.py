@@ -120,9 +120,9 @@ class AcceptIfWERLess(BaseParallelProcessor):
                 self.platform = config.get('platform', self.platform)
                 self.pool_id = config.get('pool_id', self.pool_id)
         except FileNotFoundError:
-            print("Configuration file not found.")
+            logger.error("Configuration file not found.")
         except json.JSONDecodeError:
-            print("Error decoding JSON from the configuration file.")
+            logger.error("Error decoding JSON from the configuration file.")
 
     def prepare(self):
         """
@@ -137,18 +137,18 @@ class AcceptIfWERLess(BaseParallelProcessor):
                     self.API_KEY = data.get("API_KEY", self.API_KEY)
                     self.platform = data.get("platform", self.platform)
             except FileNotFoundError:
-                print("Data file not found.")
+                logger.error("Data file not found.")
             except json.JSONDecodeError:
-                print("Error decoding JSON from the data file.")
+                logger.error("Error decoding JSON from the data file.")
 
             try:
                 with open(self.input_pool_file, 'r') as file:
                     data = json.loads(file.readline())
                     self.pool_id = data.get("pool_id", self.pool_id)
             except FileNotFoundError:
-                print("Pool file not found.")
+                logger.error("Pool file not found.")
             except json.JSONDecodeError:
-                print("Error decoding JSON from the pool file.")
+                logger.error("Error decoding JSON from the pool file.")
 
         self.toloka_client = toloka.client.TolokaClient(self.API_KEY, self.platform)
 
@@ -174,5 +174,5 @@ class AcceptIfWERLess(BaseParallelProcessor):
                 self.toloka_client.accept_assignment(assignment_id=assignment_id, public_comment='Well done!')
                 accepted += 1
 
-        print(f"Number of accepted task suits: {accepted} of {len(big_dict)}")
+        logger.info(f"Number of accepted task suits: {accepted} of {len(big_dict)}")
 
