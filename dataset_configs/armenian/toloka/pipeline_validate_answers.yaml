@@ -1,0 +1,93 @@
+documentation: |
+  Validation of responses Armenian
+  ################################
+
+  This configuration represents the second stage of processing Armenian language datasets for the Toloka platform. 
+  It focuses on validating and refining the results of completed tasks, leveraging speech-to-text models and quality metrics to ensure high-quality data for subsequent processing.
+
+  **Stage Overview**:
+  This stage includes the following steps:
+  
+  1. Downloading results of completed tasks from Toloka.
+  2. Validating the audio files and filtering out corrupted files.
+  3. Transcribing Armenian audio to text using a HuggingFace model.
+  4. Cleaning ground truth text by:
+     - Dropping all non-Armenian alphabetical characters.
+     - Replacing the double Armenian symbol "եւ" with the single symbol "և".
+     - Converting text to lowercase.
+  5. Cleaning model-predicted text using the same steps as the ground truth text.
+  6. Calculating Word Error Rate (WER) between the predicted text and the ground truth text.
+  7. Filtering out responses with high WER and accepting those with low WER.
+  8. Rejecting responses from previously banned Tolokers.
+
+  **Required Arguments**:
+  - `workspace_dir`: Specify the directory for storing intermediate and final output files.
+
+  **Output Files**:
+  - `${workspace_dir}/result_manifest.json`: Manifest of results downloaded from Toloka.
+  - `${workspace_dir}/result_manifest_no_curr.json`: Manifest after removing corrupted files.
+  - `${workspace_dir}/result_manifest_pred.json`: Manifest with model-predicted transcriptions.
+  - `${workspace_dir}/result_manifest_pred_clean.json`: Manifest with cleaned predicted transcriptions.
+  - `${workspace_dir}/result_manifest_pred_review.json`: Final manifest after quality checks, ready for review and acceptance.
+
+processors_to_run: all
+workspace_dir: ???
+
+processors:
+  - _target_: sdp.processors.GetTolokaResults
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    status: SUBMITTED
+    output_dir: ${workspace_dir}/results
+    output_manifest_file: ${workspace_dir}/result_manifest.json
+
+  - _target_: sdp.processors.ASRFileCheck
+    audio_filepath_key: audio_filepath  
+    corrupted_audio_dir: ${workspace_dir}/curr
+    output_manifest_file: ${workspace_dir}/result_manifest_no_curr.json
+
+  # WARNING: This processor requires GPU resources for optimal performance
+  # Model: nvidia/stt_hy_fastconformer_hybrid_large_pc is a FastConformer ASR model for Armenian
+  # This processor is skipped during automated tests
+  - _target_: sdp.processors.ASRTransformers 
+    input_manifest_file: ${workspace_dir}/result_manifest_no_curr.json
+    output_manifest_file: ${workspace_dir}/result_manifest_pred.json
+    pretrained_model: "nvidia/stt_hy_fastconformer_hybrid_large_pc" 
+    batch_size: 32
+    output_text_key: pred_text
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: ${workspace_dir}/result_manifest_pred.json
+    text_key: text
+    regex_params_list:
+      - {"pattern": '[^ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
+      - {"pattern": 'եւ', "repl": "և"}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: text
+
+  - _target_: sdp.processors.SubRegex
+    text_key: pred_text
+    regex_params_list:
+      - {"pattern": '[^ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև ]', "repl": ""}
+      - {"pattern": 'եւ', "repl": "և"}
+
+  - _target_: sdp.processors.SubMakeLowercase
+    text_key: pred_text
+
+  - _target_: sdp.processors.GetWER
+    pred_text_key: pred_text
+    output_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+
+  - _target_: sdp.processors.AcceptIfWERLess
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    input_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+    output_manifest_file: ${workspace_dir}/result_manifest_pred_review.json
+    threshold: 75
+
+  - _target_: sdp.processors.RejectIfBanned
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    input_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+    output_manifest_file: ${workspace_dir}/result_manifest_pred_review.json
