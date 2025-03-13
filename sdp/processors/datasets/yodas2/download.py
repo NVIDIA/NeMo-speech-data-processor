@@ -3,6 +3,10 @@ import json
 import os
 from glob import glob
 from tqdm import tqdm
+import tempfile
+import importlib.util
+
+from huggingface_hub import hf_hub_download
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor
@@ -10,51 +14,71 @@ from sdp.processors.huggingface.huggingface_hub import ListRepoFiles, SnapshotDo
 from sdp.processors import ExtractTar
 
 class ListYodas2Data(ListRepoFiles): 
-    def __init__(self, **kwargs):
+    def __init__(self, use_metadata: bool = False, **kwargs):
         super().__init__(repo_id = "espnet/yodas2", repo_type = "dataset", **kwargs)
+        self.use_metadata = use_metadata
     
     def process(self):
-        logger.info(f'Recieving files list of espnet/yodas2 dataset from Hugging Face..')
-        self.list_repo_files()
-        logger.info(f'Metadata have beeen successfully recieved. Aggregating filenames into shards..')
+        if self.use_metadata:
+            metadata = None
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                yodas_metafile = hf_hub_download(repo_id="espnet/yodas2", filename="meta.py", repo_type="dataset", local_dir = tmp_dir)
+                spec = importlib.util.spec_from_file_location("script", yodas_metafile)
+                metadata = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(metadata)
+            
+            with open(self.output_manifest_file, 'w', encoding='utf8') as fout:
+                for lang_subset in sorted(metadata.lang2shard_cnt.keys()):
+                    for shard_no in range(metadata.lang2shard_cnt['aa000']):
+                        shard_id = str(shard_no).zfill(8)
+                        data_entry = dict(lang_subset = lang_subset, shard_id = shard_id,
+                                          audio_key = f'data/{lang_subset}/audio/{shard_id}.tar.gz',
+                                          duration_key = f'data/{lang_subset}/duration/{shard_id}.txt',
+                                          text_key = f'data/{lang_subset}/text/{shard_id}.json')
+                        line = json.dumps(data_entry)
+                        fout.writelines(f'{line}\n')
+        else:       
+            logger.info(f'Recieving files list of espnet/yodas2 dataset from Hugging Face..')
+            self.list_repo_files()
+            logger.info(f'Metadata have beeen successfully recieved. Aggregating filenames into shards..')
 
-        lang2shard_files = {}
-        
-        for file in tqdm(self.files):
-            if not file.startswith('data/'):
-                continue
+            lang2shard_files = {}
+            
+            for file in tqdm(self.files):
+                if not file.startswith('data/'):
+                    continue
 
-            path = Path(file)
-            lang_subset = path.parts[1]
-            if lang_subset not in lang2shard_files:
-                lang2shard_files[lang_subset] = dict()
-            lang_shards = lang2shard_files[lang_subset]
+                path = Path(file)
+                lang_subset = path.parts[1]
+                if lang_subset not in lang2shard_files:
+                    lang2shard_files[lang_subset] = dict()
+                lang_shards = lang2shard_files[lang_subset]
 
-            shard_no = path.parts[3].split('.')[0]
-            if shard_no not in lang_shards:
-                lang_shards[shard_no] = dict()
-            shard_files = lang_shards[shard_no]
+                shard_no = path.parts[3].split('.')[0]
+                if shard_no not in lang_shards:
+                    lang_shards[shard_no] = dict()
+                shard_files = lang_shards[shard_no]
 
-            data_type = path.parts[2]
-            shard_files[data_type] = file
+                data_type = path.parts[2]
+                shard_files[data_type] = file
 
-        logger.info(f'Writing data into manifest..')
+            logger.info(f'Writing data into manifest..')
 
-        with open(self.output_manifest_file, 'w', encoding='utf8') as fout:
-            for lang_subset in sorted(lang2shard_files.keys()):
-                lang_subset_shards = lang2shard_files[lang_subset]
-                for shard_no in sorted(lang_subset_shards.keys()):
-                    data_entry = dict(
-                        lang_subset = lang_subset,
-                        shard_no = shard_no,
-                        )
-                    
-                    shard_data = lang_subset_shards[shard_no]
-                    for data_type in sorted(shard_data.keys()):
-                        data_entry[f'{data_type}_key'] = shard_data[data_type]
-                    
-                    line = json.dumps(data_entry)
-                    fout.writelines(f'{line}\n')
+            with open(self.output_manifest_file, 'w', encoding='utf8') as fout:
+                for lang_subset in sorted(lang2shard_files.keys()):
+                    lang_subset_shards = lang2shard_files[lang_subset]
+                    for shard_id in sorted(lang_subset_shards.keys()):
+                        data_entry = dict(
+                            lang_subset = lang_subset,
+                            shard_id = shard_id,
+                            )
+                        
+                        shard_data = lang_subset_shards[shard_id]
+                        for data_type in sorted(shard_data.keys()):
+                            data_entry[f'{data_type}_key'] = shard_data[data_type]
+                        
+                        line = json.dumps(data_entry)
+                        fout.writelines(f'{line}\n')
         
         logger.info(f'Metadata successfully saved!')
         
