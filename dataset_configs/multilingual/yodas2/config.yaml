@@ -1,4 +1,4 @@
-processors_to_run: "5"
+processors_to_run: "-1"
 workspace_dir: /home/ameister/SDP_YODAS2/test_config
 
 filters:
@@ -137,12 +137,39 @@ processors:
       - duration
       - pred_text
   
+  - _target_: sdp.processors.DropIfRegexMatch
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_19.json
+    text_key: pred_text
+    regex_patterns:
+      - "^\\s*$"
 
+  - _target_: sdp.processors.WhisperHallucinationFeatures
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_20.json
+    text_field: pred_text
   
-
-    
+  - _target_: sdp.processors.LambdaExpression
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_21.json
+    new_field:  is_hallucinated
+    expression: entry.hall_repeated_ngrams | entry.hall_long_word | entry.hall_frequent_single_word
   
-
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_22.json
+    input_value_key: is_hallucinated
+    target_value: false
+  
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_23.json
+    fields_to_keep: 
+      - lang_subset
+      - shard_id
+      - yodas_id
+      - audio_filepath
+      - id
+      - offset
+      - duration
+      - pred_text
+  
+  
 
 
 
