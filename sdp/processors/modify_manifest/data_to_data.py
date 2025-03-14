@@ -15,6 +15,7 @@
 import collections
 import os
 import re
+import copy
 from typing import Dict, List
 
 import soundfile
@@ -25,6 +26,7 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
+from sdp.utils.apply_operators import evaluate_expression
 
 
 class GetAudioDuration(BaseParallelProcessor):
@@ -690,3 +692,72 @@ class InverseNormalizeText(BaseParallelProcessor):
             data_entry[self.input_text_key], verbose=self.verbose
         )
         return [DataEntry(data=data_entry)]
+
+
+class ListToEntries(BaseParallelProcessor):
+    def __init__(self, 
+    field_with_list: str,
+    output_field: str = None,
+    fields_to_save: list[str] = None,
+    fields_to_remove: list[str] = None,
+    **kwargs):
+        super().__init__(**kwargs)
+        self.field_with_list = field_with_list
+        self.output_field = output_field
+        self.fields_to_save = fields_to_save
+        self.fields_to_remove = fields_to_remove
+    
+    def process_dataset_entry(self, data_entry):
+        _entries = []
+        if not isinstance(data_entry[self.field_with_list], list):
+            raise TypeError(f'Values of {self.field_with_list} field should be list type only: {data_entry}')
+        
+        items_list = data_entry.pop(self.field_with_list)
+
+        if not isinstance(items_list[0], dict) and not self.output_field:
+            raise ValueError(f'Type of items in items list `{self.field_with_list}` is not dict ({type(items_list[0])}). In this case `output_field` should be provided.')
+
+        fields_to_remove = set()
+        if self.fields_to_save is not None:
+            for field in data_entry:
+                if field not in self.fields_to_save:
+                    fields_to_remove.add(field)
+        
+        if self.fields_to_remove is not None:
+            fields_to_remove.update(self.fields_to_remove)
+
+        for field in fields_to_remove:
+            data_entry.pop(field)
+
+        for item in items_list:
+            _entry = data_entry.copy()
+            if isinstance(item, dict):
+                _entry.update(item)
+            else: 
+                _entry[self.output_field] = item
+            _entry = DataEntry(_entry)
+            _entries.append(_entry)
+
+        return _entries
+        
+
+class LambdaExpression(BaseParallelProcessor):
+    def __init__(
+        self,
+        new_field: str,
+        expression: str,
+        lambda_param_name: str = "entry",
+        str_fields: List[str] = None,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.new_field = new_field
+        self.expression = expression
+        self.lambda_param_name = lambda_param_name
+
+    def process_dataset_entry(self, data_entry) -> List[DataEntry]:
+        data_entry[self.new_field] = evaluate_expression(self.expression,  data_entry, self.lambda_param_name)
+        return [DataEntry(data=data_entry)]
+
+    def finalize(self, metrics):
+        super().finalize(metrics)
