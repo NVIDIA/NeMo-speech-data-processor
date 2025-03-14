@@ -67,6 +67,7 @@ from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
 from sdp.processors.huggingface.speech_recognition import ASRTransformers
 from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
 from sdp.processors.huggingface.faster_whisper import FasterWhisperInference
+from sdp.processors.huggingface.whisper_hallucinations import WhisperHallucinationFeatures
 
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
