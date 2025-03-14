@@ -21,6 +21,9 @@ from sdp.processors.datasets.coraal import (
     CreateInitialManifestCORAAL,
     TrainDevTestSplitCORAAL,
 )
+from sdp.processors.yaml_parse.yaml_parse import YamlParse
+from sdp.processors.yaml_parse.yaml_parse import CreateManifestListFromYaml
+
 from sdp.processors.datasets.fleurs.create_initial_manifest import (
     CreateInitialManifestFleurs,
 )
