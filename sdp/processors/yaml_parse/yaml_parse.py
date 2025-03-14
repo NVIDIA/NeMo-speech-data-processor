@@ -8,7 +8,6 @@ from pathlib import Path
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
-from sdp.run_processors import run_processors
 from omegaconf import OmegaConf
 
 
