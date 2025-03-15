@@ -15,11 +15,12 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 from tqdm import tqdm
 
+from sdp.logging import logger
 from sdp.processors.base_processor import (
     BaseParallelProcessor,
     BaseProcessor,
@@ -27,6 +28,7 @@ from sdp.processors.base_processor import (
     LegacyParallelProcessor,
 )
 from sdp.utils.common import load_manifest
+
 
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.
@@ -364,8 +366,8 @@ class KeepOnlySpecifiedFields(BaseProcessor):
                 fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")
 
 
-class ApplyInnerJoin(BaseProcessor):
-    """Applies inner join to two manifests, i.e. creates a manifest from records that have matching values in both manifests.
+class ApplyMerge(BaseProcessor):
+    """Applies merge to two manifests, i.e. creates a manifest from records that have matching values in both manifests.
     For more information, please refer to the Pandas merge function documentation:
     https://pandas.pydata.org/docs/reference/api/pandas.merge.html#pandas.merge
 
@@ -374,11 +376,13 @@ class ApplyInnerJoin(BaseProcessor):
         column_id (Union[str, List[str], None]): Field names to join on. These must be found in both manifests.
             If `column_id` is None then this defaults to the intersection of the columns in both manifests.
             Defaults to None.
+        how (str): Similar to "how" parameter in DataFrame.merge(how=""), can be "left", "right", "outer", "inner", "cross", default "inner".
+            See more https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.merge.html
         left_manifest_file (Optional[str]): path to the left manifest. Defaults to `input_manifest_file`.
         right_manifest_file (str): path to the right manifest.
 
     Returns:
-        Inner join of two manifests.
+        Merge of two manifests.
     """
 
     def __init__(
@@ -386,18 +390,25 @@ class ApplyInnerJoin(BaseProcessor):
         right_manifest_file: str,
         left_manifest_file: Optional[str] = None,
         column_id: Union[str, List[str], None] = None,
+        how: str = "inner",
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.left_manifest_file = left_manifest_file if left_manifest_file != None else self.input_manifest_file
         self.right_manifest_file = right_manifest_file
         self.column_id = column_id
+        self.how = how
 
     def process(self):
         m1 = pd.DataFrame.from_records(load_manifest(Path(self.left_manifest_file)))
         m2 = pd.DataFrame.from_records(load_manifest(Path(self.right_manifest_file)))
-        m3 = pd.merge(m1, m2, on=self.column_id, how="inner")
+        m3 = pd.merge(m1, m2, on=self.column_id, how=self.how)
 
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for _, line in m3.iterrows():
                 fout.write(json.dumps(dict(line), ensure_ascii=False) + "\n")
+
+        logger.info("Total number of entries after join: " + str(m3.shape[0]))
+
+
+ApplyInnerJoin = ApplyMerge

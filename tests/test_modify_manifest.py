@@ -19,7 +19,7 @@ from typing import Dict, List, Union
 
 import pytest
 
-from sdp.processors import ApplyInnerJoin, DropNonAlphabet
+from sdp.processors import ApplyMerge, DropNonAlphabet
 
 
 def _write_manifest(manifest: Path, entries: List[Dict[str, Union[str, float]]]):
@@ -154,11 +154,12 @@ def test_apply_inner_join(
         _write_manifest(manifest1, input1)
         _write_manifest(manifest2, input2)
 
-        processor = ApplyInnerJoin(
+        processor = ApplyMerge(
             left_manifest_file=manifest1,
             right_manifest_file=manifest2,
             column_id=coloumn_id,
             output_manifest_file=manifest_out,
+            how="inner",
         )
 
         processor.process()
