@@ -169,6 +169,14 @@ processors:
       - duration
       - pred_text
   
+  - _target_: sdp.processors.AutoModelForCausalLMProcessor
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_24.json
+    prompt_file: /home/ameister/SDP_YODAS2/NeMo-speech-data-processor/dataset_configs/multilingual/yodas2/prompts/pnc_restoration/${filters.target_lang}.yaml
+    model:
+      pretrained_model_name_or_path: "Qwen/Qwen2.5-7B-Instruct"
+      torch_dtype: "auto"
+      device_map: "auto"
+  
   
 
 
