@@ -214,6 +214,7 @@ ASR-based processors
 
 Metric calculation
 ''''''''''''''''''
+
 .. autodata:: sdp.utils.BootstrapProcessor
    :annotation:
 
