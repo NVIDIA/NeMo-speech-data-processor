@@ -51,7 +51,7 @@ class BootstrapProcessor(BaseProcessor):
         pred_text_key (str): Key in the manifest that contains the predicted text (default: 'pred_text').
         ci_lower (float): The lower bound percentile for the confidence intervals (default: 2.5).
         ci_upper (float): The upper bound percentile for the confidence intervals (default: 97.5).
-        random_state (int, optional): Sets a random state for reproducibility of bootstrap sampling.
+        random_state (int): Sets a random state for reproducibility of bootstrap sampling.
 
     Returns:
         Results saved in a JSON file at the specified `output_file` path, containing individual metric
