@@ -265,6 +265,8 @@ Data filtering
 .. autodata:: sdp.processors.DropRepeatedFields
    :annotation:
 
+.. autodata:: sdp.processors.DropDuplicates
+   :annotation:
 
 Miscellaneous
 #############
