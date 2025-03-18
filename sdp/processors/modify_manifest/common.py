@@ -24,7 +24,7 @@ from sdp.processors.base_processor import (
     BaseParallelProcessor,
     BaseProcessor,
     DataEntry,
-    DaskParallelProcessor,
+    LegacyParallelProcessor,
 )
 from sdp.utils.common import load_manifest
 
@@ -99,9 +99,9 @@ class CombineSources(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
-class AddConstantFields(DaskParallelProcessor):
+class AddConstantFields(BaseParallelProcessor):
     """
-    This processor adds constant fields to all manifest entries using DaskParallelProcessor.
+    This processor adds constant fields to all manifest entries using Dask BaseParallelProcessor.
     It is useful when you want to attach fixed information (e.g., a language label or metadata)
     to each entry for downstream tasks such as language identification model training.
     
