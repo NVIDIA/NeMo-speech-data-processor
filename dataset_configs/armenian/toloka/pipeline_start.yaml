@@ -37,7 +37,6 @@ final_manifest: ${workspace_dir}/tasks_clear.json
 
 processors:
   - _target_: sdp.processors.CreateTolokaProject
-    platform: "PRODUCTION"
     project_name: "Հայերեն ձայնագրություններ"
     project_description: "Սեղմել ձայնագրելու կոճակը և կարդալ տեքստը բարձրաձայն։"
     project_instructions: |
@@ -84,7 +83,6 @@ processors:
           </ul>
         </div>
     output_manifest_file: ${workspace_dir}/data_file.json
-    save_api_key_to_config: false
 
 
   - _target_: sdp.processors.CreateTolokaPool

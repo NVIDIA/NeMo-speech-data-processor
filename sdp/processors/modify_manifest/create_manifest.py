@@ -19,12 +19,13 @@ import pandas
 
 from sdp.processors.base_processor import (
     BaseParallelProcessor,
+    LegacyParallelProcessor,
     BaseProcessor,
     DataEntry,
 )
 
 
-class CreateInitialManifestByExt(BaseParallelProcessor):
+class CreateInitialManifestByExt(LegacyParallelProcessor):
     """
     Processor for creating an initial dataset manifest by saving filepaths with a common extension to the field specified in output_field.
 
@@ -59,7 +60,7 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         return [DataEntry(data=data)]
 
 
-class CreateCombinedManifests(BaseParallelProcessor):
+class CreateCombinedManifests(LegacyParallelProcessor):
     def __init__(
         self,
         manifest_list: list[str],
