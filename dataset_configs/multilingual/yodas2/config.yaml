@@ -1,0 +1,189 @@
+processors_to_run: "-1"
+workspace_dir: /home/ameister/SDP_YODAS2/test_config
+
+filters:
+  target_lang: en
+  min_language_probability: 0.7
+
+processors:
+  - _target_: sdp.processors.datasets.yodas2.ListYodas2Data
+    output_manifest_file: ${workspace_dir}/manifest_00.json
+    use_metadata: True
+  
+  - _target_: sdp.processors.LambdaExpression
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_01.json
+    new_field:  source_lang
+    expression: entry.lang_subset[:2]
+
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_02.json
+    input_value_key: source_lang
+    target_value: ${filters.target_lang}
+  
+  - _target_: sdp.processors.datasets.yodas2.DownloadYodas2Data
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_03.json
+    local_dir: ${workspace_dir}/${filters.target_lang}
+    max_workers: 8
+  
+  - _target_: sdp.processors.ExtractTar
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_04.json
+    field_to_tar_filepath: 'local_audio'
+    extraction_dir: ${workspace_dir}/${filters.target_lang}
+    remove_source_tar: True
+    filepath_prefix_field: 'lang_subset'
+    output_filepath_field: 'extracted_audios'
+    get_extracted_filepaths: True
+  
+  - _target_: sdp.processors.datasets.yodas2.CreateInitialManifest
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_05.json
+    field_with_list: 'extracted_audios'
+    output_field: 'source_audio_filepath'
+    fields_to_save: 
+      - lang_subset
+      - shard_id
+  
+  - _target_: sdp.processors.LambdaExpression
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_06.json
+    new_field: 'audio_filepath'
+    expression: "'${workspace_dir}/${filters.target_lang}/converted/' + entry.lang_subset + '/' + entry.shard_id + '/' + entry.yodas_id"
+  
+  - _target_: sdp.processors.FfmpegConvert
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_07.json
+    input_file_key: 'source_audio_filepath'
+    output_file_key: 'audio_filepath'
+    id_key: 'audio_filepath'
+    converted_audio_dir: '/'
+    target_samplerate: 16000
+    target_nchannels: 1
+
+  # Lang ID
+  - _target_: sdp.processors.FasterWhisperInference
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_09.json
+    model_size_or_path: 'base'
+    output_dir: ${workspace_dir}/${filters.target_lang}/manifest_09
+    language_detection_only: True
+    inference:
+        language_detection_segments: 7
+        chunk_length: 30
+    save_timestamps_separately: False
+    skip_corrupted: True
+
+  - _target_: sdp.processors.LambdaExpression
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_10.json
+    new_field: 'lid_verified'
+    expression: (entry.language == "${filters.target_lang}") & (entry.language_probability >= ${filters.min_language_probability})
+  
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_11.json
+    input_value_key: lid_verified
+    target_value: true
+
+  # Inference on long audio
+  - _target_: sdp.processors.FasterWhisperInference
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_12.json
+    model_size_or_path: 'base'
+    output_dir: ${workspace_dir}/${filters.target_lang}/manifest_12
+    inference:
+        batch_size: 16
+        language: ${filters.target_lang}
+    save_timestamps_separately: False
+    skip_corrupted: True
+  
+  - _target_: sdp.processors.ListToEntries
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_13.json
+    field_with_list: 'segments'
+    
+  - _target_: sdp.processors.LambdaExpression
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_14.json
+    new_field: 'duration'
+    expression: entry.end - entry.start
+  
+  - _target_: sdp.processors.RenameFields
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_15.json
+    rename_fields: 
+      start: offset  
+  
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_16.json
+    fields_to_keep: 
+      - lang_subset
+      - shard_id
+      - yodas_id
+      - audio_filepath
+      - id
+      - offset
+      - duration
+  
+  - _target_: sdp.processors.FasterWhisperInference
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_17.json
+    model_size_or_path: 'base'
+    output_dir: ${workspace_dir}/${filters.target_lang}/manifest_17
+    inference:
+        batch_size: 16
+        language: ${filters.target_lang}
+    save_timestamps_separately: False
+    skip_corrupted: True
+    slice_by_offset: True
+  
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_18.json
+    fields_to_keep: 
+      - lang_subset
+      - shard_id
+      - yodas_id
+      - audio_filepath
+      - id
+      - offset
+      - duration
+      - pred_text
+  
+  - _target_: sdp.processors.DropIfRegexMatch
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_19.json
+    text_key: pred_text
+    regex_patterns:
+      - "^\\s*$"
+
+  - _target_: sdp.processors.WhisperHallucinationFeatures
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_20.json
+    text_field: pred_text
+  
+  - _target_: sdp.processors.LambdaExpression
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_21.json
+    new_field:  is_hallucinated
+    expression: entry.hall_repeated_ngrams | entry.hall_long_word | entry.hall_frequent_single_word
+  
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_22.json
+    input_value_key: is_hallucinated
+    target_value: false
+  
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_23.json
+    fields_to_keep: 
+      - lang_subset
+      - shard_id
+      - yodas_id
+      - audio_filepath
+      - id
+      - offset
+      - duration
+      - pred_text
+  
+  - _target_: sdp.processors.AutoModelForCausalLMProcessor
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_24.json
+    prompt_file: /home/ameister/SDP_YODAS2/NeMo-speech-data-processor/dataset_configs/multilingual/yodas2/prompts/pnc_restoration/${filters.target_lang}.yaml
+    model:
+      pretrained_model_name_or_path: "Qwen/Qwen2.5-7B-Instruct"
+      torch_dtype: "auto"
+      device_map: "auto"
+  
+  
+
+
+
+
+    
+
+
+
+# export HYDRA_FULL_ERROR=1 && python /home/ameister/SDP_YODAS2/NeMo-speech-data-processor/main.py --config-path=/home/ameister/SDP_YODAS2/NeMo-speech-data-processor/dataset_configs/multilingual/yodas2/ --config-name=config.yaml
