@@ -77,6 +77,7 @@ from sdp.processors.modify_manifest.common import (
     RenameFields,
     SortManifest,
     SplitOnFixedDuration,
+    Subprocess,
 )
 from sdp.processors.modify_manifest.create_manifest import CreateInitialManifestByExt
 from sdp.processors.modify_manifest.data_to_data import (
@@ -107,11 +108,12 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
     DropLowWordMatchRate,
     DropNonAlphabet,
     DropOnAttribute,
-    PreserveByValue,
     DropRepeatedFields,
+    PreserveByValue,
 )
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
 )
 from sdp.processors.nemo.asr_inference import ASRInference
+from sdp.processors.nemo.lid_inference import AudioLid
 from sdp.processors.nemo.pc_inference import PCInference
