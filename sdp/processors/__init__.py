@@ -87,15 +87,15 @@ from sdp.processors.modify_manifest.common import (
     SplitOnFixedDuration,
 )
 from sdp.processors.modify_manifest.create_manifest import CreateInitialManifestByExt
+
+from sdp.processors.metrics.audio import AudioDuration
+from sdp.processors.metrics.text import CountNumWords
+
 from sdp.processors.modify_manifest.data_to_data import (
-    CountNumWords,
-    FfmpegConvert,
-    GetAudioDuration,
     InsIfASRInsertion,
     InverseNormalizeText,
     NormalizeText,
     ReadTxtLines,
-    SoxConvert,
     SplitLineBySentence,
     SubIfASRSubstitution,
     SubMakeLowercase,
@@ -124,3 +124,7 @@ from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
 )
 from sdp.processors.manage_files.extract import ExtractTar
+from sdp.processors.manage_files.audio_conversion import (
+    FfmpegConvert, 
+    SoxConvert
+)

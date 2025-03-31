@@ -19,7 +19,6 @@ import copy
 from typing import Dict, List
 import yaml
 
-import soundfile
 from sox import Transformer
 
 from sdp.logging import logger
@@ -28,40 +27,6 @@ from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
 from sdp.utils.apply_operators import evaluate_expression
-
-
-class GetAudioDuration(BaseParallelProcessor):
-    """
-    Processor that computes the duration of the file in ``audio_filepath_key`` (using soundfile)
-    and saves the duration in ``duration_key``. If there is an error computing the duration,
-    the value at ``duration_key`` will be updated with the value -1.0.
-
-    Args:
-        audio_filepath_key (str): Key to get path to wav file.
-        duration_key (str): Key to put to audio duration.
-    Returns:
-        All the same fields as in the input manifest plus duration_key
-    """
-
-    def __init__(
-        self,
-        audio_filepath_key: str,
-        duration_key: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.audio_filepath_key = audio_filepath_key
-        self.duration_key = duration_key
-
-    def process_dataset_entry(self, data_entry):
-        audio_filepath = data_entry[self.audio_filepath_key]
-        try:
-            data, samplerate = soundfile.read(audio_filepath)
-            data_entry[self.duration_key] = data.shape[0] / samplerate
-        except Exception as e:
-            logger.warning(str(e) + " file: " + audio_filepath)
-            data_entry[self.duration_key] = -1.0
-        return [DataEntry(data=data_entry)]
 
 
 class FfmpegConvert(BaseParallelProcessor):
@@ -212,40 +177,6 @@ class SoxConvert(BaseParallelProcessor):
             transformer.build(audio_file, converted_file)
 
         data_entry[self.output_audio_file_key] = converted_file
-        return [DataEntry(data=data_entry)]
-
-
-class CountNumWords(BaseParallelProcessor):
-    """
-    Processor for counting the number of words in the text_key field saving the number in num_words_key.
-
-    Args:
-        text_key (str): The field containing the input text in the dataset.
-        num_words_key (str): The field to store the number of words in the dataset.
-        alphabet (str): Characters to be used to count words. Any other characters are substituted by whitespace and not take into account.
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
-
-    """
-
-    def __init__(
-        self,
-        text_key: str,
-        num_words_key: str,
-        alphabet: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.text_key = text_key
-        self.num_words_key = num_words_key
-        self.pattern = re.compile("[^" + alphabet + "]")
-
-    def process_dataset_entry(self, data_entry):
-        text = data_entry[self.text_key]
-        cleaned_string = self.pattern.sub("", text).strip()
-        cleaned_string = re.sub("\\s+", " ", cleaned_string).strip()
-        words = cleaned_string.split()
-        num_words = len(words)
-        data_entry[self.num_words_key] = num_words
         return [DataEntry(data=data_entry)]
 
 
