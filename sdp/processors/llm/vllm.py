@@ -74,8 +74,6 @@ class vLLMInference(BaseProcessor):
         return entry_prompt
     
     def process(self):
-        llm = LLM(**self.model_params)
-
         entries = []
         entry_prompts = []
         with open(self.input_manifest_file, 'r', encoding='utf8') as fin:
@@ -84,14 +82,32 @@ class vLLMInference(BaseProcessor):
                 entries.append(data_entry)
                 entry_prompt = self.get_entry_prompt(data_entry)
                 entry_prompts.append(entry_prompt)
-                break
-        
+
+        import torch
+        import shutil
+        if torch.cuda.is_available():
+            for i in range(torch.cuda.device_count()):
+                stats = torch.cuda.memory_stats(i)
+                allocated = torch.cuda.memory_allocated(i) / 1024**3
+                reserved = torch.cuda.memory_reserved(i) / 1024**3
+                total = torch.cuda.get_device_properties(i).total_memory / 1024**3
+                logger.info(f"[GPU {i}] Allocated: {allocated:.2f} GiB, Reserved: {reserved:.2f} GiB, Total: {total:.2f} GiB")
+
+        try:
+            shm_stats = shutil.disk_usage('/dev/shm')
+            logger.info(f"/dev/shm - total: {shm_stats.total / 1024**3:.2f} GiB, used: {shm_stats.used / 1024**3:.2f} GiB, free: {shm_stats.free / 1024**3:.2f} GiB")
+        except Exception as e:
+            logger.warning(f"Could not access /dev/shm: {e}")
+
+        entry_prompts = entry_prompts[:10]
+        print(entry_prompts[0])
+
         llm = LLM(**self.model_params)
-        outputs = llm.generate(entry_prompts, **self.sampling_params)
+        outputs = llm.generate(entry_prompts, self.sampling_params)
     
         with open(self.output_manifest_file, 'w', encoding='utf8') as fout:
             for data_entry, output in tqdm(zip(entries, outputs)):
-                data_entry[self.generation_field] = output
+                data_entry[self.generation_field] = output.outputs[0].text
                 line = json.dumps(data_entry)
                 fout.writelines(f'{line}\n')
 

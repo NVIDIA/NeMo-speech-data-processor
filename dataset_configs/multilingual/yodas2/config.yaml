@@ -158,7 +158,7 @@ processors:
     target_value: false
   
   - _target_: sdp.processors.KeepOnlySpecifiedFields
-    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_23.json
+    output_manifest_file: /ameister/YODAS_PR/manifest_23.json
     fields_to_keep: 
       - lang_subset
       - shard_id
@@ -170,21 +170,23 @@ processors:
       - pred_text
   
   - _target_: sdp.processors.llm.vllm.vLLMInference
-    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_24.json
-    prompt_file: /home/ameister/SDP_YODAS2/NeMo-speech-data-processor/dataset_configs/multilingual/yodas2/prompts/pnc_restoration/${filters.target_lang}.yaml
+    output_manifest_file: /ameister/YODAS_PR/manifest_24.json
+    prompt_file: /ameister/YODAS_PR/dataset_configs/multilingual/yodas2/prompts/pnc_restoration/en.yaml
     model:
       model: "Qwen/Qwen2.5-7B-Instruct-1M"
-      tensor_parallel_size: 1
-      max_model_len: 1024
+      tensor_parallel_size: 2
+      max_model_len: 2048
       enable_chunked_prefill: True
       max_num_batched_tokens: 1024
       enforce_eager: True
       dtype: float16
+      gpu_memory_utilization: 0.95 
+      max_num_seqs: 16
     inference:
       temperature: 0.7
       top_p: 0.8
       repetition_penalty: 1.05
-      max_tokens: 1024
+      max_tokens: 2048
     apply_chat_template:
       tokenize: False
       add_generation_prompt: True
@@ -199,4 +201,4 @@ processors:
 
 
 
-# export HYDRA_FULL_ERROR=1 && python /home/ameister/SDP_YODAS2/NeMo-speech-data-processor/main.py --config-path=/home/ameister/SDP_YODAS2/NeMo-speech-data-processor/dataset_configs/multilingual/yodas2/ --config-name=config.yaml
+# export HYDRA_FULL_ERROR=1 && python /ameister/YODAS_PR/main.py --config-path=/ameister/YODAS_PR/dataset_configs/multilingual/yodas2/ --config-name=config.yaml

@@ -46,4 +46,5 @@ system: |
     output: "The report was almost done, but"
   
 user: |
-  Input transcript: {pred_text}
+  input: {pred_text}
+  output: 
