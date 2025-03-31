@@ -17,6 +17,7 @@ import os
 import re
 import copy
 from typing import Dict, List
+import yaml
 
 import soundfile
 from sox import Transformer
@@ -538,12 +539,20 @@ class SubRegex(BaseParallelProcessor):
 
     def __init__(
         self,
-        regex_params_list: List[Dict],
+        regex_params_list: List[Dict] = None,
+        regex_params_yaml: str = None,
         text_key: str = "text",
         **kwargs,
     ):
         super().__init__(**kwargs)
+        if not regex_params_list and not regex_params_yaml:
+            raise ValueError(f'One of `regex_params_list` or `regex_params_yaml` should be provided.')
+        
         self.regex_params_list = regex_params_list
+        if regex_params_yaml:
+            with open(regex_params_yaml, 'r') as regex_params_file: 
+                self.regex_params_list = yaml.safe_load(regex_params_file)
+
         self.text_key = text_key
 
         # verify all dicts in regex_params_list have "pattern" and "repl" keys

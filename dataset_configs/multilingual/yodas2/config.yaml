@@ -158,7 +158,7 @@ processors:
     target_value: false
   
   - _target_: sdp.processors.KeepOnlySpecifiedFields
-    output_manifest_file: /ameister/YODAS_PR/manifest_23.json
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_23.json
     fields_to_keep: 
       - lang_subset
       - shard_id
@@ -170,7 +170,7 @@ processors:
       - pred_text
   
   - _target_: sdp.processors.vLLMInference
-    output_manifest_file: /ameister/YODAS_PR/manifest_24.json
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_24.json
     prompt_file: /ameister/YODAS_PR/dataset_configs/multilingual/yodas2/prompts/pnc_restoration/en.yaml
     model:
       model: "Qwen/Qwen2.5-7B-Instruct-1M"
@@ -190,8 +190,22 @@ processors:
     apply_chat_template:
       tokenize: False
       add_generation_prompt: True
-
   
+  - _target_: sdp.processors.QwenGenerationFiltering
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_25.json
+    text_field: pred_text
+    generation_field: generation
+  
+  - _target_: sdp.processors.SubRegex
+    text_key: generation
+    regex_params_file: /home/ameister/SDP_YODAS2/NeMo-speech-data-processor/dataset_configs/multilingual/yodas2/regex.yaml
+    output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_26.json
+
+
+
+
+
+
   
   
 
