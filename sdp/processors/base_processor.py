@@ -82,8 +82,224 @@ class BaseProcessor(ABC):
         There are not tests by default.
         """
 
-
 class BaseParallelProcessor(BaseProcessor):
+    """
+    Processor class which allows operations on each entry to be parallelized using Dask.
+
+    Parallelization is done by distributing the workload using Dask bags inside
+    the :meth:`process` method.
+
+    Actual processing should be defined on a per-example basis inside the
+    :meth:`process_dataset_entry` method.
+
+    Args:
+        max_workers (int): Maximum number of workers for Dask.
+        chunksize (int): The size of the chunks sent to workers during processing.
+        in_memory_chunksize (int): Maximum number of entries to read and process in memory at a time.
+        test_cases (list[dict]): Optional test cases to verify processor behavior.
+    """
+
+    def __init__(
+        self,
+        max_workers: int = -1,
+        chunksize: int = 100,
+        in_memory_chunksize: int = 100000,
+        test_cases: Optional[List[Dict]] = None,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        if max_workers == -1:
+            max_workers = multiprocessing.cpu_count()
+        self.max_workers = max_workers
+        self.chunksize = chunksize
+        self.in_memory_chunksize = in_memory_chunksize
+        self.number_of_entries = 0
+        self.total_duration = 0
+        self.start_time = time.time()
+        self.test_cases = test_cases or []
+
+
+    def process(self):
+        from dask.distributed import Client, as_completed
+        from dask import config
+        from tqdm import tqdm
+        import dask.bag as db
+        import multiprocessing
+        import psutil
+
+        os.environ.setdefault("PATH", os.defpath)
+        default_path = os.environ["PATH"]
+
+        self.prepare()
+        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
+        metrics = []
+
+        # If no input manifest file is provided, use the read_manifest() method to get entries.
+        if self.input_manifest_file is None:
+            manifest_entries = list(self.read_manifest())
+            total_entries = len(manifest_entries)
+            if total_entries == 0:
+                logger.info("No input manifest entries found; using empty bag.")
+                bag = db.from_sequence([])
+            else:
+                bag = db.from_sequence(manifest_entries)
+        else:
+            # Check if input manifest file exists and is non-empty.
+            if (not os.path.exists(self.input_manifest_file) or os.path.getsize(self.input_manifest_file) == 0):
+                logger.info("Input manifest file not found or empty; using empty bag.")
+                total_entries = 0
+                bag = db.from_sequence([])
+            else:
+                # Compute total line count.
+                with open(self.input_manifest_file, "rb") as f:
+                    total_entries = sum(1 for _ in f)
+                if total_entries == 0:
+                    logger.info("Input manifest file is empty; using empty bag.")
+                    bag = db.from_sequence([])
+                else:
+                    bag = db.read_text(self.input_manifest_file, encoding="utf-8", blocksize="8MB")
+                    bag = bag.map(json.loads)
+
+        # Set up worker resources.
+        num_cpus = multiprocessing.cpu_count() if self.max_workers == -1 else self.max_workers
+        total_memory = psutil.virtual_memory().total
+        mem_per_worker = total_memory // num_cpus
+        mem_per_worker_mb = mem_per_worker // (1024 * 1024)
+        memory_limit = f"{mem_per_worker_mb}MB"
+
+        logger.info(f"Resources: {num_cpus} workers, each with memory limit {memory_limit}")
+
+        with config.set({
+            "distributed.worker.heartbeat-interval": "5s",
+            "distributed.scheduler.worker-ttl": "120s",
+            "distributed.worker.memory.target": 0.8,
+            "distributed.worker.memory.spill": 0.9,
+            "distributed.comm.retry.count": 10,
+            "distributed.comm.timeouts.connect": "30s",
+            "distributed.comm.timeouts.tcp": "30s"
+        }):
+            client = Client(
+                n_workers=num_cpus,
+                processes=True,
+                threads_per_worker=2,
+                memory_limit=memory_limit,
+                env={"PATH": default_path}
+            )
+            try:
+                def process_partition(partition):
+                    results = []
+                    for data_entry in partition:
+                        try:
+                            ret = self.process_dataset_entry(data_entry)
+                            if not isinstance(ret, list):
+                                ret = [ret]
+                            results.extend(ret)
+                        except Exception as e:
+                            logger.warning(f"Error processing entry: {e}")
+                    return results
+
+                bag = bag.map_partitions(process_partition)
+                delayed_results = bag.to_delayed()
+                futures = client.compute(delayed_results)
+
+                with open(self.output_manifest_file, "wt", encoding="utf8") as fout, \
+                    tqdm(total=total_entries, desc="Processing entries", unit="entry",
+                        mininterval=0.5, miniters=10) as pbar:
+                    for future in as_completed(futures):
+                        partition_result = future.result()
+                        for data_entry in partition_result:
+                            metrics.append(data_entry.metrics)
+                            if data_entry.data is None:
+                                continue
+                            json.dump(data_entry.data, fout, ensure_ascii=False)
+                            fout.write("\n")
+                            self.number_of_entries += 1
+                            self.total_duration += data_entry.data.get("duration", 0)
+                        pbar.update(len(partition_result))
+
+                self.finalize(metrics)
+
+            except Exception as e:
+                logger.error(f"Error during processing: {e}")
+                raise
+            finally:
+                logger.info("Shutting down Dask client...")
+                client.close(timeout="60s")
+                logger.info("Dask client shutdown complete")
+
+    def prepare(self):
+        """Can be used in derived classes to prepare the processing."""
+        pass
+
+    def _chunk_manifest(self):
+        """Splits the manifest into smaller chunks defined by `in_memory_chunksize`."""
+        manifest_chunk = []
+        for idx, data_entry in enumerate(self.read_manifest(), 1):
+            manifest_chunk.append(data_entry)
+            if idx % self.in_memory_chunksize == 0:
+                yield manifest_chunk
+                manifest_chunk = []
+        if manifest_chunk:
+            yield manifest_chunk
+
+    def read_manifest(self):
+        """Read entries from the input manifest file.
+
+        Returns an iterator over JSON objects. If no input manifest file is set,
+        returns an empty iterator.
+        """
+        if not self.input_manifest_file:
+            logger.info("No input manifest file specified; returning empty manifest iterator.")
+            return iter([])
+        with open(self.input_manifest_file, "r", encoding="utf-8") as fin:
+            for line in fin:
+                yield json.loads(line)
+
+    def write_output_manifest(self, results):
+        """Writes the processed results to the output manifest."""
+        with open(self.output_manifest_file, "w", encoding="utf-8") as fout:
+            for result in results:
+                json.dump(result.data, fout, ensure_ascii=False)
+                fout.write("\n")
+
+    def process_dataset_entry(self, data_entry) -> List[DataEntry]:
+        """Override this method in derived classes to define processing logic."""
+        raise NotImplementedError("Derived classes must implement `process_dataset_entry`.")
+
+    def finalize(self, metrics: List[Any]):
+        """Outputs metrics about the processed data."""
+        logger.info("Total number of entries after processing: %d", self.number_of_entries)
+        if self.total_duration != 0:
+            logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
+        else:
+            logger.info(
+                "Unable to calculate total audio duration (hours) after processing. "
+                "Ensure that the manifest file includes a 'duration' key."
+            )
+        logger.info("Processor completed in (seconds): %.2f", time.time() - self.start_time)
+
+    def test(self):
+        """Applies processing to each test case and raises an error if the output does not match expected output."""
+        for test_case in self.test_cases:
+            input_data = test_case["input"].copy() if isinstance(test_case["input"], dict) else test_case["input"]
+            generated_outputs = self.process_dataset_entry(input_data)
+            expected_outputs = (
+                [test_case["output"]] if not isinstance(test_case["output"], list)
+                else test_case["output"]
+            )
+            for generated_output, expected_output in zip(generated_outputs, expected_outputs):
+                generated_data = generated_output.data if hasattr(generated_output, "data") else generated_output
+                if generated_data != expected_output:
+                    raise RuntimeError(
+                        "Runtime test failed.\n"
+                        f"Test input: {test_case['input']}\n"
+                        f"Generated output: {generated_data}\n"
+                        f"Expected output: {expected_output}"
+                    )
+
+
+
+class LegacyParallelProcessor(BaseProcessor):
     """Processor class which allows operations on each utterance to be parallelized.
 
     Parallelization is done using ``tqdm.contrib.concurrent.process_map`` inside
@@ -112,7 +328,7 @@ class BaseParallelProcessor(BaseProcessor):
         self,
         max_workers: int = -1,
         chunksize: int = 100,
-        in_memory_chunksize: int = 1000000,
+        in_memory_chunksize: int = 100000,
         test_cases: Optional[List[Dict]] = None,
         **kwargs,
     ):
