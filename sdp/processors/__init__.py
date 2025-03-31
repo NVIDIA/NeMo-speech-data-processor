@@ -64,11 +64,15 @@ from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
 from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
-from sdp.processors.huggingface.speech_recognition import ASRTransformers
+
+from sdp.processors.inference.engines.transformers.speech_recognition import ASRTransformers
+from sdp.processors.inference.engines.nemo.asr_inference import ASRInference # FIX PATH TO TRANSCRIBE_SPEECH
+from sdp.processors.inference.engines.nemo.pc_inference import PCInference
+from sdp.processors.inference.engines.faster_whisper.faster_whisper import FasterWhisperInference
+from sdp.processors.inference.engines.vllm.vllm import vLLMInference
+from sdp.processors.inference.engines.post_processing.whisper_hallucinations import WhisperHallucinationFeatures
+
 from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
-from sdp.processors.huggingface.faster_whisper import FasterWhisperInference
-from sdp.processors.huggingface.whisper_hallucinations import WhisperHallucinationFeatures
-from sdp.processors.huggingface.transformers.models import AutoModelForCausalLMProcessor
 
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
@@ -118,6 +122,4 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
 )
-from sdp.processors.nemo.asr_inference import ASRInference
-from sdp.processors.nemo.pc_inference import PCInference
 from sdp.processors.manage_files.extract import ExtractTar

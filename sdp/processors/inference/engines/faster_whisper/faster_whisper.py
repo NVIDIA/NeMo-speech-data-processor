@@ -1,8 +1,8 @@
 import os
 from sdp.processors.base_processor import BaseProcessor
 
-from .whisper_inference.inference import WhisperInferenceConfig, InferenceConfig, ModelConfig, DatasetConfig
-from .whisper_inference.inference import main as process_whisper_inference
+from .utils.inference import WhisperInferenceConfig, InferenceConfig, ModelConfig, DatasetConfig
+from .utils.inference import main as process_whisper_inference
 
 from omegaconf import OmegaConf
 
