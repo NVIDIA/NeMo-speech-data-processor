@@ -169,13 +169,26 @@ processors:
       - duration
       - pred_text
   
-  - _target_: sdp.processors.AutoModelForCausalLMProcessor
+  - _target_: sdp.processors.llm.vllm.vLLMInference
     output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_24.json
     prompt_file: /home/ameister/SDP_YODAS2/NeMo-speech-data-processor/dataset_configs/multilingual/yodas2/prompts/pnc_restoration/${filters.target_lang}.yaml
     model:
-      pretrained_model_name_or_path: "Qwen/Qwen2.5-7B-Instruct"
-      torch_dtype: "auto"
-      device_map: "auto"
+      model: "Qwen/Qwen2.5-7B-Instruct-1M"
+      tensor_parallel_size: 1
+      max_model_len: 1024
+      enable_chunked_prefill: True
+      max_num_batched_tokens: 1024
+      enforce_eager: True
+      dtype: float16
+    inference:
+      temperature: 0.7
+      top_p: 0.8
+      repetition_penalty: 1.05
+      max_tokens: 1024
+    apply_chat_template:
+      tokenize: False
+      add_generation_prompt: True
+
   
   
 

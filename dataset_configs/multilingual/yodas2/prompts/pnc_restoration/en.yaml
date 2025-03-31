@@ -47,7 +47,3 @@ system: |
   
 user: |
   Input transcript: {pred_text}
-
-generation: |
-  Output transcript: 
-
