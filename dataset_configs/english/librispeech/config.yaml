@@ -61,7 +61,7 @@ processors:
     output_audio_file_key: "audio_filepath"
     output_format: "wav"
 
-  - _target_: sdp.processors.GetAudioDuration
+  - _target_: sdp.processors.AudioDuration
     audio_filepath_key: audio_filepath
     duration_key: duration
 

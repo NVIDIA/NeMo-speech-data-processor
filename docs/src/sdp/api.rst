@@ -293,7 +293,7 @@ Miscellaneous
 .. autodata:: sdp.processors.KeepOnlySpecifiedFields
    :annotation:
 
-.. autodata:: sdp.processors.GetAudioDuration
+.. autodata:: sdp.processors.AudioDuration
    :annotation:
 
 .. autodata:: sdp.processors.FfmpegConvert

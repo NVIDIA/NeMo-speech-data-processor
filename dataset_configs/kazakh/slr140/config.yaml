@@ -57,7 +57,7 @@ processors:
     input_file_key: "audio_filepath"
     output_file_key: "audio_filepath"
 
-  - _target_: sdp.processors.GetAudioDuration
+  - _target_: sdp.processors.AudioDuration
     audio_filepath_key: audio_filepath
     duration_key: duration
 
