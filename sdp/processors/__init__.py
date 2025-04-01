@@ -65,13 +65,14 @@ from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
 
-from sdp.processors.inference.engines.transformers.speech_recognition import ASRTransformers
-from sdp.processors.inference.engines.nemo.asr_inference import ASRInference # FIX PATH TO TRANSCRIBE_SPEECH
-from sdp.processors.inference.engines.nemo.pc_inference import PCInference
-from sdp.processors.inference.engines.faster_whisper.faster_whisper import FasterWhisperInference
-from sdp.processors.inference.engines.vllm.vllm import vLLMInference
-from sdp.processors.inference.post_processing.whisper_hallucinations import WhisperHallucinationFeatures
-from sdp.processors.inference.post_processing.qwen_cleaning import QwenGenerationFiltering
+from sdp.processors.inference.asr.transformers.speech_recognition import ASRTransformers
+from sdp.processors.inference.asr.nemo.asr_inference import ASRInference
+from sdp.processors.inference.asr.faster_whisper.faster_whisper import FasterWhisperInference
+from sdp.processors.inference.asr.post_processing.whisper_hallucinations import WhisperHallucinationFeatures
+
+from sdp.processors.inference.llm.nemo.pc_inference import PCInference
+from sdp.processors.inference.llm.vllm.vllm import vLLMInference
+from sdp.processors.inference.llm.post_processing.qwen_cleaning import QwenGenerationFiltering
 
 from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
 
