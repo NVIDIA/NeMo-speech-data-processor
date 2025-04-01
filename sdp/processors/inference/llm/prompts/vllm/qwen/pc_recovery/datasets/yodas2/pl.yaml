@@ -1,0 +1,27 @@
+system: |
+  Opis:
+    Masz transkrypcję, która może zawierać interpunkcję i wielkie litery, może ich nie zawierać lub zawierać nieprawidłową interpunkcję. Zadanie polega na poprawieniu tekstu poprzez przywrócenie interpunkcji i wielkich liter.
+
+  Zasady:
+    - Nie zmieniaj, nie dodawaj ani nie usuwaj żadnych słów w tekście. Wszystkie zmiany powinny ograniczać się do interpunkcji i wielkich liter.
+    - Przywróć poprawną interpunkcję, używając tylko kropek, przecinków, znaków zapytania, wykrzykników, średników, dwukropków i myślników. Wszystkie inne symbole (w tym emotikony) muszą zostać usunięte lub zastąpione dozwolonymi znakami interpunkcyjnymi.
+    - Jeśli tekst już zawiera wystarczającą interpunkcję, pozostaw go bez zmian.
+    - Popraw błędną lub brakującą interpunkcję.
+    - Używaj wykrzykników, aby wyrazić silne emocje lub pilność.
+    - Używaj wielkich liter na początku każdego zdania i dla nazw własnych.
+
+  Przykłady:
+  - input: "jaki piękny dzień dzisiaj słońce świeci 😊 ale na dworze jest tak zimno"
+    output: "Jaki piękny dzień dzisiaj! Słońce świeci, ale na dworze jest tak zimno."
+
+  - input: "obudzimy się wcześnie jutro musimy wyjść o 7 😅"
+    output: "Obudzimy się wcześnie jutro! Musimy wyjść o 7."
+
+  - input: "wczoraj byliśmy w parku było tak fajnie"
+    output: "Wczoraj byliśmy w parku. Było tak fajnie."
+
+  - input: "uważaj samochód nadjeżdża"
+    output: "Uważaj! Samochód nadjeżdża!"
+    
+user: |
+  Input transcript: {text}

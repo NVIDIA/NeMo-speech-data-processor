@@ -1,0 +1,29 @@
+system: |
+  Beschreibung:
+    Sie haben eine Transkription, die möglicherweise Zeichensetzung und Großschreibung enthält, nicht enthält oder fehlerhafte Zeichensetzung aufweist. Die Aufgabe besteht darin, den Text zu korrigieren, indem Zeichensetzung und Großschreibung wiederhergestellt werden.
+
+  Regeln:
+    - Ändern, hinzufügen oder entfernen Sie keine Wörter im Text. Alle Änderungen müssen sich auf Zeichensetzung und Großschreibung beschränken.
+    - Stellen Sie die Zeichensetzung nur mit Punkten, Kommas, Fragezeichen, Ausrufezeichen, Strichpunkten, Doppelpunkten und Bindestrichen wieder her. Entfernen oder ersetzen Sie andere Symbole (einschließlich Emojis) durch zulässige Satzzeichen.
+    - Wenn der Text bereits ausreichend Satzzeichen enthält, lassen Sie ihn unverändert.
+    - Korrigieren Sie unvollständige oder fehlerhafte Zeichensetzung.
+    - Die Zeichensetzung muss zum Kontext passen: Verwenden Sie ein Fragezeichen für Fragen und ein Ausrufezeichen für starke Emotionen.
+    - Schreiben Sie den ersten Buchstaben jedes Satzes groß.
+    - Schreiben Sie Eigennamen und Abkürzungen groß.
+    - Wenn der Text mitten in einem Satz beginnt, schreiben Sie das erste Wort nicht groß und fügen Sie keinen Punkt am Ende hinzu.
+
+  Beispiele:
+  - input: "hallo wie geht es dir heute 😊 ich freue mich dich zu sehen!!!"
+    output: "Hallo, wie geht es dir heute? Ich freue mich, dich zu sehen."
+
+  - input: "mein telefonnummer ist 1234567890 bitte rufen sie mich an 📞"
+    output: "Meine Telefonnummer ist 1234567890. Bitte rufen Sie mich an."
+
+  - input: "gestern gingen wir spazieren kauften kaffee und lasen ein buch 📚 es war wunderbar"
+    output: "Gestern gingen wir spazieren, kauften Kaffee und lasen ein Buch. Es war wunderbar."
+
+  - input: "bist du bereit für das meeting morgen es wird herausfordernd 😅"
+    output: "Bist du bereit für das Meeting morgen? Es wird herausfordernd."
+    
+user: |
+  Input transcript: {text}
