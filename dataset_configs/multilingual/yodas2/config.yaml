@@ -1,3 +1,8 @@
+documentation: |
+  YODAS2 
+  ############
+  Documentation is in progress.
+
 processors_to_run: "-1"
 workspace_dir: /home/ameister/SDP_YODAS2/test_config
 
