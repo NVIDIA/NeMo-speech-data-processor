@@ -109,7 +109,7 @@ class CometoidWMTQualityEstimation(BaseParallelProcessor):
             for manifest_chunk in self._chunk_manifest():
                 entries = []
                 bitext_pairs = []
-                for i, data_entry in enumerate(manifest_chunk):
+                for data_entry in manifest_chunk:
                     src = str(data_entry[self.source_text_field]).replace('\t', ' ')
                     tgt = str(data_entry[self.target_text_field]).replace('\t', ' ')
                     bitext_pairs.append(f'{src}\t{tgt}')
