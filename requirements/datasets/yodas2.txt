@@ -1,3 +1,5 @@
 pytorch-lightning
 faster_whisper
 vllm
+termplotlib
+pymarian
