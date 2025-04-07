@@ -32,18 +32,22 @@ class CountNumWords(BaseParallelProcessor):
     def __init__(
         self,
         text_key: str,
-        num_words_key: str,
-        alphabet: str,
+        num_words_key: str = "num_words",
+        alphabet: str = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.text_key = text_key
         self.num_words_key = num_words_key
-        self.pattern = re.compile("[^" + alphabet + "]")
+        self.pattern = None
+        if alphabet:
+            self.pattern = re.compile("[^" + alphabet + "]")
 
     def process_dataset_entry(self, data_entry):
         text = data_entry[self.text_key]
-        cleaned_string = self.pattern.sub("", text).strip()
+        cleaned_string = text
+        if self.pattern:
+            cleaned_string = self.pattern.sub("", cleaned_string).strip()
         cleaned_string = re.sub("\\s+", " ", cleaned_string).strip()
         words = cleaned_string.split()
         num_words = len(words)
