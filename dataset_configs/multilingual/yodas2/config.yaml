@@ -205,7 +205,14 @@ processors:
     text_key: generation
     regex_params_file: /home/ameister/SDP_YODAS2/NeMo-speech-data-processor/dataset_configs/multilingual/yodas2/regex.yaml
     output_manifest_file: ${workspace_dir}/${filters.target_lang}/manifest_26.json
-
+  
+  - _target_: sdp.processors.CometoidWMTQualityEstimation
+    input_manifest_file: /home/ameister/SDP_YODAS2/test_config/test_qe_m.json
+    output_manifest_file: /home/ameister/SDP_YODAS2/test_config/test_qe_m_out.json
+    source_text_field: source
+    target_text_field: target
+    model_name_or_path: /home/ameister/SDP_YODAS2/models/checkpoints/marian.model.bin
+    vocab_path: /home/ameister/SDP_YODAS2/models/vocab.spm
 
 
 
@@ -221,4 +228,4 @@ processors:
 
 
 
-# export HYDRA_FULL_ERROR=1 && python /ameister/YODAS_PR/main.py --config-path=/ameister/YODAS_PR/dataset_configs/multilingual/yodas2/ --config-name=config.yaml
+# export HYDRA_FULL_ERROR=1 && python /home/ameister/SDP_YODAS2/NeMo-speech-data-processor/main.py --config-path=/home/ameister/SDP_YODAS2/NeMo-speech-data-processor/dataset_configs/multilingual/yodas2/ --config-name=config.yaml
