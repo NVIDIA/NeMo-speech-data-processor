@@ -1,4 +1,6 @@
 pytorch-lightning
+nvidia-cublas-cu12
+nvidia-cudnn-cu12==9.*
 faster_whisper
 vllm
 termplotlib

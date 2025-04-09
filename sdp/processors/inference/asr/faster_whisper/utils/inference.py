@@ -257,7 +257,7 @@ def run_task(cfg, distributed: bool = False):
                                   )
     
     trainer = pl.Trainer(
-        devices=torch.cuda.device_count(),
+        devices=1, #torch.cuda.device_count(),
         accelerator="gpu",
         strategy=DDPStrategy(find_unused_parameters=False),
         precision="16-mixed" if torch.cuda.is_available() else 32,
