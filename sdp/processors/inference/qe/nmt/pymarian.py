@@ -100,6 +100,9 @@ class CometoidWMTQualityEstimation(BaseParallelProcessor):
         
         self.model = Evaluator(marian_args)
 
+    def process_dataset_entry(self):
+        pass
+
     def process(self):
         self.load_model()
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
