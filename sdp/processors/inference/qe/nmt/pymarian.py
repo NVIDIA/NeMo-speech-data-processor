@@ -67,7 +67,7 @@ class CometoidWMTQualityEstimation(BaseParallelProcessor):
         if not os.path.exists(self.model_name_or_path):
             raise ValueError(f'`model_name_or_path`: model name is not valid or model path does not exist ({self.model_name_or_path}).')
         
-        if not self.vocab_path and self.repo_id:
+        if not self.vocab_path and repo_id is not None:
             self.vocab_path = hf_hub_download(repo_id=repo_id, filename="vocab.spm", local_dir = self.save_model_to)
         
         if not os.path.exists(self.vocab_path):
@@ -92,7 +92,7 @@ class CometoidWMTQualityEstimation(BaseParallelProcessor):
             except Exception:
                 pass
 
-            device_indicies = ' '.join([i for i in range(self.max_workers)])
+            device_indicies = ' '.join([str(i) for i in range(self.max_workers)])
             gpu_args = self.MARIAN_GPU_ARGS.format(device_indicies = device_indicies)
             marian_args += f' {gpu_args}'
         

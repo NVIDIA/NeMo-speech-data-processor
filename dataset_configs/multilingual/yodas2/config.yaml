@@ -3,16 +3,16 @@ documentation: |
   ############
   Documentation is in progress.
 
-processors_to_run: "0:"
+processors_to_run: "27:"
 workspace_dir: /data3/sdp_test #/home/ameister/SDP_YODAS2/test_config
 
 filters:
   source_lang: en
   min_language_probability: 0.7
 
-  translation:
-    source_lang: English
-    target_lang: Italian
+translation:
+  source_lang: English
+  target_lang: Italian
 
 processors:
   - _target_: sdp.processors.datasets.yodas2.ListYodas2Data
@@ -31,7 +31,7 @@ processors:
   
   - _target_: sdp.processors.datasets.yodas2.DownloadYodas2Data
     output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_03.json
-    local_dir: ${workspace_dir}/${filters.source_lang}
+    local_dir: ${workspace_dir}/${filters.source_lang}/
     max_workers: 8
   
   - _target_: sdp.processors.ExtractTar
@@ -180,7 +180,7 @@ processors:
   
   - _target_: sdp.processors.vLLMInference
     output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_24.json
-    prompt_file: /ameister/YODAS_PR/dataset_configs/multilingual/yodas2/prompts/pnc_restoration/en.yaml
+    prompt_file: /ameister/YODAS_PR/NeMo-speech-data-processor/sdp/processors/inference/llm/prompts/vllm/qwen/pc_recovery/datasets/yodas2/${filters.source_lang}.yaml
     model:
       model: "Qwen/Qwen2.5-7B-Instruct-1M"
       tensor_parallel_size: 2
@@ -207,7 +207,7 @@ processors:
   
   - _target_: sdp.processors.SubRegex
     text_key: generation
-    regex_params_file: /home/ameister/SDP_YODAS2/NeMo-speech-data-processor/dataset_configs/multilingual/yodas2/regex.yaml
+    regex_params_yaml: /ameister/YODAS_PR/NeMo-speech-data-processor/sdp/processors/langs/regex/datasets/multilingual/yodas2/yodas2.yaml
     output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_26.json
   
   # AST
@@ -221,26 +221,26 @@ processors:
         ${translation.target_lang}: 
     model:
       model: "utter-project/EuroLLM-9B-Instruct"
-      dtype: torch.float16
+      dtype: float16 #torch.float16
     inference:
       best_of: 1
       temperature: 0.0
       top_p: 1.0
       max_tokens: 1280
-      use_beam_search: False
+      #use_beam_search: False
     apply_chat_template:
       max_length: 512
       tokenize: False
       add_generation_prompt: True
 
   - _target_: sdp.processors.CometoidWMTQualityEstimation
-    input_manifest_file: /home/ameister/SDP_YODAS2/test_config/test_qe_m.json
-    output_manifest_file: /home/ameister/SDP_YODAS2/test_config/test_qe_m_out.json
-    source_text_field: source
-    target_text_field: target
-    model_name_or_path: /home/ameister/SDP_YODAS2/models/checkpoints/marian.model.bin
-    vocab_path: /home/ameister/SDP_YODAS2/models/vocab.spm
-
+    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_28.json
+    source_text_field: pred_text #source
+    target_text_field: generation #target
+    model_name_or_path: cometoid-wmt23
+    device_type: gou
+    num_devices: 4
+    chunksize: 10
 
 
 
