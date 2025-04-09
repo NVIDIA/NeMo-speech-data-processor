@@ -68,6 +68,8 @@ from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
 from sdp.processors.inference.asr.transformers.speech_recognition import ASRTransformers
 from sdp.processors.inference.asr.nemo.asr_inference import ASRInference
 from sdp.processors.inference.asr.faster_whisper.faster_whisper import FasterWhisperInference
+from sdp.processors.inference.asr.post_processing.whisper_hallucinations import WhisperHallucinationFeatures
+
 from sdp.processors.inference.qe.nmt.pymarian import CometoidWMTQualityEstimation
 
 from sdp.processors.inference.nlp.nemo.pc_inference import PCInference

@@ -3,8 +3,8 @@ documentation: |
   ############
   Documentation is in progress.
 
-processors_to_run: "-1"
-workspace_dir: /home/ameister/SDP_YODAS2/test_config
+processors_to_run: "0:"
+workspace_dir: /data3/sdp_test #/home/ameister/SDP_YODAS2/test_config
 
 filters:
   source_lang: en
@@ -256,3 +256,4 @@ processors:
 
 
 # export HYDRA_FULL_ERROR=1 && python /home/ameister/SDP_YODAS2/NeMo-speech-data-processor/main.py --config-path=/home/ameister/SDP_YODAS2/NeMo-speech-data-processor/dataset_configs/multilingual/yodas2/ --config-name=config.yaml
+# export HYDRA_FULL_ERROR=1 && python /ameister/YODAS_PR/NeMo-speech-data-processor/main.py --config-path=/ameister/YODAS_PR/NeMo-speech-data-processor/dataset_configs/multilingual/yodas2/ --config-name=config.yaml
