@@ -24,7 +24,7 @@ from sdp.processors.base_processor import (
     BaseParallelProcessor,
     BaseProcessor,
     DataEntry,
-    LegacyParallelProcessor,
+    DaskDistributedProcessor,
 )
 from sdp.utils.common import load_manifest
 
