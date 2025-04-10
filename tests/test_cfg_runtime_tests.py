@@ -26,7 +26,7 @@ def get_test_cases():
     """Returns paths to all configs that are checked in."""
     for config_path in glob.glob(f"{DATASET_CONFIGS_ROOT}/**/*.yaml", recursive=True):
         path_parts = Path(config_path).parts
-        if "partials" in parts
+        if "partials" in parts:
             continue
         else:
             yield config_path
