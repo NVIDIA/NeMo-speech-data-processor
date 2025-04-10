@@ -13,6 +13,9 @@ filters:
 translation:
   source_lang: English
   target_lang: Italian
+  filters:
+    max_len_diff_ratio: 4
+    max_hist_token_ratio: 0.8
 
 processors:
   - _target_: sdp.processors.datasets.yodas2.ListYodas2Data
@@ -232,19 +235,74 @@ processors:
       max_length: 512
       tokenize: False
       add_generation_prompt: True
+    
+  - _target_: sdp.processors.CountNumWords
+    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_28.json
+    text_key: pred_text
+    num_words_key: num_words_src
+  
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_29.json
+    input_value_key: num_words_src
+    operator: gt
+    target_value: 1
+  
+  - _target_: sdp.processors.CountNumWords
+    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_30.json
+    text_key: generation
+    num_words_key: num_words_tgt
+  
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_31.json
+    input_value_key: num_words_tgt
+    operator: gt
+    target_value: 1
+  
+  - _target_: sdp.processors.LambdaExpression
+    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_32.json
+    new_field: 'len_diff_ratio'
+    expression: max(entry.num_words_src - entry.num_words_tgt, entry.num_words_tgt - entry.num_words_src)
+  
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_33.json
+    input_value_key: len_diff_ratio
+    operator: lt
+    target_value: ${translation.filters.max_len_diff_ratio}
+  
+  - _target_: sdp.processors.CharacterHistograms
+    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_34.json
+    text_field: pred_text
+    lang: ${filters.source_lang}
+    output_score_field: hist_token_ratio_pred_text
+    cache_dir: ""
+
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_35.json
+    input_value_key: hist_token_ratio_pred_text
+    operator: lt
+    target_value: ${translation.filters.max_hist_token_ratio}
+  
+  - _target_: sdp.processors.CharacterHistograms
+    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_34.json
+    text_field: generation
+    lang: it #${filters.source_lang}
+    output_score_field: hist_token_ratio_generation
+    cache_dir: ""
+
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_35.json
+    input_value_key: hist_token_ratio_generation
+    operator: lt
+    target_value: ${translation.filters.max_hist_token_ratio}
 
   - _target_: sdp.processors.CometoidWMTQualityEstimation
     output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_28.json
     source_text_field: pred_text #source
     target_text_field: generation #target
     model_name_or_path: cometoid-wmt23
-    device_type: gou
+    device_type: gpu
     num_devices: 4
     chunksize: 10
-
-
-
-
   
   
 

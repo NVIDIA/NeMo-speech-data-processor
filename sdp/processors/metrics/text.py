@@ -13,6 +13,13 @@
 # limitations under the License.
 
 import re
+import os
+import tempfile
+import shutil
+import requests
+import wget
+import tarfile
+from tqdm import tqdm
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
@@ -52,4 +59,93 @@ class CountNumWords(BaseParallelProcessor):
         words = cleaned_string.split()
         num_words = len(words)
         data_entry[self.num_words_key] = num_words
+        return [DataEntry(data=data_entry)]
+
+
+class CharacterHistograms(BaseParallelProcessor):
+    def __init__(self,
+                 text_field: str,
+                 lang_field: str = None,
+                 lang: str = None,
+                 threshold: float = 0.8,
+                 cache_dir: str = None,
+                 threshold_char: str = "]",
+                 output_score_field: str = "hist_token_ratio",
+                 **kwargs):
+        super().__init__(**kwargs)
+        self.text_field = text_field
+        
+        if lang_field is None and lang is None: 
+            raise ValueError("One of the arguments `lang` or `lang_field` must be provided.")
+                
+        if lang_field is not None and lang is not None: 
+            raise ValueError(
+                f"Both `lang` ({lang}) and `lang_field` ({lang_field}) are provided, which makes the source of language ambiguous. Please provide only one of them."
+            )
+        
+        self.text_field = text_field
+        self.lang_field = lang_field
+        self.lang = lang
+        self.threshold = threshold
+        self.cache_dir = cache_dir
+        self.threshold_char = threshold_char
+        self.output_score_field = output_score_field
+        self.histograms = dict()
+
+    def _read_hist(self, lang: str):
+        hist_file = os.path.join(self.cache_dir, lang)
+        chars = []
+        with open(hist_file) as hist:
+            for line in hist:
+                char = line[0] 
+                chars.append(char)
+                if char == self.threshold_char:
+                    break
+        self.histograms[lang] =set(chars)
+    
+    def prepare(self):
+        if self.cache_dir is None:
+            self.cache_dir = tempfile.mkdtemp()
+
+        os.makedirs(self.cache_dir, exist_ok=True)
+        
+        if not os.path.exists(self.cache_dir):
+            logger.info(f'Downloading histograms to {self.cache_dir}')
+            histograms_url = 'https://dl.fbaipublicfiles.com/m2m_100/histograms.tar.gz'
+            response = requests.get(histograms_url)
+
+            if response.status_code != 200:
+                raise requests.exceptions.RequestException(
+                f"Failed to download histogram file. Status code: {response.status_code}"
+            )
+            
+            histograms_tarfile = wget.download(histograms_url, out=self.cache_dir)
+            with tarfile.open(histograms_tarfile, "r:gz") as tar:
+                tar.extractall(path=self.cache_dir)
+            
+            self.cache_dir = os.path.join(self.cache_dir, "checkpoint/edunov/cc60_multilingual/clean_hists")
+            logger.info(f'Histograms are downloaded.')
+
+        logger.info(f'Reading histograms')
+        available_langs = os.listdir(self.cache_dir)
+        if self.lang is not None:
+            if self.lang in available_langs:
+                self._read_hist(self.lang)
+            else:
+                raise ValueError(f"Invalid value for `lang`: {self.lang}. Please provide one of the following: {available_langs}")
+            logger.info(f'Histogram for `{self.lang}` has been read.')
+        else:
+            for lang in tqdm(available_langs):
+                self._read_hist(lang)
+            logger.info(f'Histograms have been read.')
+        
+    def process_dataset_entry(self, data_entry):
+        lang = self.lang if self.lang is not None else data_entry[self.lang_field]
+        if lang not in self.histograms:
+            raise ValueError(f'lang `{lang} is not supported.')
+
+        text = data_entry[self.text_field].strip()
+        cnt = len([c for c in text if c in self.histograms[lang]])
+        token_ratio = 1 if cnt / len(text) > self._threshold else 0
+        data_entry[self.output_score_field] = token_ratio
         return [DataEntry(data=data_entry)]
