@@ -19,6 +19,7 @@ import shutil
 import requests
 import wget
 import tarfile
+from glob import glob
 from tqdm import tqdm
 
 from sdp.logging import logger
@@ -63,6 +64,8 @@ class CountNumWords(BaseParallelProcessor):
 
 
 class CharacterHistograms(BaseParallelProcessor):
+    HISTOGRAMS_URL = 'https://dl.fbaipublicfiles.com/m2m_100/histograms.tar.gz'
+    
     def __init__(self,
                  text_field: str,
                  lang_field: str = None,
@@ -103,28 +106,39 @@ class CharacterHistograms(BaseParallelProcessor):
                     break
         self.histograms[lang] =set(chars)
     
-    def prepare(self):
+    def _download_histograms(self):
+        logger.info(f'Downloading histograms collection..')
+        response = requests.get(self.HISTOGRAMS_URL)
+
+        if response.status_code != 200:
+            raise requests.exceptions.RequestException(
+            f"Failed to download model file. Status code: {response.status_code}"
+        )
+
         if self.cache_dir is None:
             self.cache_dir = tempfile.mkdtemp()
-
-        os.makedirs(self.cache_dir, exist_ok=True)
         
-        if not os.path.exists(self.cache_dir):
-            logger.info(f'Downloading histograms to {self.cache_dir}')
-            histograms_url = 'https://dl.fbaipublicfiles.com/m2m_100/histograms.tar.gz'
-            response = requests.get(histograms_url)
+        os.makedirs(self.cache_dir, exist_ok=True)
 
-            if response.status_code != 200:
-                raise requests.exceptions.RequestException(
-                f"Failed to download histogram file. Status code: {response.status_code}"
-            )
+        histograms_tarfile = wget.download(self.HISTOGRAMS_URL, out=self.cache_dir)
+        with tarfile.open(histograms_tarfile, "r:gz") as tar:
+            tar.extractall(path=self.cache_dir)
+
+        histograms_filepaths = glob(f'{self.cache_dir}/checkpoint/edunov/cc60_multilingual/clean_hists/*')
+        for histogram_filepath in histograms_filepaths:
+            shutil.move(histogram_filepath, os.path.join(self.cache_dir, os.path.basename(histogram_filepath)))
+        
+        os.remove(histograms_tarfile)
+        shutil.rmtree(f'{self.cache_dir}/checkpoint/edunov/cc60_multilingual/clean_hists/')
+        logger.info(f'Histograms has been downloaded to {self.cache_dir}.')
+
+    def prepare(self):
+        if (self.cache_dir is None or 
+            not os.path.exists(self.cache_dir) or 
+            not os.path.isdir(self.cache_dir) or 
+            len(os.listdir(self.cache_dir)) == 0):
             
-            histograms_tarfile = wget.download(histograms_url, out=self.cache_dir)
-            with tarfile.open(histograms_tarfile, "r:gz") as tar:
-                tar.extractall(path=self.cache_dir)
-            
-            self.cache_dir = os.path.join(self.cache_dir, "checkpoint/edunov/cc60_multilingual/clean_hists")
-            logger.info(f'Histograms are downloaded.')
+            self._download_histograms()
 
         logger.info(f'Reading histograms')
         available_langs = os.listdir(self.cache_dir)
@@ -139,6 +153,8 @@ class CharacterHistograms(BaseParallelProcessor):
                 self._read_hist(lang)
             logger.info(f'Histograms have been read.')
         
+        print(self.output_manifest_file)
+        
     def process_dataset_entry(self, data_entry):
         lang = self.lang if self.lang is not None else data_entry[self.lang_field]
         if lang not in self.histograms:
@@ -146,6 +162,6 @@ class CharacterHistograms(BaseParallelProcessor):
 
         text = data_entry[self.text_field].strip()
         cnt = len([c for c in text if c in self.histograms[lang]])
-        token_ratio = 1 if cnt / len(text) > self._threshold else 0
+        token_ratio = cnt / len(text)
         data_entry[self.output_score_field] = token_ratio
         return [DataEntry(data=data_entry)]

@@ -11,7 +11,7 @@ params:
     target_lang: it
     target_lang_full: Italian
     max_len_diff_ratio: 4
-    max_hist_token_ratio: 0.8
+    min_hist_token_ratio: 0.8
     min_langid_score: 0.3
 
 
@@ -261,8 +261,8 @@ processors:
   
   - _target_: sdp.processors.LambdaExpression
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_32.json
-    new_field: 'len_diff_ratio'
-    expression: max(entry.num_words_src - entry.num_words_tgt, entry.num_words_tgt - entry.num_words_src) #division? 
+    new_field: len_diff_ratio
+    expression: max(entry.num_words_src / entry.num_words_tgt, entry.num_words_tgt / entry.num_words_src)
   
   - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_33.json
@@ -275,32 +275,32 @@ processors:
     text_field: pred_text
     lang: ${params.source_lang}
     output_score_field: hist_token_ratio_pred_text
-    cache_dir: ""
+    cache_dir: /data3/sdp_test/cache/histograms
 
   - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_35.json
     input_value_key: hist_token_ratio_pred_text
-    operator: lt
-    target_value: ${params.translation.max_hist_token_ratio}
+    operator: gt
+    target_value: ${params.translation.min_hist_token_ratio}
   
   - _target_: sdp.processors.CharacterHistograms
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_34.json
     text_field: generation
     lang: it #${params.source_lang}
     output_score_field: hist_token_ratio_generation
-    cache_dir: ""
+    cache_dir: /data3/sdp_test/cache/histograms
 
   - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_35.json
     input_value_key: hist_token_ratio_generation
     operator: lt
-    target_value: ${params.translation.max_hist_token_ratio}
+    target_value: ${params.translation.min_hist_token_ratio}
 
   - _target_: sdp.processors.FastTextClassifier
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_36.json
     text_field: generation
     model_name_or_path: lid.176.bin
-    cache_dir: /home/ameister/SDP_YODAS2/models
+    cache_dir: /data3/sdp_test/cache
 
   - _target_: sdp.processors.CometoidWMTQualityEstimation
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_37.json
