@@ -15,7 +15,7 @@ params:
     min_langid_score: 0.3
 
 
-processors_to_run: "27:"
+processors_to_run: "30:"
 workspace_dir: /data3/sdp_test #/home/ameister/SDP_YODAS2/test_config
 
 processors:
@@ -262,7 +262,7 @@ processors:
   - _target_: sdp.processors.LambdaExpression
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_32.json
     new_field: 'len_diff_ratio'
-    expression: max(entry.num_words_src - entry.num_words_tgt, entry.num_words_tgt - entry.num_words_src)
+    expression: max(entry.num_words_src - entry.num_words_tgt, entry.num_words_tgt - entry.num_words_src) #division? 
   
   - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_33.json

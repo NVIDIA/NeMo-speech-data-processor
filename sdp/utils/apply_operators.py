@@ -46,6 +46,15 @@ OPERATORS = {
     ast.Not: operator.not_,        # Logical NOT (not a)
 }
 
+SAFE_FUNCTIONS = {
+    'max': max,
+    'min': min,
+    'len': len,
+    'sum': sum,
+    'abs': abs,
+    'sorted': sorted,
+}
+
 def evaluate_expression(expression: str, variables: Dict[str, Any] = None, var_prefix: str = None) -> any:
     if variables is None:
         variables = {}
@@ -94,6 +103,14 @@ def evaluate_expression(expression: str, variables: Dict[str, Any] = None, var_p
             elif var_name in {"True", "False"}:
                 return eval(var_name)
             raise ValueError(f"Unsupported name: {node.id}")
+        elif isinstance(node, ast.Call):  # Function call handling
+            func_name = node.func.id if isinstance(node.func, ast.Name) else None
+            if func_name in SAFE_FUNCTIONS:
+                func = SAFE_FUNCTIONS[func_name]
+                args = [_eval(arg) for arg in node.args]
+                return func(*args)
+            else:
+                raise ValueError(f"Function {func_name} is not allowed")
         else:
             raise ValueError(f"Unsupported node type: {type(node)}")
 
