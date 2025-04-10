@@ -89,6 +89,7 @@ from sdp.processors.modify_manifest.common import (
     CombineSources,
     DuplicateFields,
     KeepOnlySpecifiedFields,
+    DropSpecificFields,
     RenameFields,
     SortManifest,
     SplitOnFixedDuration,
@@ -134,6 +135,7 @@ from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
 )
 from sdp.processors.manage_files.extract import ExtractTar
+from sdp.processors.manage_files.remove import RemoveFiles
 from sdp.processors.manage_files.audio_conversion import (
     FfmpegConvert, 
     SoxConvert
