@@ -3,19 +3,20 @@ documentation: |
   ############
   Documentation is in progress.
 
-processors_to_run: "27:"
-workspace_dir: /data3/sdp_test #/home/ameister/SDP_YODAS2/test_config
-
-filters:
+params:
   source_lang: en
-  min_language_probability: 0.7
-
-translation:
-  source_lang: English
-  target_lang: Italian
-  filters:
+  source_lang_full: English
+  min_language_probability:  0.7
+  translation:
+    target_lang: it
+    target_lang_full: Italian
     max_len_diff_ratio: 4
     max_hist_token_ratio: 0.8
+    min_langid_score: 0.3
+
+
+processors_to_run: "27:"
+workspace_dir: /data3/sdp_test #/home/ameister/SDP_YODAS2/test_config
 
 processors:
   - _target_: sdp.processors.datasets.yodas2.ListYodas2Data
@@ -23,31 +24,31 @@ processors:
     use_metadata: True
   
   - _target_: sdp.processors.LambdaExpression
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_01.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_01.json
     new_field:  source_lang
     expression: entry.lang_subset[:2]
 
   - _target_: sdp.processors.PreserveByValue
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_02.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_02.json
     input_value_key: source_lang
-    target_value: ${filters.source_lang}
+    target_value: ${params.source_lang}
   
   - _target_: sdp.processors.datasets.yodas2.DownloadYodas2Data
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_03.json
-    local_dir: ${workspace_dir}/${filters.source_lang}/
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_03.json
+    local_dir: ${workspace_dir}/${params.source_lang}/
     max_workers: 8
   
   - _target_: sdp.processors.ExtractTar
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_04.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_04.json
     field_to_tar_filepath: 'local_audio'
-    extraction_dir: ${workspace_dir}/${filters.source_lang}
+    extraction_dir: ${workspace_dir}/${params.source_lang}
     remove_source_tar: True
     filepath_prefix_field: 'lang_subset'
     output_filepath_field: 'extracted_audios'
     get_extracted_filepaths: True
   
   - _target_: sdp.processors.datasets.yodas2.CreateInitialManifest
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_05.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_05.json
     field_with_list: 'extracted_audios'
     output_field: 'source_audio_filepath'
     fields_to_save: 
@@ -55,12 +56,12 @@ processors:
       - shard_id
   
   - _target_: sdp.processors.LambdaExpression
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_06.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_06.json
     new_field: 'audio_filepath'
-    expression: "'${workspace_dir}/${filters.source_lang}/converted/' + entry.lang_subset + '/' + entry.shard_id + '/' + entry.yodas_id"
+    expression: "'${workspace_dir}/${params.source_lang}/converted/' + entry.lang_subset + '/' + entry.shard_id + '/' + entry.yodas_id"
   
   - _target_: sdp.processors.FfmpegConvert
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_07.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_07.json
     input_file_key: 'source_audio_filepath'
     output_file_key: 'audio_filepath'
     id_key: 'audio_filepath'
@@ -70,9 +71,9 @@ processors:
 
   # Lang ID
   - _target_: sdp.processors.FasterWhisperInference
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_09.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_09.json
     model_size_or_path: 'base'
-    output_dir: ${workspace_dir}/${filters.source_lang}/manifest_09
+    output_dir: ${workspace_dir}/${params.source_lang}/manifest_09
     language_detection_only: True
     inference:
         language_detection_segments: 7
@@ -81,42 +82,42 @@ processors:
     skip_corrupted: True
 
   - _target_: sdp.processors.LambdaExpression
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_10.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_10.json
     new_field: 'lid_verified'
-    expression: (entry.language == "${filters.source_lang}") & (entry.language_probability >= ${filters.min_language_probability})
+    expression: (entry.language == "${params.source_lang}") & (entry.language_probability >= ${params.min_language_probability})
   
   - _target_: sdp.processors.PreserveByValue
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_11.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_11.json
     input_value_key: lid_verified
     target_value: true
 
   # Inference on long audio
   - _target_: sdp.processors.FasterWhisperInference
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_12.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_12.json
     model_size_or_path: 'base'
-    output_dir: ${workspace_dir}/${filters.source_lang}/manifest_12
+    output_dir: ${workspace_dir}/${params.source_lang}/manifest_12
     inference:
         batch_size: 16
-        language: ${filters.source_lang}
+        language: ${params.source_lang}
     save_timestamps_separately: False
     skip_corrupted: True
   
   - _target_: sdp.processors.ListToEntries
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_13.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_13.json
     field_with_list: 'segments'
     
   - _target_: sdp.processors.LambdaExpression
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_14.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_14.json
     new_field: 'duration'
     expression: entry.end - entry.start
   
   - _target_: sdp.processors.RenameFields
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_15.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_15.json
     rename_fields: 
       start: offset  
   
   - _target_: sdp.processors.KeepOnlySpecifiedFields
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_16.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_16.json
     fields_to_keep: 
       - lang_subset
       - shard_id
@@ -127,18 +128,18 @@ processors:
       - duration
   
   - _target_: sdp.processors.FasterWhisperInference
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_17.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_17.json
     model_size_or_path: 'base'
-    output_dir: ${workspace_dir}/${filters.source_lang}/manifest_17
+    output_dir: ${workspace_dir}/${params.source_lang}/manifest_17
     inference:
         batch_size: 16
-        language: ${filters.source_lang}
+        language: ${params.source_lang}
     save_timestamps_separately: False
     skip_corrupted: True
     slice_by_offset: True
   
   - _target_: sdp.processors.KeepOnlySpecifiedFields
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_18.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_18.json
     fields_to_keep: 
       - lang_subset
       - shard_id
@@ -150,27 +151,27 @@ processors:
       - pred_text
   
   - _target_: sdp.processors.DropIfRegexMatch
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_19.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_19.json
     text_key: pred_text
     regex_patterns:
       - "^\\s*$"
 
   - _target_: sdp.processors.WhisperHallucinationFeatures
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_20.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_20.json
     text_field: pred_text
   
   - _target_: sdp.processors.LambdaExpression
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_21.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_21.json
     new_field:  is_hallucinated
     expression: entry.hall_repeated_ngrams | entry.hall_long_word | entry.hall_frequent_single_word
   
   - _target_: sdp.processors.PreserveByValue
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_22.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_22.json
     input_value_key: is_hallucinated
     target_value: false
   
   - _target_: sdp.processors.KeepOnlySpecifiedFields
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_23.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_23.json
     fields_to_keep: 
       - lang_subset
       - shard_id
@@ -182,8 +183,8 @@ processors:
       - pred_text
   
   - _target_: sdp.processors.vLLMInference
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_24.json
-    prompt_file: /ameister/YODAS_PR/NeMo-speech-data-processor/sdp/processors/inference/llm/prompts/vllm/qwen/pc_recovery/datasets/yodas2/${filters.source_lang}.yaml
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_24.json
+    prompt_file: /ameister/YODAS_PR/NeMo-speech-data-processor/sdp/processors/inference/llm/prompts/vllm/qwen/pc_recovery/datasets/yodas2/${params.source_lang}.yaml
     model:
       model: "Qwen/Qwen2.5-7B-Instruct-1M"
       tensor_parallel_size: 2
@@ -204,24 +205,24 @@ processors:
       add_generation_prompt: True
   
   - _target_: sdp.processors.QwenGenerationFiltering
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_25.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_25.json
     text_field: pred_text
     generation_field: generation
   
   - _target_: sdp.processors.SubRegex
     text_key: generation
     regex_params_yaml: /ameister/YODAS_PR/NeMo-speech-data-processor/sdp/processors/langs/regex/datasets/multilingual/yodas2/yodas2.yaml
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_26.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_26.json
   
   # AST
   - _target_: sdp.processors.vLLMInference
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_27.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_27.json
     prompt:
       system: ""
       user: |
-        Translate the following ${translation.source_lang} source text to ${translation.target_lang}:
-        ${translation.source_lang}: {generation}
-        ${translation.target_lang}: 
+        Translate the following ${params.source_lang_full} source text to ${params.translation.target_lang_full}:
+        ${params.source_lang_full}: {generation}
+        ${params.translation.target_lang_full}: 
     model:
       model: "utter-project/EuroLLM-9B-Instruct"
       dtype: float16 #torch.float16
@@ -237,66 +238,72 @@ processors:
       add_generation_prompt: True
     
   - _target_: sdp.processors.CountNumWords
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_28.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_28.json
     text_key: pred_text
     num_words_key: num_words_src
   
   - _target_: sdp.processors.PreserveByValue
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_29.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_29.json
     input_value_key: num_words_src
     operator: gt
     target_value: 1
   
   - _target_: sdp.processors.CountNumWords
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_30.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_30.json
     text_key: generation
     num_words_key: num_words_tgt
   
   - _target_: sdp.processors.PreserveByValue
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_31.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_31.json
     input_value_key: num_words_tgt
     operator: gt
     target_value: 1
   
   - _target_: sdp.processors.LambdaExpression
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_32.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_32.json
     new_field: 'len_diff_ratio'
     expression: max(entry.num_words_src - entry.num_words_tgt, entry.num_words_tgt - entry.num_words_src)
   
   - _target_: sdp.processors.PreserveByValue
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_33.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_33.json
     input_value_key: len_diff_ratio
     operator: lt
-    target_value: ${translation.filters.max_len_diff_ratio}
+    target_value: ${params.translation.max_len_diff_ratio}
   
   - _target_: sdp.processors.CharacterHistograms
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_34.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_34.json
     text_field: pred_text
-    lang: ${filters.source_lang}
+    lang: ${params.source_lang}
     output_score_field: hist_token_ratio_pred_text
     cache_dir: ""
 
   - _target_: sdp.processors.PreserveByValue
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_35.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_35.json
     input_value_key: hist_token_ratio_pred_text
     operator: lt
-    target_value: ${translation.filters.max_hist_token_ratio}
+    target_value: ${params.translation.max_hist_token_ratio}
   
   - _target_: sdp.processors.CharacterHistograms
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_34.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_34.json
     text_field: generation
-    lang: it #${filters.source_lang}
+    lang: it #${params.source_lang}
     output_score_field: hist_token_ratio_generation
     cache_dir: ""
 
   - _target_: sdp.processors.PreserveByValue
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_35.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_35.json
     input_value_key: hist_token_ratio_generation
     operator: lt
-    target_value: ${translation.filters.max_hist_token_ratio}
+    target_value: ${params.translation.max_hist_token_ratio}
+
+  - _target_: sdp.processors.FastTextClassifierProcessor
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_36.json
+    text_field: generation
+    model_name_or_path: lid.176.bin
+    cache_dir: /home/ameister/SDP_YODAS2/models
 
   - _target_: sdp.processors.CometoidWMTQualityEstimation
-    output_manifest_file: ${workspace_dir}/${filters.source_lang}/manifest_28.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_37.json
     source_text_field: pred_text #source
     target_text_field: generation #target
     model_name_or_path: cometoid-wmt23
