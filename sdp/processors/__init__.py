@@ -73,6 +73,7 @@ from sdp.processors.inference.asr.post_processing.whisper_hallucinations import 
 from sdp.processors.inference.qe.nmt.pymarian import CometoidWMTQualityEstimation
 
 from sdp.processors.inference.nlp.nemo.pc_inference import PCInference
+from sdp.processors.inference.nlp.classification.fasttext.fasttext import FastTextClassifier
 
 from sdp.processors.inference.llm.vllm.vllm import vLLMInference
 from sdp.processors.inference.llm.post_processing.qwen_cleaning import QwenGenerationFiltering
@@ -95,7 +96,10 @@ from sdp.processors.modify_manifest.common import (
 from sdp.processors.modify_manifest.create_manifest import CreateInitialManifestByExt
 
 from sdp.processors.metrics.audio import AudioDuration
-from sdp.processors.metrics.text import CountNumWords
+from sdp.processors.metrics.text import (
+    CountNumWords,
+    CharacterHistograms,
+)
 
 from sdp.processors.modify_manifest.data_to_data import (
     InsIfASRInsertion,

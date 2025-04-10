@@ -296,7 +296,7 @@ processors:
     operator: lt
     target_value: ${params.translation.max_hist_token_ratio}
 
-  - _target_: sdp.processors.FastTextClassifierProcessor
+  - _target_: sdp.processors.FastTextClassifier
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_36.json
     text_field: generation
     model_name_or_path: lid.176.bin

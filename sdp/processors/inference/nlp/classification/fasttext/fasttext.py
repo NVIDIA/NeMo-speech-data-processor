@@ -8,7 +8,7 @@ import fasttext
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
-class FastTextClassifierProcessor(BaseParallelProcessor):
+class FastTextClassifier(BaseParallelProcessor):
     SUPPROTED_MODELS_URLS = {
         'lid.176.bin' : 'https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin',
         'lid.176.ftz' : 'https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz'
