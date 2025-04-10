@@ -52,7 +52,9 @@ class FastTextClassifier(BaseParallelProcessor):
     
     def prepare(self):
         if not os.path.exists(self.model_name_or_path):
-            if self.model_name_or_path in self.SUPPROTED_MODELS_URLS:
+            if os.path.exists(os.path.join(self.cache_dir, self.model_name_or_path)):
+                self.model_name_or_path = os.path.join(self.cache_dir, self.model_name_or_path)
+            elif self.model_name_or_path in self.SUPPROTED_MODELS_URLS:
                 self._download_model()
             else:
                 raise ValueError(f'Current model is not supported or filepath is invalid: {self.model_name_or_path}.')
@@ -60,7 +62,7 @@ class FastTextClassifier(BaseParallelProcessor):
     def process_dataset_entry(self, data_entry: dict):
         self._load_model()
         label, prob = self._model.predict(data_entry[self.text_field])
-        data_entry[self.output_field] = label[0]
+        data_entry[self.output_field] = label[0].replace('__label__', '')
         data_entry[f"{self.output_field}_prob"] = prob[0]
 
         return [DataEntry(data=data_entry)]
