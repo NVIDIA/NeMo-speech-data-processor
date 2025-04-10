@@ -38,6 +38,11 @@ from faster_whisper.vad import VadOptions
 from faster_whisper.audio import decode_audio
 from omegaconf import OmegaConf, MISSING
 
+def set_LD_LIBRARY_PATH():
+    import nvidia.cublas.lib
+    import nvidia.cudnn.lib
+    LD_LIBRARY_PATH = f'{os.path.dirname(nvidia.cublas.lib.__file__)}:{os.path.dirname(nvidia.cudnn.lib.__file__)}'
+    os.environ['LD_LIBRARY_PATH'] = LD_LIBRARY_PATH
 
 @dataclass
 class InferenceConfig:
@@ -288,7 +293,7 @@ def run_task(cfg, distributed: bool = False):
     return output_manifest_filepath
 
 @hydra.main(config_path=None, config_name="whisper_config", version_base=None)
-def main(cfg):
+def main(cfg):    
     logger.info(f"Hydra config:\n{OmegaConf.to_yaml(cfg)}")
     if cfg.model.device in ['auto', 'cuda'] and (cfg.model.device_index == [-1] or len(cfg.model.device_index) > 1):
         cfg.model.device_index = validate_device_ids(cfg.model.device_index)
