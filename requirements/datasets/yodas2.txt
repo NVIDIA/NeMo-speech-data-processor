@@ -5,3 +5,4 @@ faster_whisper
 vllm
 termplotlib
 pymarian
+fasttext
