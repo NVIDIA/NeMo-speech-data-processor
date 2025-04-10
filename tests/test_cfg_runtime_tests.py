@@ -25,7 +25,10 @@ DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
 def get_test_cases():
     """Returns paths to all configs that are checked in."""
     for config_path in glob.glob(f"{DATASET_CONFIGS_ROOT}/**/*.yaml", recursive=True):
-        yield config_path
+        if os.path.dirname(os.path.basename(config_path)) == "partials":
+            continue
+        else:
+            yield config_path
 
 
 @pytest.mark.parametrize("config_path", get_test_cases())
