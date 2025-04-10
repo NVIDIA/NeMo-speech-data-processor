@@ -571,16 +571,21 @@ class LambdaExpression(BaseParallelProcessor):
         new_field: str,
         expression: str,
         lambda_param_name: str = "entry",
-        str_fields: List[str] = None,
+        filter: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.new_field = new_field
         self.expression = expression
         self.lambda_param_name = lambda_param_name
+        self.filter = filter
 
     def process_dataset_entry(self, data_entry) -> List[DataEntry]:
-        data_entry[self.new_field] = evaluate_expression(self.expression,  data_entry, self.lambda_param_name)
+        value = evaluate_expression(self.expression,  data_entry, self.lambda_param_name)
+        if self.filter:
+            if value is not True:
+                return []
+        data_entry[self.new_field] = value   
         return [DataEntry(data=data_entry)]
 
     def finalize(self, metrics):
