@@ -202,7 +202,7 @@ processors:
   - _target_: sdp.processors.vLLMInference
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_24.json
     generation_field: src_text
-    prompt_file: /ameister/YODAS_PR/NeMo-speech-data-processor/sdp/processors/inference/llm/prompts/vllm/qwen/pc_recovery/datasets/yodas2/${params.source_lang}.yaml
+    prompt_file: ./dataset_configs/multilingual/yodas2/partials/pr_recovery_prompts/${params.source_lang}.yaml
     model:
       model: "Qwen/Qwen2.5-7B-Instruct-1M"
       tensor_parallel_size: 2
@@ -229,7 +229,7 @@ processors:
   
   - _target_: sdp.processors.SubRegex
     text_key: src_text
-    regex_params_yaml: /ameister/YODAS_PR/NeMo-speech-data-processor/sdp/processors/langs/regex/datasets/multilingual/yodas2/yodas2.yaml
+    regex_params_yaml: ./dataset_configs/multilingual/yodas2/partials/subregex_params.yaml
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_26.json
   
   - _target_: sdp.processors.DropSpecificFields
