@@ -8,7 +8,7 @@ params:
   source_lang_full: English
   min_audio_lid_probability:  0.7
   min_audio_duration: 0.1
-  max_audio_duration: 40.0
+  max_audio_duration: 40.0 #Add specific processor!
   translation:
     target_lang: it
     target_lang_full: Italian
