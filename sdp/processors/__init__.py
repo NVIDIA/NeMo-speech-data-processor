@@ -64,7 +64,22 @@ from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
 from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
-from sdp.processors.huggingface.speech_recognition import ASRTransformers
+
+from sdp.processors.inference.asr.transformers.speech_recognition import ASRTransformers
+from sdp.processors.inference.asr.nemo.asr_inference import ASRInference
+from sdp.processors.inference.asr.faster_whisper.faster_whisper import FasterWhisperInference
+from sdp.processors.inference.asr.post_processing.whisper_hallucinations import WhisperHallucinationFeatures
+
+from sdp.processors.inference.qe.nmt.pymarian import CometoidWMTQualityEstimation
+
+from sdp.processors.inference.nlp.nemo.pc_inference import PCInference
+from sdp.processors.inference.nlp.classification.fasttext.fasttext import FastTextClassifier
+
+from sdp.processors.inference.llm.vllm.vllm import vLLMInference
+from sdp.processors.inference.llm.post_processing.qwen_cleaning import QwenGenerationFiltering
+
+from sdp.processors.inference.llm.post_processing.qwen_cleaning import QwenGenerationFiltering
+
 from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
 
 from sdp.processors.modify_manifest.common import (
@@ -74,24 +89,30 @@ from sdp.processors.modify_manifest.common import (
     CombineSources,
     DuplicateFields,
     KeepOnlySpecifiedFields,
+    DropSpecificFields,
     RenameFields,
     SortManifest,
     SplitOnFixedDuration,
 )
 from sdp.processors.modify_manifest.create_manifest import CreateInitialManifestByExt
-from sdp.processors.modify_manifest.data_to_data import (
+
+from sdp.processors.metrics.audio import AudioDuration
+from sdp.processors.metrics.text import (
     CountNumWords,
-    FfmpegConvert,
-    GetAudioDuration,
+    CharacterHistograms,
+)
+
+from sdp.processors.modify_manifest.data_to_data import (
     InsIfASRInsertion,
     InverseNormalizeText,
     NormalizeText,
     ReadTxtLines,
-    SoxConvert,
     SplitLineBySentence,
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
+    ListToEntries,
+    LambdaExpression,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,
@@ -113,5 +134,9 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
 )
-from sdp.processors.nemo.asr_inference import ASRInference
-from sdp.processors.nemo.pc_inference import PCInference
+from sdp.processors.manage_files.extract import ExtractTar
+from sdp.processors.manage_files.remove import RemoveFiles
+from sdp.processors.manage_files.audio_conversion import (
+    FfmpegConvert, 
+    SoxConvert
+)

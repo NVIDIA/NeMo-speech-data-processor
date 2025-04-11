@@ -39,7 +39,7 @@ processors:
     split: ${data_split}
     raw_data_dir: ${workspace_dir}/raw_data
 
-  - _target_: sdp.processors.GetAudioDuration
+  - _target_: sdp.processors.AudioDuration
     audio_filepath_key: audio_filepath
     duration_key: duration
     output_manifest_file: ${final_manifest}

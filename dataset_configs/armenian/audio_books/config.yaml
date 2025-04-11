@@ -59,7 +59,7 @@ processors:
     output_file_key: "audio_filepath"
     id_key: null
 
-  - _target_: sdp.processors.GetAudioDuration
+  - _target_: sdp.processors.AudioDuration
     audio_filepath_key: audio_filepath
     duration_key: duration
     output_manifest_file: ${workspace_dir}/manifest2.json

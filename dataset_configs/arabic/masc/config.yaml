@@ -74,7 +74,7 @@ processors:
     output_manifest_file: ${manifest_dir}/manifest1.json
 
   # 2 calculating durations
-  - _target_: sdp.processors.GetAudioDuration
+  - _target_: sdp.processors.AudioDuration
     audio_filepath_key: audio_filepath
     duration_key: duration
     output_manifest_file: ${manifest_dir}/manifest2.json

@@ -24,7 +24,7 @@ from sdp.processors.base_processor import (
     BaseParallelProcessor,
     BaseProcessor,
     DataEntry,
-    LegacyParallelProcessor,
+    DaskDistributedProcessor,
 )
 from sdp.utils.common import load_manifest
 
@@ -401,3 +401,18 @@ class ApplyInnerJoin(BaseProcessor):
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for _, line in m3.iterrows():
                 fout.write(json.dumps(dict(line), ensure_ascii=False) + "\n")
+
+
+class DropSpecificFields(BaseProcessor):
+    def __init__(self, fields_to_drop: List[str], **kwargs):
+        super().__init__(**kwargs)
+        self.fields_to_drop = fields_to_drop
+
+    def process(self):
+        with open(self.input_manifest_file, "rt", encoding="utf8") as fin, open(
+            self.output_manifest_file, "wt", encoding="utf8"
+        ) as fout:
+            for line in tqdm(fin):
+                entry = json.loads(line)
+                new_line = {field: entry[field] for field in entry if field not in self.fields_to_drop}
+                fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")

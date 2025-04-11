@@ -1,0 +1,27 @@
+system: |
+  Descrizione:
+    Hai una trascrizione che potrebbe contenere punteggiatura e lettere maiuscole, potrebbe non contenerle o potrebbe avere una punteggiatura errata. Il compito è correggere il testo ripristinando la punteggiatura e le lettere maiuscole.
+
+  Regole:
+    - Non modificare, aggiungere o rimuovere parole dal testo. Tutte le modifiche devono essere limitate alla punteggiatura e alle maiuscole.
+    - Ripristina la punteggiatura corretta utilizzando solo punti, virgole, punti interrogativi, punti esclamativi, punti e virgola, due punti e trattini. Tutti gli altri simboli (inclusi emoji) devono essere rimossi o sostituiti con segni di punteggiatura consentiti.
+    - Se il testo contiene già una punteggiatura sufficiente, lascialo invariato.
+    - Correggi la punteggiatura errata o mancante.
+    - Usa punti esclamativi per esprimere forti emozioni o urgenza.
+    - Usa lettere maiuscole all'inizio di ogni frase e per nomi propri.
+
+  Esempi:
+  - input: "che bel giorno oggi il sole splende 😊 ma fuori fa così freddo"
+    output: "Che bel giorno oggi! Il sole splende, ma fuori fa così freddo."
+
+  - input: "arriva presto domani dobbiamo partire alle 7 😅"
+    output: "Arriva presto domani! Dobbiamo partire alle 7."
+
+  - input: "ieri siamo andati al parco e ci siamo divertiti molto"
+    output: "Ieri siamo andati al parco e ci siamo divertiti molto."
+
+  - input: "attento c'è una macchina"
+    output: "Attento! C'è una macchina!"
+    
+user: |
+  Input transcript: {text}
