@@ -14,17 +14,32 @@
 
 import sys
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, open_dict
 
 from sdp.run_processors import run_processors, update_processor_imports
 
 
 @hydra.main(version_base=None)
 def main(cfg: DictConfig):
+    """
+    Main entry point for the Speech Data Processor (SDP).
+    
+    Args:
+        cfg: Hydra configuration object containing processing settings
+    """
+    # Check if running in import manager mode
     if hasattr(cfg, 'mode') and cfg.mode == 'update_imports':
         update_processor_imports(cfg.config_path)
-    else:
-        run_processors(cfg)
+    
+    # Check arg for using Dask
+    if not hasattr(cfg, 'use_dask'):
+        with open_dict(cfg):
+            # Default to using Dask
+            cfg.use_dask = True
+        
+    # Run the processors
+    run_processors(cfg)
+
 
 if __name__ == "__main__":
     # hacking the arguments to always disable hydra's output
