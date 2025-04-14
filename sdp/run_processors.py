@@ -207,7 +207,7 @@ def run_processors(cfg):
                     import dask.bag as db
                     bag = db.from_sequence(current_entries, partition_size=proc.in_memory_chunksize)
 
-                    # "collapce" and compute
+                    # "collapse" and compute
                     current_entries = bag.map(proc.process_dataset_entry).flatten().compute() #flatten()
                 else:
                     new_entries = []
