@@ -113,7 +113,7 @@ class BaseParallelProcessor(BaseProcessor):
         chunksize: int = 100,
         in_memory_chunksize: int = 100000,
         test_cases: Optional[List[Dict]] = None,
-        use_dask: bool = False,
+        use_dask: bool = True,
         dask_client=None,
         **kwargs,
     ):
