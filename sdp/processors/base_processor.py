@@ -117,6 +117,7 @@ class BaseParallelProcessor(BaseProcessor):
         dask_client=None,
         **kwargs,
     ):
+        kwargs.pop("use_dask", None) #
         super().__init__(input_manifest_file=input_manifest_file, output_manifest_file=output_manifest_file, **kwargs)
         if max_workers == -1:
             max_workers = os.cpu_count()
