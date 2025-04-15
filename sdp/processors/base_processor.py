@@ -132,7 +132,7 @@ class BaseParallelProcessor(BaseProcessor):
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         metrics = []
 
-        manifest_chunks = list(self._chunk_manifest())  # mimic legacy chunking behavior
+        manifest_chunks = list(self._chunk_manifest())
         total_entries = sum(len(chunk) for chunk in manifest_chunks)
 
         if total_entries == 0:
