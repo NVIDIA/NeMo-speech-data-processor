@@ -58,8 +58,8 @@ class BaseProcessor(ABC):
             as ``input_manifest_file``.
     """
 
-    def __init__(self, output_manifest_file: str, input_manifest_file: Optional[str] = None):
-
+    def __init__(self, output_manifest_file: str, input_manifest_file: Optional[str] = None, **kwargs,):
+        kwargs.pop("use_dask", None)
         if output_manifest_file and input_manifest_file and (output_manifest_file == input_manifest_file):
             # we cannot have the same input and output manifest file specified because we need to be able to
             # read from the input_manifest_file and write to the output_manifest_file at the same time
