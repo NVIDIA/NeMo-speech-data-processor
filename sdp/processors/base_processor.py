@@ -100,7 +100,7 @@ class BaseParallelProcessor(BaseProcessor):
     
     def __getstate__(self):
         state = self.__dict__.copy()
-        # Remove the Dask client from state (it is not picklable)
+        # Remove the Dask client from state
         if 'dask_client' in state:
             state['dask_client'] = None
         return state
@@ -138,7 +138,7 @@ class BaseParallelProcessor(BaseProcessor):
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         metrics = []
         
-        #Ability to work sa legacy and as dask
+        #Ability to work with legacy and as dask
         if self.use_dask:
             self._process_with_dask(metrics)
         else:
@@ -148,21 +148,24 @@ class BaseParallelProcessor(BaseProcessor):
     def _process_with_dask(self, metrics):
         import dask.bag as db
         from dask.distributed import Client
+        from sdp.logging import logger 
 
         if self.dask_client is None:
             self.dask_client = Client()
         client = self.dask_client
-        from sdp.logging import logger  # Assume a logger exists in your framework.
         logger.info(f"Using Dask client with dashboard at: {client.dashboard_link}")
 
-        # Delegate manifest reading to read_manifest() which returns a Dask bag.
+        # Get the manifest; if it isn’t already a Dask bag, convert it.
         bag = self.read_manifest()
+        if not isinstance(bag, db.Bag):
+            bag = db.from_sequence(bag)
         total_entries = bag.count().compute()
 
         if total_entries == 0:
             logger.info("No entries found in the manifest input. Proceeding to create an empty output manifest.")
             results = []
         else:
+            # Process each entry and flatten the result
             processed_bag = bag.map(lambda entry: self.process_dataset_entry(entry)).flatten()
             results = processed_bag.compute()
 
@@ -175,6 +178,7 @@ class BaseParallelProcessor(BaseProcessor):
                     self.number_of_entries += 1
                     self.total_duration += entry.data.get("duration", 0)
         logger.info(f"Processed {total_entries} entries using Dask.")
+
 
     def _process_with_multiprocessing(self, metrics):
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
