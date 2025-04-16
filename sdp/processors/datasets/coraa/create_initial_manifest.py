@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List
 import pandas as pd
 
-import rarfile  #Needs to be installed
+import rarfile
 import sox
 from sox import Transformer
 
@@ -33,6 +33,14 @@ class CreateInitialManifestCORAA(BaseParallelProcessor):
                 Options 'SP2010', 'C-ORAL-BRASIL I', 'NURC-Recife', 'TEDx Talks', 'ALIP'
 
     """
+    @property
+    def requirements(self) -> dict[str, str]:
+        base_reqs = super().requirements
+        extra_reqs = {
+            "huggingface-hub": ">=0.20.3,<0.24.0",
+        }
+        return self._safe_merge_reqs(base_reqs, extra_reqs)
+
     def __init__(
             self,
             raw_data_dir: str,

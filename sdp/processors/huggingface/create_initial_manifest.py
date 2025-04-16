@@ -31,6 +31,13 @@ class CreateInitialManifestHuggingFace(BaseParallelProcessor):
                 "text": <transcription (with capitalization and punctuation)>,
             }
     """
+    @property
+    def requirements(self) -> dict[str, str]:
+        base_reqs = super().requirements
+        extra_reqs = {
+            "datasets" : "",
+        }
+        return self._safe_merge_reqs(base_reqs, extra_reqs)
 
     def __init__(
         self,

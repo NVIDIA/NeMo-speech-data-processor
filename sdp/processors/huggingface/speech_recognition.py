@@ -39,7 +39,15 @@ class ASRTransformers(BaseProcessor):
         max_new_tokens (Optional[int]): The maximum number of new tokens to generate.
             If not specified, there is no hard limit on the number of tokens generated, other than model-specific constraints.
     """
-
+    @property
+    def requirements(self) -> dict[str, str]:
+        base_reqs = super().requirements
+        extra_reqs = {
+            "torch" : "",
+            "transformers" : ">=0.2.1",
+        }
+        return self._safe_merge_reqs(base_reqs, extra_reqs)
+    
     def __init__(
         self,
         pretrained_model: str,

@@ -40,6 +40,13 @@ class ASRInference(BaseProcessor):
          The same data as in the input manifest with an additional field
          ``pred_text`` containing ASR model's predictions.
     """
+    @property
+    def requirements(self) -> dict[str, str]:
+        base_reqs = super().requirements
+        extra_reqs = {
+            "nemo-toolkit[asr]": "==1.23.0",
+        }
+        return self._safe_merge_reqs(base_reqs, extra_reqs)
 
     def __init__(
         self,

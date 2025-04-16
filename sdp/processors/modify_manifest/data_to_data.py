@@ -614,6 +614,13 @@ class NormalizeText(BaseParallelProcessor):
     Raises:
         `NotImplementedError`: when TN is not implemented for the requested language.
     """
+    @property
+    def requirements(self) -> dict[str, str]:
+        base_reqs = super().requirements
+        extra_reqs = {
+            "nemo_text_processing": "",
+        }
+        return self._safe_merge_reqs(base_reqs, extra_reqs)
 
     def __init__(
         self,
@@ -661,6 +668,13 @@ class InverseNormalizeText(BaseParallelProcessor):
     Raises:
         `NotImplementedError`: when ITN is not implemented for the requested language.
     """
+    @property
+    def requirements(self) -> dict[str, str]:
+        base_reqs = super().requirements
+        extra_reqs = {
+            "nemo_text_processing": "",
+        }
+        return self._safe_merge_reqs(base_reqs, extra_reqs)
 
     def __init__(
         self,

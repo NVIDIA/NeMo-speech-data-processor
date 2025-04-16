@@ -14,7 +14,7 @@
 
 import os
 import re
-import webvtt # pip install webvtt-py
+import webvtt
 from typing import Dict
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 

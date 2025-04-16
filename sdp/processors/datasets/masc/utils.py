@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import webvtt # pip install webvtt-py
+import webvtt
 from typing import Optional
 from sdp.processors.datasets.commoncrawl.harv_utils import parse_hours
 from datetime import datetime

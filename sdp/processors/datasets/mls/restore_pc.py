@@ -431,6 +431,13 @@ class RestorePCForMLS(BaseProcessor):
 
             <restored_text_field>: <restored text or n/a if match was not found>``
     """
+    @property
+    def requirements(self) -> dict[str, str]:
+        base_reqs = super().requirements
+        extra_reqs = {
+            "nemo_text_processing": ""
+        }
+        return self._safe_merge_reqs(base_reqs, extra_reqs)
 
     def __init__(
         self,

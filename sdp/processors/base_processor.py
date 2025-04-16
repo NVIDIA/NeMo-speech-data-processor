@@ -26,6 +26,8 @@ from tqdm.contrib.concurrent import process_map
 
 from sdp.logging import logger
 
+def safe_merge_reqs():
+    pass()
 
 @dataclass
 class DataEntry:
@@ -56,6 +58,9 @@ class BaseProcessor(ABC):
             different to the NeMo manifest format). Cannot have the same value
             as ``input_manifest_file``.
     """
+    @property
+    def requirements(self) -> dict[str, str]:
+        return {}
 
     def __init__(self, output_manifest_file: str, input_manifest_file: Optional[str] = None):
 
@@ -82,6 +87,10 @@ class BaseProcessor(ABC):
         There are not tests by default.
         """
 
+    @staticmethod
+    def _safe_merge_reqs(base_reqs, extra_reqs):
+        return safe_merge_reqs(base_reqs, extra_reqs)
+
 class BaseParallelProcessor(BaseProcessor):
     """
     Processor class which allows operations on each entry to be parallelized using Dask.
@@ -98,6 +107,12 @@ class BaseParallelProcessor(BaseProcessor):
         in_memory_chunksize (int): Maximum number of entries to read and process in memory at a time.
         test_cases (list[dict]): Optional test cases to verify processor behavior.
     """
+
+    @property
+    def requirements(self) -> dict[str, str]:
+        base_reqs = super().requirements
+        extra_reqs = {}
+        return self._safe_merge_reqs(base_reqs, extra_reqs)
 
     def __init__(
         self,
@@ -323,6 +338,12 @@ class LegacyParallelProcessor(BaseProcessor):
             ``output``, the value of which is a dictionary containing data which is
             the expected output manifest line.
     """
+    
+    @property
+    def requirements(self) -> dict[str, str]:
+        base_reqs = super().requirements
+        extra_reqs = {}
+        return self._safe_merge_reqs(base_reqs, extra_reqs)
 
     def __init__(
         self,

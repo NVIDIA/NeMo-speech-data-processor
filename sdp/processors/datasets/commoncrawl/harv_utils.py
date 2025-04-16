@@ -1,4 +1,4 @@
-import webvtt  # pip install webvtt-py
+import webvtt
 from datetime import datetime
 from sdp.logging import logger
 

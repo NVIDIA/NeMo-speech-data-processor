@@ -50,6 +50,12 @@ class PCInference(BaseProcessor):
          The same data as in the input manifest with an additional field
          <output_text_field> containing P&C model's predictions.
     """
+    def requirements(self) -> dict[str, str]:
+        base_reqs = super().requirements
+        extra_reqs = {
+            "nemo-toolkit[nlp]": "==1.23.0",
+        }
+        return self._safe_merge_reqs(base_reqs, extra_reqs)
 
     def __init__(
         self,
