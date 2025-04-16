@@ -123,9 +123,7 @@ class BaseParallelProcessor(BaseProcessor):
         import dask.bag as db
         import multiprocessing
         import psutil
-        from tqdm import tqdm
-        import json
-
+        
         self.prepare()
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         metrics = []
