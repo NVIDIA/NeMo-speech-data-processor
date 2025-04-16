@@ -230,7 +230,9 @@ class BaseParallelProcessor(BaseProcessor):
          - When use_dask is False:
               If the input_manifest_file does not exist or is empty, logs the condition and returns an empty iterator.
               Otherwise, opens the file in text mode, strips each line, and yields the parsed JSON from non-empty lines.
+              
         This unified behavior lets the processor run even in manifest-creation mode.
+
         """
         from sdp.logging import logger  
         if self.use_dask:
