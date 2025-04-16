@@ -58,8 +58,8 @@ class BaseProcessor(ABC):
             as ``input_manifest_file``.
     """
 
-    def __init__(self, output_manifest_file: str, input_manifest_file: Optional[str] = None, **kwargs,):
-        kwargs.pop("use_dask", None)
+    def __init__(self, output_manifest_file: str, input_manifest_file: Optional[str] = None, **kwargs):
+
         if output_manifest_file and input_manifest_file and (output_manifest_file == input_manifest_file):
             # we cannot have the same input and output manifest file specified because we need to be able to
             # read from the input_manifest_file and write to the output_manifest_file at the same time
@@ -100,7 +100,7 @@ class BaseParallelProcessor(BaseProcessor):
     
     def __getstate__(self):
         state = self.__dict__.copy()
-        # Remove the Dask client from state
+        # Remove the Dask client from state (it is not picklable)
         if 'dask_client' in state:
             state['dask_client'] = None
         return state
@@ -138,7 +138,7 @@ class BaseParallelProcessor(BaseProcessor):
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         metrics = []
         
-        #Ability to work with legacy and as dask
+        #Ability to work sa legacy and as dask
         if self.use_dask:
             self._process_with_dask(metrics)
         else:
@@ -148,15 +148,16 @@ class BaseParallelProcessor(BaseProcessor):
     def _process_with_dask(self, metrics):
         import dask.bag as db
         from dask.distributed import Client
-        from sdp.logging import logger 
 
         if self.dask_client is None:
             self.dask_client = Client()
         client = self.dask_client
+        from sdp.logging import logger 
         logger.info(f"Using Dask client with dashboard at: {client.dashboard_link}")
 
-        # Get the manifest; if it isn’t already a Dask bag, convert it.
+        # Delegate manifest reading to read_manifest() which returns a Dask bag.
         bag = self.read_manifest()
+
         if not isinstance(bag, db.Bag):
             bag = db.from_sequence(bag)
         total_entries = bag.count().compute()
@@ -165,7 +166,6 @@ class BaseParallelProcessor(BaseProcessor):
             logger.info("No entries found in the manifest input. Proceeding to create an empty output manifest.")
             results = []
         else:
-            # Process each entry and flatten the result
             processed_bag = bag.map(lambda entry: self.process_dataset_entry(entry)).flatten()
             results = processed_bag.compute()
 
@@ -178,7 +178,6 @@ class BaseParallelProcessor(BaseProcessor):
                     self.number_of_entries += 1
                     self.total_duration += entry.data.get("duration", 0)
         logger.info(f"Processed {total_entries} entries using Dask.")
-
 
     def _process_with_multiprocessing(self, metrics):
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
@@ -258,16 +257,18 @@ class BaseParallelProcessor(BaseProcessor):
         raise NotImplementedError("Derived classes must implement process_dataset_entry.")
 
     def finalize(self, metrics: List[Any]):
+        """Outputs metrics about the processed data."""
         from sdp.logging import logger
         logger.info("Total number of entries after processing: %d", self.number_of_entries)
         if self.total_duration:
             logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
         else:
-            logger.info("Unable to calculate total audio duration (hours).")
+            logger.info("Unable to calculate total audio duration (hours). Ensure that the manifest file includes a 'duration' key.")
         elapsed = time.time() - self.start_time
         logger.info("Processor completed in (seconds): %.2f", elapsed)
 
     def test(self):
+        """Applies processing to each test case and raises an error if the output does not match expected output."""        
         for test_case in self.test_cases:
             input_data = test_case["input"].copy() if isinstance(test_case["input"], dict) else test_case["input"]
             generated_outputs = self.process_dataset_entry(input_data)
@@ -291,10 +292,20 @@ class LegacyParallelProcessor(BaseProcessor):
     Child classes must implement process_dataset_entry().
     
     Args:
-        max_workers (int): Maximum workers.
-        chunksize (int): Number of entries per chunk.
-        in_memory_chunksize (int): Maximum entries read in one go.
-        test_cases (list[dict]): Optional test cases.
+        max_workers (int): maximum number of workers that will be spawned
+            during the parallel processing.
+        chunksize (int): the size of the chunks that will be sent to worker processes
+            during the parallel processing.
+        in_memory_chunksize (int): the maximum number of input data entries that will
+            be read, processed and saved at a time.
+        test_cases (list[dict]): an optional list of dicts containing test
+            cases for checking that the processor makes the changes that we
+            are expecting.
+            
+        The dicts must have a key ``input``, the value of which is a dictionary
+            containing data which is our test's input manifest line, and a key
+            ``output``, the value of which is a dictionary containing data which is
+            the expected output manifest line.
     """
     def __init__(
         self,
@@ -304,6 +315,7 @@ class LegacyParallelProcessor(BaseProcessor):
         test_cases: Optional[List[Dict]] = None,
         **kwargs,
     ):
+        kwargs.pop("use_dask", None) #
         super().__init__(**kwargs)
         if max_workers == -1:
             max_workers = multiprocessing.cpu_count()
@@ -316,8 +328,47 @@ class LegacyParallelProcessor(BaseProcessor):
         self.test_cases = test_cases or []
 
     def process(self):
+        """Parallelized implementation of the data processing.
+        The execution flow of this method is the following.
+        1. :meth:`prepare` is called. It's empty by default but can be used to
+           e.g. download the initial data files or compute some aggregates
+           required for subsequent processing.
+        2. A for-loop begins that loops over all ``manifest_chunk`` lists yielded
+           by the :meth:`_chunk_manifest` method. :meth:`_chunk_manifest` reads data
+           entries yielded by :meth:`read_manifest` and yields lists containing
+           ``in_memory_chunksize`` data entries.
+           Inside the for-loop:
+           a) :meth:`process_dataset_entry` is called **in parallel** on each element
+              of the ``manifest_chunk`` list.
+           b) All metrics are aggregated.
+           c) All output data-entries are added to the contents of ``output_manifest_file``.
+           Note:
+           * The default implementation of :meth:`read_manifest` reads an input manifest file
+             and returns a list of dictionaries for each line (we assume a standard NeMo format
+             of one json per line).
+           * :meth:`process_dataset_entry` is called **in parallel** on each element
+             of the list created in the previous step. Note that you cannot create
+             any new counters or modify the attributes of this class in any way
+             inside that function as this will lead to an undefined behavior.
+             Each call to the :meth:`process_dataset_entry` returns a list of
+             ``DataEntry`` objects that are then aggregated together. ``DataEntry``
+             simply defines a ``data`` and ``metrics`` keys.
+           * If ``data`` is set to None, the objects are ignored (metrics are still collected).
+        3. All ``metrics`` keys that were collected in the for-loop above are passed over to
+           :meth:`finalize` for any desired metric aggregation and reporting.
+        Here is a diagram outlining the execution flow of this method:
+        .. can only be viewed in the online documentation
+        .. raw:: html
+             <div align="center">
+               <img src="https://mermaid.ink/img/pako:eNqFU99r2zAQ_lcOFUYCbfbuhcCS9HFQ6N7mYS7WyRaTJSOdF7zS_32SrDYuDOYn-e6777779SJaJ0lUovM49vD9_KW2EL8wXRZLLZ6ZxgDawp75cMRAT-jRGDJP3rUUgvO7cXlttvvPEQMDce9kLRaq9H39UYsUHsioiKYRPRX0_uIPQMPIc4mDywySFE6GITlbtHAhmAJJYJdNtOt2IN3VGocSPF5BIiPgxG5A1m2UN9fiJzw8HOB8U3Fcq_CEshnQakWB11qKimuv2x5mTUaGnBPjb05Dlv07_elGf1rTN20_2V__T1CakVPkkABOQdB_KFne6bRtBhqcnxfe7E-E_6jyHGUo5yELTgRvGpbQHFYl8g-gVFmTK7sBUh_hg4wy6CahA_ESsLnFlgXIZW7i3PAS2GPLpebt4vkEAX8TuInHKbqKvGjGrvPUIVPCe92GjN_kcd-lvkzMAaR340hy-1b74632x_UIlLZoYqOaQrZZq1tWSIfR4PyeTXk3QKlR2y4mqG25B54NwRGUNqa6U0qtzae1eXGQlbUV92IgP6CW8cBekqMW3NNAtajisyx5upPXCE3b-zzbVlTsJ7oX0xj7SmeN8RAHUSk0IVpJanb-23K0-XZf_wKzfkSg" height=100% />
+             </div>
+        """
+        self.prepare()
+        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
+        metrics = []
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for manifest_chunk in self._chunk_manifest():
+                # this will unroll all inner lists
                 data = itertools.chain(
                     *process_map(
                         self.process_dataset_entry,
@@ -337,7 +388,14 @@ class LegacyParallelProcessor(BaseProcessor):
                     fout.write("\n")
         self.finalize(self.test_cases)
 
+    def prepare(self):
+        """Can be used in derived classes to prepare the processing in any way.
+        E.g., download data or compute some aggregates. Will be called before
+        starting processing the data.
+        """
+
     def _chunk_manifest(self):
+        """Splits the manifest into smaller chunks defined by ``in_memory_chunksize``."""
         manifest_chunk = []
         for idx, data_entry in enumerate(self.read_manifest(), 1):
             manifest_chunk.append(data_entry)
@@ -348,6 +406,11 @@ class LegacyParallelProcessor(BaseProcessor):
             yield manifest_chunk
 
     def read_manifest(self):
+        """Reading the input manifest file.
+        .. note::
+            This function should be overridden in the "initial" class creating
+            manifest to read from the original source of data.
+        """
         if not self.input_manifest_file:
             raise NotImplementedError("Override this method if no input manifest file is used")
         with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
@@ -356,13 +419,72 @@ class LegacyParallelProcessor(BaseProcessor):
 
     @abstractmethod
     def process_dataset_entry(self, data_entry) -> List[DataEntry]:
+        """Needs to be implemented in the derived classes.
+        Each returned value should be a ``DataEntry`` object that will hold
+        a dictionary (or anything else that can be json-serialized) with
+        the actual data + any additional metrics required for statistics
+        reporting. Those metrics can be used in :meth:`finalize` to
+        prepare for final reporting.
+        ``DataEntry`` is a simple dataclass defined in the following way::
+            @dataclass
+            class DataEntry:
+                # can be None to drop the entry
+                data: Optional[Dict]
+                # anything - you'd need to aggregate all
+                # values in the finalize method manually
+                metrics: Any = None
+        .. note::
+            This method should always return a list of objects to allow a
+            one-to-many mapping. E.g., if you want to cut an utterance into
+            multiple smaller parts, you can return a list of all the produced
+            utterances and they will be handled correctly.
+            The many-to-one mapping is not currently supported by design of
+            this method (but can still be done if you don't inherit from
+            this class and process the data sequentially).
+        Args:
+            data_entry: most often, ``data_entry`` will be a dictionary
+                containing items which represent the JSON manifest entry.
+                Sometimes, such as in :class:`sdp.processors.CreateInitialManifestMLS`,
+                it will be a string containing a line for that utterance
+                from the original raw MLS transcript. In general it is an element
+                of the list returned from the :meth:`read_manifest` method.
+        """
+        # TODO: it would be more straightforward to use a generator here, but
+        #     seems that it's not supported with multiprocessing. Is there a
+        #     way to make it work?
         raise NotImplementedError("Derived classes must implement `process_dataset_entry`.")
 
     def finalize(self, metrics):
+        """Can be used to output statistics about the processed data.
+        By default outputs new number of entries/hours.
+
+        Args:
+            metrics (list): a list containing all ``metrics`` keys from the
+                data entries returned from the :meth:`process_dataset_entry`
+                method.
+        """
         logger.info("Total number of entries after processing (legacy): %d", self.number_of_entries)
         if self.total_duration:
             logger.info("Total audio duration (hours) after processing (legacy): %.2f", self.total_duration / 3600)
         else:
-            logger.info("Unable to calculate total audio duration (legacy).")
+            logger.info("Unable to calculate total audio duration (legacy). Please ensure that the manifest file includes a 'duration' key.")
         elapsed = time.time() - self.start_time
         logger.info("Legacy processor completed in (seconds): %.2f", elapsed)
+    def test(self):
+        """Applies processing to "test_cases" and raises an error in case of mismatch."""
+        for test_case in self.test_cases:
+            generated_outputs = self.process_dataset_entry(test_case["input"].copy())
+            expected_outputs = (
+                [test_case["output"]] if not isinstance(test_case["output"], list) else test_case["output"]
+            )
+
+            for generated_output, expected_output in zip(generated_outputs, expected_outputs):
+                generated_output = generated_output.data
+
+                if generated_output != expected_output:
+                    raise RuntimeError(
+                        "Runtime test failed.\n"
+                        f"Test input: {test_case['input']}\n"
+                        f"Generated output: {generated_output}\n"
+                        f"Expected output: {expected_output}"
+                    )
