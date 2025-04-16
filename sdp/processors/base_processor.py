@@ -132,15 +132,19 @@ class BaseParallelProcessor(BaseProcessor):
         self.dask_client = dask_client
         
     def prepare(self):
-        """Can be used in derived classes to prepare the processing in any way.
-        E.g., download data or compute some aggregates. Will be called before
-        starting processing the data.
+        """Can be used in derived classes to prepare the processing.
+        
         """
+        pass
 
     def process(self):
+        """A fork in the road to pick dask or classic processing
+
+        """
         os.environ.setdefault("PATH", os.defpath)
-        if hasattr(self, 'prepare'):
-            self.prepare()
+
+        self.prepare()
+        
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         metrics = []
         
@@ -247,13 +251,13 @@ class BaseParallelProcessor(BaseProcessor):
             if not self.input_manifest_file or not os.path.exists(self.input_manifest_file):
                 logger.info("No input manifest file provided or file does not exist. Continuing with an empty manifest.")
                 return iter([])
-            else:
-                def generator():
+            else: 
+                #if use_dask = False, we get here
+                def generator(): #Reading manifest line by line, adding only non emply lines
                     with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
                         for line in fin:
-                            line = line.strip()
-                            if line:
-                                yield json.loads(line)
+                                if line:
+                                    yield json.loads(line)
                 return generator()
 
     @abstractmethod
