@@ -120,15 +120,11 @@ class BaseParallelProcessor(BaseProcessor):
 
 
     def process(self):
-        from dask.distributed import Client, as_completed
-        from dask import config
-        from tqdm import tqdm
         import dask.bag as db
         import multiprocessing
         import psutil
-
-        os.environ.setdefault("PATH", os.defpath)
-        default_path = os.environ["PATH"]
+        from tqdm import tqdm
+        import json
 
         self.prepare()
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
@@ -167,65 +163,45 @@ class BaseParallelProcessor(BaseProcessor):
         mem_per_worker_mb = mem_per_worker // (1024 * 1024)
         memory_limit = f"{mem_per_worker_mb}MB"
 
-        logger.info(f"Resources: {num_cpus} workers, each with memory limit {memory_limit}")
+        logger.info(f"Resources: {num_cpus} workers, using multiprocessing scheduler")
 
-        with config.set({
-            "distributed.worker.heartbeat-interval": "5s",
-            "distributed.scheduler.worker-ttl": "120s",
-            "distributed.worker.memory.target": 0.8,
-            "distributed.worker.memory.spill": 0.9,
-            "distributed.comm.retry.count": 10,
-            "distributed.comm.timeouts.connect": "30s",
-            "distributed.comm.timeouts.tcp": "30s"
-        }):
-            client = Client(
-                n_workers=num_cpus,
-                processes=True,
-                threads_per_worker=2,
-                memory_limit=memory_limit,
-                env={"PATH": default_path}
-            )
-            try:
-                def process_partition(partition):
-                    results = []
-                    for data_entry in partition:
-                        try:
-                            ret = self.process_dataset_entry(data_entry)
-                            if not isinstance(ret, list):
-                                ret = [ret]
-                            results.extend(ret)
-                        except Exception as e:
-                            logger.warning(f"Error processing entry: {e}")
-                    return results
+        def process_partition(partition):
+            results = []
+            for data_entry in partition:
+                try:
+                    ret = self.process_dataset_entry(data_entry)
+                    if isinstance(ret, list):
+                        results.extend(ret)
+                    elif ret is not None:
+                        results.append(ret)
+                except Exception as e:
+                    logger.warning(f"Error processing entry: {e}")
+            return results
 
-                bag = bag.map_partitions(process_partition)
-                delayed_results = bag.to_delayed()
-                futures = client.compute(delayed_results)
+        bag = bag.map_partitions(process_partition)
 
-                with open(self.output_manifest_file, "wt", encoding="utf8") as fout, \
+        try:
+            results = bag.compute(scheduler="processes")
+
+            with open(self.output_manifest_file, "wt", encoding="utf8") as fout, \
                     tqdm(total=total_entries, desc="Processing entries", unit="entry",
                         mininterval=0.5, miniters=10) as pbar:
-                    for future in as_completed(futures):
-                        partition_result = future.result()
-                        for data_entry in partition_result:
-                            metrics.append(data_entry.metrics)
-                            if data_entry.data is None:
-                                continue
-                            json.dump(data_entry.data, fout, ensure_ascii=False)
-                            fout.write("\n")
-                            self.number_of_entries += 1
-                            self.total_duration += data_entry.data.get("duration", 0)
-                        pbar.update(len(partition_result))
+                    for data_entry in results:
+                        metrics.append(data_entry.metrics)
+                        if data_entry.data is None:
+                            pbar.update(1)
+                            continue
+                        json.dump(data_entry.data, fout, ensure_ascii=False)
+                        fout.write("\n")
+                        self.number_of_entries += 1
+                        self.total_duration += data_entry.data.get("duration", 0)
+                        pbar.update(1)
 
-                self.finalize(metrics)
+            self.finalize(metrics)
 
-            except Exception as e:
-                logger.error(f"Error during processing: {e}")
-                raise
-            finally:
-                logger.info("Shutting down Dask client...")
-                client.close(timeout="60s")
-                logger.info("Dask client shutdown complete")
+        except Exception as e:
+            logger.error(f"Error during processing: {e}")
+            raise
 
     def prepare(self):
         """Can be used in derived classes to prepare the processing."""
