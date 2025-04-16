@@ -130,6 +130,12 @@ class BaseParallelProcessor(BaseProcessor):
         self.test_cases = test_cases or []
         self.use_dask = use_dask
         self.dask_client = dask_client
+        
+    def prepare(self):
+        """Can be used in derived classes to prepare the processing in any way.
+        E.g., download data or compute some aggregates. Will be called before
+        starting processing the data.
+        """
 
     def process(self):
         os.environ.setdefault("PATH", os.defpath)
