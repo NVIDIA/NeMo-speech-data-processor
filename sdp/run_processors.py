@@ -161,8 +161,7 @@ def run_processors(cfg):
         [proc_cfg["_target_"] for proc_cfg in processors_cfgs],
     )
     
-    # Check for chain_mode flag (chain_mode=True means we pass results in memory)
-    chain_mode = cfg.get("chain_mode", False) #beta, do not use
+    
     
     processors = []
     # Create a temporary directory to hold intermediate files if needed.
@@ -188,63 +187,22 @@ def run_processors(cfg):
             processor.test()
             processors.append(processor)
 
-        # If chain_mode is enabled, process all entries entirely in-memory. {currently beta, do not use}
-        if chain_mode:
-            logger.info("Chain mode enabled: processing entries in memory.")
-            
-            # Load initial entries from manifest
-            if processors[0].input_manifest_file and os.path.exists(processors[0].input_manifest_file):
-                with open(processors[0].input_manifest_file, "r", encoding="utf-8") as fin:
-                    current_entries = [json.loads(line) for line in fin if line.strip()]
-            else:
-                raise RuntimeError("Chain mode requires an input_manifest_file for the first processor.")
-
-            # Process each entry sequentially in memory
-            for proc in processors:
-                logger.info("Running processor %s in chain mode", proc.__class__.__name__)
-
-                if use_dask:
-                    import dask.bag as db
-                    bag = db.from_sequence(current_entries, partition_size=proc.in_memory_chunksize)
-
-                    # "collapse" and compute
-                    current_entries = bag.map(proc.process_dataset_entry).flatten().compute() #flatten()
-                else:
-                    new_entries = []
-                    for entry in tqdm(current_entries, desc=f"Processing with {proc.__class__.__name__}"):
-                        processed_entries = proc.process_dataset_entry(entry)
-                        new_entries.extend(processed_entries)
-                    current_entries = new_entries
-
-            # Write final entries to disk
-            with open(processors[-1].output_manifest_file, "w", encoding="utf-8") as fout:
-                for entry in current_entries:
-                    if isinstance(entry, DataEntry):
-                        entry_data = entry.data
-                    else:
-                        entry_data = entry
-                    if entry_data is not None:
-                        json.dump(entry_data, fout, ensure_ascii=False)
-                        fout.write("\n")
-
-            logger.info("Finished chain mode processing in-memory.")
-        else:
-            # Regular mode: each processor writes its own output file. [default mode]
-            dask_client = None
-            if use_dask:
-                try:
-                    from dask.distributed import Client
-                    
-                    num_cpus = psutil.cpu_count(logical=False) or 4
-                    logger.info(f"Starting Dask client with {num_cpus} workers")
-                    dask_client = Client(n_workers=num_cpus, processes=True)
-                    logger.info(f"Dask client dashboard available at: {dask_client.dashboard_link}")
-                except ImportError:
-                    logger.warning("Dask not available, falling back to multiprocessing")
-                    use_dask = False
-                except Exception as e:
-                    logger.warning(f"Failed to create Dask client: {e}. Falling back to multiprocessing")
-                    use_dask = False
+            # Regular mode: each processor writes its own output file. 
+        dask_client = None
+        if use_dask:
+            try:
+                from dask.distributed import Client
+                
+                num_cpus = psutil.cpu_count(logical=False) or 4
+                logger.info(f"Starting Dask client with {num_cpus} workers")
+                dask_client = Client(n_workers=num_cpus, processes=True)
+                logger.info(f"Dask client dashboard available at: {dask_client.dashboard_link}")
+            except ImportError:
+                logger.warning("Dask not available, falling back to multiprocessing")
+                use_dask = False
+            except Exception as e:
+                logger.warning(f"Failed to create Dask client: {e}. Falling back to multiprocessing")
+                use_dask = False
 
             try:
                 for proc in processors:
