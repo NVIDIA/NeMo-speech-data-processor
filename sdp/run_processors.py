@@ -165,25 +165,47 @@ def run_processors(cfg):
     
     processors = []
     # Create a temporary directory to hold intermediate files if needed.
+
+
     with tempfile.TemporaryDirectory() as tmp_dir:
-        # Build all processors
+        # special check for the first processor.
+        # In case user selected something that does not start from
+        # manifest creation we will try to infer the input from previous
+        # output file
+        if processors_cfgs[0] is not cfg.processors[0] and "input_manifest_file" not in processors_cfgs[0]:
+            # locating starting processor
+            for idx, processor in enumerate(cfg.processors):
+                if processor is processors_cfgs[0]:  # we don't do a copy, so can just check object ids
+                    if "output_manifest_file" in cfg.processors[idx - 1]:
+                        with open_dict(processors_cfgs[0]):
+                            processors_cfgs[0]["input_manifest_file"] = cfg.processors[idx - 1]["output_manifest_file"]
+                    break
+
         for idx, processor_cfg in enumerate(processors_cfgs):
-            # If no output_manifest_file is specified, assign one from tmp_dir.
+            logger.info('=> Building processor "%s"', processor_cfg["_target_"])
+
+            # we assume that each processor defines "output_manifest_file"
+            # and "input_manifest_file" keys, which can be optional. In case they
+            # are missing, we create tmp files here for them
+            # (1) first use a temporary file for the "output_manifest_file" if it is unspecified
             if "output_manifest_file" not in processor_cfg:
                 tmp_file_path = os.path.join(tmp_dir, str(uuid.uuid4()))
                 with open_dict(processor_cfg):
                     processor_cfg["output_manifest_file"] = tmp_file_path
 
-            # For [non-final] processors, if input_manifest_file is not set, use previous processor’s output.
+            # (2) then link the current processor's output_manifest_file to the next processor's input_manifest_file
+            # if it hasn't been specified (and if you are not on the last processor)
             if idx != len(processors_cfgs) - 1 and "input_manifest_file" not in processors_cfgs[idx + 1]:
                 with open_dict(processors_cfgs[idx + 1]):
                     processors_cfgs[idx + 1]["input_manifest_file"] = processor_cfg["output_manifest_file"]
-
+            
             if use_dask and "use_dask" not in processor_cfg:
                 with open_dict(processor_cfg):
                     processor_cfg["use_dask"] = True
 
             processor = hydra.utils.instantiate(processor_cfg)
+            # running runtime tests to fail right-away if something is not
+            # matching users expectations
             processor.test()
             processors.append(processor)
 
