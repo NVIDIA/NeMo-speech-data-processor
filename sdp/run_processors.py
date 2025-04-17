@@ -16,7 +16,9 @@ import logging
 import os
 import tempfile
 import uuid
-from typing import List
+from typing import List, Optional
+import psutil
+import json
 
 import hydra
 from omegaconf import OmegaConf, open_dict
@@ -53,6 +55,7 @@ def update_processor_imports(config_path: str, init_file: str = None):
         init_file: Optional path to __init__.py file to update
     """
     try:
+        import yaml
         manager = ImportManager()
         manager.sync_with_config(config_path, init_file)
         logger.info(f"Successfully updated imports for config: {config_path}")
@@ -113,11 +116,10 @@ def select_subset(input_list: List, select_str: str) -> List:
 def run_processors(cfg):
     logger.info(f"Hydra config: {OmegaConf.to_yaml(cfg)}")
 
-
+    # Handle import manager if enabled
     if cfg.get("use_import_manager", False):
-        '''code block dynamically manages imports based on a YAML configuration if use_import_manager is enabled.'''
         try:
-            #check yaml file path
+            import yaml
             yaml_path = cfg.get("config_path")
             if not yaml_path:
                 raise ValueError("No configuration path provided in 'config_path'. Please specify the path.")
@@ -139,13 +141,13 @@ def run_processors(cfg):
         except Exception as e:
             logger.error(f"An unexpected error occurred during management of imports: {e}")
 
-
-
     processors_to_run = cfg.get("processors_to_run", "all")
+    use_dask = cfg.get("use_dask", True)
 
     if processors_to_run == "all":
         processors_to_run = ":"
     selected_cfgs = select_subset(cfg.processors, processors_to_run)
+    
     # filtering out any processors that have should_run=False
     processors_cfgs = []
     for processor_cfg in selected_cfgs:
@@ -156,11 +158,15 @@ def run_processors(cfg):
 
     logger.info(
         "Specified to run the following processors: %s ",
-        [cfg["_target_"] for cfg in processors_cfgs],
+        [proc_cfg["_target_"] for proc_cfg in processors_cfgs],
     )
+    
+    
+    
     processors = []
-    # let's build all processors first to automatically check
-    # for errors in parameters
+    # Create a temporary directory to hold intermediate files if needed.
+
+
     with tempfile.TemporaryDirectory() as tmp_dir:
         # special check for the first processor.
         # In case user selected something that does not start from
@@ -192,6 +198,10 @@ def run_processors(cfg):
             if idx != len(processors_cfgs) - 1 and "input_manifest_file" not in processors_cfgs[idx + 1]:
                 with open_dict(processors_cfgs[idx + 1]):
                     processors_cfgs[idx + 1]["input_manifest_file"] = processor_cfg["output_manifest_file"]
+            
+            if use_dask and "use_dask" not in processor_cfg:
+                with open_dict(processor_cfg):
+                    processor_cfg["use_dask"] = True
 
             processor = hydra.utils.instantiate(processor_cfg)
             # running runtime tests to fail right-away if something is not
@@ -199,7 +209,35 @@ def run_processors(cfg):
             processor.test()
             processors.append(processor)
 
-        for processor in processors:
-            # TODO: add proper str method to all classes for good display
-            logger.info('=> Running processor "%s"', processor)
-            processor.process()
+            # Regular mode: each processor writes its own output file. 
+        dask_client = None
+        if use_dask:
+            try:
+                from dask.distributed import Client
+                
+                num_cpus = psutil.cpu_count(logical=False) or 4
+                logger.info(f"Starting Dask client with {num_cpus} workers")
+                dask_client = Client(n_workers=num_cpus, processes=True)
+                logger.info(f"Dask client dashboard available at: {dask_client.dashboard_link}")
+            except ImportError:
+                logger.warning("Dask not available, falling back to multiprocessing")
+                use_dask = False
+            except Exception as e:
+                logger.warning(f"Failed to create Dask client: {e}. Falling back to multiprocessing")
+                use_dask = False
+
+            try:
+                for proc in processors:
+                    if hasattr(proc, 'dask_client') and dask_client is not None:
+                        proc.dask_client = dask_client
+                    logger.info('=> Running processor "%s"', proc)
+                    proc.process()
+            finally:
+                if dask_client is not None:
+                    logger.info("Shutting down Dask client...")
+                    dask_client.close(timeout="60s")
+                    logger.info("Dask client shutdown complete")
+    # tmp_dir is removed here after all processing finishes. !!!
+
+
+
