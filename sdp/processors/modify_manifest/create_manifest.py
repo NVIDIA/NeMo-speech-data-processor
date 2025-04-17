@@ -25,7 +25,7 @@ from sdp.processors.base_processor import (
 )
 
 
-class CreateInitialManifestByExt(LegacyParallelProcessor):
+class CreateInitialManifestByExt(BaseParallelProcessor):
     """
     Processor for creating an initial dataset manifest by saving filepaths with a common extension to the field specified in output_field.
 
@@ -60,7 +60,7 @@ class CreateInitialManifestByExt(LegacyParallelProcessor):
         return [DataEntry(data=data)]
 
 
-class CreateCombinedManifests(LegacyParallelProcessor):
+class CreateCombinedManifests(BaseParallelProcessor):
     def __init__(
         self,
         manifest_list: list[str],
