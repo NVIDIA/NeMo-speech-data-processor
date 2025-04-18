@@ -24,6 +24,7 @@ from omegaconf import OmegaConf, open_dict
 from sdp.logging import logger
 
 from sdp.utils.import_manager import ImportManager
+from sdp.utils.install_processors_requirements import setup
 
 # registering new resolvers to simplify config files
 OmegaConf.register_new_resolver("subfield", lambda node, field: node[field])
@@ -161,6 +162,9 @@ def run_processors(cfg):
     processors = []
     # let's build all processors first to automatically check
     # for errors in parameters
+
+    install_requirements = cfg.get("install_requirements", False)
+
     with tempfile.TemporaryDirectory() as tmp_dir:
         # special check for the first processor.
         # In case user selected something that does not start from
@@ -196,8 +200,13 @@ def run_processors(cfg):
             processor = hydra.utils.instantiate(processor_cfg)
             # running runtime tests to fail right-away if something is not
             # matching users expectations
-            processor.test()
             processors.append(processor)
+        
+        if install_requirements:
+            setup(*[processor.requirements for processor in processors])
+        
+        for processor in processors:
+            processor.test()
 
         for processor in processors:
             # TODO: add proper str method to all classes for good display

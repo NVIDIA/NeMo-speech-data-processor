@@ -25,9 +25,7 @@ from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from sdp.logging import logger
-
-def safe_merge_reqs():
-    pass()
+from sdp.utils.install_processors_requirements import merge_requirements
 
 @dataclass
 class DataEntry:
@@ -89,7 +87,7 @@ class BaseProcessor(ABC):
 
     @staticmethod
     def _safe_merge_reqs(base_reqs, extra_reqs):
-        return safe_merge_reqs(base_reqs, extra_reqs)
+        return merge_requirements(base_reqs, extra_reqs)
 
 class BaseParallelProcessor(BaseProcessor):
     """
