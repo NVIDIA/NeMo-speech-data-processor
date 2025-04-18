@@ -86,7 +86,7 @@ class BaseProcessor(ABC):
         """
 
     @staticmethod
-    def _safe_merge_reqs(base_reqs, extra_reqs):
+    def _merge_requirements(base_reqs, extra_reqs):
         return merge_requirements(base_reqs, extra_reqs)
 
 class BaseParallelProcessor(BaseProcessor):
@@ -110,7 +110,7 @@ class BaseParallelProcessor(BaseProcessor):
     def requirements(self) -> dict[str, str]:
         base_reqs = super().requirements
         extra_reqs = {}
-        return self._safe_merge_reqs(base_reqs, extra_reqs)
+        return self._merge_requirements(base_reqs, extra_reqs)
 
     def __init__(
         self,
@@ -341,7 +341,7 @@ class LegacyParallelProcessor(BaseProcessor):
     def requirements(self) -> dict[str, str]:
         base_reqs = super().requirements
         extra_reqs = {}
-        return self._safe_merge_reqs(base_reqs, extra_reqs)
+        return self._merge_requirements(base_reqs, extra_reqs)
 
     def __init__(
         self,

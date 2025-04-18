@@ -620,7 +620,7 @@ class NormalizeText(BaseParallelProcessor):
         extra_reqs = {
             "nemo_text_processing": "",
         }
-        return self._safe_merge_reqs(base_reqs, extra_reqs)
+        return self._merge_requirements(base_reqs, extra_reqs)
 
     def __init__(
         self,
@@ -674,7 +674,7 @@ class InverseNormalizeText(BaseParallelProcessor):
         extra_reqs = {
             "nemo_text_processing": "",
         }
-        return self._safe_merge_reqs(base_reqs, extra_reqs)
+        return self._merge_requirements(base_reqs, extra_reqs)
 
     def __init__(
         self,

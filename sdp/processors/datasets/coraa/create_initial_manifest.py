@@ -39,7 +39,7 @@ class CreateInitialManifestCORAA(BaseParallelProcessor):
         extra_reqs = {
             "huggingface-hub": ">=0.20.3,<0.24.0",
         }
-        return self._safe_merge_reqs(base_reqs, extra_reqs)
+        return self._merge_requirements(base_reqs, extra_reqs)
 
     def __init__(
             self,

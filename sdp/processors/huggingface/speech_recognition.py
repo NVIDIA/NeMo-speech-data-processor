@@ -46,7 +46,7 @@ class ASRTransformers(BaseProcessor):
             "torch" : "",
             "transformers" : ">=0.2.1",
         }
-        return self._safe_merge_reqs(base_reqs, extra_reqs)
+        return self._merge_requirements(base_reqs, extra_reqs)
     
     def __init__(
         self,

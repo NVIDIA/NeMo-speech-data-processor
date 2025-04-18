@@ -46,7 +46,7 @@ class ASRInference(BaseProcessor):
         extra_reqs = {
             "nemo-toolkit[asr]": "==1.23.0",
         }
-        return self._safe_merge_reqs(base_reqs, extra_reqs)
+        return self._merge_requirements(base_reqs, extra_reqs)
 
     def __init__(
         self,
