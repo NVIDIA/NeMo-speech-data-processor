@@ -12,9 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
 
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+import pandas
+
+from sdp.processors.base_processor import (
+    BaseParallelProcessor,
+    LegacyParallelProcessor,
+    BaseProcessor,
+    DataEntry,
+)
 
 
 class CreateInitialManifestByExt(BaseParallelProcessor):
@@ -42,9 +50,33 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         self.extension = extension
 
     def read_manifest(self):
-        output_file = [str(self.raw_data_dir / file) for file in self.raw_data_dir.rglob('*.' + self.extension)]
-        return output_file
+        # Get all files with the specified extension
+        files = list(self.raw_data_dir.rglob('*.' + self.extension))
+        # Get relative paths and then rebuild proper paths to avoid duplication
+        return [str(self.raw_data_dir / file.relative_to(self.raw_data_dir)) for file in files]
 
     def process_dataset_entry(self, data_entry):
         data = {self.output_file_key: data_entry}
         return [DataEntry(data=data)]
+
+
+class CreateCombinedManifests(BaseParallelProcessor):
+    def __init__(
+        self,
+        manifest_list: list[str],
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.manifest_list = manifest_list
+
+    def read_manifest(self):
+        for file in self.manifest_list:
+            with open(file, "rt", encoding="utf8") as fin:
+                for line in fin:
+                    yield json.loads(line)
+
+    def process_dataset_entry(self, data_entry):
+        return [DataEntry(data=data_entry)]
+
+
+

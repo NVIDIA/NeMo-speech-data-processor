@@ -30,7 +30,8 @@ templates_path = ["_templates"]
 
 autodoc_mock_imports = [
     "soundfile",
-    "webvtt"
+    "webvtt",
+    "docx"
 ]
 
 _skipped_autodoc_mock_imports = []
