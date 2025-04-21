@@ -123,6 +123,9 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
 )
+from sdp.processors.modify_manifest.convert_to_tarred_audio_dataset import (
+    ConvertToTarredAudioDataset,
+)
 from sdp.processors.nemo.asr_inference import ASRInference
 from sdp.processors.nemo.pc_inference import PCInference
 from sdp.processors.toloka.accept_if import AcceptIfWERLess
