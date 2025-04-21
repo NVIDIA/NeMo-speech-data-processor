@@ -183,6 +183,9 @@ Data modifications
 .. autodata:: sdp.processors.InverseNormalizeText
    :annotation:
 
+.. autodata:: sdp.processors.ConvertToTarredAudioDataset
+   :annotation:
+
 Data filtering
 ''''''''''''''
 
