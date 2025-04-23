@@ -148,9 +148,9 @@ def run_processors(cfg):
     except ImportError:
         logger.warning("Dask not installed; using multiprocessing for all processors")
         dask_available = False
-        
+    
+    # look for global directions in cfg for dask usage
     global_use_dask = bool(cfg.get("use_dask", True)) and dask_available
-    #use_dask = cfg.get("use_dask", True)
 
     processors_to_run = cfg.get("processors_to_run", "all")
     if processors_to_run == "all":
