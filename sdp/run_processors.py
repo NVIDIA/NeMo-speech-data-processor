@@ -202,7 +202,9 @@ def run_processors(cfg):
             if use_dask and "use_dask" not in processor_cfg:
                 with open_dict(processor_cfg):
                     processor_cfg["use_dask"] = True
-
+            else:
+                with open_dict(processor_cfg):
+                    processor_cfg["use_dask"] = False
             processor = hydra.utils.instantiate(processor_cfg)
             # running runtime tests to fail right-away if something is not
             # matching users expectations
@@ -237,7 +239,12 @@ def run_processors(cfg):
                     logger.info("Shutting down Dask client...")
                     dask_client.close(timeout="60s")
                     logger.info("Dask client shutdown complete")
-    # tmp_dir is removed here after all processing finishes. !!!
 
+        else:
+            # Fallback to sequential processing if Dask is disabled or unavailable.
+            # Each processor will still leverage its own parallelism (e.g., multiprocessing).
+            for proc in processors:
+                logger.info('=> Running processor "%s"', proc)
+                proc.process()
 
-
+#tmp_dir is removed here after all processing finishes. !!!
