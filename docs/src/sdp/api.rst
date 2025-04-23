@@ -346,7 +346,7 @@ impact on the data manifest will be as expected. If you want to do some other ch
 to override this `test` method.
 
 The input data entry and the expected output data entry/entries for
-:meth:`sdp.processors.base_processor.BaseParallelProcessor.test` are specified inside an optional list under the ``test_cases`` that were provided in the object constructor.
+:meth:`sdp.processors.base_processor.BaseParallelProcessor.test` are specified inside an optionally list under the ``test_cases`` that were provided in the object constructor.
 This means you can provided test cases in the YAML config file, and the
 dataset will only be processed if the test cases pass.
 
