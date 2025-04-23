@@ -207,13 +207,12 @@ def run_processors(cfg):
                     processors_cfgs[idx + 1]["input_manifest_file"] = processor_cfg["output_manifest_file"]
             
             flag=processor_cfg.get("use_dask", None)
-            if "use_dask" in processor_cfg:
-                with open_dict(processor_cfg):
-                    del processor_cfg["use_dask"]
+
+            # if no processor-specific flag, fallback to global; otherwise use provided value
             if flag is None:
-                use_dask_flag = global_use_dask and dask_available
+                use_dask_flag = global_use_dask
             else:
-                use_dask_flag = flag and dask_available
+                use_dask_flag = flag
 
             processor = hydra.utils.instantiate(processor_cfg)
             processor.use_dask = use_dask_flag
