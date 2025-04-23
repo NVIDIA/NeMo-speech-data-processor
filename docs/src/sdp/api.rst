@@ -116,6 +116,11 @@ HuggingFace Datasets
 .. autodata:: sdp.processors.CreateInitialManifestHuggingFace
    :annotation:
 
+Toloka
+'''''''
+
+.. autodata:: sdp.processors.AcceptIfWERLess
+
 Lhotse processors
 #################
 
