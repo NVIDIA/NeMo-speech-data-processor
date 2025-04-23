@@ -206,6 +206,7 @@ def run_processors(cfg):
                 with open_dict(processors_cfgs[idx + 1]):
                     processors_cfgs[idx + 1]["input_manifest_file"] = processor_cfg["output_manifest_file"]
             
+            #check if we have processor level directions of using dask
             flag=processor_cfg.get("use_dask", None)
 
             # if no processor-specific flag, fallback to global; otherwise use provided value
