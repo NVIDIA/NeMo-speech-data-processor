@@ -18,15 +18,6 @@ import os
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
-try:
-    import toloka.client
-    import toloka.client.project.template_builder
-    TOLOKA_AVAILABLE = True
-except ImportError:
-    logger.warning("Toloka is currently not supported. CreateTolokaProject processor functionality will be limited.")
-    TOLOKA_AVAILABLE = False
-    toloka = None
-
 
 class CreateTolokaProject(BaseParallelProcessor):
     """
@@ -93,6 +84,15 @@ class CreateTolokaProject(BaseParallelProcessor):
 
         After creating the project, it saves the project details (including the project ID) to a specified file.
         """
+        try:
+            import toloka.client
+            import toloka.client.project.template_builder
+            TOLOKA_AVAILABLE = True
+        except ImportError:
+            logger.warning("Toloka is currently not supported. CreateTolokaProject processor functionality will be limited.")
+            TOLOKA_AVAILABLE = False
+            toloka = None
+
         logger.info("Processing Toloka project creation...")
 
         toloka_client = toloka.client.TolokaClient(self.API_KEY, self.platform)

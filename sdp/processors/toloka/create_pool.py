@@ -19,15 +19,6 @@ import os
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor
 
-try:
-    import toloka.client
-    import toloka.client.project.template_builder
-    TOLOKA_AVAILABLE = True
-except ImportError:
-    logger.warning("Toloka is currently not supported. CreatePool processor functionality will be limited.")
-    TOLOKA_AVAILABLE = False
-    toloka = None
-
 
 class CreateTolokaPool(BaseParallelProcessor):
     """
@@ -101,6 +92,18 @@ class CreateTolokaPool(BaseParallelProcessor):
             A list containing a DataEntry object with the new pool ID if successful, or an empty list if failed.
         """
         # Get project_id from the data entry
+
+        try:
+            import toloka.client
+            import toloka.client.project.template_builder
+            TOLOKA_AVAILABLE = True
+        except ImportError:
+            logger.warning("Toloka is currently not supported. CreatePool processor functionality will be limited.")
+            TOLOKA_AVAILABLE = False
+            toloka = None
+
+
+
         project_id = data_entry.get("project_id")
         if not project_id:
             logger.error("No project_id found in data entry")

@@ -19,14 +19,6 @@ from collections import defaultdict
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
-try:
-    import toloka.client
-    import toloka.client.project.template_builder
-    TOLOKA_AVAILABLE = True
-except ImportError:
-    logger.warning("Toloka is currently not supported. AcceptIf processor functionality will be limited.")
-    TOLOKA_AVAILABLE = False
-    toloka = None
 
 from tqdm import tqdm
 
@@ -125,6 +117,15 @@ class AcceptIfWERLess(BaseParallelProcessor):
 
         This method loads necessary configurations and initializes the Toloka client to interact with Toloka's API.
         """
+        try:
+            import toloka.client
+            import toloka.client.project.template_builder
+            TOLOKA_AVAILABLE = True
+        except ImportError:
+            logger.warning("Toloka is currently not supported. AcceptIf processor functionality will be limited.")
+            TOLOKA_AVAILABLE = False
+            toloka = None
+    
         if not self.API_KEY or not self.platform or not self.pool_id:
             try:
                 with open(self.input_data_file, 'r') as file:

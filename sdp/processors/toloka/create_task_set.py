@@ -20,14 +20,6 @@ from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
-try:
-    import toloka.client
-    import toloka.client.project.template_builder
-    TOLOKA_AVAILABLE = True
-except ImportError:
-    logger.warning("Toloka is currently not supported. CreateTaskSet processor functionality will be limited.")
-    TOLOKA_AVAILABLE = False
-    toloka = None
 
 
 
@@ -105,6 +97,15 @@ class CreateTolokaTaskSet(BaseParallelProcessor):
         This method sets up the necessary components for task creation, including loading the
         pool configuration and initializing the Toloka client.
         """
+        try:
+            import toloka.client
+            import toloka.client.project.template_builder
+            TOLOKA_AVAILABLE = True
+        except ImportError:
+            logger.warning("Toloka is currently not supported. CreateTaskSet processor functionality will be limited.")
+            TOLOKA_AVAILABLE = False
+            toloka = None
+
         self.load_pool_config()
         self.toloka_client = toloka.client.TolokaClient(self.API_KEY, self.platform)
 
