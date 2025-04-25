@@ -21,8 +21,8 @@ from pyannote.audio import Pipeline
 from pyannote.audio.pipelines.utils.hook import ProgressHook
 import torch
 import torchaudio
-from whisperx.audio import SAMPLE_RATE
-from whisperx.vads.pyannote import load_vad_model, Pyannote
+from whisperx.audio import SAMPLE_RATE, load_audio
+from whisperx.vad import load_vad_model, merge_chunks
 
 
 def has_overlap(turn, overlaps):
@@ -110,7 +110,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
                 }
             )
         
-        vad_segments = Pyannote.merge_chunks(vad_segments, merge_max_length, onset=self.vad_onset)
+        vad_segments = merge_chunks(vad_segments, merge_max_length, onset=self.vad_onset)
         
         return vad_segments
     

@@ -66,6 +66,7 @@ class SplitLongAudio(BaseProcessor):
         results = []
         for metadata in manifest:
             if metadata['duration'] < self.suggested_max_len:
+                metadata['split_filepaths'] = None
                 results.append(metadata)
                 continue
             splits = []
@@ -110,7 +111,7 @@ class SplitLongAudio(BaseProcessor):
             split_filepath = os.path.join(path, filename[:-4] + '.{}_of_{}.wav'.format(1+len(splits), 1+len(splits)))
             last_frame = len(audio[0])-1
             # skip audios that are too short
-            if last_frame-split_start > self.min_len * sr:
+            if last_frame-split_start > self.min_len * sr and last_frame-split_start < (self.suggested_max_len + 1)*sr:
                 torchaudio.save(split_filepath, audio[:, split_start:], sr)
                 split_filepaths.append(split_filepath)
                 split_durations.append((last_frame-split_start)/sr)
@@ -132,6 +133,7 @@ class SplitLongAudio(BaseProcessor):
 
         with open(self.output_manifest_file, 'w') as f:
             ndjson.dump(results, f)
+
 
 class JoinSplitAudioMetadata(BaseProcessor):
     """A processor for joining metadata of previously split audio files.
@@ -170,13 +172,15 @@ class JoinSplitAudioMetadata(BaseProcessor):
         for metadata in manifest:
             if 'split_filepaths' in metadata:
                 meta_entries.append(metadata)
-            else:
-                fp_w.write(f"{json.dumps(metadata)}\n")
 
         for meta_entry in meta_entries:
             # Find all parts
             transcripts = []
             alignments = []
+            if meta_entry['split_filepaths'] is None:
+                del meta_entry['split_filepaths']
+                fp_w.write(f"{json.dumps(meta_entry)}\n")
+                continue
             for idx, split in enumerate(meta_entry['split_filepaths']):
                 entry = next(filter(lambda x: x['resampled_audio_filepath'] == split, manifest))
                 transcripts.append(entry['text'])
@@ -194,4 +198,5 @@ class JoinSplitAudioMetadata(BaseProcessor):
             fp_w.write(f"{json.dumps(meta_entry)}\n")
         
         fp_w.close()
+
 

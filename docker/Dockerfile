@@ -21,23 +21,19 @@ RUN apt-get update \
 # Update pip
 RUN pip install --upgrade pip
 
-# Clone the NeMo SDP repository
+# Install NeMo SDP
 WORKDIR /src
-RUN git clone https://github.com/NVIDIA/NeMo-speech-data-processor.git
-
-WORKDIR /src/NeMo-speech-data-processor
-#need to install numpy before reqs, even thougth it present in reqs (cause it requred to install [python-sox], otherwise we face an error)
-RUN pip install numpy 
-RUN find requirements/ -name "*.txt" -exec pip install -r {} \;
+RUN git clone https://github.com/NVIDIA/NeMo-speech-data-processor.git && cd NeMo-speech-data-processor && git checkout 29b9b1ec0ceaf3ffa441c1d01297371b3f8e11d2 && pip install -r requirements/main.txt
+RUN pip install transformers accelerate ndjson torchaudio pyannote-audio jupyter notebook
+RUN pip install flash-attn --no-build-isolation
+RUN pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
+RUN pip install whisperx
 RUN wget https://github.com/state-spaces/mamba/releases/download/v2.2.2/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
 RUN pip install mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
 
+RUN pip install megatron-core transformer_engine[pytorch] pyarabic
 
-# Update NeMo to allow timestamps
-RUN git clone https://github.com/NVIDIA/NeMo.git /src/NeMo/
-WORKDIR /src/NeMo
-RUN git reset --hard 0547550ad803fce1e4a019f92e9c59f4c902e7e0
-RUN ./reinstall.sh
+RUN pip install nemo_toolkit['all']==2.1.0 
 RUN pip install python-swiftclient ffmpeg-python
 
 # Set working directory back to NeMo-speech-data-processor

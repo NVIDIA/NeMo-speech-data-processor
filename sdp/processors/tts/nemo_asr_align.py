@@ -177,12 +177,13 @@ class NeMoASRAligner(BaseProcessor):
         if not self.infer_segment_only:
             transcribe_manifest = []
             for data in manifest:
-                if 'split_filepaths' not in data and data['duration'] > self.min_len:
+                if  (('split_filepaths' in data and data['split_filepaths'] is None) or ('split_filepaths' not in data)) and data['duration'] > self.min_len:
                     transcribe_manifest.append(data)
                 else:
                     data['text'] = ''
                     data['alignment'] = []
                     results.append(data)
+
 
             files = [x['resampled_audio_filepath'] for x in transcribe_manifest]
 

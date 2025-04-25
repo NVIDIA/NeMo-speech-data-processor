@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ndjson
+
 import os
+import ndjson
+import subprocess
 import soundfile as sf
 from pathlib import Path
+
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
@@ -86,20 +89,28 @@ class CreateInitialManifestYTC(BaseParallelProcessor):
         output_audio_path = os.path.join(self.resampled_audio_dir, audio_filename + '.' + self.target_format)
 
         # Convert audio file to target sample rate and format
+        # Convert audio file to target sample rate and format
         if not os.path.exists(output_audio_path):
             if input_audio_path.lower().endswith(".wav"):
                 cmd = f'sox --no-dither -V1 "{input_audio_path}" -r {self.target_sample_rate} -c 1 -b 16 "{output_audio_path}"'
             else:
                 cmd = f'ffmpeg -i  "{input_audio_path}" -ar {self.target_sample_rate} -ac 1 -ab 16 "{output_audio_path}" -v error'
             try:
-                os.system(cmd)
-            except Exception as e:
-                print(e)
+                subprocess.run(cmd, shell=True, check=True, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               text=True)  # Ensures output is in string formats)
+            except subprocess.CalledProcessError as e:
+                print("Exception occurred while converting audio file: ", e, e.stderr)
+                print(f'Error converting {input_audio_path} to {output_audio_path}. Hence skipping this entry.')
                 exit(1)
-
+        
         metadata['audio_filepath'] = input_audio_path
         metadata['resampled_audio_filepath'] = output_audio_path
-        metadata['duration'] = sf.info(output_audio_path).duration
-
+        try:
+            metadata['duration'] = sf.info(output_audio_path).duration
+        except Exception as e:
+            print(f'Error getting duration of {output_audio_path}. Hence not adding duration to metadata.')
+        
         return [DataEntry(data=metadata)]
+
 
