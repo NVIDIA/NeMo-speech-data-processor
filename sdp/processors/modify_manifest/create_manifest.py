@@ -59,12 +59,18 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
 
 
 class CreateCombinedManifests(BaseParallelProcessor):
-    """
-    Processor for creating an initial dataset manifest by saving filepaths with a common extension to the field specified in output_field.
+    """Reads JSON lines from specified files and creates a combined manifest.
+
+    This processor iterates over files listed in `manifest_list`, reads each file line by line, 
+    and yields the parsed JSON data from each line.
 
     Args:
-        manifest_list (list(str)): The root directory of the files to be added to the initial manifest. This processor will recursively look for files with the extension 'extension' inside this directory.
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        manifest_list (list(str)): A list of file paths or directories to process. The processor will 
+                                   recursively read files within the directories and expect each file to contain JSON data.
+        **kwargs: Additional keyword arguments passed to the base class `BaseParallelProcessor`.
+
+    Returns:
+        A generator that yields parsed JSON data from each line in the files listed in `manifest_list`.
     """
     def __init__(
         self,
