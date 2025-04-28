@@ -227,8 +227,8 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
 
             # iterate over segments
             for speech_turn, track, speaker in diarization.itertracks(yield_label=True):
-                if 'id' in metadata:
-                    speaker_id = metadata['id'] + '_' + speaker
+                if 'audio_item_id' in metadata:
+                    speaker_id = metadata['audio_item_id'] + '_' + speaker
                 elif 'speaker_id' in metadata:
                     speaker_id = metadata['speaker_id'] + '_' + speaker
                 else:
