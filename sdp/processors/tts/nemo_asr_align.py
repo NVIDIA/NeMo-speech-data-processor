@@ -99,6 +99,7 @@ class NeMoASRAligner(BaseProcessor):
         self.split_batch_size = split_batch_size
         self.override_cfg.num_workers = num_workers
         self.override_cfg.return_hypotheses = True
+        self.override_cfg.timestamps = True
 
     def get_alignments_text(self, hypotheses):
         """Extract word alignments and text from model hypotheses.
