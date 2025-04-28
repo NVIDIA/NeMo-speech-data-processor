@@ -26,13 +26,25 @@ from torchaudio.pipelines import SQUIM_OBJECTIVE
 
 
 class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
-    """A processor class for calculating Squim objective quality metrics.
-    
-    This class uses a pre-trained Squim model to calculate the objective quality metrics
-    of audio files. It loads the model, processes each audio file in the manifest, and
-    updates the manifest with the calculated metrics.
-    """
+    """This processor calculates Squim quality metrics for audio files.
 
+    It uses a pre-trained Squim model to calculate audio quality metrics like PESQ, STOI
+    and SI-SDR for each audio segment in the manifest.
+
+    Args:
+        None
+
+    Returns:
+        The same data as in the input manifest, but with quality metrics added to each
+        segment's metrics field.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.tts.metrics.TorchSquimObjectiveQualityMetricsProcessor
+              input_manifest_file: ${workspace_dir}/manifest.json
+              output_manifest_file: ${workspace_dir}/manifest_squim.json
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.model = SQUIM_OBJECTIVE.get_model().cuda()
@@ -102,17 +114,28 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
 
 
 class BandwidthEstimationProcessor(BaseProcessor):
-    """A processor class for estimating audio bandwidth.
-    
-    This class analyzes audio files to estimate their effective bandwidth by examining
-    the power spectrum and determining the highest frequency with significant energy
-    content above a threshold.
+    """This processor estimates audio bandwidth by analyzing power spectra.
+
+    It analyzes audio files to estimate their effective bandwidth by examining the power
+    spectrum and determining the highest frequency with significant energy content above
+    a threshold.
 
     Args:
-        n_fft (int, optional): Size of FFT window. Defaults to 512.
-        stride_seconds (float, optional): Time between successive FFT windows in seconds. Defaults to 0.01.
-        top_db (float, optional): Maximum decibel value for power spectrum normalization. Defaults to 100.0.
-        frequency_threshold (float, optional): Threshold in dB below peak for bandwidth estimation. Defaults to -50.0.
+        n_fft (int, optional): Size of FFT window. Defaults to 512
+        stride_seconds (float, optional): Time between successive FFT windows in seconds. Defaults to 0.01
+        top_db (float, optional): Maximum decibel value for power spectrum normalization. Defaults to 100.0
+        frequency_threshold (float, optional): Threshold in dB below peak for bandwidth estimation. Defaults to -50.0
+
+    Returns:
+        The same data as in the input manifest, but with bandwidth estimates added
+        to each segment.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.tts.metrics.BandwidthEstimationProcessor
+              input_manifest_file: ${workspace_dir}/manifest.json
+              output_manifest_file: ${workspace_dir}/manifest_with_bandwidth.json
     """
     def __init__(
         self,
@@ -160,12 +183,6 @@ class BandwidthEstimationProcessor(BaseProcessor):
         return bandwidth
 
     def process(self):
-        """Process the audio files in the manifest to estimate bandwidth.
-        
-        Reads the input manifest, processes each audio segment to estimate its bandwidth,
-        and writes the results to the output manifest with bandwidth measurements added
-        to the metrics field of each segment.
-        """
         with open(self.input_manifest_file) as f:
             manifest = ndjson.load(f)
 

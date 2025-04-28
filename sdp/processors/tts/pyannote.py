@@ -21,7 +21,7 @@ from pyannote.audio import Pipeline
 from pyannote.audio.pipelines.utils.hook import ProgressHook
 import torch
 import torchaudio
-from whisperx.audio import SAMPLE_RATE, load_audio
+from whisperx.audio import SAMPLE_RATE
 from whisperx.vad import load_vad_model, merge_chunks
 
 
@@ -51,11 +51,11 @@ def has_overlap(turn, overlaps):
     return turn_overlaps
 
 class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
-    """A processor for speaker diarization and overlap detection using PyAnnote.
+    """This processor performs speaker diarization and overlap detection using PyAnnote.
 
-    This class processes audio files to identify different speakers and detect overlapping speech
-    segments. It uses PyAnnote's speaker diarization pipeline and VAD (Voice Activity Detection)
-    to segment audio into speaker turns and identify regions of overlapping speech.
+    It processes audio files to identify different speakers and detect overlapping speech
+    segments using PyAnnote's speaker diarization pipeline and VAD (Voice Activity Detection).
+    The processor segments audio into speaker turns and identifies regions with overlapping speech.
 
     Args:
         hf_token (str): HuggingFace authentication token for accessing pretrained models
@@ -64,6 +64,18 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
         min_length (float, optional): Minimum length of segments in seconds. Defaults to 0.5
         max_length (float, optional): Maximum length of segments in seconds. Defaults to 40
         device (str, optional): Device to run the models on ('cuda' or 'cpu'). Defaults to "cuda"
+
+    Returns:
+        The same data as in the input manifest, but with speaker diarization and overlap
+        detection information added to each segment.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.tts.pyannote.PyAnnoteDiarizationAndOverlapDetection
+              input_manifest_file: ${workspace_dir}/manifest.json
+              output_manifest_file: ${workspace_dir}/manifest_diarized.json
+              hf_token: ${hf_token}
     """
     def __init__(self,
                  hf_token: str,

@@ -23,15 +23,27 @@ from copy import deepcopy
 from joblib import Parallel, delayed
 
 class SplitLongAudio(BaseProcessor):
-    """A processor for splitting long audio files into smaller segments.
+    """This processor splits long audio files into smaller segments.
 
-    This processor splits audio files that exceed a specified maximum length into smaller segments.
-    Splits are made during natural pauses in the audio to maintain speech coherence.
+    It processes audio files that exceed a specified maximum length by splitting them into
+    smaller segments at natural pauses in the audio to maintain speech coherence.
 
     Args:
-        suggested_max_len (float): Target maximum length for audio segments in seconds. Defaults to 3600.
-        min_pause_len (float): Minimum length of a pause to consider for splitting in seconds. Defaults to 1.0.
-        min_len (float): Minimum length for any split segment in seconds. Defaults to 1.0.
+        suggested_max_len (float): Target maximum length for audio segments in seconds. Defaults to 3600
+        min_pause_len (float): Minimum length of a pause to consider for splitting in seconds. Defaults to 1.0
+        min_len (float): Minimum length for any split segment in seconds. Defaults to 1.0
+
+    Returns:
+        The same data as in the input manifest, but with long audio files split into
+        multiple segments with updated paths and durations.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.tts.split.SplitLongAudio
+              input_manifest_file: ${workspace_dir}/manifest.json
+              output_manifest_file: ${workspace_dir}/manifest_split.json
+              suggested_max_len: 3600
     """
     def __init__(self,
                  suggested_max_len: float = 3600,
@@ -138,9 +150,15 @@ class SplitLongAudio(BaseProcessor):
 class JoinSplitAudioMetadata(BaseProcessor):
     """A processor for joining metadata of previously split audio files.
 
-    This processor combines the metadata (transcripts and alignments) of audio files
+    This processor combines the metadata (transcripts and alignments) of audio files 
     that were previously split by the SplitLongAudio processor. It adjusts timestamps
     and concatenates transcripts to recreate the original audio's metadata.
+
+    Args:
+        None
+
+    Returns:
+        The same data as in the input manifest, but with split audio files joined together.
     """
     def __init__(self,
                  **kwargs

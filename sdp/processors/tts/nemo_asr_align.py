@@ -20,24 +20,36 @@ import nemo.collections.asr as nemo_asr
 from sdp.processors.base_processor import BaseProcessor
 
 class NeMoASRAligner(BaseProcessor):
-    """A processor class for aligning ASR models with audio data.
-    
-    This class uses a pre-trained ASR model to transcribe audio files and generate
-    alignments of words with their corresponding timestamps. It supports both CTC
-    and RNNT decoders and can handle both segment-level and segment-only inference.
+    """This processor aligns text and audio using NeMo ASR models.
+
+    It uses a pre-trained ASR model to transcribe audio files and generate word-level
+    alignments with timestamps. The processor supports both CTC and RNNT decoders and
+    can process either full audio files or just specific segments.
 
     Args:
-        model_name (str): Name of the pretrained model to use. Defaults to "nvidia/parakeet-tdt_ctc-1.1b".
-        model_path (str, optional): Path to a local model file. If provided, overrides model_name.
-        min_len (float): Minimum length of audio segments to process in seconds. Defaults to 0.1.
-        max_len (float): Maximum length of audio segments to process in seconds. Defaults to 40.
-        parakeet (bool): Whether the model is a Parakeet model. Affects time stride calculation. Defaults to True.
-        ctc (bool): Whether to use CTC decoding. Defaults to False.
-        batch_size (int): Batch size for processing. Defaults to 32.
-        num_workers (int): Number of workers for data loading. Defaults to 10.
-        split_batch_size (int): Maximum size for splitting large batches. Defaults to 5000.
-        timestamp_type (str): Type of timestamp to generate ("word" or "char"). Defaults to "word".
-        infer_segment_only (bool): Whether to process only segments instead of full audio. Defaults to False.
+        model_name (str): Name of pretrained model to use. Defaults to "nvidia/parakeet-tdt_ctc-1.1b"
+        model_path (str, optional): Path to local model file. If provided, overrides model_name
+        min_len (float): Minimum length of audio segments to process in seconds. Defaults to 0.1
+        max_len (float): Maximum length of audio segments to process in seconds. Defaults to 40
+        parakeet (bool): Whether model is a Parakeet model. Affects time stride calculation. Defaults to True
+        ctc (bool): Whether to use CTC decoding. Defaults to False
+        batch_size (int): Batch size for processing. Defaults to 32
+        num_workers (int): Number of workers for data loading. Defaults to 10
+        split_batch_size (int): Maximum size for splitting large batches. Defaults to 5000
+        timestamp_type (str): Type of timestamp to generate ("word" or "char"). Defaults to "word"
+        infer_segment_only (bool): Whether to process only segments instead of full audio. Defaults to False
+
+    Returns:
+        The same data as in the input manifest, but with word-level alignments added
+        to each segment.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.tts.nemo_asr_align.NeMoASRAligner
+              input_manifest_file: ${workspace_dir}/manifest.json
+              output_manifest_file: ${workspace_dir}/manifest_aligned.json
+              parakeet: True
     """
     def __init__(self,
             model_name="nvidia/parakeet-tdt_ctc-1.1b",

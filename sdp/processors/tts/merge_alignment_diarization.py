@@ -17,23 +17,30 @@ from sdp.processors.base_processor import BaseProcessor
 
 
 class MergeAlignmentDiarization(BaseProcessor):
-    """A processor class for merging alignment and diarization information.
-    
-    This class processes a manifest file containing alignment and diarization information,
-    and merges the alignment information into the segments. 
+    """This processor merges alignment and diarization information from a manifest file.
+
+    It takes a manifest file containing both alignment and diarization information and
+    merges the alignment information into the diarization segments.
+
+    Args:
+        None
+
+    Returns:
+        The same data as in the input manifest, but with alignment information merged into
+        the diarization segments.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.tts.merge_alignment_diarization.MergeAlignmentDiarization
+              input_manifest_file: ${workspace_dir}/manifest.json
+              output_manifest_file: ${workspace_dir}/manifest_merged.json
     """
-    
     def __init__(self,
             **kwargs):
         super().__init__(**kwargs)
 
     def process(self):
-        """Processes the manifest file containing alignment and diarization information.
-        
-        This method:
-        1. Reads the manifest file containing alignment and diarization information
-        2. Merges the alignment information into the segments
-        """
         with open(self.input_manifest_file) as f:
             manifest = ndjson.load(f)
 

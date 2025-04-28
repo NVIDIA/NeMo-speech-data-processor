@@ -18,8 +18,31 @@ from typing import List, Union
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
-    """
-    This processor merges the adjacent same speaker segments and splits the segments based on the duration, punctuation, and bandwidth.
+    """This processor merges adjacent segments from the same speaker and splits segments.
+
+    It processes segments by merging those from the same speaker that are adjacent, then
+    splits segments based on duration limits, punctuation marks, and audio quality metrics
+    like bandwidth.
+
+    Args:
+        min_duration (float): Minimum duration in seconds for a segment. Defaults to 5
+        max_duration (float): Maximum duration in seconds for a segment. Defaults to 20
+        max_pause (float): Maximum pause duration in seconds between merged segments. Defaults to 2
+        terminal_punct_marks (str): String containing punctuation marks to split on. Defaults to ".!?。？？！。"
+        punctuation_split_only (bool): Whether to only split on punctuation. Defaults to False
+
+    Returns:
+        The same data as in the input manifest, but with segments merged and split according
+        to the specified parameters.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.tts.prepare_tts_segments.PrepareTTSSegmentsProcessor
+              input_manifest_file: ${workspace_dir}/manifest.json
+              output_manifest_file: ${workspace_dir}/manifest_processed.json
+              min_duration: 5
+              max_duration: 20
     """
     def __init__(self, 
                 min_duration: float = 5, 

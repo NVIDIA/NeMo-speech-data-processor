@@ -16,15 +16,30 @@
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
 import json
 import ndjson
-import re
-from tqdm import tqdm
 from nemo_text_processing.inverse_text_normalization.inverse_normalize import InverseNormalizer
-import nemo.collections.asr as nemo_asr
 from nemo.collections.nlp.models import PunctuationCapitalizationModel
-import pyarabic.araby as araby
 
 class InverseTextNormalizationProcessor(BaseParallelProcessor):
+    """This processor performs inverse text normalization on text data.
 
+    It normalizes text data from various languages into a standard format using the InverseNormalizer.
+    The processor converts written text representations into their spoken form (e.g. "123" -> "one hundred twenty three").
+
+    Args:
+        language (str): Language code for the text normalization. Defaults to "en"
+
+    Returns:
+        The same data as in the input manifest, but with an additional "text_ITN" field containing
+        the inverse normalized text for each segment.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.tts.text.InverseTextNormalizationProcessor
+              input_manifest_file: ${workspace_dir}/manifest.json
+              output_manifest_file: ${workspace_dir}/manifest_itn.json
+              language: "en"
+    """
     def __init__(self, 
                  language="en",
                  **kwargs):
@@ -51,6 +66,26 @@ class InverseTextNormalizationProcessor(BaseParallelProcessor):
 
 
 class PunctuationAndCapitalizationOnSegmentsProcessor(BaseProcessor):
+    """This processor performs punctuation and capitalization on segments text data.
+
+    It capitalizes the first letter of each sentence and adds punctuation marks to the text.
+
+    Args:
+        model_name (str): Name of the pretrained model to use. Defaults to "punctuation_en_bert"
+        model_path (str, optional): Path to the local PNC model file. If provided, overrides model_name
+        batch_size (int, optional): Batch size for processing. Defaults to 64
+
+    Returns:
+        The same data as in the input manifest, but with punctuation and capitalization added
+        to each segment.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.tts.text.PunctuationAndCapitalizationOnSegmentsProcessor
+              input_manifest_file: ${workspace_dir}/manifest.json
+              output_manifest_file: ${workspace_dir}/manifest_pnc.json
+    """
     def __init__(self,
             model_name="punctuation_en_bert",
             model_path=None,
@@ -92,6 +127,26 @@ class PunctuationAndCapitalizationOnSegmentsProcessor(BaseProcessor):
             ndjson.dump(results, f)
 
 class PunctuationAndCapitalizationProcessor(BaseProcessor):
+    """This processor performs punctuation and capitalization on text data.
+
+    It capitalizes the first letter of each sentence and adds punctuation marks to the text.
+
+    Args:
+        model_name (str): Name of the pretrained model to use. Defaults to "punctuation_en_bert"
+        model_path (str, optional): Path to the local PNC model file. If provided, overrides model_name
+        batch_size (int, optional): Batch size for processing. Defaults to 64
+
+    Returns:
+        The same data as in the input manifest, but with punctuation and capitalization added
+        to each segment.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.tts.text.PunctuationAndCapitalizationProcessor
+              input_manifest_file: ${workspace_dir}/manifest.json
+              output_manifest_file: ${workspace_dir}/manifest_pnc.json
+    """
     def __init__(self,
             model_name="punctuation_en_bert",
             model_path=None,
