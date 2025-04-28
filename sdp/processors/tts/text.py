@@ -135,25 +135,3 @@ class PunctuationAndCapitalizationProcessor(BaseProcessor):
                     i+=1
                 f.write(json.dumps(metadata) + "\n")
 
-class ArabicRemoveDiacriticsProcessor(BaseProcessor):
-
-    def __init__(self, 
-                 **kwargs):
-        super().__init__(**kwargs)
-
-    def process(self):
-        with open(self.input_manifest_file) as f:
-            manifest = ndjson.load(f)
-        
-        results = []
-        for metadata in manifest:
-            is_segmented_entry = ('split_filepaths' in metadata and metadata['split_filepaths'] is None) or ('split_filepaths' not in metadata)
-            if  is_segmented_entry and ('text' in metadata and metadata['text'] != ''):
-                metadata["text"] = araby.strip_diacritics(metadata["text"])
-                for word in metadata['alignment']:
-                    if word['word'] != '':
-                        word['word'] = araby.strip_diacritics(word['word'])
-            results.append(metadata)
-                
-        with open(self.output_manifest_file, 'w') as f:
-            ndjson.dump(results, f)

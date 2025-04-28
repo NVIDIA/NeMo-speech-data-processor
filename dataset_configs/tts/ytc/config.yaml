@@ -14,8 +14,7 @@ documentation: |
   7. Performs inverse text normalization
   8. Calculates audio quality metrics using TorchSQUIM
   9. Estimates audio bandwidth
-  10. Detects potential hallucinations in the aligned text
-  11. Prepares TTS segments
+  10. Prepares TTS segments
 
   Required inputs:
   - input_manifest_file: Path to input manifest file
@@ -91,13 +90,9 @@ processors:
   - _target_: sdp.processors.tts.metrics.BandwidthEstimationProcessor
     input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_squim.json"
     output_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_bandwidth.json"
-  
-  - _target_: sdp.processors.tts.metrics.HallucinationDetectionProcessor
-    input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_bandwidth.json"
-    output_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_hallucination.json"
 
   - _target_: sdp.processors.tts.prepare_tts_segments.PrepareTTSSegmentsProcessor
-    input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_hallucination.json"
+    input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_bandwidth.json"
     output_manifest_file: "${final_manifest}"
     terminal_punct_marks:  ".!?"
 

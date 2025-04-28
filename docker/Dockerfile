@@ -13,6 +13,9 @@ RUN apt-get update \
     git \
     sox \
     libsox-fmt-mp3 \
+    imagemagick \
+    ninja-build \
+    sox \
     unzip \
     wget \
  && apt-get clean \
@@ -31,10 +34,10 @@ RUN pip install whisperx
 RUN wget https://github.com/state-spaces/mamba/releases/download/v2.2.2/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
 RUN pip install mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
 
-RUN pip install megatron-core transformer_engine[pytorch] pyarabic
+RUN pip install megatron-core transformer_engine[pytorch]
 
 RUN pip install nemo_toolkit['all']==2.1.0 
-RUN pip install python-swiftclient ffmpeg-python
+RUN pip install ffmpeg-python
 
 # Set working directory back to NeMo-speech-data-processor
 WORKDIR /src/NeMo-speech-data-processor
