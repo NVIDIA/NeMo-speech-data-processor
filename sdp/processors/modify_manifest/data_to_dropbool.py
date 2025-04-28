@@ -877,7 +877,7 @@ class DropDuplicates(BaseProcessor):
 
     Args:
         drop_key (str): A string specifying the key in the data entries used to determine uniqueness. Defaults to "text".
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
     Returns:
         A list of unique data entries after removing duplicates.

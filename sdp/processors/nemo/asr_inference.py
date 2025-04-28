@@ -35,7 +35,7 @@ class ASRInference(BaseProcessor):
         pretrained_model (str, Optional): the name or the filepath of the pretrained NeMo ASR model
             which will be used to do inference.
         batch_size (int): the batch size to use for ASR inference. Defaults to 32.
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
     Returns:
          The same data as in the input manifest with an additional field
