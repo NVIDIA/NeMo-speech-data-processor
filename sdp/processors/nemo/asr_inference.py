@@ -32,9 +32,10 @@ class ASRInference(BaseProcessor):
     ASR predictions will be saved in the ``pred_text`` key.
 
     Args:
-        pretrained_model (str): the name or the filepath of the pretrained NeMo ASR model
+        pretrained_model (str, Optional): the name or the filepath of the pretrained NeMo ASR model
             which will be used to do inference.
         batch_size (int): the batch size to use for ASR inference. Defaults to 32.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     Returns:
          The same data as in the input manifest with an additional field

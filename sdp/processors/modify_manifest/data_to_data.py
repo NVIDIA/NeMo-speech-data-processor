@@ -194,7 +194,7 @@ class SoxConvert(BaseParallelProcessor):
         output_format (str): Format of the output audio file.
         rate (int): Sample rate of the output audio file.
         channels (int): Number of channels of the output audio file.
-        workspace_dir (str, optional): Path to the workspace directory. Defaults to None.
+        workspace_dir (str, Optional): Path to the workspace directory. Defaults to None.
     """
 
     def __init__(

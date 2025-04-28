@@ -32,35 +32,21 @@ from tqdm import tqdm
 
 
 class RejectIfBanned(BaseParallelProcessor):
-    """
-    RejectIfBanned is a class for rejecting Toloka assignments if the user is banned.
-    This class uses Toloka's API to identify banned users and reject their assignments.
+    """Rejects Toloka assignments if the user is banned.
 
-    Attributes:
-    ----------
-    input_data_file : str
-        The path to the input data file containing API configurations.
-    input_pool_file : str
-        The path to the input pool file containing pool configurations.
-    config_file : str, optional
-        The path to the configuration file. Defaults to None.
-    API_KEY : str, optional
-        The API key used to authenticate with Toloka's API. Defaults to None, in which case it tries to
-        load the key from environment variables or config file.
-    platform : str, optional
-        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). Defaults to None, meaning it will
-        try to load from environment variables or the config file.
-    pool_id : str, optional
-        The ID of the pool from which assignments will be retrieved. Defaults to None.
+    This class connects to Toloka, checks the user’s ban status, and rejects any assignments 
+    from users who are identified as banned.
 
-    Methods:
-    -------
-    load_config()
-        Loads configuration data from a config file to populate API_KEY, platform, and pool_id attributes.
-    prepare()
-        Prepares the class by loading API configuration, pool configuration, and initializing Toloka client.
-    process()
-        Rejects Toloka assignments if the user is in the banned list.
+    Args:
+        input_data_file (str): Path to the input data file containing API configurations.
+        input_pool_file (str): Path to the input pool file containing pool configurations.
+        config_file (str): Path to the configuration file. Default: None.
+        API_KEY (str): The API key for authenticating with Toloka's API. Default: None.
+        platform (str): The Toloka environment to use ('PRODUCTION' or 'SANDBOX'). Default: None.
+        pool_id (str): The ID of the Toloka pool to retrieve assignments from. Default: None.
+
+    Returns:
+        A list of rejected assignments for users who are banned.
     """
     def __init__(
         self,

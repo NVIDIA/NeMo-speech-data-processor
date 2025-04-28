@@ -19,8 +19,6 @@ import pandas
 
 from sdp.processors.base_processor import (
     BaseParallelProcessor,
-    LegacyParallelProcessor,
-    BaseProcessor,
     DataEntry,
 )
 
@@ -61,6 +59,13 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
 
 
 class CreateCombinedManifests(BaseParallelProcessor):
+    """
+    Processor for creating an initial dataset manifest by saving filepaths with a common extension to the field specified in output_field.
+
+    Args:
+        manifest_list (list(str)): The root directory of the files to be added to the initial manifest. This processor will recursively look for files with the extension 'extension' inside this directory.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+    """
     def __init__(
         self,
         manifest_list: list[str],

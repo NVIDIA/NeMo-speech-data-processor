@@ -32,35 +32,18 @@ except ImportError:
 
 
 class CreateTolokaTaskSet(BaseParallelProcessor):
-    """
-    CreateTolokaTaskSet is a class for creating task sets on the Toloka crowdsourcing platform.
-    This class uses Toloka's API to create task sets based on user-provided configurations and input data.
+    """Creates a set of tasks in a Toloka pool based on user-provided configurations and input data.
 
-    Attributes:
-    ----------
-    input_data_file : str
-        The path to the input data file containing API configurations.
-    input_pool_file : str
-        The path to the input pool file containing pool configurations.
-    limit : float, optional
-        The percentage limit of tasks to read from the manifest file. Defaults to 100.
-    API_KEY : str
-        The API key used to authenticate with Toloka's API, retrieved from the TOLOKA_API_KEY environment variable.
-    platform : str
-        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'), retrieved from the TOLOKA_PLATFORM environment variable.
-    pool_id : str
-        The ID of the pool to which tasks will be added, read from the input_pool_file.
+    This class reads data from a manifest file, loads the target pool configuration,
+    and uses Toloka's API to create and upload tasks into the specified pool.
 
-    Methods:
-    -------
-    prepare()
-        Prepares the class by loading pool configuration and initializing Toloka client.
-    load_pool_config()
-        Loads pool configuration data from the input pool file.
-    read_manifest() -> List[dict]
-        Reads and returns a portion of the manifest data from the input manifest file based on the specified limit.
-    process()
-        Creates Toloka tasks based on manifest data and adds them to the specified pool.
+    Args:
+        input_data_file (str): Path to the input data file containing API configurations.
+        input_pool_file (str): Path to the input pool file containing pool configurations.
+        limit (float): Percentage of tasks to load from the manifest file. Default: 100.
+
+    Returns:
+        A set of tasks created and uploaded to the specified Toloka pool.
     """
     def __init__(
         self,
@@ -69,18 +52,6 @@ class CreateTolokaTaskSet(BaseParallelProcessor):
         limit: float = 100,
         **kwargs,
     ):
-        """
-        Constructs the necessary attributes for the CreateTolokaTaskSet class.
-
-        Parameters:
-        ----------
-        input_data_file : str
-            The path to the input data file containing project configurations.
-        input_pool_file : str
-            The path to the input pool file containing pool configurations.
-        limit : float, optional
-            The percentage limit of tasks to read from the manifest file. Defaults to 100.
-        """
         super().__init__(**kwargs)
         self.input_data_file = input_data_file
         self.input_pool_file = input_pool_file

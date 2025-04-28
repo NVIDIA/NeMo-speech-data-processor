@@ -21,6 +21,17 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
 class CreateSentenceSet(BaseParallelProcessor):
+    """Creates a set of sentences from a DOCX file by splitting its content into individual sentences.
+
+    This processor reads a DOCX file, extracts the full text, splits it into sentences
+    based on the Armenian period character, and wraps each sentence into a `DataEntry`.
+
+    Args:
+        **kwargs: Additional arguments passed to the base `BaseParallelProcessor` class.
+
+    Returns:
+        A list of `DataEntry` objects, each containing a single extracted sentence.
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
