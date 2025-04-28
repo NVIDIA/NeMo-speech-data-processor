@@ -268,6 +268,27 @@ Data filtering
 .. autodata:: sdp.processors.DropDuplicates
    :annotation:
 
+.. autodata:: sdp.processors.AcceptIfWERLess
+    :annotation:
+
+.. autodata:: sdp.processors.CreateTolokaPool
+    :annotation:
+
+.. autodata:: sdp.processors.CreateTolokaProject
+    :annotation:
+
+.. autodata:: sdp.processors.CreateSentenceSet
+    :annotation:
+
+.. autodata:: sdp.processors.CreateTolokaTaskSet
+    :annotation:
+
+.. autodata:: sdp.processors.GetTolokaResults
+    :annotation:
+
+.. autodata:: sdp.processors.RejectIfBanned
+    :annotation:
+
 Miscellaneous
 #############
 
@@ -305,6 +326,9 @@ Miscellaneous
    :annotation:
 
 .. autodata:: sdp.processors.ApplyInnerJoin
+   :annotation:
+
+.. autodata:: sdp.processors.CreateCombinedManifests
    :annotation:
 
 .. _sdp-base-classes:
