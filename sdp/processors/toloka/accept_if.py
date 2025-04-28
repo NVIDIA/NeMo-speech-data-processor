@@ -49,6 +49,16 @@ class AcceptIfWERLess(BaseParallelProcessor):
 
     Returns:
         A manifest with accepted assignments from Toloka based on the WER threshold.
+        
+    Example:
+    .. code-block:: yaml
+
+        - _target_: sdp.processors.toloka.accept_if.AcceptIfWERLess
+            input_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+            output_manifest_file: ${workspace_dir}/result_manifest_pred_review.json
+            input_data_file: ${workspace_dir}/data_file.json
+            input_pool_file: ${workspace_dir}/taskpool.json
+            threshold: 50
     """
     
     def __init__(
