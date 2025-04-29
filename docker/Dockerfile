@@ -34,11 +34,11 @@ RUN pip install mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86
 
 
 # Update NeMo to allow timestamps
-# RUN git clone https://github.com/NVIDIA/NeMo.git /src/NeMo/
-# WORKDIR /src/NeMo
-# RUN git reset --hard 0547550ad803fce1e4a019f92e9c59f4c902e7e0
-# RUN ./reinstall.sh
-# RUN pip install python-swiftclient ffmpeg-python
+RUN git clone https://github.com/NVIDIA/NeMo.git /src/NeMo/
+WORKDIR /src/NeMo
+RUN git reset --hard 0547550ad803fce1e4a019f92e9c59f4c902e7e0
+RUN ./reinstall.sh
+RUN pip install python-swiftclient ffmpeg-python
 
 # Set working directory back to NeMo-speech-data-processor
 WORKDIR /src/NeMo-speech-data-processor
