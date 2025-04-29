@@ -28,7 +28,7 @@ RUN git clone https://github.com/NVIDIA/NeMo-speech-data-processor.git
 # Install all requirements from requirements folder
 WORKDIR /src/NeMo-speech-data-processor
 RUN find requirements/ -name "*.txt" -exec pip install -r {} \;
-RUN pip install ndjson accelerate
+#RUN pip install ndjson accelerate
 # Install additional dependencies
 #RUN pip install transformers accelerate ndjson torchaudio pyannote-audio jupyter notebook
 #RUN pip install flash-attn --no-build-isolation
