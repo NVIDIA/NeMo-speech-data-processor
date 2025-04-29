@@ -36,7 +36,7 @@ RUN git clone https://github.com/NVIDIA/NeMo.git /src/NeMo/
 WORKDIR /src/NeMo
 RUN git reset --hard 0547550ad803fce1e4a019f92e9c59f4c902e7e0
 RUN ./reinstall.sh
-RUN pip install python-swiftclient ffmpeg-python
+RUN pip install python-swiftclient ffmpeg-python rarfile
 
 # Set working directory back to NeMo-speech-data-processor
 WORKDIR /src/NeMo-speech-data-processor
