@@ -28,15 +28,15 @@ RUN git clone https://github.com/NVIDIA/NeMo-speech-data-processor.git
 # Install all requirements from requirements folder
 WORKDIR /src/NeMo-speech-data-processor
 RUN find requirements/ -name "*.txt" -exec pip install -r {} \;
-
+RUN pip install ndjson accelerate
 # Install additional dependencies
-RUN pip install transformers accelerate ndjson torchaudio pyannote-audio jupyter notebook
-RUN pip install flash-attn --no-build-isolation
-RUN pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
-RUN pip install git+https://github.com/m-bain/whisperx.git --upgrade
-RUN wget https://github.com/state-spaces/mamba/releases/download/v2.2.2/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
-RUN pip install mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
-RUN pip install megatron-core transformer_engine[pytorch]
+#RUN pip install transformers accelerate ndjson torchaudio pyannote-audio jupyter notebook
+#RUN pip install flash-attn --no-build-isolation
+#RUN pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
+#RUN pip install git+https://github.com/m-bain/whisperx.git --upgrade
+#RUN wget https://github.com/state-spaces/mamba/releases/download/v2.2.2/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
+#RUN pip install mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
+#RUN pip install megatron-core transformer_engine[pytorch]
 
 # Update NeMo to allow timestamps
 RUN git clone https://github.com/NVIDIA/NeMo.git /src/NeMo/
