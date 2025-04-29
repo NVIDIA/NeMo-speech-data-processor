@@ -14,9 +14,7 @@
 
 
 import os
-import ndjson
 import subprocess
-import soundfile as sf
 from pathlib import Path
 
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
@@ -63,7 +61,7 @@ class CreateInitialManifestYTC(BaseParallelProcessor):
           Returns:
             list: A list of dataset entries parsed from the NDJSON manifest file
         """
-
+        import ndjson
         with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
             dataset_entries = ndjson.load(fin)
 
@@ -84,11 +82,11 @@ class CreateInitialManifestYTC(BaseParallelProcessor):
             2. Updates the metadata with new file paths and duration
             3. Uses either sox or ffmpeg for audio conversion depending on input format
         """
+        import soundfile as sf
         input_audio_path = metadata['audio_filepath']
         audio_filename = Path(input_audio_path).stem
         output_audio_path = os.path.join(self.resampled_audio_dir, audio_filename + '.' + self.target_format)
 
-        # Convert audio file to target sample rate and format
         # Convert audio file to target sample rate and format
         if not os.path.exists(output_audio_path):
             if input_audio_path.lower().endswith(".wav"):
