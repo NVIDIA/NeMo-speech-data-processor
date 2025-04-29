@@ -31,14 +31,6 @@ jobs:
           sdp-test-image:${{ github.sha }} \
           bash -c "python -m pytest tests/test_utils.py -v"
     
-    # - name: Run more tests
-    #   run: |
-    #     docker run --rm \
-    #       -v ${{ github.workspace }}:/workspace \
-    #       -w /workspace \
-    #       sdp-test-image:${{ github.sha }} \
-    #       bash -c "python -m pytest tests/ --junitxml=pytest.xml --cov=sdp --cov-report=xml"
-      
     - name: Get test results
       if: always()
       uses: actions/upload-artifact@v4
