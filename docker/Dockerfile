@@ -1,4 +1,5 @@
-FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-devel
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 # Install  minimal basics
