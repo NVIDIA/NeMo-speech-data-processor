@@ -5,14 +5,15 @@ ENV TZ=America/Los_Angeles
 # Install basics
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      build-essential \
-      curl \
-      ffmpeg \
-      git \
-      sox \
-      libsox-fmt-mp3 \
-      unzip \
-      wget \
+    python3 python3-pip python3-dev \
+    build-essential \
+    curl \
+    ffmpeg \
+    git \
+    sox \
+    libsox-fmt-mp3 \
+    unzip \
+    wget \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
