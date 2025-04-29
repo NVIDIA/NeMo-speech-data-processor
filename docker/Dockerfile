@@ -26,7 +26,7 @@ WORKDIR /src
 RUN git clone https://github.com/NVIDIA/NeMo-speech-data-processor.git
 
 WORKDIR /src/NeMo-speech-data-processor
-#need to install numpy before reqs, even thougth it present in reqs
+#need to install numpy before reqs, even thougth it present in reqs (cause it requred to install [python-sox], otherwise we face an error)
 RUN pip install numpy 
 RUN find requirements/ -name "*.txt" -exec pip install -r {} \;
 RUN wget https://github.com/state-spaces/mamba/releases/download/v2.2.2/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
