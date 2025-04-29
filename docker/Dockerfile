@@ -2,10 +2,11 @@ FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
+
 # Install basics
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-    python3 python3-pip python3-dev \
+    python3 python3-pip python3-dev python-is-python3 \
     build-essential \
     curl \
     ffmpeg \
@@ -18,8 +19,9 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 
+
 # Update pip
-#RUN pip install --upgrade pip
+RUN pip install --upgrade pip
 
 # Clone the NeMo SDP repository
 WORKDIR /src
