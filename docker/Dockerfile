@@ -1,36 +1,15 @@
 FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-devel
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
-# Install basics
+# Install  minimal basics
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    bzip2 \
-    ca-certificates \
-    cmake \
     curl \
     ffmpeg \
-    g++ \
     git \
-    htop \
-    imagemagick \
-    libegl1 \
-    libegl1-mesa-dev \
-    libgl1 \
-    libgl1-mesa-dev \
-    libgles2 \
-    libgles2-mesa-dev \
-    libglvnd-dev \
-    libglvnd0 \
-    libglx0 \
-    libnss3-dev \
-    libopenexr-dev \
-    libx264-dev \
-    ninja-build \
     sox \
     libsox-fmt-mp3 \
-    tmux \
     unzip \
-    vim \
     wget
 
 # Update pip
@@ -42,10 +21,12 @@ RUN git clone https://github.com/NVIDIA/NeMo-speech-data-processor.git
 
 # Install all requirements from requirements folder
 WORKDIR /src/NeMo-speech-data-processor
-RUN find requirements/ -name "*.txt" -exec pip install -r {} \;
+RUN find requirements/ -name "main.txt" -exec pip install -r {} \;
+RUN find requirements/ -name "tests.txt" -exec pip install -r {} \;
+
 
 # Install additional dependencies
-RUN pip install transformers accelerate ndjson torchaudio pyannote-audio jupyter notebook
+RUN pip install transformers accelerate ndjson torchaudio pyannote-audio
 RUN pip install flash-attn --no-build-isolation
 RUN pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
 RUN pip install git+https://github.com/m-bain/whisperx.git --upgrade
