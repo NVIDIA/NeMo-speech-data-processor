@@ -23,9 +23,9 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 class CreateInitialManifestYTC(BaseParallelProcessor):
     """A processor class for creating initial manifest files for a TTS dataset.
     
-    This class handles the preprocessing of audio files by resampling them to a target
-    sample rate and format, while creating a manifest file with the necessary metadata.
-    
+    It takes a manifest file containing audio file paths and resamples them to a target
+    sample rate and format, while creating a new manifest file with the updated paths.
+
     Args:
         raw_data_dir (str): Directory containing the raw audio files
         input_format (str): Format of the input audio files
@@ -33,6 +33,17 @@ class CreateInitialManifestYTC(BaseParallelProcessor):
         target_sample_rate (int): Desired sample rate for the output audio files
         target_format (str): Desired format for the output audio files
         target_nchannels (int): Desired number of channels for the output audio files
+
+    Returns:
+        The same data as in the input manifest, but with resampled audio files and
+        updated audio file paths.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.datasets.ytc.create_initial_manifest.CreateInitialManifestYTC
+              input_manifest_file: ${workspace_dir}/manifest.json
+              output_manifest_file: ${workspace_dir}/manifest_resampled.json
     """
     def __init__(
             self,
