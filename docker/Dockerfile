@@ -18,7 +18,7 @@ RUN apt-get update \
 
 
 # Update pip
-RUN pip install --upgrade pip
+#RUN pip install --upgrade pip
 
 # Clone the NeMo SDP repository
 WORKDIR /src
