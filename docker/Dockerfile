@@ -2,16 +2,20 @@ FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
-# Install  minimal basics
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
-    ffmpeg \
-    git \
-    sox \
-    libsox-fmt-mp3 \
-    unzip \
-    wget
+# Install basics
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      build-essential \
+      curl \
+      ffmpeg \
+      git \
+      sox \
+      libsox-fmt-mp3 \
+      unzip \
+      wget \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
 
 # Update pip
 RUN pip install --upgrade pip
@@ -22,12 +26,10 @@ RUN git clone https://github.com/NVIDIA/NeMo-speech-data-processor.git
 
 # Install all requirements from requirements folder
 WORKDIR /src/NeMo-speech-data-processor
-RUN find requirements/ -name "main.txt" -exec pip install -r {} \;
-RUN find requirements/ -name "tests.txt" -exec pip install -r {} \;
-
+RUN find requirements/ -name "*.txt" -exec pip install -r {} \;
 
 # Install additional dependencies
-RUN pip install transformers accelerate ndjson torchaudio pyannote-audio
+RUN pip install transformers accelerate ndjson torchaudio pyannote-audio jupyter notebook
 RUN pip install flash-attn --no-build-isolation
 RUN pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
 RUN pip install git+https://github.com/m-bain/whisperx.git --upgrade
