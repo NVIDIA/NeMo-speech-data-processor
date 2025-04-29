@@ -33,13 +33,13 @@ class ASRTransformers(BaseProcessor):
         output_text_key (str): Key to save transcription result in the manifest.
         input_audio_key (str): Key to read audio file paths from the manifest. Default: "audio_filepath".
         input_duration_key (str): Key for audio duration in the manifest. Default: "duration".
-        device (str, optional): Inference device (e.g., "cuda", "cpu"). Default: None.
+        device (str): Inference device (e.g., "cuda", "cpu"). Default: None.
         batch_size (int): Inference batch size. Default: 1.
         chunk_length_s (int): Length of audio chunks in seconds. Default: 0.
         torch_dtype (str): Tensor data type for model inference. Default: "float32".
         generate_task (str): Task type for generation. Default: "transcribe".
         generate_language (str): Language for generation. Default: "english".
-        max_new_tokens (int, optional): Maximum number of new tokens to generate. Default: None.
+        max_new_tokens (int, Optional): Maximum number of new tokens to generate. Default: None.
 
     Returns:
         A manifest with transcribed text added to each entry under the specified output_text_key.

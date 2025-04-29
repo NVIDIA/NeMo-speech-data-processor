@@ -29,28 +29,21 @@ except ImportError:
 
 
 class CreateTolokaProject(BaseParallelProcessor):
-    """
-    CreateTolokaProject is a class for creating projects on the Toloka crowdsourcing platform.
-    This class leverages Toloka's API to create a project based on user-provided configurations.
+    """Creates a Toloka project based on user-provided configurations.
 
-    Attributes:
-    ----------
-    project_name : str
-        The name of the project to be created.
-    project_description : str
-        A description of the project that will be shown to the Toloka workers.
-    project_instructions : str
-        Instructions that will be provided to the workers on how to complete tasks for the project.
-    API_KEY : str, optional
-        The API key used to authenticate with Toloka's API, retrieved from the TOLOKA_API_KEY environment variable.
-    platform : str, optional
-        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'), retrieved from the TOLOKA_PLATFORM environment variable.
+    This class connects to Toloka, configures a new project with a name, description, and instructions,
+    and saves the created project details for future use.
 
-    Methods:
-    -------
-    process()
-        Creates a Toloka project based on provided configurations, saving project details to a file.
+    Args:
+        project_name (str): The name of the project to be created.
+        project_description (str): A description shown to Toloka workers about the project.
+        project_instructions (str): Instructions provided to workers on how to complete assigned tasks.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    Returns:
+        A project created on the Toloka platform, configured and ready for task and pool setup.
     """
+    
     def __init__(
         self,
         project_name: str,
@@ -58,18 +51,6 @@ class CreateTolokaProject(BaseParallelProcessor):
         project_instructions: str,
         **kwargs,
     ):
-        """
-        Constructs the necessary attributes for the CreateTolokaProject class.
-
-        Parameters:
-        ----------
-        project_name : str
-            The name of the project to be created.
-        project_description : str
-            A description of the project that will be shown to the Toloka workers.
-        project_instructions : str
-            Instructions that will be provided to the workers on how to complete tasks for the project.
-        """
         super().__init__(**kwargs)
         self.API_KEY = os.getenv('TOLOKA_API_KEY')
         if not self.API_KEY:

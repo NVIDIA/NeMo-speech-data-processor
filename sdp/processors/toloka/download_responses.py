@@ -29,41 +29,23 @@ except ImportError:
 
 
 class GetTolokaResults(BaseParallelProcessor):
-    """
-    GetTolokaResults is a class for retrieving results from the Toloka crowdsourcing platform.
-    This class uses Toloka's API to fetch and store results for a specified pool based on certain conditions.
+    """Fetches and stores results from a specified Toloka pool based on user-configured conditions.
 
-    Attributes:
-    ----------
-    input_data_file : str
-        The path to the input data file containing API configurations.
-    input_pool_file : str
-        The path to the input pool file containing pool configurations.
-    output_dir : str
-        The directory where the output results will be stored.
-    status : str, optional
-        The status filter for assignments to retrieve. Defaults to 'ACCEPTED'.
-    config_file : str, optional
-        The path to the configuration file. Defaults to None.
-    API_KEY : str, optional
-        The API key used to authenticate with Toloka's API. Defaults to None, in which case it tries to
-        load the key from environment variables or config file.
-    platform : str, optional
-        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). Defaults to None, meaning it will
-        try to load from environment variables or the config file.
-    pool_id : str, optional
-        The ID of the pool from which results will be retrieved. Defaults to None.
+    This class connects to Toloka, retrieves task results from a specified pool, filters them by assignment status,
+    and stores the results in the given output directory.
 
-    Methods:
-    -------
-    load_config()
-        Loads configuration data from a config file to populate API_KEY, platform, and pool_id attributes.
-    prepare()
-        Prepares the class by loading API configuration, pool configuration, and initializing Toloka client.
-    read_manifest()
-        Retrieves and yields task information from Toloka based on the specified pool and assignment status.
-    process_dataset_entry(data_entry)
-        Downloads and processes individual task results.
+    Args:
+        input_data_file (str): Path to the input data file containing API configurations.
+        input_pool_file (str): Path to the input pool file containing pool configurations.
+        output_dir (str): Directory where the results will be stored.
+        status (str): Status filter for assignments to retrieve (default: 'ACCEPTED').
+        config_file (str): Path to a configuration file. Default: None.
+        API_KEY (str): The API key for authenticating with Toloka's API. Default: None.
+        platform (str): The Toloka environment to use ('PRODUCTION' or 'SANDBOX'). Default: None.
+        pool_id (str): The ID of the Toloka pool to retrieve results from. Default: None.
+
+    Returns:
+        A set of task results from Toloka, stored in the specified output directory.
     """
     def __init__(
         self,

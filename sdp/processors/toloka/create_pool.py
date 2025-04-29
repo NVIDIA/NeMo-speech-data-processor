@@ -30,32 +30,17 @@ except ImportError:
 
 
 class CreateTolokaPool(BaseParallelProcessor):
-    """
-    CreateTolokaPool is a class for creating pools on the Toloka crowdsourcing platform.
-    This class uses Toloka's API to create pools for a given project, based on user-provided configurations.
+    """Creates a Toloka pool for a given project based on user-provided configurations.
 
-    Attributes:
-    ----------
-    API_KEY : str, optional
-        The API key used to authenticate with Toloka's API. Defaults to None, in which case it tries to
-        load the key from environment variables or config file.
-    platform : str, optional
-        Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). Defaults to None, meaning it will
-        try to load from environment variables or the config file.
-    project_id : str, optional
-        The ID of the project for which the pool will be created. This can be provided during initialization
-        or loaded from the configuration file.
-    lang : str, optional
-        The language filter for the pool. Defaults to 'HY'.
+    This class connects to Toloka, loads necessary settings, creates a new pool,
+    and optionally sets up quality control mechanisms for worker submissions.
 
-    Methods:
-    -------
-    load_config()
-        Loads configuration data from a manifest file to populate API_KEY, platform, and project_id attributes.
-    process_dataset_entry(data_entry)
-        Creates a new Toloka pool based on the provided dataset entry.
-    setup_quality_control(pool)
-        Sets up quality control rules for the pool to ensure data quality.
+    Args:
+        lang (str): The language filter for the pool. Default: 'HY'.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    Returns:
+        A newly created pool on the Toloka platform, configured and ready for task assignment.
     """
     def __init__(
         self,

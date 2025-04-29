@@ -15,6 +15,7 @@
 import json
 import os
 from collections import defaultdict
+from typing import Optional
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
@@ -41,24 +42,25 @@ class AcceptIfWERLess(BaseParallelProcessor):
         input_data_file (str): Path to the input data file containing API configurations.
         input_pool_file (str): Path to the input pool file containing pool configurations.
         threshold (float): The WER threshold below which assignments are accepted. Default: 75.
-        config_file (str, optional): Path to the configuration file. Default: None.
-        API_KEY (str, optional): The API key for authenticating with Toloka's API. Default: None.
-        platform (str, optional): The Toloka platform to use. Default: None.
-        pool_id (str, optional): The ID of the Toloka pool. Default: None.
+        config_file (str): Path to the configuration file. Default: None.
+        API_KEY (str): The API key for authenticating with Toloka's API. Default: None.
+        platform (str): The Toloka platform to use. Default: None.
+        pool_id (str): The ID of the Toloka pool. Default: None.
 
     Returns:
         A manifest with accepted assignments from Toloka based on the WER threshold.
-
+        
     Example:
-        .. code-block:: yaml
+    .. code-block:: yaml
 
-            - _target_: sdp.processors.toloka.accept_if.AcceptIfWERLess
-              input_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
-              output_manifest_file: ${workspace_dir}/result_manifest_pred_review.json
-              input_data_file: ${workspace_dir}/data_file.json
-              input_pool_file: ${workspace_dir}/taskpool.json
-              threshold: 50
+        - _target_: sdp.processors.toloka.accept_if.AcceptIfWERLess
+            input_manifest_file: ${workspace_dir}/result_manifest_pred_clean.json
+            output_manifest_file: ${workspace_dir}/result_manifest_pred_review.json
+            input_data_file: ${workspace_dir}/data_file.json
+            input_pool_file: ${workspace_dir}/taskpool.json
+            threshold: 50
     """
+    
     def __init__(
         self,
         input_data_file: str,
@@ -70,26 +72,6 @@ class AcceptIfWERLess(BaseParallelProcessor):
         pool_id: str = None,
         **kwargs,
     ):
-        """
-        Constructs the necessary attributes for the AcceptIfWERLess class.
-
-        Parameters:
-        ----------
-        input_data_file : str
-            The path to the input data file containing API configurations.
-        input_pool_file : str
-            The path to the input pool file containing pool configurations.
-        threshold : float, optional
-            The WER threshold below which assignments are accepted. Defaults to 75.
-        config_file : str, optional
-            The path to the configuration file. Defaults to None.
-        API_KEY : str, optional
-            The API key used to authenticate with Toloka's API. If not provided, it is retrieved from the environment.
-        platform : str, optional
-            Specifies the Toloka environment (e.g., 'PRODUCTION', 'SANDBOX'). If not provided, it is retrieved from the environment.
-        pool_id : str, optional
-            The ID of the pool from which assignments will be retrieved. Defaults to None.
-        """
         super().__init__(**kwargs)
         self.input_data_file = input_data_file
         self.input_pool_file = input_pool_file

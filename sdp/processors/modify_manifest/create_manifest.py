@@ -19,8 +19,6 @@ import pandas
 
 from sdp.processors.base_processor import (
     BaseParallelProcessor,
-    LegacyParallelProcessor,
-    BaseProcessor,
     DataEntry,
 )
 
@@ -61,6 +59,19 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
 
 
 class CreateCombinedManifests(BaseParallelProcessor):
+    """Reads JSON lines from specified files and creates a combined manifest.
+
+    This processor iterates over files listed in `manifest_list`, reads each file line by line, 
+    and yields the parsed JSON data from each line.
+
+    Args:
+        manifest_list (list(str)): A list of file paths or directories to process. The processor will 
+                                   recursively read files within the directories and expect each file to contain JSON data.
+        **kwargs: Additional keyword arguments passed to the base class `BaseParallelProcessor`.
+
+    Returns:
+        A generator that yields parsed JSON data from each line in the files listed in `manifest_list`.
+    """
     def __init__(
         self,
         manifest_list: list[str],
