@@ -38,7 +38,7 @@ if __name__ == "__main__":
         tmpdir_path = Path(tmpdir)
         split = "test"
         os.makedirs(tmpdir_path / split / "audio")
-        manifest_path = tmpdir_path / split / "manifest.json"
+        manifest_path = tmpdir_path / split / "manifest.jsonl"
         with open(manifest_path, "w", encoding="utf-8") as fout:
             for idx, audio_file in enumerate(Path(args.extracted_data_path).glob("audios/*")):
                 if idx == args.num_entries:
@@ -49,10 +49,12 @@ if __name__ == "__main__":
                 target_path = tmpdir_path / split / "audio" / rel_path
                 target_path.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(audio_file, target_path)
+                stem = audio_file.stem
                 
                 # Write manifest entry
                 manifest_entry = {
-                    "audio_filepath": str(target_path.relative_to(tmpdir_path / split))
+                    "audio_filepath": str(target_path.relative_to(tmpdir_path / split)),
+                    "audio_item_id": stem
                 }
                 fout.write(f"{json.dumps(manifest_entry)}\n")
            
