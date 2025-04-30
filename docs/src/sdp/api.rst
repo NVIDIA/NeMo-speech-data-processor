@@ -117,7 +117,7 @@ HuggingFace Datasets
    :annotation:
 
 YTC Datasets
-''''''''''''''''''''
+''''''''''''
 
 .. autodata:: sdp.processors.CreateInitialManifestYTC
    :annotation:

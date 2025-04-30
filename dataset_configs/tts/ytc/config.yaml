@@ -1,6 +1,6 @@
 documentation: |
   TTS data processing pipeline
-  #########################
+  ############################
 
   This pipeline processes YouTube Commons (YTC) data for text-to-speech (TTS) training.
   
@@ -13,13 +13,15 @@ documentation: |
   6. Merges alignment and diarization information
   7. Performs inverse text normalization
   8. Calculates audio quality metrics using TorchSQUIM
-  9. Estimates audio bandwidth
+  9. Estimates audio bandwidth 
   10. Prepares TTS segments
 
   Required inputs:
+
   - input_manifest_file: Path to input manifest json file
-      - manifest must contain "audio_filepath" and "audio_item_id" fields
-      - example: {"audio_filepath": "path/to/raw/audio/file.wav", "audio_item_id": "some_unique_id"}
+    - manifest must contain "audio_filepath" and "audio_item_id" fields
+    - example: {"audio_filepath": "path/to/raw/audio/file.wav", "audio_item_id": "some_unique_id"}
+
   - raw_data_dir: Directory containing raw audio files
   - hf_token: HuggingFace token for pyannote access
   - data_split: Data split name (train/dev/test)
