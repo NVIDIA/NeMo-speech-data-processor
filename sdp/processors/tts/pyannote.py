@@ -13,16 +13,11 @@
 # limitations under the License.
 
 from sdp.processors.base_processor import BaseProcessor
-import ndjson
 import random
 import os
 from time import time
-from pyannote.audio import Pipeline
-from pyannote.audio.pipelines.utils.hook import ProgressHook
-import torch
-import torchaudio
-from whisperx.audio import SAMPLE_RATE
-from whisperx.vad import load_vad_model, merge_chunks
+
+
 
 
 def has_overlap(turn, overlaps):
@@ -77,6 +72,19 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
               output_manifest_file: ${workspace_dir}/manifest_diarized.json
               hf_token: ${hf_token}
     """
+
+    try:
+        import ndjson
+        from pyannote.audio import Pipeline
+        from pyannote.audio.pipelines.utils.hook import ProgressHook
+        from whisperx.audio import SAMPLE_RATE
+        from whisperx.vad import load_vad_model, merge_chunks
+        import torch
+        import torchaudio
+        _HAS_DEPS = True
+    except ImportError:
+        _HAS_DEPS = False
+    
     def __init__(self,
                  hf_token: str,
                  segmentation_batch_size: int = 128,
@@ -86,7 +94,17 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
                  device: str = "cuda",
                  **kwargs
         ):
+
+        # only now we check for those imports
+        if not self._HAS_DEPS:
+             raise RuntimeError(
+                 "To use PyAnnoteDiarizationAndOverlapDetection you must install "
+                 "`pyannote.audio`, `torch`, `torchaudio` and `whisperx`."
+             )
+
         super().__init__(**kwargs)
+
+
         self.pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization-3.1",
                                     use_auth_token=hf_token)
         self.pipeline.segmentation_batch_size = segmentation_batch_size
@@ -104,6 +122,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
             torch.device(device), use_auth_token=None, **default_vad_options
         )
         random.seed(42)
+        
     
     def get_vad_segments(self, audio, merge_max_length=3):
         """Get voice activity detection segments for the given audio.
