@@ -1,2 +1,3 @@
 ndjson
-
+pyannote.audio
+whisperx
