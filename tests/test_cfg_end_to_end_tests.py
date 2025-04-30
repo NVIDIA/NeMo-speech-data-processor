@@ -361,6 +361,9 @@ def test_configs(setup_data, tmp_path):
         # Set input_manifest_file for ASRFileCheck to use the existing manifest.json
         cfg.processors[1].input_manifest_file = (data_dir / "pipeline_get_final_res" / "manifest.json").as_posix()
 
+    if "tts/ytc" in config_path:
+        cfg.processors[0].input_manifest_file = (data_dir / "manifest.json").as_posix()
+
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
     # reference file (ignoring the file paths and additional fields explicitly specified to ignore)
