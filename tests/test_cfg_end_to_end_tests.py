@@ -363,6 +363,7 @@ def test_configs(setup_data, tmp_path):
 
     if "tts/ytc" in config_path:
         cfg.processors[0].input_manifest_file = (data_dir / "manifest.json").as_posix()
+        cfg.hf_token = os.getenv("HF_ACCESS_KEY")
 
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
