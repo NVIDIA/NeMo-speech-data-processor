@@ -22,8 +22,9 @@ RUN apt-get update \
 RUN pip install --upgrade pip
 
 # Clone the NeMo SDP repository
-WORKDIR /src
-RUN git clone https://github.com/NVIDIA/NeMo-speech-data-processor.git
+COPY . /src/NeMo-speech-data-processor
+RUN rm -rf /src/NeMo-speech-data-processor/.git
+
 
 WORKDIR /src/NeMo-speech-data-processor
 #need to install numpy before reqs, even thougth it present in reqs (cause it requred to install [python-sox], otherwise we face an error)
@@ -38,7 +39,7 @@ RUN git clone https://github.com/NVIDIA/NeMo.git /src/NeMo/
 WORKDIR /src/NeMo
 RUN git reset --hard 0547550ad803fce1e4a019f92e9c59f4c902e7e0
 RUN ./reinstall.sh
-RUN pip install python-swiftclient ffmpeg-python
+RUN pip install ffmpeg-python
 
 # Set working directory back to NeMo-speech-data-processor
 WORKDIR /src/NeMo-speech-data-processor
