@@ -75,6 +75,7 @@ from sdp.processors.manage_files.convert_audio import (
     FfmpegConvert,
     SoxConvert,
 )
+from sdp.processors.manage_files.remove import RemoveFiles
 
 from sdp.processors.huggingface.speech_recognition import ASRTransformers
 from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace

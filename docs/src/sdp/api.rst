@@ -359,6 +359,9 @@ Miscellaneous
 .. autodata:: sdp.processors.ExtractTar
    :annotation:
 
+.. autodata:: sdp.processors.RemoveFiles
+   :annotation:
+
 .. _sdp-base-classes:
 
 Base classes
