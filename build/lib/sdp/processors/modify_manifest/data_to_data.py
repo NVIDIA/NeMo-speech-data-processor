@@ -1134,8 +1134,8 @@ class ListToEntries(BaseParallelProcessor):
     A dataset processor that transforms a single entry containing a list of items into multiple entries,
     one for each item in the list.
 
-    This is useful when a manifest field (e.g., "segments") contains a list of sub-entries, and you want
-    to flatten these into individual records for further processing.
+    This is useful when a dataset field (e.g., "segments") contains a list of sub-entries, and you want
+    to flatten these into individual records for further processing or training.
 
     Args:
         field_with_list (str): The name of the field in the input entry that contains a list.
@@ -1156,75 +1156,19 @@ class ListToEntries(BaseParallelProcessor):
         This effectively transforms a single input entry containing a list of items into multiple standalone 
         entries, each suitable for further dataset processing.
 
-    .. admonition:: Example 1 (list of dicts)
-        
-        .. code-block:: yaml
+    Example 1 (list of dicts):
+        Input: 
+            {"audio_filepath": "sample.wav", "segments": [{"start": 0.0, "end": 1.5, "text": "Hello"}, {"start": 1.6, "end": 3.0, "text": "World"}]}
+        Output:
+            {"audio_filepath": "sample.wav", "start": 0.0, "end": 1.5, "text": "Hello"}
+            {"audio_filepath": "sample.wav", "start": 1.6, "end": 3.0, "text": "World"}
     
-            - _target_: sdp.processors.ListToEntries
-              input_manifest_file: ${workspace_dir}/input_manifest.json
-              output_manifest_file: ${workspace_dir}/output_manifest.json
-              field_with_list: "segments"
-                
-        Input::
- 
-            {
-                "audio_filepath": "sample.wav",
-                "segments": [
-                    {"start": 0.0, "end": 1.5, "text": "Hello"},
-                    {"start": 1.6, "end": 3.0, "text": "World"}
-                ]
-            }
-
-        Output::
-
-            [
-                {
-                    "audio_filepath": "sample.wav",
-                    "start": 0.0,
-                    "end": 1.5,
-                    "text": "Hello"
-                },
-                {
-                    "audio_filepath": "sample.wav",
-                    "start": 1.6,
-                    "end": 3.0,
-                    "text": "World"
-                }
-            ]
-    
-    .. admonition:: Example 2 (list of primitives)
-        
-        .. code-block:: yaml
-    
-            - _target_: sdp.processors.ListToEntries
-              input_manifest_file: ${workspace_dir}/input_manifest.json
-              output_manifest_file: ${workspace_dir}/output_manifest.json
-              field_with_list: "text_chunks"
-              output_field: "text"
-                
-        Input::
- 
-            {
-                "audio_filepath": "sample.wav",
-                "text_chunks": [
-                    "Hello",
-                    "World"
-                ]
-            }
-
-        Output::
-
-            [
-                {
-                    "audio_filepath": "sample.wav",
-                    "text": "Hello"
-                },
-                {
-                    "audio_filepath": "sample.wav",
-                    "text": "World"
-                }
-            ]
-
+    Example 2 (list of primitives, where field_with_list="text_chunks" and output_field="text"):
+        Input:
+            {"audio_filepath": "sample.wav", "text_chunks": ["Hello", "World"]}
+        Output:
+            {"audio_filepath": "sample.wav", "text": "Hello"}
+            {"audio_filepath": "sample.wav", "text": "World"}
     """
 
     def __init__(self, 

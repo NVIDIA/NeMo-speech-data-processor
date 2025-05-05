@@ -92,7 +92,6 @@ from sdp.processors.modify_manifest.data_to_data import (
     GetWER,
     InsIfASRInsertion,
     InverseNormalizeText,
-    ListToEntries,
     NormalizeText,
     MakeSentence,
     ReadDocxLines,

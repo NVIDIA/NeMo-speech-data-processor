@@ -227,6 +227,9 @@ Data modifications
 .. autodata:: sdp.processors.SubIfASRSubstitution
    :annotation:
 
+.. autodata:: sdp.processors.ListToEntries
+   :annotation:
+
 Data filtering
 ''''''''''''''
 
