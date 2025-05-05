@@ -116,6 +116,12 @@ HuggingFace Datasets
 .. autodata:: sdp.processors.CreateInitialManifestHuggingFace
    :annotation:
 
+.. autodata:: sdp.processors.ListRepoFiles
+   :annotation:
+
+.. autodata:: sdp.processors.SnapshotDownload
+   :annotation:
+
 Lhotse processors
 #################
 
