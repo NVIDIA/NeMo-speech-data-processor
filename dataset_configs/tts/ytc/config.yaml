@@ -26,7 +26,6 @@ documentation: |
   - hf_token: HuggingFace token for pyannote access
   - data_split: Data split name (train/dev/test)
   - workspace_dir: Directory for intermediate files
-  - language_long: Full language name
   - language_short: 2-letter language code
   - nemo_path: Path to NeMo installation
   - final_manifest: Path for final output manifest
@@ -34,11 +33,9 @@ documentation: |
 processors_to_run: all
 data_split: ???
 workspace_dir: /tmp
-language_long: ???
 language_short: ???
 input_manifest_file: ???
 final_manifest: ???
-raw_data_dir: ???
 nemo_path: ???
 resampled_audio_dir: /tmp/audio_resampled
 hf_token: ???
@@ -47,7 +44,6 @@ max_segment_length: 40
 processors:
   - _target_: sdp.processors.datasets.ytc.create_initial_manifest.CreateInitialManifestYTC
     input_manifest_file: ${input_manifest_file}
-    raw_data_dir: ${raw_data_dir}
     output_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_initial.json"
     resampled_audio_dir: ${resampled_audio_dir}
     input_format: "wav"

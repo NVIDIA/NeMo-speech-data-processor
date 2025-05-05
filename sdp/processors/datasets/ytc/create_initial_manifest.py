@@ -27,7 +27,6 @@ class CreateInitialManifestYTC(BaseParallelProcessor):
     sample rate and format, while creating a new manifest file with the updated paths.
 
     Args:
-        raw_data_dir (str): Directory containing the raw audio files
         input_format (str): Format of the input audio files
         resampled_audio_dir (str): Directory where resampled audio files will be saved
         target_sample_rate (int): Desired sample rate for the output audio files
@@ -47,7 +46,6 @@ class CreateInitialManifestYTC(BaseParallelProcessor):
     """
     def __init__(
             self,
-            raw_data_dir: str,
             input_format: str,
             resampled_audio_dir: str,
             target_sample_rate: int,
@@ -56,7 +54,6 @@ class CreateInitialManifestYTC(BaseParallelProcessor):
             **kwargs
         ):
         super().__init__(**kwargs)
-        self.raw_data_dir = raw_data_dir
         self.input_format = input_format
         self.resampled_audio_dir = resampled_audio_dir
         self.target_sample_rate = target_sample_rate
@@ -95,8 +92,7 @@ class CreateInitialManifestYTC(BaseParallelProcessor):
         """
         import soundfile as sf
         input_audio_path = metadata['audio_filepath']
-        audio_filename = Path(input_audio_path).stem
-        output_audio_path = os.path.join(self.resampled_audio_dir, audio_filename + '.' + self.target_format)
+        output_audio_path = os.path.join(self.resampled_audio_dir, metadata['audio_item_id'] + '.' + self.target_format)
 
         # Convert audio file to target sample rate and format
         if not os.path.exists(output_audio_path):

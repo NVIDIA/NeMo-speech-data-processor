@@ -3,6 +3,4 @@ transformers
 accelerate
 torchaudio
 pyannote-audio
-whisperx
-nemo_toolkit[all]==2.1.0
 ffmpeg-python

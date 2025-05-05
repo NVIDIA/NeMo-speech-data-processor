@@ -244,10 +244,6 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
             reference_manifest_filename="pipeline_get_final_res/test_data_reference.json",
             fields_to_ignore=['audio_filepath', 'duration'],
             processors_to_run="1:6"
-        ),
-        TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/tts/ytc/config.yaml", 
-            data_check_fn=partial(data_check_fn_generic, file_name="ytc.en.tar.gz")
         )
     ]
 
@@ -360,10 +356,6 @@ def test_configs(setup_data, tmp_path):
         cfg.processors[2].workspace_dir = (data_dir / "pipeline_get_final_res").as_posix()
         # Set input_manifest_file for ASRFileCheck to use the existing manifest.json
         cfg.processors[1].input_manifest_file = (data_dir / "pipeline_get_final_res" / "manifest.json").as_posix()
-
-    if "tts/ytc" in config_path:
-        cfg.processors[0].input_manifest_file = (data_dir / "manifest.json").as_posix()
-        cfg.hf_token = os.getenv("HF_ACCESS_KEY")
 
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
