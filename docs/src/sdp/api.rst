@@ -113,10 +113,10 @@ MediaSpeech
 Yodas2
 ''''''''''''
 
-.. autodata:: sdp.processors.datasets.yodas2.ListYodas2Data
+.. autodata:: sdp.processors.ListYodas2Data
    :annotation:
 
-.. autodata:: sdp.processors.datasets.yodas2.DownloadYodas2Data
+.. autodata:: sdp.processors.DownloadYodas2Data
    :annotation:
 
 
