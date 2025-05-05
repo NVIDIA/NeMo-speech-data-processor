@@ -36,7 +36,7 @@ class ListRepoFiles(BaseProcessor):
 
     Returns:
         A line-delimited JSON manifest where each line looks like:
-        {"file_key": "path/to/file.ext"}
+        ``{"file_key": "path/to/file.ext"}``
     """
 
     def __init__(
@@ -87,7 +87,7 @@ class SnapshotDownload(BaseProcessor):
 
     Returns:
         A JSON file containing one line:
-        {"destination_dir": "/path/to/downloaded/repo"}
+        ``{"destination_dir": "/path/to/downloaded/repo"}``
     """
 
     def __init__(

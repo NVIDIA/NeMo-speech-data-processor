@@ -23,7 +23,7 @@ workspace_dir: ???
 install_requirements: True
 
 processors:
-  - _target_: sdp.processors.datasets.yodas2.ListYodas2Data
+  - _target_: sdp.processors.ListYodas2Data
     output_manifest_file: ${workspace_dir}/manifest_00.json
     use_metadata: True
   
@@ -37,7 +37,7 @@ processors:
     input_value_key: src_lang
     target_value: ${params.source_lang}
   
-  - _target_: sdp.processors.datasets.yodas2.DownloadYodas2Data
+  - _target_: sdp.processors.DownloadYodas2Data
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_03.json
     local_dir: ${workspace_dir}/${params.source_lang}/
     max_workers: 8
@@ -51,7 +51,7 @@ processors:
     output_filepath_field: 'extracted_audios'
     get_extracted_filepaths: True
   
-  - _target_: sdp.processors.datasets.yodas2.CreateInitialManifest
+  - _target_: sdp.processors.CreateInitialManifestYodas2
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_05.json
     field_with_list: 'extracted_audios'
     output_field: 'source_audio_filepath'
