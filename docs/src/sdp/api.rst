@@ -110,6 +110,16 @@ MediaSpeech
    :annotation:
 
 
+Yodas2
+''''''''''''
+
+.. autodata:: sdp.processors.datasets.yodas2.ListYodas2Data
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.yodas2.DownloadYodas2Data
+   :annotation:
+
+
 HuggingFace Datasets
 ''''''''''''''''''''
 
