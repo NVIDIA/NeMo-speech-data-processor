@@ -236,6 +236,9 @@ Data modifications
 .. autodata:: sdp.processors.ListToEntries
    :annotation:
 
+.. autodata:: sdp.processors.LambdaExpression
+   :annotation:
+
 Data filtering
 ''''''''''''''
 

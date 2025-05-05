@@ -31,6 +31,7 @@ from sdp.processors.base_processor import (
     DataEntry,
 )
 from sdp.utils.common import ffmpeg_convert
+from sdp.utils.apply_operators import evaluate_expression
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
 from sdp.utils.metrics_computation import (
@@ -1281,3 +1282,58 @@ class ListToEntries(BaseParallelProcessor):
             _entries.append(_entry)
 
         return _entries
+
+
+class LambdaExpression(BaseParallelProcessor):
+    """
+    A dataset processor that evaluates a Python expression on each data entry and either stores
+    the result in a new field or uses it as a filtering condition.
+
+    This processor is useful for dynamic field computation or conditional filtering of entries based
+    on configurable expressions. It leverages `evaluate_expression`, which safely evaluates expressions
+    using the abstract syntax tree (AST).
+
+    Args:
+        new_field (str): The name of the field to store the result of the expression.
+        expression (str): A Python expression to evaluate. It can reference fields of the data entry
+            using the name specified by `lambda_param_name`.
+        lambda_param_name (str, optional): The name to refer to the current data entry in the expression.
+            Default is "entry".
+        filter (bool, optional): If True, the expression result is treated as a condition.
+            The entry is kept only if the result is `True`. Default is False.
+        **kwargs: Additional keyword arguments passed to the BaseParallelProcessor class.
+    
+    Returns:
+        A line-delimited JSON manifest, where each line is a processed entry.
+        The result may contain fewer entries than the input if `filter=True`.
+    """
+    def __init__(
+        self,
+        new_field: str,
+        expression: str,
+        lambda_param_name: str = "entry",
+        filter: bool = False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.new_field = new_field
+        self.expression = expression
+        self.lambda_param_name = lambda_param_name
+        self.filter = filter
+
+    def process_dataset_entry(self, data_entry) -> List[DataEntry]:
+        """
+        Process a single data entry by evaluating the expression.
+
+        If `filter` is True, the entry is only retained if the expression evaluates to True.
+        Otherwise, the result is stored in `new_field`.
+        """
+        value = evaluate_expression(self.expression,  data_entry, self.lambda_param_name)
+        if self.filter:
+            if value is not True:
+                return []
+        data_entry[self.new_field] = value   
+        return [DataEntry(data=data_entry)]
+
+    def finalize(self, metrics):
+        super().finalize(metrics)
