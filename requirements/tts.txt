@@ -4,3 +4,4 @@ accelerate
 torchaudio
 pyannote-audio
 ffmpeg-python
+whisperx==3.3.1
