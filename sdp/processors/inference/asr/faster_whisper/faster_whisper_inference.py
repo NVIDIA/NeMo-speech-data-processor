@@ -138,7 +138,7 @@ class FasterWhisperInference(BaseProcessor):
 
     Args:
         input_manifest_file (str): Path to the input manifest.
-        output_manifest_file (Optional[str]): Path to the output manifest (default: <output_dir>/predictions_all.json).
+        output_manifest_file (Optional[str]): Path to the output manifest (default: `<output_dir>/predictions_all.json`).
         model_size_or_path (str): Whisper model path or model name (e.g., 'base', 'medium').
         device (str): Device type to use ('auto', 'cuda', or 'cpu').
         num_devices (int): Number of workers/devices to use (-1 = all available).
@@ -152,20 +152,20 @@ class FasterWhisperInference(BaseProcessor):
         in_memory_chunksize (int): Number of samples to load per worker at once.
         audio_filepath_field (str): Name of the field in manifest pointing to audio path.
      
-     Returns:
+    Returns:
         A manifest file where each line corresponds to the transcription result of an input sample.
         Each entry contains the following fields:
 
-        - "language" (str, optional): Detected language (if language detection is enabled).
-        - "language_probability" (float, optional): Confidence score of detected language.
-        - "segments" (List[Dict], optional): List of segment-level transcriptions with start/end times and text (if timestamps are embedded).
-        - "pred_text" (str): Final transcribed text obtained by concatenating segment texts.
-        - "segments" (str, optional): Path to file containing segment timestamps (if saved separately).
-        - "words" (str, optional): Path to file containing word-level timestamps (if enabled and saved separately).
+        - ``languag`` (str, optional): Detected language (if language detection is enabled).
+        - ``language_probability`` (float, optional): Confidence score of detected language.
+        - ``segments`` (List[Dict], optional): List of segment-level transcriptions with start/end times and text (if timestamps are embedded).
+        - ``pred_text`` (str): Final transcribed text obtained by concatenating segment texts.
+        - ``segments`` (str, optional): Path to file containing segment timestamps (if saved separately).
+        - ``words`` (str, optional): Path to file containing word-level timestamps (if enabled and saved separately).
         
         The output manifest is written to `output_manifest_file`, which defaults to `<output_dir>/predictions_all.json`.
     
-     .. note::
+    .. note::
         For detailed configuration options and advanced usage of FasterWhisper, refer to the official repository:
         https://github.com/SYSTRAN/faster-whisper
     """
