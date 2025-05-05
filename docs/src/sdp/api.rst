@@ -119,6 +119,9 @@ Yodas2
 .. autodata:: sdp.processors.DownloadYodas2Data
    :annotation:
 
+.. autodata:: sdp.processors.CreateInitialManifestYodas2
+   :annotation:
+
 
 HuggingFace Datasets
 ''''''''''''''''''''

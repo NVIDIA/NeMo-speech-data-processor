@@ -272,10 +272,72 @@ class DownloadYodas2Data(SnapshotDownload):
 
 
 class CreateInitialManifestYodas2(ListToEntries):
+    """
+    A dataset processor specialized for the YODAS2 dataset.
+
+    This processor extends ``ListToEntries`` to:
+    
+    - Expand each input record that contains a list of audio items (e.g., under a ``shards`` or ``files`` field).
+    - Append duration and YODAS ID metadata to each resulting entry using a provided durations file.
+
+    Each input entry must include a field (e.g., ``local_duration``) pointing to a `.txt` file
+    with lines in the format:
+
+    .. code-block:: text
+
+        <yodas_id> <duration>
+
+    Example input line:
+
+    .. code-block:: json
+
+        {
+            "lang_subset": "en000",
+            "shard_id": "00000000",
+            "audio_key": "data/en000/audio/00000000.tar.gz",
+            "duration_key": "data/en000/duration/00000000.txt",
+            "text_key": "data/en000/text/00000000.json",
+            "src_lang": "en",
+            "local_audio": "/data3/sdp_test/en/data/en000/audio/00000000.tar.gz",
+            "local_duration": "/data3/sdp_test/en/data/en000/duration/00000000.txt",
+            "extracted_audios": [
+                "/path/to/data/en000/00000000/YuseO8GhcWk.wav",
+                "/path/to/data/en000/00000000/Y9zJ8mT5Bou.wav"
+            ]
+        }
+    
+    Args:
+        **kwargs: Passed directly to the ``sdp.processors.ListToEntries`` base processor.
+
+    Returns:
+        A manifest where each entry corresponds to one YODAS2 sample with the following structure:
+
+        .. code-block:: json
+
+            {
+                "lang_subset": "en000",
+                "shard_id": "00000000",
+                "src_lang": "en",
+                "source_audio_filepath": "/path/to/data/en000/00000000/YuseO8GhcWk.wav",
+                "yodas_id": "YuseO8GhcWk",
+                "duration": 216.9
+            }
+    """
     def __init__(self, **kwargs):
+        # Initialize with ListToEntries configuration
          super().__init__(**kwargs)
         
     def get_samples_durations(self, durations_filepath: str):
+        """
+        Parse durations file into a dict mapping yodas_id -> duration.
+
+        Args:
+            durations_filepath (str): Path to durations.txt file, where each line
+                contains "<yodas_id> <duration>".
+
+        Returns:
+            dict[str, float]: Mapping from yodas_id to duration.
+        """
         durations = dict()
         with open(durations_filepath, 'r') as durations_txt:
             for line in durations_txt:
@@ -284,13 +346,33 @@ class CreateInitialManifestYodas2(ListToEntries):
         return durations
     
     def process_dataset_entry(self, data_entry):
+        """
+        Process a single dataset entry.
+
+        - Reads durations file from the entry
+        - Expands list field using base ListToEntries
+        - Extracts `yodas_id` from audio path and adds `duration` if found
+
+        Args:
+            data_entry (dict): Original manifest entry with a list field and a pointer
+                to a local durations.txt file.
+
+        Returns:
+            List[DataEntry]: Processed and filtered list of entries with yodas_id and duration.
+        """
+        # Load duration metadata for current group of items
         durations = self.get_samples_durations(data_entry['local_duration'])
+
+        # Expand the list of items into individual entries (inherited logic)
         data_entries = super().process_dataset_entry(data_entry)
 
         yodas_entries = []
         for entry in data_entries:
+            # Extract YODAS ID from filename (e.g., "YABC1234" from "YABC1234.wav")
             yodas_id = os.path.basename(entry.data['source_audio_filepath']).split('.')[0]
             entry.data['yodas_id'] = yodas_id
+
+            # Attach duration if available
             if yodas_id in durations:
                 entry.data['duration'] = durations[yodas_id]
                 yodas_entries.append(entry)
