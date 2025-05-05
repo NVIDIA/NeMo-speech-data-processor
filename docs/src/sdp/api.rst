@@ -164,6 +164,9 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.ASRTransformers
    :annotation:
 
+.. autodata:: sdp.processors.FasterWhisperInference
+   :annotation:
+
 Text-only processors
 ####################
 

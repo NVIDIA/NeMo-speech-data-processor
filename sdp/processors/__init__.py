@@ -82,6 +82,7 @@ from sdp.processors.huggingface.huggingface_hub import ListRepoFiles, SnapshotDo
 
 from sdp.processors.inference.asr.nemo.asr_inference import ASRInference
 from sdp.processors.inference.asr.transformers.speech_recognition import ASRTransformers
+from sdp.processors.inference.asr.faster_whisper.faster_whisper_inference import FasterWhisperInference
 
 from sdp.processors.nemo.pc_inference import PCInference
 
