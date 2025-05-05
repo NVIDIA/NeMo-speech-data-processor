@@ -77,12 +77,14 @@ from sdp.processors.manage_files.convert_audio import (
 )
 from sdp.processors.manage_files.remove import RemoveFiles
 
-from sdp.processors.huggingface.speech_recognition import ASRTransformers
 from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
 from sdp.processors.huggingface.huggingface_hub import ListRepoFiles, SnapshotDownload
 
-from sdp.processors.nemo.asr_inference import ASRInference
+from sdp.processors.inference.asr.nemo.asr_inference import ASRInference
+from sdp.processors.inference.asr.transformers.speech_recognition import ASRTransformers
+
 from sdp.processors.nemo.pc_inference import PCInference
+
 from sdp.processors.toloka.accept_if import AcceptIfWERLess
 from sdp.processors.toloka.create_pool import CreateTolokaPool
 from sdp.processors.toloka.create_project import CreateTolokaProject
