@@ -243,12 +243,6 @@ Data modifications
 .. autodata:: sdp.processors.SubIfASRSubstitution
    :annotation:
 
-.. autodata:: sdp.processors.ListToEntries
-   :annotation:
-
-.. autodata:: sdp.processors.LambdaExpression
-   :annotation:
-
 Data filtering
 ''''''''''''''
 
@@ -351,6 +345,15 @@ Miscellaneous
    :annotation:
 
 .. autodata:: sdp.processors.CreateCombinedManifests
+   :annotation:
+
+.. autodata:: sdp.processors.ListToEntries
+   :annotation:
+
+.. autodata:: sdp.processors.LambdaExpression
+   :annotation:
+
+.. autodata:: sdp.processors.ExtractTar
    :annotation:
 
 .. _sdp-base-classes:
