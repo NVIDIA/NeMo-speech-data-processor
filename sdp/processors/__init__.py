@@ -34,7 +34,6 @@ from sdp.processors.modify_manifest.data_to_data import (
     CopyManifestData,
     CountNumWords,
     ExtractFromBrackets,
-    FfmpegConvert,
     GetAudioDuration,
     GetWER,
     InsIfASRInsertion,
@@ -45,7 +44,6 @@ from sdp.processors.modify_manifest.data_to_data import (
     MakeSentence,
     ReadDocxLines,
     ReadTxtLines,
-    SoxConvert,
     SplitLineBySentence,
     SubIfASRSubstitution,
     SubMakeLowercase,
@@ -73,6 +71,10 @@ from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
 )
 from sdp.processors.manage_files.extract import ExtractTar
+from sdp.processors.manage_files.convert_audio import (
+    FfmpegConvert,
+    SoxConvert,
+)
 
 from sdp.processors.huggingface.speech_recognition import ASRTransformers
 from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
