@@ -24,6 +24,8 @@ from sdp.processors.datasets.coraal import (
 from sdp.processors.datasets.fleurs.create_initial_manifest import (
     CreateInitialManifestFleurs,
 )
+from sdp.processors.datasets.hifitts2.download_dataset import DownloadHiFiTTS2
+from sdp.processors.datasets.hifitts2.remove_failed_chapters import RemovedFailedChapters
 from sdp.processors.datasets.uzbekvoice.create_initial_manifest import (
     CreateInitialManifestUzbekvoice,
 )

@@ -373,3 +373,16 @@ Armenian Toloka
    config-docs/armenian/toloka/pipeline_validate_answers
    config-docs/armenian/toloka/pipeline_get_final_res
 
+HiFiTTS-2
+~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** TODO
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/arabic/everyayah/config.yaml>`__ |
+:doc:`documentation <config-docs/arabic/everyayah/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/english/hifitts2/config_22khz
+   config-docs/english/hifitts2/config_44khz
