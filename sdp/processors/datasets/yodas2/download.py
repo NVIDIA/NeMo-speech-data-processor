@@ -40,6 +40,11 @@ class ListYodas2Data(ListRepoFiles):
     Args:
         use_metadata (bool): Whether to use `meta.py` to generate the manifest (default: False).
         **kwargs: Passed to the parent class `sdp.processors.ListRepoFiles`, including Hugging Face repo config.
+    
+    Returns:
+        A line-delimited JSON manifest, where each line represents information about a YODAS2 dataset shard and 
+        includes keys pointing to the audio files (in .tar.gz format), transcriptions (in .json format), and 
+        durations (in .txt format) stored in the repository.
     """
 
     def __init__(self, use_metadata: bool = False, **kwargs):
