@@ -1,4 +1,4 @@
-name: Docker Build and Test
+name: SDP TTS Docker Build and Test
 
 on:
   pull_request:
@@ -23,7 +23,12 @@ jobs:
       run: |
         docker build -t sdp-test-image:${{ github.sha }} -f docker/Dockerfile.tts_sdp .
       
-    - name: Run test tests
+    - name: Run sdp tts tests
+      env:
+        AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+        AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+        HF_ACCESS_KEY: ${{ secrets.HF_ACCESS_KEY }}
+        CLEAN_UP_TMP_PATH: 1
       run: |
         docker run --rm \
           -v ${{ github.workspace }}:/workspace \
