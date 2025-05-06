@@ -47,6 +47,9 @@ class CometoidWMTQualityEstimation(BaseParallelProcessor):
     
     .. note::
         This processor uses MarianNMT models fine-tuned for quality estimation. See https://marian-nmt.github.io/.
+
+        Make sure to install `pymarian` before using this processor:
+            pip install pymarian
     """
 
     # Mapping of supported model aliases to Hugging Face repo paths

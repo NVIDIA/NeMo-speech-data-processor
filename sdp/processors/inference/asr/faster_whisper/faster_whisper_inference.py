@@ -174,8 +174,19 @@ class FasterWhisperInference(BaseProcessor):
         The final combined manifest is written to ``output_manifest_file``, which defaults to ``<output_dir>/predictions_all.json``.
     
     .. note::
+        Make sure to install the following packages before using this processor:
+        
+            pip install pytorch-lightning nvidia-cublas-cu12 nvidia-cudnn-cu12==9.* faster_whisper
+
+        Additionally, ensure that the dynamic libraries for cuBLAS and cuDNN are discoverable at runtime:
+
+            export LD_LIBRARY_PATH=`python3 -c 'import os; import nvidia.cublas.lib; import nvidia.cudnn.lib; print(os.path.dirname(nvidia.cublas.lib.__file__) + ":" + os.path.dirname(nvidia.cudnn.lib.__file__))'`
+
+        This is required for CUDA backend components to function correctly when using FasterWhisper with GPU acceleration.
+
         For detailed configuration options and advanced usage of FasterWhisper, refer to the official repository:
         https://github.com/SYSTRAN/faster-whisper
+        
     """
     def __init__(self, 
                  input_manifest_file: str,

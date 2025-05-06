@@ -41,7 +41,11 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
         A manifest where each entry contains the original data fields plus:
             - `<output_field>`: The predicted label (e.g., language code for `lid.176.bin`).
             - `<output_field>_prob`: The probability of the prediction.
-            
+    
+    .. note::
+        Make sure to install `fasttext` before using this processor:
+            pip install fasttext
+
     """
 
     SUPPROTED_MODELS_URLS = {

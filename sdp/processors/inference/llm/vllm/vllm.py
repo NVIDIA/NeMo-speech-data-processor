@@ -54,6 +54,9 @@ class vLLMInference(BaseProcessor):
         - model: https://docs.vllm.ai/en/latest/api/vllm/vllm.entrypoints.llm.html#vllm.entrypoints.llm.LLM
         - inference: https://docs.vllm.ai/en/v0.6.4/dev/sampling_params.html
         - apply_chat_template: https://huggingface.co/docs/transformers/main/en/chat_templating#applychattemplate
+
+        Make sure to install `optree>=0.13.0` and `vllm` before using this processor:
+            pip install optree>=0.13.0, vllm
     """
 
     def __init__(self,
