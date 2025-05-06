@@ -292,6 +292,9 @@ Data filtering
 
 .. autodata:: sdp.processors.AcceptIfWERLess
     :annotation:
+   
+.. autodata:: sdp.processors.WhisperHallucinationFeatures
+    :annotation:
 
 .. autodata:: sdp.processors.CreateTolokaPool
     :annotation:

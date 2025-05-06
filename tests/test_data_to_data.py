@@ -23,6 +23,8 @@ from sdp.processors.modify_manifest.data_to_data import (
     LambdaExpression,
 )
 
+from sdp.processors.inference.asr.post_processing.whisper_hallucinations import WhisperHallucinationFeatures
+
 test_params_list = []
 
 test_params_list.extend(
@@ -204,6 +206,98 @@ test_params_list.extend(
     ]
 )
 
+test_params_list.extend(
+    [
+        # Case: repeated n-grams (low unique words share)
+        (
+            WhisperHallucinationFeatures,
+            {"unique_words_threshold": 0.5},
+            {"text": "word word word word", "duration": 2.0},
+            [{   
+                "text": "word word word word", 
+                "duration": 2.0,
+                "hall_repeated_ngrams": True,
+                "hall_long_word": False,
+                "hall_frequent_single_word": False,
+            }],
+        ),
+
+        # Case: high unique word share
+        (
+            WhisperHallucinationFeatures,
+            {"unique_words_threshold": 0.2},
+            {"text": "this is a very diverse sentence", "duration": 3.0},
+            [{
+                "text": "this is a very diverse sentence", 
+                "duration": 3.0,
+                "hall_repeated_ngrams": False,
+                "hall_long_word": False,
+                "hall_frequent_single_word": False,
+            }],
+        ),
+
+        # Case: one very long word
+        (
+            WhisperHallucinationFeatures,
+            {"long_word_threshold": 10},
+            {"text": "short supercalifragilisticexpialidocious", "duration": 3.0},
+            [{
+                "text": "short supercalifragilisticexpialidocious", 
+                "duration": 3.0,
+                "hall_repeated_ngrams": False,
+                "hall_long_word": True,
+                "hall_frequent_single_word": False,
+            }],
+        ),
+
+        # Case: long word with large relative difference
+        (
+            WhisperHallucinationFeatures,
+            {"long_word_threshold": 100, "long_word_rel_threshold": 2.0},
+            {"text": "hi extraordinarylongword tiny", "duration": 3.0},
+            [{
+                "text": "hi extraordinarylongword tiny", 
+                "duration": 3.0,
+                "hall_repeated_ngrams": False,
+                "hall_long_word": True,
+                "hall_frequent_single_word": False,
+            }],
+        ),
+
+        # Case: low character rate (chars/sec)
+        (
+            WhisperHallucinationFeatures,
+            {"char_rate_threshold": 10.0},
+            {"text": "a b", "duration": 2.0},
+            [{   
+                "text": "a b", 
+                "duration": 2.0,
+                "hall_repeated_ngrams": False,
+                "hall_long_word": False,
+                "hall_frequent_single_word": True,
+            }],
+        ),
+
+        # Case: all metrics triggered
+        (
+            WhisperHallucinationFeatures,
+            {
+                "unique_words_threshold": 0.5,
+                "long_word_threshold": 10,
+                "long_word_rel_threshold": 1.0,
+                "char_rate_threshold": 5.0,
+            },
+            {"text": "verylongword verylongword verylongword", "duration": 12.0},
+            [{   
+                "text": "verylongword verylongword verylongword", 
+                "duration": 12.0,
+                "hall_repeated_ngrams": True,
+                "hall_long_word": True,
+                "hall_frequent_single_word": True,
+            }],
+        ),
+    ]
+)
 
 
 @pytest.mark.parametrize("test_class,class_kwargs,test_input,expected_output", test_params_list, ids=str)

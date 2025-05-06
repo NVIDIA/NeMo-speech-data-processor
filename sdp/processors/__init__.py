@@ -24,7 +24,7 @@ from sdp.processors.modify_manifest.common import (
     RenameFields,
     SortManifest,
     SplitOnFixedDuration,
-    DropSpecificFields,
+    DropSpecifiedFields,
 )
 from sdp.processors.modify_manifest.create_manifest import (
     CreateCombinedManifests,
@@ -84,6 +84,8 @@ from sdp.processors.huggingface.huggingface_hub import ListRepoFiles, SnapshotDo
 from sdp.processors.inference.asr.nemo.asr_inference import ASRInference
 from sdp.processors.inference.asr.transformers.speech_recognition import ASRTransformers
 from sdp.processors.inference.asr.faster_whisper.faster_whisper_inference import FasterWhisperInference
+from sdp.processors.inference.asr.post_processing.whisper_hallucinations import WhisperHallucinationFeatures
+
 
 from sdp.processors.nemo.pc_inference import PCInference
 
