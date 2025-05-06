@@ -112,31 +112,43 @@ class ReadTxtLines(BaseParallelProcessor):
 
 class CountNumWords(BaseParallelProcessor):
     """
-    Processor for counting the number of words in the text_key field saving the number in num_words_key.
+    A processor that counts the number of words in the `text_key` field of each dataset entry and stores the result in `num_words_key`.
+
+    Before counting, the text is optionally cleaned using a custom `alphabet`:
+    - If `alphabet` is provided, all characters not in the alphabet are replaced with whitespace.
+    - Consecutive whitespace characters are collapsed into a single space.
+    - The number of resulting space-separated tokens is counted as the number of words.
 
     Args:
-        text_key (str): The field containing the input text in the dataset.
-        num_words_key (str): The field to store the number of words in the dataset.
-        alphabet (str): Characters to be used to count words. Any other characters are substituted by whitespace and not take into account.
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        text_key (str): The key in the input data entry containing the text to be analyzed.
+        num_words_key (str): The key under which the word count will be stored in the output entry. Defaults to "num_words".
+        alphabet (str, optional): A string of allowed characters (e.g., lowercase letters). All characters not in this set will be replaced with whitespace before counting. If not provided, no filtering is applied.
+        **kwargs: Additional arguments passed to the BaseParallelProcessor.
 
+    Returns:
+        A manifest where each entry is the original data entry with an added field `num_words_key` (default: `"num_words"`),
+        indicating the number of words in the `text_key` field.
     """
 
     def __init__(
         self,
         text_key: str,
-        num_words_key: str,
-        alphabet: str,
+        num_words_key: str = "num_words",
+        alphabet: str = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.text_key = text_key
         self.num_words_key = num_words_key
-        self.pattern = re.compile("[^" + alphabet + "]")
+        self.pattern = None
+        if alphabet:
+            self.pattern = re.compile("[^" + alphabet + "]")
 
     def process_dataset_entry(self, data_entry):
         text = data_entry[self.text_key]
-        cleaned_string = self.pattern.sub("", text).strip()
+        cleaned_string = text
+        if self.pattern:
+            cleaned_string = self.pattern.sub("", cleaned_string).strip()
         cleaned_string = re.sub("\\s+", " ", cleaned_string).strip()
         words = cleaned_string.split()
         num_words = len(words)
