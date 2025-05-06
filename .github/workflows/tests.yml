@@ -46,7 +46,6 @@ jobs:
         pip install -r requirements/main.txt
         pip install -r requirements/tests.txt
         pip install -r requirements/huggingface.txt
-        pip install -r requirements/tts.txt
         pip install nemo_text_processing
         python -m pip cache purge
     - name: Checking that SDP can be imported and basic configs can be run without nemo
@@ -69,7 +68,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements/main.txt
         pip install -r requirements/tests.txt
-        pip install -r requirements/tts.txt
         sudo apt-get update
         sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
         pip install pytorch_lightning
