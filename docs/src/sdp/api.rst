@@ -167,6 +167,9 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.FasterWhisperInference
    :annotation:
 
+.. autodata:: sdp.processors.vLLMInference
+   :annotation:
+
 Text-only processors
 ####################
 
