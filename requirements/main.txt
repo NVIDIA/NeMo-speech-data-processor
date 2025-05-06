@@ -18,7 +18,6 @@ python-docx
 pydub
 dask
 distributed
-ndjson
 
 # toloka-kit  # Temporarily disabled due to Toloka's technical pause; keep as reference for past and future API support
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required

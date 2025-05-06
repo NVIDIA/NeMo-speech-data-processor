@@ -15,7 +15,6 @@
 
 import os
 import subprocess
-from pathlib import Path
 
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
