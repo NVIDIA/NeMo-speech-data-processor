@@ -15,6 +15,7 @@
 from sdp.processors.base_processor import BaseProcessor
 import random
 import os
+import logging
 from time import time
 import ndjson
 from pyannote.audio import Pipeline
@@ -97,6 +98,11 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
                                     use_auth_token=hf_token)
         self.pipeline.segmentation_batch_size = segmentation_batch_size
         self.pipeline.embedding_batch_size = embedding_batch_size
+
+        if not torch.cuda.is_available():
+            device = "cpu"
+            logging.warning("CUDA is not available, using CPU")
+        
         self.pipeline.to(torch.device(device))
 
         self.min_length = min_length

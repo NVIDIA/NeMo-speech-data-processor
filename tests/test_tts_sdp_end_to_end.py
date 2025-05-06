@@ -68,7 +68,7 @@ def test_tts_sdp_end_to_end(get_tts_ytc_data):
         output_data = ndjson.load(f)
         for item in output_data:
             output_file_data[item["audio_item_id"]] = item
-        
+    
     reference_file_data = {}
     with open(reference_manifest_file, "r") as f:
         reference_data = ndjson.load(f)
