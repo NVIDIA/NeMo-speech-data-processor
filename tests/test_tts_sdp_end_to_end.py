@@ -54,7 +54,7 @@ def test_tts_sdp_end_to_end(get_tts_ytc_data):
     reference_manifest_file = os.path.join(data_dir, "test_data_reference.json")
 
     cfg = OmegaConf.load(config_path)
-    cfg.hf_token = os.getenv("HF_ACCESS_KEY")
+    cfg.hf_token = os.getenv("HF_SECRET_KEY")
     cfg.final_manifest = os.path.join(data_dir, "output_manifest.jsonl")
     cfg.raw_audio_dir = os.path.join(data_dir, "audios")
     cfg.data_split = "train"
