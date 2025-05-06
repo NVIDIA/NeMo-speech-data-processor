@@ -39,3 +39,6 @@ jobs:
         path: |
           pytest.xml
           coverage.xml
+
+    - name: Docker cleanup
+      run: docker system prune -af
