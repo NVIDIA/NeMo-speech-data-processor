@@ -56,7 +56,8 @@ class vLLMInference(BaseProcessor):
         - apply_chat_template: https://huggingface.co/docs/transformers/main/en/chat_templating#applychattemplate
 
         Make sure to install `optree>=0.13.0` and `vllm` before using this processor:
-            pip install optree>=0.13.0 vllm
+            pip install "optree>=0.13.0" vllm
+
     """
 
     def __init__(self,
