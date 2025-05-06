@@ -33,7 +33,7 @@ jobs:
         docker run --rm \
           -v ${{ github.workspace }}:/workspace \
           -w /workspace \
-          --shm-size=10g \
+          --shm-size=4g \
           -e AWS_SECRET_KEY="${AWS_SECRET_KEY}" \
           -e AWS_ACCESS_KEY="${AWS_ACCESS_KEY}" \
           -e HF_SECRET_KEY="${HF_SECRET_KEY}" \
