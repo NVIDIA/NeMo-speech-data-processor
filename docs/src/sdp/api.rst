@@ -202,6 +202,9 @@ Data modifications
 .. autodata:: sdp.processors.CountNumWords
    :annotation:
 
+.. autodata:: sdp.processors.FilterWithCharacterHistograms
+   :annotation:
+
 .. autodata:: sdp.processors.NormalizeText
    :annotation:
    
