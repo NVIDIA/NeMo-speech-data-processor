@@ -153,17 +153,25 @@ class FasterWhisperInference(BaseProcessor):
         audio_filepath_field (str): Name of the field in manifest pointing to audio path.
      
     Returns:
-        A manifest file where each line corresponds to the transcription result of an input sample.
+        A final merged manifest file where each line corresponds to the transcription result of an input audio sample.
+        The manifest is assembled from multiple per-worker (rank) manifest files, each produced by a separate device or process.
+
         Each entry contains the following fields:
 
         - ``language`` (str, optional): Detected language (if language detection is enabled).
         - ``language_probability`` (float, optional): Confidence score of detected language.
-        - ``segments`` (List[Dict], optional): List of segment-level transcriptions with start/end times and text (if timestamps are embedded).
-        - ``pred_text`` (str): Final transcribed text obtained by concatenating segment texts.
-        - ``segments`` (str, optional): Path to file containing segment timestamps (if saved separately).
-        - ``words`` (str, optional): Path to file containing word-level timestamps (if enabled and saved separately).
-        
-        The output manifest is written to `output_manifest_file`, which defaults to `<output_dir>/predictions_all.json`.
+        - ``pred_text`` (str): Final transcribed text obtained by concatenating all segment texts.
+
+        One of the following timestamp representations will also be included, depending on the value of `save_timestamps_separately`:
+
+        - If ``save_timestamps_separately=False``:
+            - ``segments`` (List[Dict]): List of segment dictionaries with start/end timestamps and transcribed text.
+
+        - If ``save_timestamps_separately=True``:
+            - ``segments`` (str): Path to a JSON file containing segment-level timestamps.
+            - ``words`` (str, optional): Path to a JSON file containing word-level timestamps (if `word_timestamps=True`).
+
+        The final combined manifest is written to ``output_manifest_file``, which defaults to ``<output_dir>/predictions_all.json``.
     
     .. note::
         For detailed configuration options and advanced usage of FasterWhisper, refer to the official repository:
@@ -253,7 +261,6 @@ class FasterWhisperInference(BaseProcessor):
             else:
                 logger.info("CUDA devices found. GPU will be used as workers.")
                 device == "cuda"
-                max_workers = max_available_workers
         elif device == "cpu":
             logger.info("CPU will be used as workers.")
         else:
