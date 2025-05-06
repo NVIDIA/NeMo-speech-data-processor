@@ -91,6 +91,7 @@ from sdp.processors.inference.llm.vllm.vllm import vLLMInference
 from sdp.processors.inference.llm.post_processing.qwen_cleaning import CleanQwenGeneration
 
 from sdp.processors.inference.nlp.nemo.pc_inference import PCInference
+from sdp.processors.inference.nlp.fasttext.fasttext import FastTextLangIdClassifier
 
 from sdp.processors.toloka.accept_if import AcceptIfWERLess
 from sdp.processors.toloka.create_pool import CreateTolokaPool

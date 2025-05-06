@@ -152,7 +152,7 @@ Data enrichment
 ###############
 
 The following processors can be used to add additional attributes to the data by
-running different NeMo models (e.g., ASR predictions). These attributes are typically
+running different models (e.g., ASR predictions). These attributes are typically
 used in the downstream processing for additional enhancement or filtering.
 
 .. autodata:: sdp.processors.ASRInference
@@ -168,6 +168,9 @@ used in the downstream processing for additional enhancement or filtering.
    :annotation:
 
 .. autodata:: sdp.processors.vLLMInference
+   :annotation:
+
+.. autodata:: sdp.processors.FastTextLangIdClassifier
    :annotation:
 
 Text-only processors
