@@ -156,7 +156,7 @@ class FasterWhisperInference(BaseProcessor):
         A manifest file where each line corresponds to the transcription result of an input sample.
         Each entry contains the following fields:
 
-        - ``languag`` (str, optional): Detected language (if language detection is enabled).
+        - ``language`` (str, optional): Detected language (if language detection is enabled).
         - ``language_probability`` (float, optional): Confidence score of detected language.
         - ``segments`` (List[Dict], optional): List of segment-level transcriptions with start/end times and text (if timestamps are embedded).
         - ``pred_text`` (str): Final transcribed text obtained by concatenating segment texts.
