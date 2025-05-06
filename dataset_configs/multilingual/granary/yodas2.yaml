@@ -11,7 +11,7 @@ params:
   min_audio_lid_probability:  0.7
   min_audio_duration: 0.1
   max_audio_duration: 40.0
-  use_regex: commom 
+  use_regex: common
   translation:
     target_lang: it
     target_lang_full: Italian
@@ -21,8 +21,9 @@ params:
     min_qe_score: 0.75
   save_disk_space: True
 
-processors_to_run: "9"
-workspace_dir: ???
+processors_to_run: "3:"
+workspace_dir: /data3/sdp_test/final_test
+sdp_dir: /ameister/YODAS_PR_FINAL/NeMo-speech-data-processor
 
 processors:
   - _target_: sdp.processors.ListYodas2Data
@@ -100,7 +101,7 @@ processors:
     expression: (entry.language == "${params.source_lang}") & (entry.language_probability >= ${params.min_audio_lid_probability})
     filter: True
 
-  - _target_: sdp.processors.DropSpecificFields
+  - _target_: sdp.processors.DropSpecifiedFields
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_11.json
     fields_to_drop:
       - language
@@ -113,10 +114,9 @@ processors:
     model_size_or_path: 'base'
     output_dir: ${workspace_dir}/${params.source_lang}/manifest_12
     inference:
-        batch_size: 16
         language: ${params.source_lang}
     save_timestamps_separately: False
-    skip_corrupted: True
+    skip_corrupted_audios: True
   
   - _target_: sdp.processors.ListToEntries
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_13.json
@@ -155,10 +155,9 @@ processors:
     model_size_or_path: 'base'
     output_dir: ${workspace_dir}/${params.source_lang}/manifest_17
     inference:
-        batch_size: 16
         language: ${params.source_lang}
     save_timestamps_separately: False
-    skip_corrupted: True
+    skip_corrupted_audios: True
     slice_by_offset: True
   
   - _target_: sdp.processors.KeepOnlySpecifiedFields
@@ -185,8 +184,9 @@ processors:
     regex_patterns:
       - "^\\s*$"
 
-  - _target_: sdp.processors.WhisperHallucinationFeatures
+  - _target_: sdp.processors.DetectWhisperHallucinationFeatures
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_21.json
+    common_hall_file: ${sdp_dir}/dataset_configs/multilingual/granary/partials/common_phrases/${params.source_lang}.txt
     text_field: text
   
   - _target_: sdp.processors.LambdaExpression
@@ -211,7 +211,7 @@ processors:
   - _target_: sdp.processors.vLLMInference
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_24.json
     generation_field: src_text
-    prompt_file: ./dataset_configs/multilingual/yodas2/partials/pr_recovery_prompts/${params.source_lang}.yaml
+    prompt_file: ${sdp_dir}/dataset_configs/multilingual/granary/partials/pr_recovery_prompts/${params.source_lang}.yaml
     model:
       model: "Qwen/Qwen2.5-7B-Instruct-1M"
       tensor_parallel_size: 2
@@ -231,17 +231,17 @@ processors:
       tokenize: False
       add_generation_prompt: True
   
-  - _target_: sdp.processors.QwenGenerationFiltering
+  - _target_: sdp.processors.CleanQwenGeneration
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_25.json
     text_field: text
     generation_field: src_text
   
   - _target_: sdp.processors.SubRegex
     text_key: src_text
-    regex_params_yaml: ./dataset_configs/multilingual/yodas2/partials/subregex_params.yaml
+    regex_params_yaml: ${sdp_dir}/dataset_configs/multilingual/granary/partials/subregex_params/${params.use_regex}.yaml
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_26.json
   
-  - _target_: sdp.processors.DropSpecificFields
+  - _target_: sdp.processors.DropSpecifiedFields
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_27.json
     fields_to_drop:
       - text
@@ -302,7 +302,7 @@ processors:
     operator: lt
     target_value: ${params.translation.max_len_diff_ratio}
   
-  - _target_: sdp.processors.DropSpecificFields
+  - _target_: sdp.processors.DropSpecifiedFields
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_35.json
     fields_to_drop:
       - num_words_src
@@ -311,14 +311,14 @@ processors:
       - len_diff_ratio
   
   ## filtering based on character histograms
-  - _target_: sdp.processors.CharacterHistograms
+  - _target_: sdp.processors.FilterWithCharacterHistograms
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_36.json
     text_field: src_text
     lang: ${params.source_lang}
     output_score_field: src_hist_token_ratio
     cache_dir: /data3/sdp_test/cache/histograms
   
-  - _target_: sdp.processors.CharacterHistograms
+  - _target_: sdp.processors.FilterWithCharacterHistograms
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_37.json
     text_field: tgt_text
     lang: ${params.translation.target_lang}
@@ -331,7 +331,7 @@ processors:
     expression: (entry.src_hist_token_ratio > ${params.translation.min_hist_token_ratio}) & (entry.tgt_hist_token_ratio > ${params.translation.min_hist_token_ratio})
     filter: True
   
-  - _target_: sdp.processors.DropSpecificFields
+  - _target_: sdp.processors.DropSpecifiedFields
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_39.json
     fields_to_drop:
       - src_hist_token_ratio
@@ -339,14 +339,14 @@ processors:
       - len_diff_ratio_filter
 
   ## filtering based on Fasttext LID
-  - _target_: sdp.processors.FastTextClassifier
+  - _target_: sdp.processors.FastTextLangIdClassifier
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_40.json
     text_field: src_text
     output_field: src_lid
     model_name_or_path: lid.176.bin
     cache_dir: /data3/sdp_test/cache
   
-  - _target_: sdp.processors.FastTextClassifier
+  - _target_: sdp.processors.FastTextLangIdClassifier
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_41.json
     text_field: tgt_text
     output_field: tgt_lid
@@ -359,7 +359,7 @@ processors:
     expression: (entry.src_lid == '${params.source_lang}') & (entry.src_lid_prob > ${params.translation.min_text_lid_probability}) & (entry.tgt_lid == '${params.translation.target_lang}') & (entry.tgt_lid_prob > ${params.translation.min_text_lid_probability})
     filter: True
   
-  - _target_: sdp.processors.DropSpecificFields
+  - _target_: sdp.processors.DropSpecifiedFields
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_43.json
     fields_to_drop:
       - src_lid
@@ -384,9 +384,11 @@ processors:
     operator: gt
     target_value: ${params.translation.min_qe_score}
 
-  - _target_: sdp.processors.DropSpecificFields
+  - _target_: sdp.processors.DropSpecifiedFields
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_46.json
     fields_to_drop:
       - cometoid_score
   
   # - _target_: sdp.processors.ConvertToTarredAudioDataset
+
+  #export HYDRA_FULL_ERROR=1 && python /ameister/YODAS_PR_FINAL/NeMo-speech-data-processor/main.py --config-path=/ameister/YODAS_PR_FINAL/NeMo-speech-data-processor/dataset_configs/multilingual/granary/ --config-name=yodas2.yaml
