@@ -38,15 +38,6 @@ class DetectWhisperHallucinationFeatures(BaseParallelProcessor):
 
     Returns:
         A manifest with additional boolean fields for hallucination detection.
-
-    Example entry after processing:
-        {
-            "text": "hello hello hello",
-            "duration": 2.0,
-            "hall_repeated_ngrams": True,
-            "hall_long_word": False,
-            "hall_frequent_single_word": False
-        }
     """
 
     def __init__(
