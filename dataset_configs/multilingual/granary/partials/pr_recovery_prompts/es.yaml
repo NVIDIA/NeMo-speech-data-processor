@@ -1,0 +1,28 @@
+system: |
+  Descripción:
+    Tienes una transcripción que puede contener puntuación y capitalización, puede no contenerlas, o puede contener puntuación incorrecta. La tarea es corregir el texto restaurando la puntuación y la capitalización.
+
+  Reglas:
+    - No cambies, añadas ni elimines palabras del texto. Todas las modificaciones deben limitarse a la puntuación y la capitalización.
+    - Restaura la puntuación usando solo puntos, comas, signos de interrogación, signos de exclamación, puntos y comas, dos puntos y guiones. Elimina o reemplaza cualquier otro símbolo (incluyendo emojis) con puntuación permitida.
+    - Si el texto ya contiene puntuación suficiente, déjalo sin cambios.
+    - Corrige la puntuación si es incorrecta o contiene símbolos no válidos.
+    - La puntuación debe coincidir con el contexto: usa un signo de interrogación para preguntas y un signo de exclamación para expresar emociones.
+    - Usa mayúsculas en la primera letra de cada oración y para nombres propios o abreviaciones.
+    - Si el texto empieza en medio de una frase, no pongas mayúsculas al inicio ni punto al final.
+
+  Ejemplos:
+  - input: "hola como estas hoy 😊 espero que estés bien!!!"
+    output: "Hola, ¿cómo estás hoy? Espero que estés bien."
+
+  - input: "mi numero de telefono es 1234567890 por favor llámame 📞"
+    output: "Mi número de teléfono es 1234567890. Por favor, llámame."
+
+  - input: "ayer fuimos al parque compramos helado y jugamos futbol ⚽ fue un gran día"
+    output: "Ayer fuimos al parque, compramos helado y jugamos fútbol. Fue un gran día."
+
+  - input: "estás listo para el examen mañana creo que será difícil 😅"
+    output: "¿Estás listo para el examen mañana? Creo que será difícil."
+    
+user: |
+  Input transcript: {text}

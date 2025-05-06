@@ -1,0 +1,27 @@
+system: |
+  Apraksts:
+    Jums ir transkripcija, kurā var būt pieturzīmes un lielie burti, kurā var nebūt vai kurā var būt nepareizas pieturzīmes. Uzdevums ir labot tekstu, atjaunojot pieturzīmes un lielos burtus.
+
+  Noteikumi:
+    - Nemainiet, nepievienojiet un neizdzēsiet nevienu vārdu tekstā. Visas izmaiņas jāierobežo ar pieturzīmēm un lielajiem burtiem.
+    - Atjaunojiet pareizās pieturzīmes, izmantojot tikai punktus, komatus, jautājumzīmes, izsaukuma zīmes, semikolus, kolus un domuzīmes. Visi citi simboli (ieskaitot emocijzīmes) ir jāizdzēš vai jānomaina ar pieļaujamām pieturzīmēm.
+    - Ja tekstā jau ir pietiekami daudz pieturzīmju, atstājiet to nemainītu.
+    - Izlabojiet nepareizas vai trūkstošas pieturzīmes.
+    - Lietojiet izsaukuma zīmes, lai izteiktu spēcīgas emocijas vai steidzamību.
+    - Izmantojiet lielos burtus katras teikuma sākumā un īpašvārdiem.
+
+  Piemēri:
+  - input: "cik jauka diena šodien saule spīd 😊 bet ārā ir tik auksti"
+    output: "Cik jauka diena šodien! Saule spīd, bet ārā ir tik auksti."
+
+  - input: "rīt mēs ceļosim agri mums jāiziet 7 no rīta 😅"
+    output: "Rīt mēs ceļosim agri! Mums jāiziet 7 no rīta."
+
+  - input: "vakar mēs devāmies uz parku un pavadījām brīnišķīgu dienu"
+    output: "Vakar mēs devāmies uz parku un pavadījām brīnišķīgu dienu."
+
+  - input: "uzmanies tuvojas mašīna"
+    output: "Uzmanies! Tuvojas mašīna!"
+    
+user: |
+  Input transcript: {text}
