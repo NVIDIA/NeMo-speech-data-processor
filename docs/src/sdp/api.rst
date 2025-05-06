@@ -338,6 +338,9 @@ Miscellaneous
 .. autodata:: sdp.processors.KeepOnlySpecifiedFields
    :annotation:
 
+.. autodata:: sdp.processors.DropSpecifiedFields
+   :annotation:
+
 .. autodata:: sdp.processors.GetAudioDuration
    :annotation:
 

@@ -401,3 +401,38 @@ class ApplyInnerJoin(BaseProcessor):
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for _, line in m3.iterrows():
                 fout.write(json.dumps(dict(line), ensure_ascii=False) + "\n")
+
+
+class DropSpecifiedFields(BaseProcessor):
+    """
+    A processor that removes specified fields from each data entry in the manifest.
+
+    This processor reads an input manifest line by line, drops the fields listed in `fields_to_drop` 
+    from each JSON entry, and writes the cleaned entries to the output manifest.
+
+    Args:
+        fields_to_drop (List[str]): A list of keys to remove from each manifest entry.
+        **kwargs: Additional arguments passed to the BaseProcessor (e.g., input/output manifest paths).
+
+    Returns:
+        A line-delimited JSON manifest, where each entry is the same as the input,
+        but with the specified fields removed.
+    """
+
+    def __init__(self, fields_to_drop: List[str], **kwargs):
+        super().__init__(**kwargs)
+        self.fields_to_drop = fields_to_drop
+
+    def process(self):
+        # Open the input and output manifest files
+        with open(self.input_manifest_file, "rt", encoding="utf8") as fin, open(
+            self.output_manifest_file, "wt", encoding="utf8"
+        ) as fout:
+            # Iterate over each line (entry) in the input manifest
+            for line in tqdm(fin):
+                # Parse JSON entry from the current line
+                entry = json.loads(line)
+                # Create a new entry by excluding the specified fields
+                new_line = {field: entry[field] for field in entry if field not in self.fields_to_drop}
+                # Write the cleaned entry to the output manifest
+                fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")

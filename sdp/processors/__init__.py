@@ -24,6 +24,7 @@ from sdp.processors.modify_manifest.common import (
     RenameFields,
     SortManifest,
     SplitOnFixedDuration,
+    DropSpecificFields,
 )
 from sdp.processors.modify_manifest.create_manifest import (
     CreateCombinedManifests,
