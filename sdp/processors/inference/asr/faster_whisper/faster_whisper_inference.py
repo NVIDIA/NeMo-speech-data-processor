@@ -186,7 +186,7 @@ class FasterWhisperInference(BaseProcessor):
 
         For detailed configuration options and advanced usage of FasterWhisper, refer to the official repository:
         https://github.com/SYSTRAN/faster-whisper
-        
+
     """
     def __init__(self, 
                  input_manifest_file: str,
@@ -469,14 +469,3 @@ class FasterWhisperInference(BaseProcessor):
                 with open(rank_manifest_filepath, 'r', encoding='utf8') as rank_manifest:
                     for line in rank_manifest:
                         output_manifest.writelines(line)
-            
-
-
-
-
-
-
-
-
-                
-
