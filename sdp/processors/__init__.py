@@ -85,7 +85,7 @@ from sdp.processors.huggingface.huggingface_hub import ListRepoFiles, SnapshotDo
 from sdp.processors.inference.asr.nemo.asr_inference import ASRInference
 from sdp.processors.inference.asr.transformers.speech_recognition import ASRTransformers
 from sdp.processors.inference.asr.faster_whisper.faster_whisper_inference import FasterWhisperInference
-from sdp.processors.inference.asr.post_processing.whisper_hallucinations import WhisperHallucinationFeatures
+from sdp.processors.inference.asr.post_processing.whisper_hallucinations import DetectWhisperHallucinationFeatures
 
 from sdp.processors.inference.llm.vllm.vllm import vLLMInference
 from sdp.processors.inference.llm.post_processing.qwen_cleaning import CleanQwenGeneration

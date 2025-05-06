@@ -15,7 +15,7 @@
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
-class WhisperHallucinationFeatures(BaseParallelProcessor):
+class DetectWhisperHallucinationFeatures(BaseParallelProcessor):
     """
     A processor for detecting common hallucination patterns in ASR (automatic speech recognition) model outputs.
     

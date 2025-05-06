@@ -305,7 +305,7 @@ Data filtering
 .. autodata:: sdp.processors.AcceptIfWERLess
     :annotation:
    
-.. autodata:: sdp.processors.WhisperHallucinationFeatures
+.. autodata:: sdp.processors.DetectWhisperHallucinationFeatures
     :annotation:
    
 .. autodata:: sdp.processors.CleanQwenGeneration

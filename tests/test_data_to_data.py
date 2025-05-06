@@ -23,7 +23,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     LambdaExpression,
 )
 
-from sdp.processors.inference.asr.post_processing.whisper_hallucinations import WhisperHallucinationFeatures
+from sdp.processors.inference.asr.post_processing.whisper_hallucinations import DetectWhisperHallucinationFeatures
 from sdp.processors.inference.llm.post_processing.qwen_cleaning import CleanQwenGeneration
 
 test_params_list = []
@@ -211,7 +211,7 @@ test_params_list.extend(
     [
         # Case: repeated n-grams (low unique words share)
         (
-            WhisperHallucinationFeatures,
+            DetectWhisperHallucinationFeatures,
             {"unique_words_threshold": 0.5},
             {"text": "word word word word", "duration": 2.0},
             [{   
@@ -225,7 +225,7 @@ test_params_list.extend(
 
         # Case: high unique word share
         (
-            WhisperHallucinationFeatures,
+            DetectWhisperHallucinationFeatures,
             {"unique_words_threshold": 0.2},
             {"text": "this is a very diverse sentence", "duration": 3.0},
             [{
@@ -239,7 +239,7 @@ test_params_list.extend(
 
         # Case: one very long word
         (
-            WhisperHallucinationFeatures,
+            DetectWhisperHallucinationFeatures,
             {"long_word_threshold": 10},
             {"text": "short supercalifragilisticexpialidocious", "duration": 3.0},
             [{
@@ -253,7 +253,7 @@ test_params_list.extend(
 
         # Case: long word with large relative difference
         (
-            WhisperHallucinationFeatures,
+            DetectWhisperHallucinationFeatures,
             {"long_word_threshold": 100, "long_word_rel_threshold": 2.0},
             {"text": "hi extraordinarylongword tiny", "duration": 3.0},
             [{
@@ -267,7 +267,7 @@ test_params_list.extend(
 
         # Case: low character rate (chars/sec)
         (
-            WhisperHallucinationFeatures,
+            DetectWhisperHallucinationFeatures,
             {"char_rate_threshold": 10.0},
             {"text": "a b", "duration": 2.0},
             [{   
@@ -281,7 +281,7 @@ test_params_list.extend(
 
         # Case: all metrics triggered
         (
-            WhisperHallucinationFeatures,
+            DetectWhisperHallucinationFeatures,
             {
                 "unique_words_threshold": 0.5,
                 "long_word_threshold": 10,
