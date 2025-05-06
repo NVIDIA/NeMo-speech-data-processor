@@ -298,6 +298,9 @@ Data filtering
    
 .. autodata:: sdp.processors.WhisperHallucinationFeatures
     :annotation:
+   
+.. autodata:: sdp.processors.CleanQwenGeneration
+    :annotation:
 
 .. autodata:: sdp.processors.CreateTolokaPool
     :annotation:

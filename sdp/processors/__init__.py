@@ -87,6 +87,7 @@ from sdp.processors.inference.asr.faster_whisper.faster_whisper_inference import
 from sdp.processors.inference.asr.post_processing.whisper_hallucinations import WhisperHallucinationFeatures
 
 from sdp.processors.inference.llm.vllm.vllm import vLLMInference
+from sdp.processors.inference.llm.post_processing.qwen_cleaning import CleanQwenGeneration
 
 from sdp.processors.nemo.pc_inference import PCInference
 

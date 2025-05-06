@@ -24,6 +24,7 @@ from sdp.processors.modify_manifest.data_to_data import (
 )
 
 from sdp.processors.inference.asr.post_processing.whisper_hallucinations import WhisperHallucinationFeatures
+from sdp.processors.inference.llm.post_processing.qwen_cleaning import CleanQwenGeneration
 
 test_params_list = []
 
@@ -299,6 +300,57 @@ test_params_list.extend(
     ]
 )
 
+test_params_list.extend(
+    [
+        # Case: generation is fine, no replacement
+        (
+            CleanQwenGeneration,
+            {"cer_threshold": 10, "upper_case_threshold": 0.6},
+            {"text": "hello world", "generation": "hello world"},
+            [{"text": "hello world", "generation": "hello world"}],
+        ),
+
+        # Case: generation is completely uppercase → replaced
+        (
+            CleanQwenGeneration,
+            {"cer_threshold": 10, "upper_case_threshold": 0.5},
+            {"text": "hello world", "generation": "HELLO WORLD"},
+            [{"text": "hello world", "generation": "hello world"}],
+        ),
+
+        # Case: generation contains <|endoftext|> and prompt remnants → cleaned
+        (
+            CleanQwenGeneration,
+            {},
+            {"text": "hello", "generation": "Input transcript: hello\nOutput transcript: hello<|endoftext|>"},
+            [{"text": "hello", "generation": "hello"}],
+        ),
+
+        # Case: generation is too different → high CER → replaced
+        (
+            CleanQwenGeneration,
+            {"cer_threshold": 0.2},
+            {"text": "hello world", "generation": "xyz abc"},
+            [{"text": "hello world", "generation": "hello world"}],
+        ),
+
+        # Case: generation is empty → replaced
+        (
+            CleanQwenGeneration,
+            {},
+            {"text": "reference", "generation": ""},
+            [{"text": "reference", "generation": "reference"}],
+        ),
+
+        # Case: text is empty → fallback to replacement
+        (
+            CleanQwenGeneration,
+            {},
+            {"text": "", "generation": "some output"},
+            [{"text": "", "generation": ""}],
+        ),
+    ]
+)
 
 @pytest.mark.parametrize("test_class,class_kwargs,test_input,expected_output", test_params_list, ids=str)
 def test_data_to_data(test_class, class_kwargs, test_input, expected_output):
