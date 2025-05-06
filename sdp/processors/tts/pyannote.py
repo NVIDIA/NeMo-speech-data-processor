@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from sdp.processors.base_processor import BaseProcessor
 import random
 import os
 import logging
@@ -25,8 +24,8 @@ from whisperx.vad import load_vad_model, merge_chunks
 import torch
 import torchaudio
 
-
-
+from sdp.logging import logger
+from sdp.processors.base_processor import BaseProcessor
 
 def has_overlap(turn, overlaps):
     """Check if a given turn overlaps with any segment in the overlaps list.
@@ -217,7 +216,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
 
         for metadata in manifest:
             file_path = metadata['resampled_audio_filepath']
-            print(file_path)
+            logger.info(file_path)
             
             s, fs = torchaudio.load(file_path)
             with ProgressHook() as hook:
@@ -230,7 +229,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
             diarization.crop(0, len(s)/fs)
 
             # write in RTTM format
-            print("Writing {} turns to RTTM file".format(len(diarization._tracks)))
+            logger.info("Writing {} turns to RTTM file".format(len(diarization._tracks)))
             rttm_filepath = os.path.splitext(file_path)[0] + ".rttm"
             with open(rttm_filepath, "w") as rttm_file:
                 diarization.write_rttm(rttm_file)
@@ -292,7 +291,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
             metadata['overlap_segments'] = overlap_segments
             results.append(metadata)
 
-        print(f'Completed diarization in {(time()-start_time)/3600} hrs')
+        logger.info(f'Completed diarization in {(time()-start_time)/3600} hrs')
         with open(self.output_manifest_file, 'w') as f:
             ndjson.dump(results, f)
 

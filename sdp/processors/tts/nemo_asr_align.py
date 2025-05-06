@@ -17,6 +17,7 @@ import omegaconf
 import torch
 import torchaudio
 import nemo.collections.asr as nemo_asr
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 
 class NeMoASRAligner(BaseProcessor):
@@ -27,7 +28,7 @@ class NeMoASRAligner(BaseProcessor):
     can process either full audio files or just specific segments.
 
     Args:
-        model_name (str): Name of pretrained model to use. Defaults to "nvidia/stt_en_fastconformer_ctc_large"
+        model_name (str): Name of pretrained model to use. Defaults to "nvidia/parakeet-tdt_ctc-1.1b"
         model_path (str, optional): Path to local model file. If provided, overrides model_name
         min_len (float): Minimum length of audio segments to process in seconds. Defaults to 0.1
         max_len (float): Maximum length of audio segments to process in seconds. Defaults to 40
@@ -52,7 +53,7 @@ class NeMoASRAligner(BaseProcessor):
               parakeet: True
     """
     def __init__(self,
-            model_name="nvidia/stt_en_fastconformer_ctc_large",
+            model_name="nvidia/parakeet-tdt_ctc-1.1b",
             model_path=None,
             min_len: float = 0.1,
             max_len: float = 40,
@@ -63,14 +64,19 @@ class NeMoASRAligner(BaseProcessor):
             split_batch_size: int = 5000,
             timestamp_type: str = "word",
             infer_segment_only: bool = False,
+            device: str = "cuda",
             **kwargs):
         super().__init__(**kwargs)
         if model_path is not None:
             self.asr_model = nemo_asr.models.ASRModel.restore_from(restore_path=model_path)
         else:
             self.asr_model = nemo_asr.models.ASRModel.from_pretrained(model_name=model_name)
-            
-        self.asr_model.cuda()
+        
+        if not torch.cuda.is_available():
+            device = "cpu"
+            logger.warning("CUDA is not available, using CPU")
+        
+        self.asr_model.to(device)
         # Configuring attention to work with longer files
         self.asr_model.change_attention_model(
             self_attention_model="rel_pos_local_attn", att_context_size=[128, 128]

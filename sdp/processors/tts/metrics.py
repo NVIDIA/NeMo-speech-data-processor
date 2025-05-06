@@ -17,6 +17,8 @@ import math
 import ndjson
 import numpy as np
 from tqdm import tqdm
+
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 
 import torch
@@ -45,9 +47,17 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
               input_manifest_file: ${workspace_dir}/manifest.json
               output_manifest_file: ${workspace_dir}/manifest_squim.json
     """
-    def __init__(self, **kwargs):
+    def __init__(self, device: str = "cuda", **kwargs):
         super().__init__(**kwargs)
-        self.model = SQUIM_OBJECTIVE.get_model().cuda()
+
+        if not torch.cuda.is_available():
+            device="cpu"
+            logger.warning("CUDA is not available, using CPU")
+        
+        if device == "cuda":
+            self.model = SQUIM_OBJECTIVE.get_model().cuda()
+        else:
+            self.model = SQUIM_OBJECTIVE.get_model()
 
     def process(self):
         with open(self.input_manifest_file) as f:
@@ -62,7 +72,7 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
             try: 
                 audio, _ = librosa.load(path=metadata['resampled_audio_filepath'], sr=sr)
             except Exception as ex:
-                print(f"Failed to load {metadata['resampled_audio_filepath']}, exception={ex}")
+                logger.info(f"Failed to load {metadata['resampled_audio_filepath']}, exception={ex}")
                 continue
 
             for segment in metadata["segments"]:
@@ -102,7 +112,7 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
                     segment['metrics'] = metrics
                 except Exception as e:
                     torch.cuda.empty_cache()
-                    print('Failed to extract Squim metrics {} with frame_offset={} and num_frames={}'.format(
+                    logger.info('Failed to extract Squim metrics {} with frame_offset={} and num_frames={}'.format(
                         metadata['resampled_audio_filepath'],
                         start,
                         num_samples))
@@ -193,7 +203,7 @@ class BandwidthEstimationProcessor(BaseProcessor):
             try: 
                 audio, sample_rate = librosa.load(path=audio_filepath, sr=None)
             except Exception as ex:
-                print(f"Failed to load {audio_filepath}, exception={ex}")
+                logger.info(f"Failed to load {audio_filepath}, exception={ex}")
                 continue
 
             for segment in metadata['segments']:

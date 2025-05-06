@@ -15,6 +15,7 @@
 import ndjson
 from typing import List, Union
 
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
@@ -91,7 +92,7 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
                         word['bandwidth'] = None
                     words.append(word)
             else:
-                print('Found no words in segment')
+                logger.info('Found no words in segment')
 
         return words
     
@@ -326,7 +327,7 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
             self.add_new_segments_to_metadata(metadata, new_segments)
             
         else:
-            print('Found no segments in metadata for audio file: ', metadata['audio_filepath'])
+            logger.info('Found no segments in metadata for audio file: ', metadata['audio_filepath'])
         
         return [DataEntry(data=metadata)]
 
