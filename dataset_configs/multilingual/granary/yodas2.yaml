@@ -8,7 +8,7 @@ params:
   source_lang_full: English
   min_audio_lid_probability:  0.7
   min_audio_duration: 0.1
-  max_audio_duration: 40.0 #Add specific processor!
+  max_audio_duration: 40.0
   translation:
     target_lang: it
     target_lang_full: Italian
@@ -20,7 +20,6 @@ params:
 
 processors_to_run: "9"
 workspace_dir: ???
-install_requirements: True
 
 processors:
   - _target_: sdp.processors.ListYodas2Data
@@ -124,6 +123,11 @@ processors:
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_14.json
     new_field: 'duration'
     expression: entry.end - entry.start
+  
+  - _target_: sdp.processors.DropHighLowDuration
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_14a.json
+    high_duration_threshold: ${params.max_audio_duration}
+    low_duration_threshold: ${params.min_audio_duration}
   
   - _target_: sdp.processors.RenameFields
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_15.json
