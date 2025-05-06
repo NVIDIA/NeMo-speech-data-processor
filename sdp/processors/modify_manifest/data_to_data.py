@@ -1220,7 +1220,7 @@ class LambdaExpression(BaseParallelProcessor):
         super().finalize(metrics)
 
 
-class CharacterHistograms(BaseParallelProcessor):
+class FilterWithCharacterHistograms(BaseParallelProcessor):
     """
     A processor that filters text based on character histogram similarity to trusted data in the target language.
 
@@ -1249,7 +1249,7 @@ class CharacterHistograms(BaseParallelProcessor):
     Returns:
         A manifest where each entry includes the additional field `output_score_field` with the character match ratio.
             Example::
-            
+
                 {
                     "text": "hello world",
                     "lang": "en",
