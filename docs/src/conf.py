@@ -28,10 +28,29 @@ sys.path.insert(0, os.path.abspath("../../"))
 
 templates_path = ["_templates"]
 
+
 autodoc_mock_imports = [
+    # TTS pipeline
+    "pyannote.audio",
+    "pyannote.audio.pipelines.utils.hook",
+    "whisperx.audio",
+    "whisperx.vad",
+    "torch",
+    "torchaudio",
+    "nemo",
+    "nemo.collections",
+    "nemo.collections.asr",
+    "nemo_text_processing.inverse_text_normalization.inverse_normalize",
+    "librosa",
+    "numpy",
+    "tqdm",
     "soundfile",
+    "ndjson",
+    "boto3",
+    "webvtt_py",
+    "python_docx",
     "webvtt",
-    "docx"
+    "docx",    
 ]
 
 _skipped_autodoc_mock_imports = []
