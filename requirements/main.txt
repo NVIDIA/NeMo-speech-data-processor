@@ -12,6 +12,7 @@ regex
 soundfile
 sox
 tabulate
+termplotlib
 tqdm
 termplotlib
 gdown
