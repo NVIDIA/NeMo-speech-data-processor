@@ -2,6 +2,7 @@ FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
 
 ARG SOURCE
 COPY ${SOURCE:-.} /workspace/NeMo-speech-data-processor
+RUN rm -rf /workspace/NeMo-speech-data-processor/docker/
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
