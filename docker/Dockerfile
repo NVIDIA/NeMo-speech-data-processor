@@ -2,7 +2,7 @@ FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
 
 ARG SOURCE
 COPY ${SOURCE:-.} /workspace
-WORKDIR /workspace
+WORKDIR /workspace/NeMo-speech-data-processor
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
@@ -25,10 +25,6 @@ RUN apt-get update \
 # Update pip
 RUN pip install --upgrade pip
 
-# Clone the NeMo SDP repository
-WORKDIR /workspace
-
-WORKDIR /src/NeMo-speech-data-processor
 #need to install numpy before reqs, even thougth it present in reqs (cause it requred to install [python-sox], otherwise we face an error)
 RUN pip install numpy 
 RUN find requirements/ -name "*.txt" -exec pip install -r {} \;
