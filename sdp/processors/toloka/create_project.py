@@ -23,9 +23,9 @@ try:
     import toloka.client.project.template_builder
     TOLOKA_AVAILABLE = True
 except ImportError:
-    logger.warning("Toloka is currently not supported. CreateTolokaProject processor functionality will be limited.")
     TOLOKA_AVAILABLE = False
     toloka = None
+    pass
 
 
 class CreateTolokaProject(BaseParallelProcessor):
@@ -63,6 +63,7 @@ class CreateTolokaProject(BaseParallelProcessor):
         self.project_name = project_name
         self.project_description = project_description
         self.project_instructions = project_instructions
+        self.toloka_availabe = TOLOKA_AVAILABLE
 
     def process(self):
         """
@@ -75,6 +76,8 @@ class CreateTolokaProject(BaseParallelProcessor):
         After creating the project, it saves the project details (including the project ID) to a specified file.
         """
         logger.info("Processing Toloka project creation...")
+        if self.toloka_availabe != True:
+            logger.warning("Toloka is currently not supported. CreateTolokaProject processor functionality will be limited.")
 
         toloka_client = toloka.client.TolokaClient(self.API_KEY, self.platform)
 
