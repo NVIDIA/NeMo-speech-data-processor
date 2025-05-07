@@ -151,13 +151,13 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.ASRTransformers
    :annotation:
 
-.. autodata:: sdp.processors.PyAnnoteDiarizationAndOverlapDetection
+.. autodata:: sdp.processors.tts.pyannote.PyAnnoteDiarizationAndOverlapDetection
    :annotation:
 
-.. autodata:: sdp.processors.NeMoASRAligner
+.. autodata:: sdp.processors.tts.nemo_asr_align.NeMoASRAligner
    :annotation:
 
-.. autodata:: sdp.processors.InverseTextNormalizationProcessor
+.. autodata:: sdp.processors.tts.text.InverseTextNormalizationProcessor
    :annotation:
 
 .. autodata:: sdp.processors.TorchSquimObjectiveQualityMetricsProcessor
