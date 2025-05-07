@@ -41,6 +41,10 @@ def gen_docs():
 
         # Copy files and change the file extensions
         for file in files:
+            path_parts = Path(file).parts
+            if "partials" in path_parts:
+                continue
+
             if file.endswith('.yaml'):
                 source_path = os.path.join(root, file)
                 config_path = source_path.replace(config_dir, '')[1:]  # removing leading /
