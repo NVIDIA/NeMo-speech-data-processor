@@ -58,6 +58,7 @@ def test_tts_sdp_end_to_end(get_tts_ytc_data):
     cfg.raw_audio_dir = os.path.join(data_dir, "audios")
     cfg.data_split = "train"
     cfg.device = "cpu"
+    cfg.language_short = "en"
     cfg.processors[3].model_name = "nvidia/stt_en_fastconformer_ctc_large"
     cfg.processors[3].parakeet = False
     cfg.processors[3].ctc = True
