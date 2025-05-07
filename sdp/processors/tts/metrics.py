@@ -34,7 +34,7 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
     and SI-SDR for each audio segment in the manifest.
 
     Args:
-        None
+        device (str, optional): Device to run the model on. Defaults to "cuda".
 
     Returns:
         The same data as in the input manifest, but with quality metrics added to each

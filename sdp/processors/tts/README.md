@@ -3,15 +3,15 @@
 ## Scope of this pipeline
 This pipeline runs a list of Speech Data Processors (SDP) to process raw audios for TTS training and saves all the processing information in a manifest. This pipeline contains this following processors:
   1. [CreateInitialManifestYTC](../datasets/ytc/create_initial_manifest.py#L22): Creates initial manifest by resampling audio to 16kHz mono WAV format
-  2. [PyAnnoteDiarizationAndOverlapDetection](./pyannote.py#L55): Runs speaker diarization and overlap detection using pyannote
-  3. [SplitLongAudio](./split.py#L23): Splits long audio segments 
-  4. [NeMoASRAligner](./nemo_asr_align.py#L23): Aligns text and audio using NeMo ASR models
+  2. [PyAnnoteDiarizationAndOverlapDetection](./pyannote.py#L55): Runs speaker diarization and overlap detection using pyannote to get speaker information of the audio
+  3. [SplitLongAudio](./split.py#L23): Splits long audio into segments of max duration specified
+  4. [NeMoASRAligner](./nemo_asr_align.py#L23): Runs ASR model on above split segments to get transcripts and word level timestamps
   5. [JoinSplitAudioMetadata](./split.py#L148): Joins split audio metadata back together
-  6. [MergeAlignmentDiarization](./merge_alignment_diarization.py#L19): Merges alignment and diarization information
+  6. [MergeAlignmentDiarization](./merge_alignment_diarization.py#L19): Merges alignment and diarization information to assign word level timestamps and transcript to each diarization segment 
   7. [InverseTextNormalizationProcessor](./text.py#L22): Performs inverse text normalization
-  8. [TorchSquimObjectiveQualityMetricsProcessor](./metrics.py#L30): Calculates audio quality metrics using TorchSQUIM
-  9. [BandwidthEstimationProcessor](./metrics.py#L126): Estimates audio bandwidth 
-  10. [PrepareTTSSegmentsProcessor](./prepare_tts_segments.py#L21): Prepares TTS segments
+  8. [TorchSquimObjectiveQualityMetricsProcessor](./metrics.py#L30): Calculates audio quality metrics such as pesq, squim and stoi on each diarization segment using TorchSQUIM
+  9. [BandwidthEstimationProcessor](./metrics.py#L126): Estimates original bandwidth of the audio signal on each diarization segment 
+  10. [PrepareTTSSegmentsProcessor](./prepare_tts_segments.py#L21): Combines adjacent segments from the same speaker to create new TTS segments, ensuring each segment contains a complete utterance.
 
 ## Prerequisite
 ### Building the docker image

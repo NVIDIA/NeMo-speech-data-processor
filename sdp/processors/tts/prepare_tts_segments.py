@@ -19,7 +19,7 @@ from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
-    """This processor merges adjacent segments from the same speaker and splits segments.
+    """This processor merges adjacent segments from the same speaker and splits segments to have a complete utterance.
 
     It processes segments by merging those from the same speaker that are adjacent, then
     splits segments based on duration limits, punctuation marks, and audio quality metrics

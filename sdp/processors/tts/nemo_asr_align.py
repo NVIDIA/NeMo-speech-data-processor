@@ -39,6 +39,7 @@ class NeMoASRAligner(BaseProcessor):
         split_batch_size (int): Maximum size for splitting large batches. Defaults to 5000
         timestamp_type (str): Type of timestamp to generate ("word" or "char"). Defaults to "word"
         infer_segment_only (bool): Whether to process only segments instead of full audio. Defaults to False
+        device (str): Device to run the model on. Defaults to "cuda"
 
     Returns:
         The same data as in the input manifest, but with word-level alignments added
