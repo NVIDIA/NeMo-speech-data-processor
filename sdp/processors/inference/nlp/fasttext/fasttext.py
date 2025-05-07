@@ -17,8 +17,6 @@ import requests
 import tempfile
 import wget
 
-import fasttext
-
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
@@ -88,6 +86,8 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
 
     def _load_model(self):
         """Lazily loads the FastText model into memory."""
+        import fasttext
+
         if self._model is None:
             self._model = fasttext.load_model(self.model_name_or_path)
     

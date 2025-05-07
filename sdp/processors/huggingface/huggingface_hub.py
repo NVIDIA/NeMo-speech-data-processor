@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import json
-from huggingface_hub import snapshot_download, list_repo_files
 
 from sdp.processors.base_processor import BaseProcessor
 
@@ -53,6 +52,8 @@ class ListRepoFiles(BaseProcessor):
         """
         Retrieve the list of files from a Hugging Face repository.
         """
+        from huggingface_hub import list_repo_files
+
         self.files = list_repo_files(**self.list_repo_files_kwargs)
 
     def write_output_manifest_file(self):
@@ -106,6 +107,8 @@ class SnapshotDownload(BaseProcessor):
         """
         Download the repository snapshot to a local folder.
         """
+        from huggingface_hub import snapshot_download
+
         self.local_dir = snapshot_download(**self.snapshot_download_kwargs)
 
     def write_output_manifest_file(self):

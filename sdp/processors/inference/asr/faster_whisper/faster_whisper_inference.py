@@ -63,8 +63,6 @@ def serialize(obj):
 
 @dataclass
 class InferenceConfig:
-    from faster_whisper.vad import VadOptions
-
     language: Optional[str] = None
     task: str = "transcribe"
     log_progress: bool = False
@@ -91,7 +89,13 @@ class InferenceConfig:
     append_punctuations: str = "\"'.。,，!！?？:：”)]}、"
     multilingual: bool = False
     vad_filter: bool = True
-    vad_parameters: Optional[VadOptions] = None
+
+    try:
+        from faster_whisper.vad import VadOptions
+        vad_parameters: Optional[VadOptions] = None
+    except ModuleNotFoundError:
+        pass
+    
     max_new_tokens: Optional[int] = None
     chunk_length: Optional[int] = None
     clip_timestamps: Optional[Any] = "0"
