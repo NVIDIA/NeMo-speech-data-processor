@@ -119,7 +119,7 @@ HuggingFace Datasets
 YTC Datasets
 ''''''''''''
 
-.. autodata:: sdp.processors.CreateInitialManifestYTC
+.. autodata:: sdp.processors.datasets.ytc.create_initial_manifest.CreateInitialManifestYTC
    :annotation:
 
 Lhotse processors
@@ -160,10 +160,10 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.tts.text.InverseTextNormalizationProcessor
    :annotation:
 
-.. autodata:: sdp.processors.TorchSquimObjectiveQualityMetricsProcessor
+.. autodata:: sdp.processors.tts.metrics.TorchSquimObjectiveQualityMetricsProcessor
    :annotation:
 
-.. autodata:: sdp.processors.BandwidthEstimationProcessor
+.. autodata:: sdp.processors.tts.metrics.BandwidthEstimationProcessor
    :annotation:
 
 
@@ -353,16 +353,16 @@ Miscellaneous
 .. autodata:: sdp.processors.CreateCombinedManifests
    :annotation:
 
-.. autodata:: sdp.processors.SplitLongAudio
+.. autodata:: sdp.processors.tts.split.SplitLongAudio
    :annotation:
 
-.. autodata:: sdp.processors.JoinSplitAudioMetadata
+.. autodata:: sdp.processors.tts.split.JoinSplitAudioMetadata
    :annotation:
 
-.. autodata:: sdp.processors.MergeAlignmentDiarization
+.. autodata:: sdp.processors.tts.merge_alignment_diarization.MergeAlignmentDiarization
    :annotation:
 
-.. autodata:: sdp.processors.PrepareTTSSegmentsProcessor
+.. autodata:: sdp.processors.tts.prepare_tts_segments.PrepareTTSSegmentsProcessor
    :annotation:
 
 
