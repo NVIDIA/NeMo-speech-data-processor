@@ -88,7 +88,7 @@ from io import BytesIO
 from typing import Any, List, Optional
 
 import numpy as np
-import soundfile
+import soundfile as sf
 from joblib import Parallel, delayed
 from omegaconf import DictConfig, OmegaConf, open_dict
 from tabulate import tabulate
@@ -616,7 +616,7 @@ class ASRTarredDatasetBuilder:
         # Trim audio based on offset and duration.
         start_sample = int(offset * sampling_rate)
         num_frames = int(duration * sampling_rate) if duration else -1
-        audio, sampling_rate = sf.read(file_path, start=start_sample, frames=num_frames)
+        audio, sampling_rate = sf.read(audio_filepath, start=start_sample, frames=num_frames)
 
         # Determine codec parameters.
         if codec is not None:
@@ -625,12 +625,12 @@ class ASRTarredDatasetBuilder:
             else:
                 kwargs = {"format": codec}
         else:
-            codec = soundfile.info(audio_filepath).format.lower()
+            codec = sf.info(audio_filepath).format.lower()
             kwargs = {"format": codec}
 
         # Transcode and write audio to tar.
         encoded_audio = BytesIO()
-        soundfile.write(encoded_audio, audio, sampling_rate, closefd=False, **kwargs)
+        sf.write(encoded_audio, audio, sampling_rate, closefd=False, **kwargs)
 
         # Generate filename with the appropriate extension.
         encoded_squashed_filename = f"{squashed_filename.split('.')[0]}.{codec}"
