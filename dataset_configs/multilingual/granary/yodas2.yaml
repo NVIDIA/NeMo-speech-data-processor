@@ -19,6 +19,10 @@ params:
     min_hist_token_ratio: 0.8
     min_text_lid_probability: 0.3
     min_qe_score: 0.75
+  convert_to_audio_tarred_dataset:
+    should_run: True
+    num_shards: 16
+    buckets_num: 1
   save_disk_space: True
 
 processors_to_run: "3:"
@@ -389,6 +393,18 @@ processors:
     fields_to_drop:
       - cometoid_score
   
-  # - _target_: sdp.processors.ConvertToTarredAudioDataset
+  - _target_: sdp.processors.ConvertToTarredAudioDataset
+    should_run: ${params.convert_to_audio_tarred_dataset.should_run}
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_47.json
+    min_duration: ${params.min_audio_duration}
+    max_duration: ${params.max_audio_duration}
+    target_dir: ${workspace_dir}/${params.source_lang}/tarred_dataset
+    num_shards: ${params.convert_to_audio_tarred_dataset.num_shards}
+    buckets_num: ${params.convert_to_audio_tarred_dataset.buckets_num}
+    workers: -1
+    shuffle: True
+    shuffle_seed: 1
+    sort_in_shards: True
+    slice_with_offset: True
 
   #export HYDRA_FULL_ERROR=1 && python /ameister/YODAS_PR_FINAL/NeMo-speech-data-processor/main.py --config-path=/ameister/YODAS_PR_FINAL/NeMo-speech-data-processor/dataset_configs/multilingual/granary/ --config-name=yodas2.yaml
