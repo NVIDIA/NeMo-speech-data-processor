@@ -24,9 +24,9 @@ try:
     import toloka.client.project.template_builder
     TOLOKA_AVAILABLE = True
 except ImportError:
-    logger.warning("Toloka is currently not supported. CreatePool processor functionality will be limited.")
     TOLOKA_AVAILABLE = False
     toloka = None
+    pass
 
 
 class CreateTolokaPool(BaseParallelProcessor):
@@ -67,6 +67,7 @@ class CreateTolokaPool(BaseParallelProcessor):
         # Project ID will be read from the input manifest file in process_dataset_entry
         self.project_id = None
         self.lang = lang
+        self.toloka_available = TOLOKA_AVAILABLE
 
     def process_dataset_entry(self, data_entry):
         """
@@ -85,6 +86,10 @@ class CreateTolokaPool(BaseParallelProcessor):
         list
             A list containing a DataEntry object with the new pool ID if successful, or an empty list if failed.
         """
+        
+        if self.toloka_available != True:
+            logger.warning("Toloka is currently not supported. CreatePool processor functionality will be limited.")
+
         # Get project_id from the data entry
         project_id = data_entry.get("project_id")
         if not project_id:

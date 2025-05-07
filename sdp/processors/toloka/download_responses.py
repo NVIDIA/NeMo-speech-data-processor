@@ -22,9 +22,9 @@ try:
     import toloka.client
     TOLOKA_AVAILABLE = True
 except ImportError:
-    logger.warning("Toloka is currently not supported. DownloadResponses processor functionality will be limited.")
     TOLOKA_AVAILABLE = False
     toloka = None
+    pass
 
 
 
@@ -92,6 +92,7 @@ class GetTolokaResults(BaseParallelProcessor):
         self.pool_id = pool_id
         if self.config_file:
             self.load_config()
+        self.toloka_available = TOLOKA_AVAILABLE
 
     def load_config(self):
         """
@@ -100,6 +101,7 @@ class GetTolokaResults(BaseParallelProcessor):
         This method attempts to read configuration details such as API key, platform, and pool ID from a JSON file.
         If the file is missing or improperly formatted, an appropriate error is logged.
         """
+
         try:
             with open(self.config_file, 'r') as file:
                 config = json.load(file)
@@ -117,6 +119,9 @@ class GetTolokaResults(BaseParallelProcessor):
 
         This method loads necessary configurations and initializes the Toloka client to interact with Toloka's API.
         """
+        if self.toloka_available != True:
+            logger.warning("Toloka is currently not supported. DownloadResponses processor functionality will be limited.")
+
         if not self.API_KEY or not self.platform or not self.pool_id:
             try:
                 with open(self.input_data_file, 'r') as file:

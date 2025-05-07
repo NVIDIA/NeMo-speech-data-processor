@@ -25,9 +25,9 @@ try:
     import toloka.client.project.template_builder
     TOLOKA_AVAILABLE = True
 except ImportError:
-    logger.warning("Toloka is currently not supported. CreateTaskSet processor functionality will be limited.")
     TOLOKA_AVAILABLE = False
     toloka = None
+    pass
 
 
 
@@ -57,6 +57,10 @@ class CreateTolokaTaskSet(BaseParallelProcessor):
         self.input_pool_file = input_pool_file
         self.limit = limit
         self.pool_id = None
+        self.toloka_available = TOLOKA_AVAILABLE
+        
+        
+
         
         # Get API key and platform from environment variables
         self.API_KEY = os.getenv('TOLOKA_API_KEY')
@@ -76,6 +80,8 @@ class CreateTolokaTaskSet(BaseParallelProcessor):
         This method sets up the necessary components for task creation, including loading the
         pool configuration and initializing the Toloka client.
         """
+        if self.toloka_available != True:
+            logger.warning("Toloka is currently not supported. CreateTaskSet processor functionality will be limited.")
         self.load_pool_config()
         self.toloka_client = toloka.client.TolokaClient(self.API_KEY, self.platform)
 

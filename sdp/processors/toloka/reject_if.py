@@ -23,9 +23,9 @@ try:
     import toloka.client.project.template_builder
     TOLOKA_AVAILABLE = True
 except ImportError:
-    logger.warning("Toloka is currently not supported. RejectIf processor functionality will be limited.")
     TOLOKA_AVAILABLE = False
     toloka = None
+    pass
 
 from docx import Document
 from tqdm import tqdm
@@ -83,6 +83,7 @@ class RejectIfBanned(BaseParallelProcessor):
         self.API_KEY = API_KEY or os.getenv('TOLOKA_API_KEY')
         self.platform = platform or os.getenv('TOLOKA_PLATFORM')
         self.pool_id = pool_id
+        self.toloka_available = TOLOKA_AVAILABLE
         if self.config_file:
             self.load_config()
 
@@ -110,6 +111,8 @@ class RejectIfBanned(BaseParallelProcessor):
 
         This method loads necessary configurations and initializes the Toloka client to interact with Toloka's API.
         """
+        if self.toloka_available != True:
+            logger.warning("Toloka is currently not supported. RejectIf processor functionality will be limited.")
         if not self.API_KEY or not self.platform or not self.pool_id:
             try:
                 with open(self.input_data_file, 'r') as file:
