@@ -151,6 +151,21 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.ASRTransformers
    :annotation:
 
+.. autodata:: sdp.processors.PyAnnoteDiarizationAndOverlapDetection
+   :annotation:
+
+.. autodata:: sdp.processors.NeMoASRAligner
+   :annotation:
+
+.. autodata:: sdp.processors.InverseTextNormalizationProcessor
+   :annotation:
+
+.. autodata:: sdp.processors.TorchSquimObjectiveQualityMetricsProcessor
+   :annotation:
+
+.. autodata:: sdp.processors.BandwidthEstimationProcessor
+   :annotation:
+
 
 Text-only processors
 ####################
@@ -337,6 +352,19 @@ Miscellaneous
 
 .. autodata:: sdp.processors.CreateCombinedManifests
    :annotation:
+
+.. autodata:: sdp.processors.SplitLongAudio
+   :annotation:
+
+.. autodata:: sdp.processors.JoinSplitAudioMetadata
+   :annotation:
+
+.. autodata:: sdp.processors.MergeAlignmentDiarization
+   :annotation:
+
+.. autodata:: sdp.processors.PrepareTTSSegmentsProcessor
+   :annotation:
+
 
 .. _sdp-base-classes:
 
