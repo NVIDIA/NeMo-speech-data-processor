@@ -1,14 +1,45 @@
-name: Tests for E2E dataset pipelines 
+name: E2E Dataset Pipelines Docker Build and Test
 
 on:
   pull_request:
     branches: [ "main" ]
 
+  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  call-granary:
-    uses: ./.github/workflows/granary.yaml
+  Granary:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      run: |
+        docker build -t sdp-test-image:${{ github.sha }} \
+          -f docker/datasets/Dockerfile.granary_sdp \
+          --build-arg SOURCE=./ .
+      
+    - name: Run Yodas2 E2E test
+      run: |
+        docker run --rm \
+          -v ${{ github.workspace }}:/workspace \
+          -w /workspace \
+          sdp-test-image:${{ github.sha }} \
+          bash -c "python -m pytest tests/test_utils.py -v"
+    
+    - name: Get test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          pytest.xml
+          coverage.xml
