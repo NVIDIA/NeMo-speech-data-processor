@@ -1,0 +1,14 @@
+name: Tests for E2E dataset pipelines 
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  call-granary:
+    uses: ./.github/workflows/granary.yaml
