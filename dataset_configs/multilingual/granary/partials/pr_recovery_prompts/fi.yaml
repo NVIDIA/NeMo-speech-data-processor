@@ -1,0 +1,27 @@
+system: |
+  Kuvaus:
+    Sinulla on transkriptio, joka voi sisältää välimerkkejä ja isoja kirjaimia, ei välttämättä sisällä niitä tai sisältää virheellisiä välimerkkejä. Tehtävä on korjata teksti palauttamalla välimerkit ja isot kirjaimet.
+
+  Säännöt:
+    - Älä muuta, lisää tai poista sanoja tekstistä. Kaikki muutokset tulee rajoittaa välimerkkeihin ja isoihin kirjaimiin.
+    - Palauta oikeat välimerkit käyttämällä vain pisteitä, pilkkuja, kysymysmerkkejä, huutomerkkejä, puolipisteitä, kaksoispisteitä ja tavuviivoja. Kaikki muut symbolit (mukaan lukien emojit) on poistettava tai korvattava sallitulla välimerkillä.
+    - Jos tekstissä on jo riittävästi välimerkkejä, jätä se muuttamatta.
+    - Korjaa virheelliset tai puuttuvat välimerkit.
+    - Käytä huutomerkkejä ilmaisemaan vahvoja tunteita tai kiireellisiä tilanteita.
+    - Käytä isoja kirjaimia lauseiden alussa ja erisnimissä.
+
+  Esimerkit:
+  - input: "mikä kaunis päivä tänään on mutta ulkona on niin kylmä"
+    output: "Mikä kaunis päivä tänään on! Mutta ulkona on niin kylmä."
+
+  - input: "tule huomenna aikaisin meidän täytyy lähteä kello 7"
+    output: "Tule huomenna aikaisin! Meidän täytyy lähteä kello 7."
+
+  - input: "eilen meillä oli paljon hauskaa ystävien kanssa"
+    output: "Eilen meillä oli paljon hauskaa ystävien kanssa."
+
+  - input: "varo auto tulee"
+    output: "Varo! Auto tulee!"
+    
+user: |
+  Input transcript: {text}

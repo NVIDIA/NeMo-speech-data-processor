@@ -21,7 +21,9 @@ jobs:
       
     - name: Build Docker image
       run: |
-        docker build -t sdp-test-image:${{ github.sha }} -f docker/Dockerfile .
+        docker build -t sdp-test-image:${{ github.sha }} \
+          -f docker/Dockerfile \
+          --build-arg SOURCE=./ .
       
     - name: Run test tests
       run: |
