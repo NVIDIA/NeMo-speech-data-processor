@@ -264,7 +264,6 @@ class FasterWhisperInference(BaseProcessor):
         except ImportError:
             TORCH_AVAILABLE = False
 
-        max_available_workers = os.cpu_count()
         if device in ["cuda", "auto"] and TORCH_AVAILABLE:
             cuda_available_workers = torch.cuda.device_count()
             if cuda_available_workers == 0:
@@ -275,11 +274,16 @@ class FasterWhisperInference(BaseProcessor):
                     device == "cpu"
             else:
                 logger.info("CUDA devices found. GPU will be used as workers.")
-                device == "cuda"
+                device = "cuda"
         elif device == "cpu":
             logger.info("CPU will be used as workers.")
         else:
             raise ValueError(f"Invalid device type: {device}")
+        
+        if device == "cuda":
+            max_available_workers = cuda_available_workers
+        else:
+            max_available_workers = os.cpu_count()
 
         if num_devices < -1 or num_devices == 0: 
             raise ValueError(f"Invalid number of workers: {num_devices}.")
@@ -292,7 +296,7 @@ class FasterWhisperInference(BaseProcessor):
         else:
             logger.info(f"Using {workers} {device.upper()} worker(s).")
         
-        device_ids = list(range(num_devices))
+        device_ids = list(range(workers))
         return device, device_ids
     
     def prepare(self):
@@ -400,7 +404,8 @@ class FasterWhisperInference(BaseProcessor):
                 if self.language_detection_only:
                     try:
                         audio = decode_audio(audio_filepath)
-                        language, language_probability, all_language_probs = model.model.detect_language(audio = audio,
+                        features = model.feature_extractor(audio)
+                        language, language_probability, all_language_probs = model.detect_language(features = features,
                                                 vad_filter = self.config.inference.vad_filter,
                                                 vad_parameters = self.config.inference.vad_parameters,
                                                 language_detection_segments = self.config.inference.language_detection_segments,
@@ -417,7 +422,7 @@ class FasterWhisperInference(BaseProcessor):
                 else:
                     try:
                         if self.config.dataset.offset:
-                            audio = self.get_audio_segment(audio_filepath, batch['offset'][i], batch['duration'][i])
+                            audio = self.get_audio_segment(audio_filepath, entry['offset'], entry['duration'])
                         else:
                             audio = audio_filepath
                     
@@ -451,7 +456,8 @@ class FasterWhisperInference(BaseProcessor):
                     pred_text = ' '.join(str(segment['text']) for segment in segments).strip()
                     result['pred_text'] = pred_text
                 
-                fout.write(json.dumps(result, ensure_ascii=False) + "\n")
+                entry.update(result)
+                fout.write(json.dumps(entry, ensure_ascii=False) + "\n")
                 fout.flush()
         
         return output_manifest_file
@@ -468,8 +474,8 @@ class FasterWhisperInference(BaseProcessor):
         with Pool(processes=len(self.device_ids)) as pool:
             output_rank_manifests = pool.map(self.transcribe, self.device_ids)
         
-        with open(self.output_manifest_filepath, 'w', encoding='utf8') as output_manifest:
-            for rank_manifest_filepath in tqdm(output_rank_manifests):
+        with open(self.output_manifest_file, 'w', encoding='utf8') as output_manifest:
+            for rank_manifest_filepath in tqdm(output_rank_manifests, desc = "Writing output manifest.."):
                 with open(rank_manifest_filepath, 'r', encoding='utf8') as rank_manifest:
                     for line in rank_manifest:
                         output_manifest.writelines(line)
