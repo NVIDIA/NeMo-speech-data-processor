@@ -386,6 +386,9 @@ Miscellaneous
 .. autodata:: sdp.processors.RemoveFiles
    :annotation:
 
+.. autodata:: sdp.processors.ConvertToTarredAudioDatasetConfig
+   :annotation:
+
 .. _sdp-base-classes:
 
 Base classes

@@ -9,7 +9,9 @@ omegaconf
 pandas
 rarfile
 regex
+soundfile
 sox
+tabulate
 tqdm
 termplotlib
 gdown
@@ -31,3 +33,4 @@ distributed
 # for vLLMInference processor is required: pip install "optree>=0.13.0" vllm
 # for FastTextLangIdClassifier processor is required: pip install fasttext
 # for CometoidWMTQualityEstimation processor is required: pip install pymarian
+# for ConvertToTarredAudioDatasetConfig processor can be additionally required: pip install lhotse "nemo-toolkit[common]"

@@ -78,6 +78,7 @@ from sdp.processors.manage_files.convert_audio import (
     SoxConvert,
 )
 from sdp.processors.manage_files.remove import RemoveFiles
+from sdp.processors.manage_files.convert_to_tarred_audio_dataset import ConvertToTarredAudioDataset
 
 from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
 from sdp.processors.huggingface.huggingface_hub import ListRepoFiles, SnapshotDownload
