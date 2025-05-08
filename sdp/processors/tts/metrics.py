@@ -34,7 +34,7 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
     and SI-SDR for each audio segment in the manifest.
 
     Args:
-        device (str, optional): Device to run the model on. Defaults to "cuda".
+        device (str, Optional): Device to run the model on. Defaults to "cuda".
 
     Returns:
         The same data as in the input manifest, but with quality metrics added to each
@@ -131,10 +131,10 @@ class BandwidthEstimationProcessor(BaseProcessor):
     a threshold.
 
     Args:
-        n_fft (int, optional): Size of FFT window. Defaults to 512
-        stride_seconds (float, optional): Time between successive FFT windows in seconds. Defaults to 0.01
-        top_db (float, optional): Maximum decibel value for power spectrum normalization. Defaults to 100.0
-        frequency_threshold (float, optional): Threshold in dB below peak for bandwidth estimation. Defaults to -50.0
+        n_fft (int, Optional): Size of FFT window. Defaults to 512
+        stride_seconds (float, Optional): Time between successive FFT windows in seconds. Defaults to 0.01
+        top_db (float, Optional): Maximum decibel value for power spectrum normalization. Defaults to 100.0
+        frequency_threshold (float, Optional): Threshold in dB below peak for bandwidth estimation. Defaults to -50.0
 
     Returns:
         The same data as in the input manifest, but with bandwidth estimates added

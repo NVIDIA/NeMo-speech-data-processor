@@ -122,7 +122,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
 
         Args:
             audio: Audio tensor to process
-            merge_max_length (int, optional): Maximum length for merging segments. Defaults to 3
+            merge_max_length (int, Optional): Maximum length for merging segments. Defaults to 3
 
         Returns:
             list: List of VAD segments with start and end times
