@@ -1,0 +1,102 @@
+documentation: |
+  TTS data processing pipeline
+  ############################
+
+  This pipeline processes YouTube Commons (YTC) data for text-to-speech (TTS) training.
+  
+  The pipeline performs the following steps:
+  1. Creates initial manifest by resampling audio to 16kHz mono WAV format
+  2. Runs speaker diarization and overlap detection using pyannote
+  3. Splits long audio segments 
+  4. Aligns text and audio using NeMo ASR models
+  5. Joins split audio metadata back together
+  6. Merges alignment and diarization information
+  7. Performs inverse text normalization
+  8. Calculates audio quality metrics using TorchSQUIM
+  9. Estimates audio bandwidth 
+  10. Prepares TTS segments
+
+  Required inputs:
+
+  - input_manifest_file: Path to input manifest json file
+    - manifest must contain "audio_filepath" and "audio_item_id" fields
+    - example: {"audio_filepath": "path/to/raw/audio/file.wav", "audio_item_id": "some_unique_id"}
+
+  - hf_token: HuggingFace token for pyannote access
+  - data_split: Data split name (train/dev/test)
+  - workspace_dir: Directory for intermediate files
+  - language_short: 2-letter language code
+  - nemo_path: Path to NeMo installation
+  - final_manifest: Path for final output manifest
+
+processors_to_run: all
+data_split: ???
+workspace_dir: /tmp
+language_short: ???
+input_manifest_file: ???
+final_manifest: ???
+nemo_path: ???
+resampled_audio_dir: /tmp/audio_resampled
+hf_token: ???
+max_segment_length: 40
+device: cuda
+
+processors:
+  - _target_: sdp.processors.datasets.ytc.create_initial_manifest.CreateInitialManifestYTC
+    input_manifest_file: ${input_manifest_file}
+    output_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_initial.json"
+    resampled_audio_dir: ${resampled_audio_dir}
+    input_format: "wav"
+    target_sample_rate: 16000
+    target_format: "wav"
+    target_nchannels: 1
+
+  - _target_: sdp.processors.tts.pyannote.PyAnnoteDiarizationAndOverlapDetection
+    hf_token: ${hf_token}
+    input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_initial.json"
+    output_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_diarized.json"
+    max_length: ${max_segment_length}
+    device: ${device}
+
+  - _target_: sdp.processors.tts.split.SplitLongAudio
+    input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_diarized.json"
+    output_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_split.json"
+    suggested_max_len: ${max_segment_length}
+    min_pause_len: 1
+
+  - _target_: sdp.processors.tts.nemo_asr_align.NeMoASRAligner
+    input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_split.json"
+    output_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_aligned.json"
+    parakeet: True
+    ctc: False
+    batch_size: 16
+    device: ${device}
+
+  - _target_: sdp.processors.tts.split.JoinSplitAudioMetadata
+    input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_aligned.json"
+    output_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_joined.json"
+
+  - _target_: sdp.processors.tts.merge_alignment_diarization.MergeAlignmentDiarization
+    input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_joined.json"
+    output_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_merged.json"
+
+  - _target_: sdp.processors.tts.text.InverseTextNormalizationProcessor
+    input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_merged.json"
+    output_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_ITN.json"
+    language: ${language_short}
+  
+  - _target_: sdp.processors.tts.metrics.TorchSquimObjectiveQualityMetricsProcessor
+    input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_ITN.json"
+    output_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_squim.json"
+    device: ${device}
+
+  - _target_: sdp.processors.tts.metrics.BandwidthEstimationProcessor
+    input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_squim.json"
+    output_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_bandwidth.json"
+
+  - _target_: sdp.processors.tts.prepare_tts_segments.PrepareTTSSegmentsProcessor
+    input_manifest_file: "${workspace_dir}/tts_processed/${data_split}_manifest_bandwidth.json"
+    output_manifest_file: "${final_manifest}"
+    terminal_punct_marks:  ".!?"
+
+
