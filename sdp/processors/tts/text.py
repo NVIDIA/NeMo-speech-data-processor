@@ -72,8 +72,8 @@ class PunctuationAndCapitalizationOnSegmentsProcessor(BaseProcessor):
 
     Args:
         model_name (str): Name of the pretrained model to use. Defaults to "punctuation_en_bert"
-        model_path (str, optional): Path to the local PNC model file. If provided, overrides model_name
-        batch_size (int, optional): Batch size for processing. Defaults to 64
+        model_path (str, Optional): Path to the local PNC model file. If provided, overrides model_name
+        batch_size (int, Optional): Batch size for processing. Defaults to 64
 
     Returns:
         The same data as in the input manifest, but with punctuation and capitalization added

@@ -29,7 +29,7 @@ class NeMoASRAligner(BaseProcessor):
 
     Args:
         model_name (str): Name of pretrained model to use. Defaults to "nvidia/parakeet-tdt_ctc-1.1b"
-        model_path (str, optional): Path to local model file. If provided, overrides model_name
+        model_path (str, Optional): Path to local model file. If provided, overrides model_name
         min_len (float): Minimum length of audio segments to process in seconds. Defaults to 0.1
         max_len (float): Maximum length of audio segments to process in seconds. Defaults to 40
         parakeet (bool): Whether model is a Parakeet model. Affects time stride calculation. Defaults to True

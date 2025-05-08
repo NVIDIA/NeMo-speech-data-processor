@@ -61,11 +61,11 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
 
     Args:
         hf_token (str): HuggingFace authentication token for accessing pretrained models
-        segmentation_batch_size (int, optional): Batch size for segmentation. Defaults to 128
-        embedding_batch_size (int, optional): Batch size for speaker embeddings. Defaults to 128
-        min_length (float, optional): Minimum length of segments in seconds. Defaults to 0.5
-        max_length (float, optional): Maximum length of segments in seconds. Defaults to 40
-        device (str, optional): Device to run the models on ('cuda' or 'cpu'). Defaults to "cuda"
+        segmentation_batch_size (int, Optional): Batch size for segmentation. Defaults to 128
+        embedding_batch_size (int, Optional): Batch size for speaker embeddings. Defaults to 128
+        min_length (float, Optional): Minimum length of segments in seconds. Defaults to 0.5
+        max_length (float, Optional): Maximum length of segments in seconds. Defaults to 40
+        device (str, Optional): Device to run the models on ('cuda' or 'cpu'). Defaults to "cuda"
 
     Returns:
         The same data as in the input manifest, but with speaker diarization and overlap
