@@ -51,6 +51,7 @@ autodoc_mock_imports = [
     "python_docx",
     "webvtt",
     "docx",    
+    "pyannote"
 ]
 
 _skipped_autodoc_mock_imports = []
