@@ -27,7 +27,7 @@ try:
 except ImportError:
     TOLOKA_AVAILABLE = False
     toloka = None
-    pass
+    
 
 from tqdm import tqdm
 

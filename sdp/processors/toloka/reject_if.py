@@ -25,7 +25,7 @@ try:
 except ImportError:
     TOLOKA_AVAILABLE = False
     toloka = None
-    pass
+    
 
 from docx import Document
 from tqdm import tqdm

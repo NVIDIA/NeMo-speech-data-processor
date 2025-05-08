@@ -24,7 +24,7 @@ try:
 except ImportError:
     TOLOKA_AVAILABLE = False
     toloka = None
-    pass
+    
 
 
 
