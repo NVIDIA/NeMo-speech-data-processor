@@ -129,6 +129,12 @@ HuggingFace Datasets
 .. autodata:: sdp.processors.CreateInitialManifestHuggingFace
    :annotation:
 
+YTC Datasets
+''''''''''''
+
+.. autodata:: sdp.processors.datasets.ytc.create_initial_manifest.CreateInitialManifestYTC
+   :annotation:
+
 .. autodata:: sdp.processors.ListRepoFiles
    :annotation:
 
@@ -163,6 +169,22 @@ used in the downstream processing for additional enhancement or filtering.
 
 .. autodata:: sdp.processors.ASRTransformers
    :annotation:
+
+.. autodata:: sdp.processors.tts.pyannote.PyAnnoteDiarizationAndOverlapDetection
+   :annotation:
+
+.. autodata:: sdp.processors.tts.nemo_asr_align.NeMoASRAligner
+   :annotation:
+
+.. autodata:: sdp.processors.tts.text.InverseTextNormalizationProcessor
+   :annotation:
+
+.. autodata:: sdp.processors.tts.metrics.TorchSquimObjectiveQualityMetricsProcessor
+   :annotation:
+
+.. autodata:: sdp.processors.tts.metrics.BandwidthEstimationProcessor
+   :annotation:
+
 
 .. autodata:: sdp.processors.FasterWhisperInference
    :annotation:
@@ -373,6 +395,19 @@ Miscellaneous
 
 .. autodata:: sdp.processors.CreateCombinedManifests
    :annotation:
+
+.. autodata:: sdp.processors.tts.split.SplitLongAudio
+   :annotation:
+
+.. autodata:: sdp.processors.tts.split.JoinSplitAudioMetadata
+   :annotation:
+
+.. autodata:: sdp.processors.tts.merge_alignment_diarization.MergeAlignmentDiarization
+   :annotation:
+
+.. autodata:: sdp.processors.tts.prepare_tts_segments.PrepareTTSSegmentsProcessor
+   :annotation:
+
 
 .. autodata:: sdp.processors.ListToEntries
    :annotation:

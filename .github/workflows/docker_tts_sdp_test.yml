@@ -1,4 +1,4 @@
-name: Docker Build and Test
+name: SDP TTS Docker Build and Test
 
 on:
   pull_request:
@@ -21,17 +21,25 @@ jobs:
       
     - name: Build Docker image
       run: |
-        docker build -t sdp-test-image:${{ github.sha }} \
-          -f docker/Dockerfile \
-          --build-arg SOURCE=./ .
+        docker build -t sdp-test-image:${{ github.sha }} -f docker/Dockerfile.tts_sdp .
       
-    - name: Run test tests
+    - name: Run sdp tts tests
+      env:
+        AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+        AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+        HF_SECRET_KEY: ${{ secrets.HF_SECRET_KEY }}
+        CLEAN_UP_TMP_PATH: 1
       run: |
         docker run --rm \
           -v ${{ github.workspace }}:/workspace \
           -w /workspace \
+          --shm-size=4g \
+          -e AWS_SECRET_KEY="${AWS_SECRET_KEY}" \
+          -e AWS_ACCESS_KEY="${AWS_ACCESS_KEY}" \
+          -e HF_SECRET_KEY="${HF_SECRET_KEY}" \
+          -e CLEAN_UP_TMP_PATH="${CLEAN_UP_TMP_PATH}" \
           sdp-test-image:${{ github.sha }} \
-          bash -c "python -m pytest tests/test_utils.py -v"
+          bash -c "python -m pytest tests/test_tts_sdp_end_to_end.py -v"
     
     - name: Get test results
       if: always()
@@ -41,6 +49,6 @@ jobs:
         path: |
           pytest.xml
           coverage.xml
-
+    
     - name: Docker cleanup
       run: docker system prune -af

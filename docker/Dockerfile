@@ -25,21 +25,15 @@ RUN apt-get update \
 # Update pip
 RUN pip install --upgrade pip
 
+# Clone the NeMo SDP repository
+COPY . /src/NeMo-speech-data-processor
+RUN rm -rf /src/NeMo-speech-data-processor/.git
+
+WORKDIR /src/NeMo-speech-data-processor
 #need to install numpy before reqs, even thougth it present in reqs (cause it requred to install [python-sox], otherwise we face an error)
 WORKDIR /workspace/NeMo-speech-data-processor
 RUN pip install numpy 
 RUN find requirements/ -maxdepth 1 -name "*.txt" -exec pip install -r {} \;
-RUN wget https://github.com/state-spaces/mamba/releases/download/v2.2.2/mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
-RUN pip install mamba_ssm-2.2.2+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
-
-
-# Update NeMo to allow timestamps
-RUN git clone https://github.com/NVIDIA/NeMo.git /src/NeMo/
-WORKDIR /src/NeMo
-RUN git reset --hard 0547550ad803fce1e4a019f92e9c59f4c902e7e0
-RUN ./reinstall.sh
-RUN pip install python-swiftclient ffmpeg-python
-
 # Set working directory back to NeMo-speech-data-processor
 WORKDIR /src/NeMo-speech-data-processor
 

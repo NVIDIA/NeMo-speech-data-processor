@@ -154,6 +154,9 @@ from sdp.processors.datasets.voxpopuli.create_initial_manifest import (
 from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
     NormalizeFromNonPCTextVoxpopuli,
 )
+from sdp.processors.datasets.ytc.create_initial_manifest import (
+    CreateInitialManifestYTC,
+)
 from sdp.processors.datasets.yodas2.create_initial_manifest import(
     ListYodas2Data,
     DownloadYodas2Data,
