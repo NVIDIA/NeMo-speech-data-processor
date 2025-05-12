@@ -1,0 +1,54 @@
+name: SDP TTS Docker Build and Test
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      run: |
+        docker build -t sdp-test-image:${{ github.sha }} -f docker/Dockerfile.tts_sdp .
+      
+    - name: Run sdp tts tests
+      env:
+        AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+        AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+        HF_SECRET_KEY: ${{ secrets.HF_SECRET_KEY }}
+        CLEAN_UP_TMP_PATH: 1
+      run: |
+        docker run --rm \
+          -v ${{ github.workspace }}:/workspace \
+          -w /workspace \
+          --shm-size=4g \
+          -e AWS_SECRET_KEY="${AWS_SECRET_KEY}" \
+          -e AWS_ACCESS_KEY="${AWS_ACCESS_KEY}" \
+          -e HF_SECRET_KEY="${HF_SECRET_KEY}" \
+          -e CLEAN_UP_TMP_PATH="${CLEAN_UP_TMP_PATH}" \
+          sdp-test-image:${{ github.sha }} \
+          bash -c "python -m pytest tests/test_tts_sdp_end_to_end.py -v"
+    
+    - name: Get test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          pytest.xml
+          coverage.xml
+    
+    - name: Docker cleanup
+      run: docker system prune -af
