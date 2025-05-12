@@ -126,6 +126,7 @@ from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
 )
 from sdp.processors.nemo.asr_inference import ASRInference
+from sdp.processors.nemo.estimate_bandwidth import EstimateBandwidth
 from sdp.processors.nemo.pc_inference import PCInference
 from sdp.processors.toloka.accept_if import AcceptIfWERLess
 from sdp.processors.toloka.create_pool import CreateTolokaPool

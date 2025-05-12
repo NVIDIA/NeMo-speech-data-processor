@@ -21,6 +21,7 @@ import time
 import urllib.error
 import urllib.request
 
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
@@ -98,9 +99,9 @@ class DownloadHiFiTTS2(BaseParallelProcessor):
                 break
             except (urllib.error.HTTPError, urllib.error.URLError) as http_error:
                 error_msg = f"Encountered HTTP error when downloading {url}: {http_error}"
-                print(error_msg)
+                logger.warning(error_msg)
                 if str(http_error.code).startswith("5") and i < self.num_retries:
-                    print(f"Retry {i} for url {url}")
+                    logger.info(f"Retry {i} for url {url}")
                     time.sleep(10)
                     continue
 
