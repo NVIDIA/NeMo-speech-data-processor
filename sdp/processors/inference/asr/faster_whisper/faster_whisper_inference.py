@@ -271,7 +271,7 @@ class FasterWhisperInference(BaseProcessor):
                     raise RuntimeError("GPU was requested, but no CUDA devices are available.")
                 else:
                     logger.warning("No GPU found in auto mode — switching to CPU.")
-                    device == "cpu"
+                    device = "cpu"
             else:
                 logger.info("CUDA devices found. GPU will be used as workers.")
                 device = "cuda"
@@ -294,6 +294,7 @@ class FasterWhisperInference(BaseProcessor):
             workers = max_available_workers
             logger.warning(f"Requested {num_devices} {device.upper()} workers, but only {max_available_workers} {device.upper()} available — using {workers}.")
         else:
+            workers = num_devices
             logger.info(f"Using {workers} {device.upper()} worker(s).")
         
         device_ids = list(range(workers))
@@ -364,7 +365,7 @@ class FasterWhisperInference(BaseProcessor):
                 line = json.dumps(segment)
                 output_manifest.writelines(f'{line}\n')
         
-        def write_words(output_words_filepath: str, words: List[Dict]):
+        def write_words(words: List[Dict]):
             output_manifest_filepath = os.path.join(self.config.dataset.output_dir, 'words', f'{filename}.json')
             with open(output_manifest_filepath, 'w', encoding = 'utf8') as output_manifest:
                 for word in words:
@@ -390,7 +391,7 @@ class FasterWhisperInference(BaseProcessor):
         from faster_whisper.audio import decode_audio
 
         model_cfg = deepcopy(self.config.model)
-        model_cfg.device_index = [device_id]
+        model_cfg.device_index = [device_id] if model_cfg.device == "cuda" else [0]
         model = WhisperModel(**asdict(model_cfg))
 
         inference_cfg = OmegaConf.to_container(self.config.inference, resolve=True)
