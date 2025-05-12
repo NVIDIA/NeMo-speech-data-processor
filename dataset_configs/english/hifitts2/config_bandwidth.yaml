@@ -1,6 +1,6 @@
 documentation: |
-  HiFiTTS2 Bandwidth Estimation
-  ##################
+  HiFiTTS-2 Bandwidth Estimation
+  ##############################
   
   This config contains the bandwidth estimation code used for HiFiTTS and HiFiTTS-2.
   This config can be used to estimate bandwidth for any dataset. For HiFiTTS-2 bandwidth
