@@ -36,8 +36,8 @@ class TestCase:
     """Class for keeping track of test cases."""
     config_path: str
     data_check_fn: Callable
-    # Fields in the manifest to ignore (can be set when non-deterministic processor was used)
     reference_manifest_filename: str = "test_data_reference.json"
+    # Fields in the manifest to ignore (can be set when non-deterministic processor was used)
     fields_to_ignore: List[str] = field(default_factory=list)
     processors_to_run: str = ""
 
@@ -232,19 +232,29 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
             data_check_fn=partial(data_check_fn_generic, file_name="everyayah.hf")
         ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_start.yaml", 
+            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_start.yaml",
             data_check_fn=data_check_fn_armenian_toloka_pipeline_start,
             fields_to_ignore=['source_filepath'],
             processors_to_run="2:14",
             reference_manifest_filename="pipeline_start/test_data_reference.json"
         ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_get_final_res.yaml", 
+            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_get_final_res.yaml",
             data_check_fn=data_check_fn_armenian_toloka_pipeline_get_final_res,
             reference_manifest_filename="pipeline_get_final_res/test_data_reference.json",
             fields_to_ignore=['audio_filepath', 'duration'],
             processors_to_run="1:6"
-        )
+        ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/english/hifitts2/config_22khz.yaml",
+            data_check_fn=partial(data_check_fn_generic, file_name="manifest_filtered_22khz.json"),
+            processors_to_run="1:2"
+        ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/english/hifitts2/config_bandwidth.yaml",
+            data_check_fn=partial(data_check_fn_generic, file_name="manifest_22khz.json"),
+            reference_manifest_filename="test_data_reference_bandwidth.json",
+        ),
     ]
 
 def get_test_names():
@@ -356,6 +366,14 @@ def test_configs(setup_data, tmp_path):
         cfg.processors[2].workspace_dir = (data_dir / "pipeline_get_final_res").as_posix()
         # Set input_manifest_file for ASRFileCheck to use the existing manifest.json
         cfg.processors[1].input_manifest_file = (data_dir / "pipeline_get_final_res" / "manifest.json").as_posix()
+
+    if "english/hifitts2/config_22khz" in config_path:
+        cfg.processors[1].input_manifest_file = (data_dir / "manifest_22khz.json").as_posix()
+        cfg.processors[1].error_file = (data_dir / "errors_22khz.json").as_posix()
+
+    if "english/hifitts2/config_bandwidth" in config_path:
+        cfg.processors[0].audio_dir = (data_dir / "audio_22khz").as_posix()
+        cfg.processors[0].input_manifest_file = (data_dir / "manifest_22khz.json").as_posix()
 
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
