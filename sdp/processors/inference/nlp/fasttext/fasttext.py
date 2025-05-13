@@ -110,7 +110,8 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
         """Applies the classifier to a single dataset entry."""
 
         self._load_model()
-        label, prob = self._model.predict(data_entry[self.text_field])
+        text = data_entry[self.text_field].strip().replace("\n", " ")
+        label, prob = self._model.predict(text)
         data_entry[self.output_field] = label[0].replace('__label__', '')
         data_entry[f"{self.output_field}_prob"] = prob[0]
 
