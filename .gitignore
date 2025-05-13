@@ -2,6 +2,7 @@
 test_data
 workdir
 lightning_logs
+build
 
 # unit test / coverage reports
 .hypothesis

@@ -1,0 +1,26 @@
+- {'pattern': 'é', 'repl': 'e'}
+
+- {"pattern": "’", "repl": "'"}
+- {"pattern": "‘", "repl": "'"}
+- {"pattern": ";", "repl": ','}
+- {"pattern": "–", "repl": "-"}
+- {"pattern": "—", "repl": "-"}
+- {"pattern": "♫", "repl": ' '}
+- {"pattern": "♪", "repl": ' '}
+- {"pattern": "♬", "repl": ' '}
+- {"pattern": "♩", "repl": ' '}
+- {"pattern": "♭", "repl": ' '}
+- {"pattern": '\|', "repl": ' '}
+- {'pattern': ':', 'repl': ' '}
+- {'pattern': '-', 'repl': '-'}
+
+# Keep these characters and remove everything else !$',.0123456789?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+- {"pattern": "[^ €₽₴$£%!',.?0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzЄІЇАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЮЯабвгдежзийклмнопрстуфхцчшщьюяєіїҐґ-]", "repl": ""}
+
+# keep capital letters, lowercase letters, and spaces, ?, !, ., ,, and ' only
+- {"pattern": '\s+\.', "repl": "."}
+- {"pattern": '\?+', "repl": "?"}
+- {"pattern": '\.+', "repl": "."}
+- {"pattern": ',+', "repl": ","}
+- {"pattern": '!+', "repl": "!"}
+- {"pattern": '\s+', "repl": " "}

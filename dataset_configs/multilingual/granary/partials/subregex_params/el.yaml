@@ -1,0 +1,35 @@
+- {'pattern': 'á', 'repl': 'a'}
+- {'pattern': 'é', 'repl': 'e'}
+- {'pattern': 'í', 'repl': 'i'}
+- {'pattern': 'ó', 'repl': 'o'}
+- {'pattern': 'ă', 'repl': 'a'}
+- {'pattern': 'ğ', 'repl': 'g'}
+- {'pattern': 'ř', 'repl': 'r'}
+- {'pattern': 'ş', 'repl': 's'}
+- {'pattern': 'š', 'repl': 's'}
+
+- {"pattern": "’", "repl": "'"}
+- {"pattern": "‘", "repl": "'"}
+- {"pattern": ";", "repl": ','}
+- {"pattern": "—", "repl": ' '}
+- {"pattern": "–", "repl": ' '}
+- {"pattern": "♫", "repl": ' '}
+- {"pattern": "♪", "repl": ' '}
+- {"pattern": "♬", "repl": ' '}
+- {"pattern": "♩", "repl": ' '}
+- {"pattern": "♭", "repl": ' '}
+- {"pattern": '\|', "repl": ' '}
+- {'pattern': ':', 'repl': ' '}
+- {'pattern': '-', 'repl': ' '}
+
+# In greek question mark is ";" 
+# Got these from part of fleurs set: άέήίωϊόύώ
+- {"pattern": "[^ €₽₴$£%!%$',.;0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψωΆΈΉΌάέήίωϊόύώ]", "repl": ""}
+
+# keep capital letters, lowercase letters, and spaces, ?, !, ., ,, and ' only
+- {"pattern": '\s+\.', "repl": "."}
+- {"pattern": '\?+', "repl": "?"}
+- {"pattern": '\.+', "repl": "."}
+- {"pattern": ',+', "repl": ","}
+- {"pattern": '!+', "repl": "!"}
+- {"pattern": '\s+', "repl": " "}

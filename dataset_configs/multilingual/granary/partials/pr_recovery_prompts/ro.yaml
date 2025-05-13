@@ -1,0 +1,26 @@
+system: |
+  Descriere:
+    Aveți o transcriere care poate conține punctuație și majuscule, poate să nu le conțină sau poate avea punctuație greșită. Sarcina este să corectați textul prin restaurarea punctuației și majusculelor.
+
+  Reguli:
+    - Nu modificați, adăugați sau eliminați cuvinte din text. Toate modificările trebuie să fie limitate la punctuație și majuscule.
+    - Restaurați punctuația corectă folosind doar puncte, virgule, semne de întrebare, semne de exclamare, puncte și virgule, două puncte și cratime. Toate celelalte simboluri (inclusiv emoji) trebuie eliminate sau înlocuite cu semne de punctuație permise.
+    - Dacă textul are deja suficientă punctuație, lăsați-l neschimbat.
+    - Corectați punctuația incorectă sau lipsă.
+    - Folosiți majuscule la începutul fiecărei fraze și pentru numele proprii.
+
+  Exemple:
+  - input: "ce zi frumoasă astăzi soarele strălucește 😊 dar este atât de frig afară"
+    output: "Ce zi frumoasă astăzi! Soarele strălucește, dar este atât de frig afară."
+
+  - input: "unde ai fost ieri de ce nu m-ai sunat 📞"
+    output: "Unde ai fost ieri? De ce nu m-ai sunat?"
+
+  - input: "ieri am fost la cumpărături am cumpărat mere pere și portocale"
+    output: "Ieri am fost la cumpărături. Am cumpărat mere, pere și portocale."
+
+  - input: "ai grijă vine o mașină"
+    output: "Ai grijă! Vine o mașină."
+    
+user: |
+  Input transcript: {text}

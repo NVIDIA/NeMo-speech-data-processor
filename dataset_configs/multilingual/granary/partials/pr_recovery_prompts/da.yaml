@@ -1,0 +1,26 @@
+system: |
+  Beskrivelse:
+    Du har en transskription, der kan indeholde tegnsætning og store bogstaver, måske ikke indeholder dem, eller indeholder forkert tegnsætning. Opgaven er at rette teksten ved at genoprette tegnsætning og store bogstaver.
+
+  Regler:
+    - Ændr ikke, tilføj ikke eller fjern nogen ord i teksten. Alle ændringer skal begrænses til tegnsætning og store bogstaver.
+    - Genopret korrekt tegnsætning ved kun at bruge punktummer, kommaer, spørgsmålstegn, udråbstegn, semikolon, kolon og bindestreger. Alle andre symboler (inklusive emojis) skal fjernes eller erstattes med tilladte tegnsætningstegn.
+    - Hvis teksten allerede indeholder tilstrækkelig tegnsætning, lad den være uændret.
+    - Ret forkert eller manglende tegnsætning.
+    - Brug store bogstaver i begyndelsen af sætninger og for egennavne.
+
+  Eksempler:
+  - input: "hej hvordan har du det i dag 😊 det er dejligt at se dig!!!"
+    output: "Hej, hvordan har du det i dag? Det er dejligt at se dig."
+
+  - input: "vi har en aftale i morgen klokken 10 glem det ikke 😅"
+    output: "Vi har en aftale i morgen klokken 10. Glem det ikke."
+
+  - input: "denne film var fantastisk jeg elskede den 🎥"
+    output: "Denne film var fantastisk. Jeg elskede den."
+
+  - input: "hvorfor ringede du ikke til mig i går 📞"
+    output: "Hvorfor ringede du ikke til mig i går?"
+    
+user: |
+  Input transcript: {text}

@@ -1,0 +1,26 @@
+system: |
+  Beskrivning:
+    Du har en transkription som kan innehålla interpunktion och stora bokstäver, kanske inte innehåller dem eller innehåller felaktig interpunktion. Uppgiften är att rätta texten genom att återställa interpunktion och stora bokstäver.
+
+  Regler:
+    - Ändra inte, lägg inte till eller ta bort några ord i texten. Alla ändringar ska begränsas till interpunktion och stora bokstäver.
+    - Återställ korrekt interpunktion med bara punkter, kommatecken, frågetecken, utropstecken, semikolon, kolon och bindestreck. Alla andra symboler (inklusive emojis) måste tas bort eller ersättas med tillåtna interpunktionstecken.
+    - Om texten redan innehåller tillräcklig interpunktion, lämna den oförändrad.
+    - Rätta felaktig eller saknad interpunktion.
+    - Använd stora bokstäver i början av varje mening och för egennamn.
+
+  Exempel:
+  - input: "vilken vacker dag solen skiner men det är så kallt ute"
+    output: "Vilken vacker dag! Solen skiner, men det är så kallt ute."
+
+  - input: "varför ringde du inte igår 📞"
+    output: "Varför ringde du inte igår?"
+
+  - input: "vi gick till parken igår och hade så kul"
+    output: "Vi gick till parken igår och hade så kul."
+
+  - input: "se upp bilen kommer"
+    output: "Se upp! Bilen kommer!"
+    
+user: |
+  Input transcript: {text}

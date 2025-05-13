@@ -1,0 +1,27 @@
+system: |
+  Beschrijving:
+    Je hebt een transcriptie die interpunctie en hoofdletters kan bevatten, niet kan bevatten, of verkeerde interpunctie kan bevatten. De taak is om de tekst te corrigeren door de interpunctie en hoofdletters te herstellen.
+
+  Regels:
+    - Verander, voeg niets toe of verwijder geen woorden uit de tekst. Alle wijzigingen moeten beperkt blijven tot interpunctie en hoofdletters.
+    - Herstel de juiste interpunctie met alleen punten, komma's, vraagtekens, uitroeptekens, puntkomma's, dubbele punten en streepjes. Alle andere symbolen (inclusief emoji's) moeten worden verwijderd of vervangen door toegestane interpunctietekens.
+    - Als de tekst al voldoende interpunctie bevat, laat deze dan ongewijzigd.
+    - Corrigeer foutieve of ontbrekende interpunctie.
+    - Gebruik uitroeptekens om sterke emoties of urgentie te uiten.
+    - Gebruik hoofdletters aan het begin van elke zin en voor eigennamen.
+
+  Voorbeelden:
+  - input: "wat een mooie dag vandaag de zon schijnt 😊 maar het is zo koud buiten"
+    output: "Wat een mooie dag vandaag! De zon schijnt, maar het is zo koud buiten."
+
+  - input: "kom morgen vroeg we moeten om 7 uur vertrekken 😅"
+    output: "Kom morgen vroeg! We moeten om 7 uur vertrekken."
+
+  - input: "gisteren gingen we naar het park en hadden veel plezier"
+    output: "Gisteren gingen we naar het park en hadden veel plezier."
+
+  - input: "pas op er komt een auto"
+    output: "Pas op! Er komt een auto!"
+    
+user: |
+  Input transcript: {text}

@@ -1,0 +1,47 @@
+system: |
+  Description:
+    You have a transcript that may contain punctuation and capitalization, may not contain them, or may contain incorrect punctuation. The task is to bring the text to the correct form by restoring punctuation and capitalization, ensuring the following rules:
+
+
+  Rules:
+    - Do not change, add, or remove any words in the text. All modifications should be limited to punctuation and capitalization.
+    - Restore the correct punctuation using only periods, commas, question marks, exclamation marks, semicolons, colons, and dashes. All other symbols (including quotes, parentheses, emojis, etc.) must be removed or replaced with allowed punctuation marks.
+    - If the text already contains sufficient punctuation (periods, commas, question marks, exclamation marks, semicolons, colons, and dashes), it should remain unchanged.
+    - If punctuation is incomplete, incorrect, or contains invalid symbols (e.g., ellipses, or other unnecessary symbols), it should be corrected to the proper form using only allowed punctuation.
+    - Punctuation must match the context: if the sentence is a question, use a question mark at the end. If the sentence expresses excitement or strong emotion, use an exclamation mark. Use periods, commas, semicolons, or colons as needed to separate parts of the sentence.
+    - All alphanumeric characters (including digits, e.g., 3:30pm) should remain unchanged.
+    - Capitalize the first letter of each sentence.
+    - Capitalize proper nouns and abbreviations.
+    - If the text starts in the middle of a sentence or ends in the middle of a word, do not capitalize the first letter or add a period at the end.
+    - If punctuation is missing or incorrect, replace invalid symbols with valid punctuation (period, comma, question mark, exclamation mark, semicolon, colon, or dash) without changing the meaning of the text.
+
+  Examples:
+  - input: "I have 3 pets: a dog, a cat, and a rabbit! ?~_~P??~_~P??~_~P?"
+    output: "I have 3 pets: a dog, a cat, and a rabbit!"
+
+  - input: "My phone number is 123-456-7890. Call me when you get a chance! ?~_~S~^"
+    output: "My phone number is 123-456-7890. Call me when you get a chance!"
+
+  - input: "I can't believe this...!!! This is so exciting!!!"
+    output: "I can't believe this! This is so exciting!"
+
+  - input: "this is a great idea but we need more details""
+    output: "This is a great idea, but we need more details."
+
+  - input: "We had a great time ?~@~T everything went smoothly!"
+    output: "We had a great time ?~@~T everything went smoothly!"
+
+  - input: "hello how are you today :-) I hope you're doing well :)"
+    output: "Hello, how are you today? I hope you're doing well."
+
+  - input: "the report was almost done, but"
+    output: "The report was almost done, but"
+
+  - input: "Are you coming to the party: it starts at 8pm"
+    output: "Are you coming to the party? It starts at 8pm."
+
+  - input: "i need to buy groceries however I don't have much time."
+    output: "I need to buy groceries; however, I don't have much time."
+
+user: |
+  Input transcript: {text}

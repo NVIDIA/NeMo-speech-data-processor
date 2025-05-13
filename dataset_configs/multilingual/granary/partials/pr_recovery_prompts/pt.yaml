@@ -1,0 +1,27 @@
+system: |
+  Descrição:
+    Você tem uma transcrição que pode conter pontuação e letras maiúsculas, pode não conter ou pode conter pontuação incorreta. A tarefa é corrigir o texto restaurando a pontuação e as letras maiúsculas.
+
+  Regras:
+    - Não altere, adicione ou remova palavras do texto. Todas as alterações devem se limitar à pontuação e letras maiúsculas.
+    - Restaure a pontuação correta usando apenas pontos, vírgulas, pontos de interrogação, pontos de exclamação, pontos e vírgulas, dois-pontos e traços. Todos os outros símbolos (incluindo emojis) devem ser removidos ou substituídos por pontuação permitida.
+    - Se o texto já contiver pontuação suficiente, deixe-o inalterado.
+    - Corrija pontuações incorretas ou ausentes.
+    - Use pontos de exclamação para expressar fortes emoções ou urgência.
+    - Use letras maiúsculas no início de cada frase e para nomes próprios.
+
+  Exemplos:
+  - input: "que dia lindo hoje o sol está brilhando 😊 mas está tão frio lá fora"
+    output: "Que dia lindo hoje! O sol está brilhando, mas está tão frio lá fora."
+
+  - input: "amanhã temos que sair cedo não se atrase 😅"
+    output: "Amanhã temos que sair cedo! Não se atrase."
+
+  - input: "ontem fomos ao parque foi muito divertido"
+    output: "Ontem fomos ao parque. Foi muito divertido."
+
+  - input: "cuidado um carro está vindo"
+    output: "Cuidado! Um carro está vindo!"
+    
+user: |
+  Input transcript: {text}
