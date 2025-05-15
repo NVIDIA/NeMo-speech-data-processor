@@ -40,14 +40,18 @@ class TrainingCommandGenerator(BaseProcessor):
         super().__init__(**kwargs)
 
         # Paths on the current machine
-        self.training_config_local = OmegaConf.load(training_config_local)
+        self.training_config_local = training_config_local
         self.training_config_cluster = training_config_cluster
         self.training_script_path = os.path.join(nemo_directory, training_script_path)
         self.nemo_directory = nemo_directory
         self.new_manifest_files = new_manifest_files
         self.new_tarred_audio_filepaths = new_tarred_audio_filepaths
 
-    def process(self) -> str:
+    def process(
+        self, 
+        new_manifest_files=None, 
+        new_tarred_audio_filepaths=None
+    ) -> str:
         """
         Generates the training command based on the processor's configuration.
         If new manifest files are provided, updates the training configuration accordingly.
@@ -55,8 +59,7 @@ class TrainingCommandGenerator(BaseProcessor):
         Returns:
             str: The complete training command to be executed on the cluster
         """
-        
-        if self.new_manifest_files is None:
+        if new_manifest_files is None:
             cmd = self.get_execution_script(
                 cluster_script_path=self.training_script_path,
                 local_config=self.training_config_local,
@@ -65,8 +68,8 @@ class TrainingCommandGenerator(BaseProcessor):
         else:
             updated_manifest_filepaths, updated_tarred_audio_filepaths = self.update_training_sets(
                 config=self.training_config_local,
-                updated_manifest_filepaths=self.new_manifest_files,
-                updated_tarred_audio_filepaths=self.new_tarred_audio_filepaths
+                updated_manifest_filepaths=new_manifest_files,
+                updated_tarred_audio_filepaths=new_tarred_audio_filepaths
             )
             cmd = self.get_execution_script(
                 cluster_script_path=self.training_script_path,
@@ -110,7 +113,7 @@ class TrainingCommandGenerator(BaseProcessor):
                     "Please set WANDB_API_KEY to enable WANDB logging."
                 )
 
-        # Prepare the base command
+
         config_path = os.path.dirname(cluster_config_path)
         config_name = os.path.basename(cluster_config_path)
         cmd = (
@@ -126,8 +129,9 @@ class TrainingCommandGenerator(BaseProcessor):
         if updated_tarred_filepaths:
             cmd += f" model.train_ds.tarred_audio_filepaths={updated_tarred_filepaths}"
         output_data = {"training_command": cmd}
-        with open(self.output_manifest_file, 'w') as f:
-            json.dump(output_data, f, indent=4)
+
+        # with open(self.output_manifest_file, 'w') as f:
+        #     json.dump(output_data, f, indent=4)
         return cmd
     
     def get_transcribed_names(self, manifest_filepaths: List[str], is_tarred: bool=False) -> List[List[str]]:
@@ -185,7 +189,6 @@ class TrainingCommandGenerator(BaseProcessor):
                 - Updated manifest file paths as a string, formatted for Omegaconf
                 - Updated tarred audio file paths as a string, formatted for Omegaconf
         """
-        print(f"updated_manifest_filepaths {updated_manifest_filepaths}")
         updated_manifest_filepaths = self.get_transcribed_names(updated_manifest_filepaths,is_tarred=config.model.train_ds.get("is_tarred", False))
         manifest_filepath = config.model.train_ds.manifest_filepath
         if updated_tarred_audio_filepaths:
@@ -201,7 +204,6 @@ class TrainingCommandGenerator(BaseProcessor):
                 updated_tarred_audio_filepaths += tarred_audio_filepaths
                 updated_manifest_filepaths += manifest_filepath
         else:
-            print(f"config.model.train_ds.get {config.model.train_ds.get('use_lhotse')}")
             if config.model.train_ds.get("use_lhotse", False):
                 if isinstance(manifest_filepath, str):
                     updated_manifest_filepaths.append([manifest_filepath])
@@ -243,9 +245,8 @@ class InferenceCommandGenerator(BaseProcessor):
         inference_config_paths: str,
         manifests:  str,
         p_cache: float,
-        num_gpus, int,
+        num_gpus: int,
         is_tarred: bool = False,
-        first_run: bool = False,
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -254,29 +255,17 @@ class InferenceCommandGenerator(BaseProcessor):
         self.inference_config_paths = inference_config_paths
         self.nemo_directory = nemo_directory
         self.inference_script_path = os.path.join(nemo_directory, "examples/asr/transcribe_speech_parallel.py")
-        self.first_run = first_run  
         self.manifests = manifests
         self.p_cache = p_cache
         self.num_gpus = num_gpus
         self.is_tarred = is_tarred
 
-    def process(self): 
+    def process(self, first_run=False): 
         """
         Generate the pseudo-labeling command for the given configuration and training parameters.
 
         Args:
-            merged_config (Dict): Merged configuration containing model and dataset settings.
-            config_name (str): Name of the configuration file to be used.
-            cluster_script_path (str): Path to the cluster execution script.
-            config_dir (str): Directory containing the configuration files.
-            ipl_training (Dict[str, any]): Dictionary containing:
-                - first_run (bool): Whether this is the first run of pseudo-labeling.
-                - num_gpus (int): Number of GPUs to use.
-                - inference_config_paths (List[str]): List of inference configuration file paths.
-                - manifests (List[str]): List of manifest file paths.
-                - tarr_paths (List[str]): List of tarred audio file paths.
-                - num_ipl_epochs (int): Number of epochs to train with pseudo-labels.
-                - p_cache (float): What part of pseudo-labels to update.
+            first_run (bool, optional): Whether this is the first run of pseudo-labeling.
 
         Returns:
             str: The constructed pseudo-labeling command.
@@ -286,7 +275,7 @@ class InferenceCommandGenerator(BaseProcessor):
         inference_config_paths_str = " ".join(self.inference_config_paths)        
         write_transcription_path = os.path.join(self.nemo_directory, "scripts/pseudo_labeling/write_transcribed_files.py")
         update_inference_config_path = os.path.join(self.nemo_directory, "scripts/pseudo_labeling/update_inference_config.pys")
-        if self.first_run:
+        if first_run:
             cmd += f"{self.get_pl_inference_command(self.inference_config_paths, shuffle=False)}"
             cmd += (
                 f" && python {write_transcription_path} "

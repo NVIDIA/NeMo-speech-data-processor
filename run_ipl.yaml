@@ -1,0 +1,5 @@
+script: asr_hybrid_transducer_ctc/speech_to_text_hybrid_rnnt_ctc_bpe.py 
+num_epochs: 2
+script_config: /home/ntadevosyan/code/fork_ipl/NeMo/examples/asr/conf/update_script_config.yaml 
+inference_config: /home/ntadevosyan/code/nemo_run_ipl_PR/NeMo/examples/asr/inference_config_local_non_tarred.yaml 
+nemo_path: /home/ntadevosyan/code/pr_iplmixin/NeMo/examples/asr/
