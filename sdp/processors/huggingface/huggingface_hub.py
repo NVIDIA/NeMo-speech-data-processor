@@ -13,9 +13,16 @@
 # limitations under the License.
 
 import json
+import os
+from typing import Dict
 
-from sdp.processors.base_processor import BaseProcessor
+from tqdm.contrib.concurrent import process_map
 
+from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor
+
+def _hf_hub_download(kwargs):
+    from huggingface_hub import hf_hub_download
+    return hf_hub_download(**kwargs)
 
 class ListRepoFiles(BaseProcessor):
     """
@@ -93,34 +100,70 @@ class SnapshotDownload(BaseProcessor):
 
     def __init__(
         self,
-        output_manifest_file: str,
-        input_manifest_file: str = None,
-        **snapshot_download_kwargs,
+        output_filepath_field: str = "downloaded",
+        snapshot_download_args: dict = {},
+        **kwargs,
     ):
-        super().__init__(
-            output_manifest_file=output_manifest_file,
-            input_manifest_file=input_manifest_file,
-        )
-        self.snapshot_download_kwargs = snapshot_download_kwargs
-
-    def download(self):
-        """
-        Download the repository snapshot to a local folder.
-        """
-        from huggingface_hub import snapshot_download
-
-        self.local_dir = snapshot_download(**self.snapshot_download_kwargs)
-
-    def write_output_manifest_file(self):
-        """
-        Write the path of the downloaded snapshot folder to the output manifest.
-        """
-        with open(self.output_manifest_file, 'w', encoding='utf8') as fout:
-            fout.writelines(json.dumps({"destination_dir": self.local_dir}))
+        super().__init__(**kwargs)
+        self.output_filepath_field = output_filepath_field
+        self.snapshot_download_args = snapshot_download_args
 
     def process(self):
         """
-        Main processing entrypoint: download repo and write path to manifest.
+        Main processing entrypoint: download repo and write path to manifest. 
         """
-        self.download()
-        self.write_output_manifest_file()
+        from huggingface_hub import snapshot_download
+
+        self.local_dir = snapshot_download(**self.snapshot_download_args)
+        
+        with open(self.output_manifest_file, 'w', encoding='utf8') as fout:
+            fout.writelines(json.dumps({self.output_filepath_field : self.local_dir}))
+
+
+class HfHubDownload(BaseParallelProcessor):
+    def __init__(
+        self,
+        filename_field: str,
+        output_filepath_field: str = "downloaded",
+        hf_hub_download_args: Dict = {},
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.filename_field = filename_field
+        self.output_filepath_field = output_filepath_field
+        self.hf_hub_download_args = hf_hub_download_args
+
+    def process(self):
+        self.prepare()
+        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
+
+        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
+            for manifest_chunk in self._chunk_manifest():
+                # Подготовим список задач
+                download_tasks = [
+                    {
+                        **self.hf_hub_download_args,
+                        "filename": entry[self.filename_field]
+                    }
+                    for entry in manifest_chunk
+                ]
+
+                # Параллельная загрузка с учётом max_workers и chunksize
+                results = process_map(
+                    _hf_hub_download,
+                    download_tasks,
+                    max_workers=self.max_workers,
+                    chunksize=self.chunksize,
+                )
+
+                # Сопоставим обратно результаты с входными entry
+                for entry, local_path in zip(manifest_chunk, results):
+                    entry[self.output_filepath_field] = local_path
+                    json.dump(entry, fout, ensure_ascii=False)
+                    fout.write("\n")
+                    self.number_of_entries += 1
+
+        self.finalize(self.test_cases)
+    
+    def process_dataset_entry(self, data_entry):
+        pass

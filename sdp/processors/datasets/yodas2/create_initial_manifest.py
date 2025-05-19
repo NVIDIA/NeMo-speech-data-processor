@@ -20,7 +20,7 @@ import tempfile
 import importlib.util
 
 from sdp.processors import ListToEntries
-from sdp.processors.huggingface.huggingface_hub import ListRepoFiles, SnapshotDownload
+from sdp.processors.huggingface.huggingface_hub import ListRepoFiles, SnapshotDownload, HfHubDownload
 from sdp.logging import logger
 
 
@@ -137,7 +137,7 @@ class ListYodas2Data(ListRepoFiles):
         logger.info("Metadata successfully saved!")
         
 
-class DownloadYodas2Data(SnapshotDownload):
+class SnapshotDownloadYodas2Data(SnapshotDownload):
     """
     A specialized processor for downloading the YODAS2 dataset from Hugging Face
     and updating the input manifest with local file paths to the downloaded files.
@@ -194,7 +194,12 @@ class DownloadYodas2Data(SnapshotDownload):
 
     def __init__(self, **kwargs):
         # Hardcoded to download the espnet/yodas2 dataset from Hugging Face
-        super().__init__(repo_id="espnet/yodas2", repo_type="dataset", **kwargs)
+        if not 'snapshot_download_args' in kwargs:
+            kwargs['snapshot_download_args'] = dict()
+        kwargs['snapshot_download_args']['repo_id'] = 'espnet/yodas2'
+        kwargs['snapshot_download_args']['repo_type'] = 'dataset'
+
+        super().__init__(**kwargs)
 
     def write_output_manifest_file(self):
         """
@@ -270,6 +275,18 @@ class DownloadYodas2Data(SnapshotDownload):
         self.download()
         self.write_output_manifest_file()
 
+
+class HfHubDownloadYodas2Data(HfHubDownload):
+    def __init__(self, filename_field: str = 'audio_key', output_filepath_field = 'local_audio', **kwargs):
+        if not 'hf_hub_download_args' in kwargs:
+            kwargs['hf_hub_download_args'] = dict()
+        kwargs['hf_hub_download_args']['repo_id'] = 'espnet/yodas2'
+        kwargs['hf_hub_download_args']['repo_type'] = 'dataset'
+
+        super().__init__(filename_field = filename_field, output_filepath_field = output_filepath_field, **kwargs)
+    
+    def process(self):
+        super().process()
 
 class CreateInitialManifestYodas2(ListToEntries):
     """
