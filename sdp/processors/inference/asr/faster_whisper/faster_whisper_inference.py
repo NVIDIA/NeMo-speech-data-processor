@@ -198,6 +198,7 @@ class FasterWhisperInference(BaseProcessor):
                  model_size_or_path: str = "base",
                  device: str = "auto",
                  num_devices: int = -1,
+                 compute_type: str = "default",
                  model_download_root: Optional[str] = None,
                  output_dir: Optional[str] = None,
                  skip_corrupted_audios: bool = False,
@@ -236,7 +237,7 @@ class FasterWhisperInference(BaseProcessor):
         device, device_ids = self.setup_devices(device, num_devices)
         self.device_ids = device_ids
         model_cfg = ModelConfig(model_size_or_path = model_size_or_path,
-                                device = device,
+                                device = device, compute_type = compute_type,
                                 download_root = model_download_root)
         
         #GeneralConfig setup
