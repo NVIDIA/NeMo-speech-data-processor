@@ -31,13 +31,7 @@ import tempfile
 import shutil
 import tarfile
 import io
-import wget
-
-try:
-    from huggingface_hub import snapshot_download
-    IS_HF_HUB_AVAILABLE = True
-except ModuleNotFoundError:
-    IS_HF_HUB_AVAILABLE = False
+from huggingface_hub import hf_hub_download
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Prepare a specific YODAS2 test data shard for local use.")
@@ -83,70 +77,36 @@ if __name__ == "__main__":
     os.makedirs(test_data_folder, exist_ok=True)
 
     # File keys used to construct Hugging Face paths
-    audio_key = f"data/{args.lang_subset}/audio/{args.shard_id}.tar.gz"
-    duration_key = f"data/{args.lang_subset}/duration/{args.shard_id}.txt"
-    text_key = f"data/{args.lang_subset}/text/{args.shard_id}.json"
-
-    # Local paths to store the downloaded files
-    local_audio = os.path.join(test_data_folder, audio_key)
-    local_duration = os.path.join(test_data_folder, duration_key)
-    local_text = os.path.join(test_data_folder, text_key)
-
-    # Ensure directories exist
-    os.makedirs(os.path.dirname(local_audio), exist_ok=True)
-    os.makedirs(os.path.dirname(local_duration), exist_ok=True)
-    os.makedirs(os.path.dirname(local_text), exist_ok=True)
+    shard = dict(
+        audio = dict(key = f"data/{args.lang_subset}/audio/{args.shard_id}.tar.gz"),
+        duration = dict(key = f"data/{args.lang_subset}/duration/{args.shard_id}.txt"),
+        text = dict(key = f"data/{args.lang_subset}/text/{args.shard_id}.json")
+    )
 
     # Temporary directory for downloads
     with tempfile.TemporaryDirectory() as tmpdir:
-        downloaded_audio = os.path.join(tmpdir, audio_key)
-        downloaded_duration = os.path.join(tmpdir, duration_key)
-        downloaded_text = os.path.join(tmpdir, text_key)
-
-        os.makedirs(os.path.dirname(downloaded_audio), exist_ok=True)
-        os.makedirs(os.path.dirname(downloaded_duration), exist_ok=True)
-        os.makedirs(os.path.dirname(downloaded_text), exist_ok=True)
-
-        def download_with_hf():
-            snapshot_download(
+        for datatype in shard:
+            tmp_filepath = hf_hub_download(
                 repo_id="espnet/yodas2",
                 repo_type="dataset",
+                filename = shard[datatype]['key'],
                 local_dir=tmpdir,
-                allow_patterns=[audio_key, duration_key, text_key],
+                local_dir_use_symlinks = False,
             )
 
-        def download_with_wget():
-            base_url = "https://huggingface.co/datasets/espnet/yodas2/resolve/main/"
-            suffix = "?download=true"
-            wget.download(f"{base_url}{audio_key}{suffix}", out=downloaded_audio)
-            wget.download(f"{base_url}{duration_key}{suffix}", out=downloaded_duration)
-            wget.download(f"{base_url}{text_key}{suffix}", out=downloaded_text)
+            assert os.path.exists(tmp_filepath), f"{datatype} file missing after download ({tmp_filepath} not found)."
+            shard[datatype]['src_filepath'] = tmp_filepath
 
-        # Try downloading the files
-        if IS_HF_HUB_AVAILABLE:
-            try:
-                download_with_hf()
-            except Exception:
-                download_with_wget()
-        else:
-            download_with_wget()
+            dest_filepath = os.path.join(test_data_folder, shard[datatype]['key'])
+            shard[datatype]['dest_filepath'] = dest_filepath
+            os.makedirs(os.path.dirname(dest_filepath), exist_ok=True)
 
-        # Sanity check to make sure files were downloaded
-        assert os.path.exists(downloaded_audio), "Audio file missing after download."
-        assert os.path.exists(downloaded_duration), "Duration file missing after download."
-        assert os.path.exists(downloaded_text), "Text file missing after download."
+            if args.num_entries == -1:
+                shutil.move(tmp_filepath, dest_filepath)
 
-        if args.num_entries == -1:
-            # Move full shard
-            shutil.move(downloaded_audio, local_audio)
-            shutil.move(downloaded_duration, local_duration)
-            shutil.move(downloaded_text, local_text)
-        else:
-            # Limit to N entries
+        if args.num_entries != -1:    
             yodas_ids = []
-
-            # Process duration file and extract first N IDs
-            with open(downloaded_duration, 'r') as fin, open(local_duration, 'w') as fout:
+            with open(shard['duration']['src_filepath'], 'r') as fin, open(shard['duration']['dest_filepath'], 'w') as fout:
                 for i, line in enumerate(fin, 1):
                     yodas_id = line.split()[0]
                     yodas_ids.append(yodas_id)
@@ -155,9 +115,8 @@ if __name__ == "__main__":
                         break
                 else:
                     print(f"Warning: fewer lines than requested ({args.num_entries}).")
-
-            # Filter JSON entries by selected IDs
-            with open(downloaded_text, 'r', encoding='utf8') as fin, open(local_text, 'w', encoding='utf8') as fout:
+            
+            with open(shard['text']['src_filepath'], 'r', encoding='utf8') as fin, open(shard['text']['dest_filepath'], 'w', encoding='utf8') as fout:
                 all_samples = json.load(fin)
                 selected = [s for s in all_samples if s['audio_id'] in yodas_ids]
 
@@ -165,9 +124,9 @@ if __name__ == "__main__":
                     raise ValueError("Mismatch between duration and text entries.")
 
                 fout.write(json.dumps(selected) + '\n')
-
+            
             # Extract and repack audio subset
-            with tarfile.open(downloaded_audio, "r:gz") as tar_in, tarfile.open(local_audio, "w:gz") as tar_out:
+            with tarfile.open(shard['audio']['src_filepath'], "r:gz") as tar_in, tarfile.open(shard['audio']['dest_filepath'], "w:gz") as tar_out:
                 for yodas_id in yodas_ids:
                     filename = f"./{yodas_id}.wav"
                     member = tar_in.getmember(filename)
@@ -176,23 +135,22 @@ if __name__ == "__main__":
                     member.size = len(audio_bytes)
                     tar_out.addfile(member, fileobj=file_obj)
 
-    # Determine manifest location and folder
-    lang = args.lang_subset[:2]
-    manifest_dir = os.path.join(test_data_folder, lang)
-    os.makedirs(manifest_dir, exist_ok=True)
+        # Determine manifest location and folder
+        lang = args.lang_subset[:2]
+        manifest_dir = os.path.join(test_data_folder, lang)
+        os.makedirs(manifest_dir, exist_ok=True)
 
-    # Write output manifest
-    manifest_path = os.path.join(manifest_dir, "manifest_03.json")
-    with open(manifest_path, 'w', encoding='utf8') as manifest:
-        sample = {
-            "lang_subset": args.lang_subset,
-            "shard_id": args.shard_id,
-            "audio_key": audio_key,
-            "duration_key": duration_key,
-            "text_key": text_key,
-            "src_lang": lang,
-            "local_audio": local_audio,
-            "local_duration": local_duration,
-            "local_text": local_text,
-        }
-        manifest.write(json.dumps(sample) + '\n')
+        manifest_path = os.path.join(manifest_dir, "manifest_03.json")
+        with open(manifest_path, 'w', encoding='utf8') as manifest:
+            sample = {
+                "lang_subset": args.lang_subset,
+                "shard_id": args.shard_id,
+                "audio_key": shard['audio']['key'],
+                "duration_key": shard['duration']['key'],
+                "text_key": shard['text']['key'],
+                "src_lang": lang,
+                "local_audio": shard['audio']['dest_filepath'],
+                "local_duration": shard['duration']['dest_filepath'],
+                "local_text": shard['text']['dest_filepath'],
+            }
+            manifest.write(json.dumps(sample) + '\n')
