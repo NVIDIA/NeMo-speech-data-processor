@@ -1,61 +1,225 @@
 documentation: |
-  YODAS2 
-  ############
-  Documentation is in progress.
+  YODAS2 Data Processing Pipeline
+  ==============================
 
-use_dask: False
+  This pipeline processes the YODAS2 subset of the Granary dataset, which consists of long-form multilingual YouTube speech data
+  with timestamps and transcriptions. It downloads, normalizes, filters, converts, and packages the data into a tarred audio dataset
+  format suitable for training speech models with NeMo.
+
+  Overview
+  --------
+  The pipeline automatically downloads all required metadata and audio data, applies text normalization and filtering, converts audio
+  to the standard format, and generates a final Granary dataset in *tarred audio format*.
+
+  The pipeline is designed to process data for a specific source language, which must be one of the following supported languages:
+
+  ::
+
+    "bg", "cs", "da", "de", "el", "en", "es", "et", "fi", "fr",
+    "hr", "hu", "it", "lt", "lv", "nl", "pl", "pt", "ro", "ru", "sk", "sv", "uk"
+
+  Configuration Parameters
+  ------------------------
+  - **use_dask**: Whether to use Dask for multiprocessing (recommended: False)
+  - **params**:
+    - **source_lang**: Language code (e.g., "bg" for Bulgarian)
+    - **use_regex**: Regex rules to apply. Usually set to the same value as `source_lang`, or to `"common"` to apply a universal normalization pattern across 25 languages.
+    - **en_translation**: Whether to include English translations (default: True)
+    - **convert_to_audio_tarred_dataset**:
+      - **should_run**: Whether to convert to tarred audio format
+      - **num_shards**: Number of tar shards
+      - **buckets_num**: Number of buckets for duration grouping
+      - **min_audio_duration** / **max_audio_duration**: Duration filters (in seconds)
+    - **save_disk_space**: Whether to delete intermediate files (default: True)
+    - **use_snapshot_download**: Whether to use snapshot_download from Hugging Face (default: False)
+
+  Output
+  ------
+  After execution, the pipeline produces:
+
+  - A **tarred audio dataset**, which contains:
+    - Converted audio files in 16 kHz mono WAV format
+    - Corresponding manifests with cleaned and normalized transcripts
+    - Optionally, English translations
+
+  Running the Pipeline
+  --------------------
+  Run this command to launch the pipeline:
+
+  .. code-block:: bash
+
+     python main.py \
+       --config-path=dataset_configs/multilingual/granary/ \
+       --config-name=yodas2.yaml
+
+  References
+  ----------
+  - YODAS2 on Hugging Face: https://huggingface.co/datasets/espnet/yodas2
+
+  Summary
+  -------
+  This pipeline prepares filtered, normalized, and language-specific audio data in a format ready for training NeMo-compatible ASR models.
+
+use_dask: False  # Whether to use Dask for multiprocessing. False = use built-in processing (recommended).
 
 params:
-  source_lang: es
-  use_regex: ${.source_lang}
-  translation: True
+  source_lang: ??  # Set the language to process (e.g., "bg")
+  use_regex: ${.source_lang}  # Regex config for text normalization. Usually same as the language, or "common" to apply a universal regex for 25 languages.
+  en_translation: True  # If True, download also English translations (if available).
   convert_to_audio_tarred_dataset:
-    should_run: True
-    num_shards: 16
-    buckets_num: 1
-    min_audio_duration: 0.1
-    max_audio_duration: 40.0
-  save_disk_space: True
+    should_run: True  # If True, the final tarred dataset will be created.
+    num_shards: ??  # Number of tar files to split the dataset into.
+    buckets_num: ??  # Number of duration buckets (used for balancing durations across shards).
+    min_audio_duration: 0.1  # Exclude files shorter than 0.1 seconds.
+    max_audio_duration: 40.0  # Exclude files longer than 40 seconds.
+  save_disk_space: True  # If True, intermediate audio files will be deleted.
+  use_snapshot_download: False  # If True, use snapshot_download instead of Hugging Face Hub APIs.
 
-processors_to_run: "2:"
-workspace_dir: /data3/sdp_test/new_test_kurz #/data3/sdp_test/final_test
-sdp_dir: /ameister/YODAS_PR_FINAL/NeMo-speech-data-processor
+processors_to_run: "all"  # Run all processors in sequence.
+
+workspace_dir: ??  # Required: output directory to save all intermediate and final files.
+sdp_dir: ./NeMo-speech-data-processor  # Path to the local clone of the SDP repo.
 
 processors:
+  # 0. Get base manifest (JSONL with audio references and text)
   - _target_: sdp.processors.GetGranarysYodas2
-    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_0.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_00.json
     lang: ${params.source_lang}
-    translation: ${params.translation}
+    translation: ${params.en_translation}
 
+  # 1. Apply regex-based substitutions to normalize text
   - _target_: sdp.processors.SubRegex
     text_key: text
-    regex_params_yaml: ${sdp_dir}/dataset_configs/multilingual/granary/partials/subregex_params/${params.use_regex}.yaml
-    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_1.json
-  
+    regex_params_yaml: ${sdp_dir}/dataset_configs/multilingual/yodas2/partials/subregex_params/${params.use_regex}.yaml
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_01.json
+
+  # 2. Drop empty or whitespace-only entries
   - _target_: sdp.processors.DropIfRegexMatch
-    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_2.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_02.json
     text_key: text
     regex_patterns:
       - "^\\s*$"
-  
-  - _target_: sdp.processors.DownloadYodas2Data
-    #by pattern
-    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_3.json
-    local_dir: ${workspace_dir}/${params.source_lang}
+
+  # 3. Expand metadata (adds lang_subset, shard_id, etc.)
+  - _target_: sdp.processors.ListYodas2Data
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_03.json
+    use_metadata: True
+
+  # 4. Remove unused fields
+  - _target_: sdp.processors.DropSpecifiedFields
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_04.json
+    fields_to_drop:
+      - duration_key
+      - text_key
+
+  # 5. Add `source_lang` field based on lang_subset prefix
+  - _target_: sdp.processors.LambdaExpression
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_05.json
+    new_field: source_lang
+    expression: entry.lang_subset[:2]
+
+  # 6. Keep only entries where source_lang matches config
+  - _target_: sdp.processors.PreserveByValue
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_06.json
+    input_value_key: source_lang
+    target_value: ${params.source_lang}
+
+  # 7. Download tarballs with snapshot_download (if enabled)
+  - _target_: sdp.processors.SnapshotDownloadYodas2Data
+    should_run: ${params.use_snapshot_download}
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_07.json
+    local_dir: ${workspace_dir}/${params.source_lang}/
     max_workers: 8
-  
+
+  # 8. Download tarballs via HF Hub API (default path)
+  - _target_: sdp.processors.HfHubDownloadYodas2Data
+    input_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_06.json
+    should_run: ${not:${params.use_snapshot_download}}
+    filename_field: audio_key
+    output_filepath_field: local_audio
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_07.json
+    hf_hub_download_args:
+      local_dir: ${workspace_dir}/${params.source_lang}/
+    max_workers: 8
+
+  # 9. Extract .tar files into audio WAVs
   - _target_: sdp.processors.ExtractTar
-    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_4.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_08.json
     field_to_tar_filepath: 'local_audio'
     extraction_dir: ${workspace_dir}/${params.source_lang}
     remove_source_tar: ${params.save_disk_space}
     filepath_prefix_field: 'lang_subset'
     output_filepath_field: 'extracted_audios'
     get_extracted_filepaths: True
-  
-  - _target_: sdp.processors.CreateInitialManifestYodas2
-    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_5.json
+
+  # 10. Flatten lists of extracted audio paths
+  - _target_: sdp.processors.ListToEntries
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_09.json
     field_with_list: 'extracted_audios'
     output_field: 'source_audio_filepath'
 
-#export HYDRA_FULL_ERROR=1 && python /ameister/YODAS_PR_FINAL/NeMo-speech-data-processor/main.py --config-path=/ameister/YODAS_PR_FINAL/NeMo-speech-data-processor/dataset_configs/multilingual/granary/ --config-name=yodas2_express.yaml
+  # 11. Add yodas_id (unique audio ID) from filename
+  - _target_: sdp.processors.LambdaExpression
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_10.json
+    new_field: 'yodas_id'
+    expression: "entry.source_audio_filepath[-15:-4]"
+
+  # 12. Define the final audio output path for conversion
+  - _target_: sdp.processors.LambdaExpression
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_11.json
+    new_field: 'audio_filepath'
+    expression: "'${workspace_dir}/${params.source_lang}/converted/' + entry.lang_subset + '/' + entry.shard_id + '/' + entry.yodas_id"
+
+  # 13. Convert audio to 16kHz mono WAV
+  - _target_: sdp.processors.FfmpegConvert
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_12.json
+    input_file_key: 'source_audio_filepath'
+    output_file_key: 'audio_filepath'
+    id_key: 'audio_filepath'
+    converted_audio_dir: '/'
+    target_samplerate: 16000
+    target_nchannels: 1
+
+  # 14. Optionally remove the original raw audio files
+  - _target_: sdp.processors.RemoveFiles
+    filepath_field: 'source_audio_filepath'
+    should_run: ${params.save_disk_space}
+
+  # 15. Keep only fields needed for final merge
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    input_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_12.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_13.json
+    fields_to_keep:
+      - yodas_id
+      - audio_filepath
+
+  # 16. Merge audio paths with filtered text
+  - _target_: sdp.processors.JoinManifests
+    left_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_02.json
+    right_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_13.json
+    merge_params:
+      'on': yodas_id
+      how: inner
+      copy: False
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_14.json
+
+  # 17. Create the final tarred audio dataset
+  - _target_: sdp.processors.ConvertToTarredAudioDataset
+    should_run: ${params.convert_to_audio_tarred_dataset.should_run}
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_15.json
+    min_duration: ${params.convert_to_audio_tarred_dataset.min_audio_duration}
+    max_duration: ${params.convert_to_audio_tarred_dataset.max_audio_duration}
+    target_dir: ${workspace_dir}/${params.source_lang}/tarred_dataset
+    num_shards: ${params.convert_to_audio_tarred_dataset.num_shards}
+    buckets_num: ${params.convert_to_audio_tarred_dataset.buckets_num}
+    workers: -1
+    shuffle: True
+    shuffle_seed: 1
+    sort_in_shards: True
+    slice_with_offset: True
+
+  # 18. Optionally delete final converted audio files
+  - _target_: sdp.processors.RemoveFiles
+    input_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_14.json
+    filepath_field: 'audio_filepath'
+    should_run: ${params.save_disk_space}

@@ -163,4 +163,4 @@ from sdp.processors.datasets.yodas2.create_initial_manifest import(
     HfHubDownloadYodas2Data,
     CreateInitialManifestYodas2,
 )
-from sdp.processors.datasets.yodas2.granary import GetGranarysYodas2
+from sdp.processors.datasets.granary import GetGranarysYodas2
