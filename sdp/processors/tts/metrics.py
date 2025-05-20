@@ -31,7 +31,18 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
     """This processor calculates Squim quality metrics for audio files.
 
     It uses a pre-trained Squim model to calculate audio quality metrics like PESQ, STOI
-    and SI-SDR for each audio segment in the manifest.
+    and SI-SDR for each audio segment in the manifest:
+
+        PESQ (Perceptual Evaluation of Speech Quality)
+        A measure of overall quality for speech (originally designed to detect codec distortions but highly correlated to all kinds of distortion.
+        
+        STOI (Short-Time Objective Intelligibility)
+        A measure of speech intelligibility, basically measures speech envelope integrity. 
+        A STOI value of 1.0 means 100% of the speech being evaluated is intelligible on average.
+
+        SI-SDR (Scale-Invariant Signal-to-Distortion Ratio)
+        A measure of how strong the speech signal is vs. all the distortion present in the audio, in decibels. 
+        0 dB means the energies of speech and distortion are the same. A value between 15-20 dB is what is considered "clean enough" speech in general.
 
     Args:
         device (str, Optional): Device to run the model on. Defaults to "cuda".
