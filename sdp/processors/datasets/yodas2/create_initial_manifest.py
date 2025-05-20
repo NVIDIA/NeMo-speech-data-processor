@@ -77,7 +77,7 @@ class ListYodas2Data(ListRepoFiles):
             # Write the manifest based on metadata.lang2shard_cnt
             with open(self.output_manifest_file, 'w', encoding='utf8') as fout:
                 for lang_subset in sorted(metadata.lang2shard_cnt.keys()):
-                    for shard_no in range(metadata.lang2shard_cnt['aa000']):
+                    for shard_no in range(metadata.lang2shard_cnt[lang_subset]):
                         shard_id = str(shard_no).zfill(8)
                         data_entry = {
                             "lang_subset": lang_subset,
