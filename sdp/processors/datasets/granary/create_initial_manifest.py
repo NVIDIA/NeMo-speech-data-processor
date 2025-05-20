@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# let's import all supported processors here to simplify target specification
-
 import os
 import json
 from glob import glob
