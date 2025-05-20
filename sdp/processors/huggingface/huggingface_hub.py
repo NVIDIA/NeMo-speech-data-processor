@@ -101,7 +101,7 @@ class SnapshotDownload(BaseProcessor):
     def __init__(
         self,
         output_filepath_field: str = "downloaded",
-        snapshot_download_args: dict = {},
+        snapshot_download_args: Dict = {},
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -109,6 +109,8 @@ class SnapshotDownload(BaseProcessor):
         self.snapshot_download_args = snapshot_download_args
 
     def process(self):
+        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok = True)
+        
         """
         Main processing entrypoint: download repo and write path to manifest. 
         """
