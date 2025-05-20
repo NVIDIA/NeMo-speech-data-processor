@@ -16,7 +16,7 @@
 
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
-    ApplyInnerJoin,
+    JoinManifests,
     ChangeToRelativePath,
     CombineSources,
     DuplicateFields,

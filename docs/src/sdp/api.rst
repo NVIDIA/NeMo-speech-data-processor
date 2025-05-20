@@ -390,7 +390,7 @@ Miscellaneous
 .. autodata:: sdp.processors.CreateInitialManifestByExt
    :annotation:
 
-.. autodata:: sdp.processors.ApplyInnerJoin
+.. autodata:: sdp.processors.JoinManifests
    :annotation:
 
 .. autodata:: sdp.processors.CreateCombinedManifests

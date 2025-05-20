@@ -282,10 +282,12 @@ processors:
     output_manifest_file: ${manifest_dir}/manifest21.json
 
   # 22 keeping only low WER and CER samples
-  - _target_: sdp.processors.ApplyInnerJoin
+  - _target_: sdp.processors.JoinManifests
     left_manifest_file: ${manifest_dir}/manifest21.json
     right_manifest_file: ${manifest_dir}/manifest19.json
-    column_id: audio_filepath
+    merge_params:
+      'on': audio_filepath
+      how: inner
     output_manifest_file: ${manifest_dir}/manifest22.json
 
   # 23 changing paths to relative
