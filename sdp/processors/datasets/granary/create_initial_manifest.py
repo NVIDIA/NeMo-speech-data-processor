@@ -69,13 +69,8 @@ class GetGranarysYodas2(SnapshotDownload):
                                             offset = sample['start_time'],
                                             duration = sample['duration'],
                                             text = sample['text'],
-                                            answer = sample['text'],
-                                            decodercontext = "",
-                                            emotion = "<|emo:undefined|>",
-                                            pnc = "pnc",
-                                            itn = "itn",
-                                            timestamp = "notimestamp", 
-                                            diarize = "nodiarize")
+                                            answer = sample['text']
+                                            )
                                                         
                             if self.translation:
                                 new_sample['target_lang'] = "en"

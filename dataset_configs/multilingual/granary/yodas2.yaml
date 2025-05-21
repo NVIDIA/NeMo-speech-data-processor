@@ -202,11 +202,22 @@ processors:
       how: inner
       copy: False
     output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_14.json
+  
+  # 17. Add fields required for Canary model
+  - _target_: sdp.processors.AddConstantFields
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_15.json
+    fields:
+      decodercontext: ""
+      "emotion": "<|emo:undefined|>"
+      "pnc": "pnc"
+      "itn": "itn"
+      "timestamp": "notimestamp"
+      "diarize": "nodiarize"
 
-  # 17. Create the final tarred audio dataset
+  # 18. Create the final tarred audio dataset
   - _target_: sdp.processors.ConvertToTarredAudioDataset
     should_run: ${params.convert_to_audio_tarred_dataset.should_run}
-    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_15.json
+    output_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_16.json
     min_duration: ${params.convert_to_audio_tarred_dataset.min_audio_duration}
     max_duration: ${params.convert_to_audio_tarred_dataset.max_audio_duration}
     target_dir: ${workspace_dir}/${params.source_lang}/tarred_dataset
@@ -218,8 +229,8 @@ processors:
     sort_in_shards: True
     slice_with_offset: True
 
-  # 18. Optionally delete final converted audio files
+  # 19. Optionally delete final converted audio files
   - _target_: sdp.processors.RemoveFiles
-    input_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_14.json
+    input_manifest_file: ${workspace_dir}/${params.source_lang}/manifest_17.json
     filepath_field: 'audio_filepath'
     should_run: ${params.save_disk_space}
