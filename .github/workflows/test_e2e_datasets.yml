@@ -1,0 +1,43 @@
+name: E2E Dataset Pipelines Docker Build and Test
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  Granary:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip && \
+        find requirements/ -maxdepth 1 -name "*.txt" -exec pip install -r {} && \
+        pip install -r requirements/datasets/granary.txt && \
+        python -m pip cache purge
+    
+    - name: Run Yodas2 E2E test
+      # in the future this might fail if some runtime tests require nemo
+      # in that case this test will need to be changed
+      run: |
+        python -m pytest tests/test_utils.py -v
+    
+    - name: Get test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          pytest.xml
+          coverage.xml

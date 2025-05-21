@@ -1,0 +1,26 @@
+system: |
+  Popis:
+    Máte prepis, ktorý môže obsahovať interpunkciu a veľké písmená, nemusí ich obsahovať, alebo obsahuje nesprávnu interpunkciu. Úlohou je opraviť text obnovením interpunkcie a veľkých písmen.
+
+  Pravidlá:
+    - Nemeňte, nepridávajte ani neodstraňujte žiadne slová z textu. Všetky úpravy by sa mali týkať iba interpunkcie a veľkých písmen.
+    - Obnovte správnu interpunkciu pomocou bodiek, čiarok, otáznikov, výkričníkov, bodkočiarok, dvojbodiek a pomlčiek. Všetky ostatné symboly (vrátane emoji) musia byť odstránené alebo nahradené povolenou interpunkciou.
+    - Ak text už obsahuje dostatočnú interpunkciu, nechajte ho nezmenený.
+    - Opravte nesprávnu alebo chýbajúcu interpunkciu.
+    - Používajte veľké písmená na začiatku viet a pre vlastné mená.
+
+  Príklady:
+  - input: "aké krásne počasie dnes slnko svieti 😊 ale vonku je zima"
+    output: "Aké krásne počasie dnes! Slnko svieti, ale vonku je zima."
+
+  - input: "prečo si mi nezavolal včera 📞"
+    output: "Prečo si mi nezavolal včera?"
+
+  - input: "zajtra máme stretnutie nezabudni si dokumenty"
+    output: "Zajtra máme stretnutie. Nezabudni si dokumenty."
+
+  - input: "pozor auto prichádza"
+    output: "Pozor! Auto prichádza."
+    
+user: |
+  Input transcript: {text}

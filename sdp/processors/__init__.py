@@ -14,6 +14,96 @@
 
 # let's import all supported processors here to simplify target specification
 
+from sdp.processors.modify_manifest.common import (
+    AddConstantFields,
+    JoinManifests,
+    ChangeToRelativePath,
+    CombineSources,
+    DuplicateFields,
+    KeepOnlySpecifiedFields,
+    RenameFields,
+    SortManifest,
+    SplitOnFixedDuration,
+    DropSpecifiedFields,
+)
+from sdp.processors.modify_manifest.create_manifest import (
+    CreateCombinedManifests,
+    CreateInitialManifestByExt,
+)
+from sdp.processors.modify_manifest.data_to_data import (
+    ASRFileCheck,
+    CopyManifestData,
+    CountNumWords,
+    ExtractFromBrackets,
+    FilterWithCharacterHistograms,
+    GetAudioDuration,
+    GetWER,
+    InsIfASRInsertion,
+    InverseNormalizeText,
+    LambdaExpression,
+    ListToEntries,
+    NormalizeText,
+    MakeSentence,
+    ReadDocxLines,
+    ReadTxtLines,
+    SplitLineBySentence,
+    SubIfASRSubstitution,
+    SubMakeLowercase,
+    SubRegex,
+)
+from sdp.processors.modify_manifest.data_to_dropbool import (
+    DropASRError,
+    DropASRErrorBeginningEnd,
+    DropDuplicates,
+    DropHighCER,
+    DropHighLowCharrate,
+    DropHighLowDuration,
+    DropHighLowWordrate,
+    DropHighWER,
+    DropIfNoneOfRegexMatch,
+    DropIfRegexMatch,
+    DropIfSubstringInInsertion,
+    DropLowWordMatchRate,
+    DropNonAlphabet,
+    DropOnAttribute,
+    PreserveByValue,
+    DropRepeatedFields,
+)
+from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
+    MakeLettersUppercaseAfterPeriod,
+)
+from sdp.processors.manage_files.extract import ExtractTar
+from sdp.processors.manage_files.convert_audio import (
+    FfmpegConvert,
+    SoxConvert,
+)
+from sdp.processors.manage_files.remove import RemoveFiles
+from sdp.processors.manage_files.convert_to_tarred_audio_dataset import ConvertToTarredAudioDataset
+
+from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
+from sdp.processors.huggingface.huggingface_hub import ListRepoFiles, SnapshotDownload, HfHubDownload
+
+from sdp.processors.inference.asr.nemo.asr_inference import ASRInference
+from sdp.processors.inference.asr.transformers.speech_recognition import ASRTransformers
+from sdp.processors.inference.asr.faster_whisper.faster_whisper_inference import FasterWhisperInference
+from sdp.processors.inference.asr.post_processing.whisper_hallucinations import DetectWhisperHallucinationFeatures
+
+from sdp.processors.inference.llm.vllm.vllm import vLLMInference
+from sdp.processors.inference.llm.post_processing.qwen_cleaning import CleanQwenGeneration
+
+from sdp.processors.inference.nlp.nemo.pc_inference import PCInference
+from sdp.processors.inference.nlp.fasttext.fasttext import FastTextLangIdClassifier
+
+from sdp.processors.inference.quality_estimation.pymarian import CometoidWMTQualityEstimation
+
+from sdp.processors.toloka.accept_if import AcceptIfWERLess
+from sdp.processors.toloka.create_pool import CreateTolokaPool
+from sdp.processors.toloka.create_project import CreateTolokaProject
+from sdp.processors.toloka.create_sentence_set import CreateSentenceSet
+from sdp.processors.toloka.create_task_set import CreateTolokaTaskSet
+from sdp.processors.toloka.download_responses import GetTolokaResults
+from sdp.processors.toloka.reject_if import RejectIfBanned
+
 from sdp.processors.datasets.coraa.create_initial_manifest import (
     CreateInitialManifestCORAA,
 )
@@ -67,71 +157,10 @@ from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
 from sdp.processors.datasets.ytc.create_initial_manifest import (
     CreateInitialManifestYTC,
 )
-from sdp.processors.huggingface.speech_recognition import ASRTransformers
-from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
-
-from sdp.processors.modify_manifest.common import (
-    AddConstantFields,
-    ApplyInnerJoin,
-    ChangeToRelativePath,
-    CombineSources,
-    DuplicateFields,
-    KeepOnlySpecifiedFields,
-    RenameFields,
-    SortManifest,
-    SplitOnFixedDuration,
+from sdp.processors.datasets.yodas2.create_initial_manifest import(
+    ListYodas2Data,
+    SnapshotDownloadYodas2Data,
+    HfHubDownloadYodas2Data,
+    CreateInitialManifestYodas2,
 )
-from sdp.processors.modify_manifest.create_manifest import (
-    CreateCombinedManifests,
-    CreateInitialManifestByExt,
-)
-from sdp.processors.modify_manifest.data_to_data import (
-    ASRFileCheck,
-    CopyManifestData,
-    CountNumWords,
-    ExtractFromBrackets,
-    FfmpegConvert,
-    GetAudioDuration,
-    GetWER,
-    InsIfASRInsertion,
-    InverseNormalizeText,
-    NormalizeText,
-    MakeSentence,
-    ReadDocxLines,
-    ReadTxtLines,
-    SoxConvert,
-    SplitLineBySentence,
-    SubIfASRSubstitution,
-    SubMakeLowercase,
-    SubRegex,
-)
-from sdp.processors.modify_manifest.data_to_dropbool import (
-    DropASRError,
-    DropASRErrorBeginningEnd,
-    DropDuplicates,
-    DropHighCER,
-    DropHighLowCharrate,
-    DropHighLowDuration,
-    DropHighLowWordrate,
-    DropHighWER,
-    DropIfNoneOfRegexMatch,
-    DropIfRegexMatch,
-    DropIfSubstringInInsertion,
-    DropLowWordMatchRate,
-    DropNonAlphabet,
-    DropOnAttribute,
-    PreserveByValue,
-    DropRepeatedFields,
-)
-from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
-    MakeLettersUppercaseAfterPeriod,
-)
-from sdp.processors.nemo.asr_inference import ASRInference
-from sdp.processors.nemo.pc_inference import PCInference
-from sdp.processors.toloka.accept_if import AcceptIfWERLess
-from sdp.processors.toloka.create_pool import CreateTolokaPool
-from sdp.processors.toloka.create_project import CreateTolokaProject
-from sdp.processors.toloka.create_sentence_set import CreateSentenceSet
-from sdp.processors.toloka.create_task_set import CreateTolokaTaskSet
-from sdp.processors.toloka.download_responses import GetTolokaResults
-from sdp.processors.toloka.reject_if import RejectIfBanned
+from sdp.processors.datasets.granary import GetGranarysYodas2

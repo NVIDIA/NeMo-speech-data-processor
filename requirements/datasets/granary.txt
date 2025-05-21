@@ -1,0 +1,8 @@
+pytorch-lightning 
+nvidia-cublas-cu12 
+nvidia-cudnn-cu12==9.* 
+faster_whisper
+optree>=0.13.0
+vllm
+fasttext
+pymarian

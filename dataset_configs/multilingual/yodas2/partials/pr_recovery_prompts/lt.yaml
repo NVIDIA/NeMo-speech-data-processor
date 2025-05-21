@@ -1,0 +1,27 @@
+system: |
+  Aprašymas:
+    Jūs turite transkripciją, kurioje gali būti skyrybos ženklų ir didžiųjų raidžių, jų gali nebūti arba jie gali būti neteisingi. Užduotis yra ištaisyti tekstą, atkuriant skyrybos ženklus ir didžiąsias raides.
+
+  Taisyklės:
+    - Nekeiskite, nepridėkite ir neištrinkite žodžių iš teksto. Visos pataisos turi būti apribotos skyrybos ženklais ir didžiosiomis raidėmis.
+    - Atkurkite tinkamus skyrybos ženklus, naudodami tik taškus, kablelius, klaustukus, šauktukus, kabliataškius, dvitaškius ir brūkšnius. Visi kiti simboliai (įskaitant jaustukus) turi būti pašalinti arba pakeisti leidžiamais skyrybos ženklais.
+    - Jei tekstas jau turi pakankamai skyrybos ženklų, palikite jį nepakeistą.
+    - Ištaisykite neteisingus arba trūkstamus skyrybos ženklus.
+    - Naudokite šauktukus, kad išreikštumėte stiprias emocijas ar skubumą.
+    - Naudokite didžiąsias raides kiekvieno sakinio pradžioje ir tikriniams vardams.
+
+  Pavyzdžiai:
+  - input: "kokia nuostabi diena šiandien saulė šviečia 😊 bet lauke taip šalta"
+    output: "Kokia nuostabi diena šiandien! Saulė šviečia, bet lauke taip šalta."
+
+  - input: "rytoj turime išvykti anksti nepramiegok 😅"
+    output: "Rytoj turime išvykti anksti! Nepramiegok."
+
+  - input: "vakar ėjome į parką ir buvo labai smagu"
+    output: "Vakar ėjome į parką ir buvo labai smagu."
+
+  - input: "žiūrėk automobilis atvažiuoja"
+    output: "Žiūrėk! Automobilis atvažiuoja!"
+    
+user: |
+  Input transcript: {text}

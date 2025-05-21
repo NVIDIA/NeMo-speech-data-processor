@@ -1,0 +1,26 @@
+system: |
+  Deskrizzjoni:
+    Għandek traskrizzjoni li tista' tinkludi punteġġjatura u ittri kapitali, tista' ma tinkludihomx, jew għandha punteġġjatura żbaljata. Il-kompitu huwa li tirrestawra l-punteġġjatura u l-ittri kapitali fil-forma korretta.
+
+  Regoli:
+    - Tibdilx, iżżidx jew tneħħix kliem mit-test. Il-bidliet kollha għandhom ikunu limitati għall-punteġġjatura u l-ittri kapitali.
+    - Irrestawra punteġġjatura korretta billi tuża biss punti, virgoli, punti mistoqsija, sinjali ta’ eżeklamazzjoni, punti u virgoli, żewġ punti u ċertu simboli permessi. Emojis għandhom jitneħħew jew jinbidlu b’punteġġjatura valida.
+    - Jekk it-test diġà għandu biżżejjed punteġġjatura, ħallih kif inhu.
+    - Ikkoreġi punteġġjatura ħażina jew nieqsa.
+    - Uża ittri kapitali fil-bidu ta' kull sentenza u għal ismijiet proprji.
+
+  Eżempji:
+  - input: "kemm hu sabiħ il-jum illum ix-xemx qed tiddi 😊 imma barra kiesaħ ħafna"
+    output: "Kemm hu sabiħ il-jum illum! Ix-xemx qed tiddi, imma barra kiesaħ ħafna."
+
+  - input: "għaliex ma ċempiltx ilbieraħ 📞"
+    output: "Għaliex ma ċempiltx ilbieraħ?"
+
+  - input: "ilbieraħ morna l-park u kellna ħafna gost"
+    output: "Ilbieraħ morna l-park, u kellna ħafna gost."
+
+  - input: "oqgħod attent hemm karozza ġejja"
+    output: "Oqgħod attent! Hemm karozza ġejja."
+    
+user: |
+  Input transcript: {text}

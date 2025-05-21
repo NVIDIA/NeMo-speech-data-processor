@@ -110,6 +110,19 @@ MediaSpeech
    :annotation:
 
 
+Yodas2
+''''''''''''
+
+.. autodata:: sdp.processors.ListYodas2Data
+   :annotation:
+
+.. autodata:: sdp.processors.DownloadYodas2Data
+   :annotation:
+
+.. autodata:: sdp.processors.CreateInitialManifestYodas2
+   :annotation:
+
+
 HuggingFace Datasets
 ''''''''''''''''''''
 
@@ -120,6 +133,12 @@ YTC Datasets
 ''''''''''''
 
 .. autodata:: sdp.processors.datasets.ytc.create_initial_manifest.CreateInitialManifestYTC
+   :annotation:
+
+.. autodata:: sdp.processors.ListRepoFiles
+   :annotation:
+
+.. autodata:: sdp.processors.SnapshotDownload
    :annotation:
 
 Lhotse processors
@@ -139,7 +158,7 @@ Data enrichment
 ###############
 
 The following processors can be used to add additional attributes to the data by
-running different NeMo models (e.g., ASR predictions). These attributes are typically
+running different models (e.g., ASR predictions). These attributes are typically
 used in the downstream processing for additional enhancement or filtering.
 
 .. autodata:: sdp.processors.ASRInference
@@ -166,6 +185,18 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.tts.metrics.BandwidthEstimationProcessor
    :annotation:
 
+
+.. autodata:: sdp.processors.FasterWhisperInference
+   :annotation:
+
+.. autodata:: sdp.processors.vLLMInference
+   :annotation:
+
+.. autodata:: sdp.processors.FastTextLangIdClassifier
+   :annotation:
+
+.. autodata:: sdp.processors.CometoidWMTQualityEstimation
+   :annotation:
 
 Text-only processors
 ####################
@@ -197,6 +228,9 @@ Data modifications
    :annotation:
 
 .. autodata:: sdp.processors.CountNumWords
+   :annotation:
+
+.. autodata:: sdp.processors.FilterWithCharacterHistograms
    :annotation:
 
 .. autodata:: sdp.processors.NormalizeText
@@ -292,6 +326,12 @@ Data filtering
 
 .. autodata:: sdp.processors.AcceptIfWERLess
     :annotation:
+   
+.. autodata:: sdp.processors.DetectWhisperHallucinationFeatures
+    :annotation:
+   
+.. autodata:: sdp.processors.CleanQwenGeneration
+    :annotation:
 
 .. autodata:: sdp.processors.CreateTolokaPool
     :annotation:
@@ -338,6 +378,9 @@ Miscellaneous
 .. autodata:: sdp.processors.KeepOnlySpecifiedFields
    :annotation:
 
+.. autodata:: sdp.processors.DropSpecifiedFields
+   :annotation:
+
 .. autodata:: sdp.processors.GetAudioDuration
    :annotation:
 
@@ -347,7 +390,7 @@ Miscellaneous
 .. autodata:: sdp.processors.CreateInitialManifestByExt
    :annotation:
 
-.. autodata:: sdp.processors.ApplyInnerJoin
+.. autodata:: sdp.processors.JoinManifests
    :annotation:
 
 .. autodata:: sdp.processors.CreateCombinedManifests
@@ -365,6 +408,21 @@ Miscellaneous
 .. autodata:: sdp.processors.tts.prepare_tts_segments.PrepareTTSSegmentsProcessor
    :annotation:
 
+
+.. autodata:: sdp.processors.ListToEntries
+   :annotation:
+
+.. autodata:: sdp.processors.LambdaExpression
+   :annotation:
+
+.. autodata:: sdp.processors.ExtractTar
+   :annotation:
+
+.. autodata:: sdp.processors.RemoveFiles
+   :annotation:
+
+.. autodata:: sdp.processors.ConvertToTarredAudioDatasetConfig
+   :annotation:
 
 .. _sdp-base-classes:
 

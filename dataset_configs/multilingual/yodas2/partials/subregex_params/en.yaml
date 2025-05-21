@@ -1,0 +1,47 @@
+- {'pattern': 'ó', 'repl': 'o'}
+- {'pattern': 'ñ', 'repl': 'n'}
+- {'pattern': 'é', 'repl': 'e'}
+- {'pattern': 'á', 'repl': 'a'}
+- {'pattern': 'í', 'repl': 'i'}
+- {'pattern': 'ú', 'repl': 'u'}
+- {'pattern': 'ü', 'repl': 'u'}
+- {'pattern': 'ï', 'repl': 'i'}
+- {'pattern': 'ë', 'repl': 'e'}
+- {'pattern': 'ô', 'repl': 'o'}
+- {'pattern': 'û', 'repl': 'u'}
+- {'pattern': 'â', 'repl': 'a'}
+- {'pattern': 'ê', 'repl': 'e'}
+- {'pattern': 'î', 'repl': 'i'}
+- {'pattern': 'ô', 'repl': 'o'}
+- {'pattern': 'û', 'repl': 'u'}
+- {'pattern': 'ã', 'repl': 'a'}
+- {'pattern': 'õ', 'repl': 'o'}
+- {'pattern': 'ç', 'repl': 'c'}
+- {'pattern': 'ă', 'repl': 'a'}
+- {'pattern': 'ğ', 'repl': 'g'}
+- {'pattern': 'ş', 'repl': 's'}
+
+- {"pattern": "’", "repl": "'"}
+- {"pattern": "‘", "repl": "'"}
+- {"pattern": ";", "repl": ','}
+- {"pattern": "—", "repl": ' '}
+- {"pattern": "–", "repl": ' '}
+- {"pattern": "♫", "repl": ' '}
+- {"pattern": "♪", "repl": ' '}
+- {"pattern": "♬", "repl": ' '}
+- {"pattern": "♩", "repl": ' '}
+- {"pattern": "♭", "repl": ' '}
+- {"pattern": '\|', "repl": ' '}
+- {'pattern': ':', 'repl': ' '}
+- {'pattern': '-', 'repl': ' '}
+
+# Keep these characters and remove everything else !$',.0123456789?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+- {"pattern": "[^ €₽₴$£%!$',.?0123456789?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]", "repl": ""}
+
+# keep capital letters, lowercase letters, and spaces, ?, !, ., ,, and ' only
+- {"pattern": '\s+\.', "repl": "."}
+- {"pattern": '\?+', "repl": "?"}
+- {"pattern": '\.+', "repl": "."}
+- {"pattern": ',+', "repl": ","}
+- {"pattern": '!+', "repl": "!"}
+- {"pattern": '\s+', "repl": " "}

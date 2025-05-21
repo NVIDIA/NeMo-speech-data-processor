@@ -364,40 +364,83 @@ class KeepOnlySpecifiedFields(BaseProcessor):
                 fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")
 
 
-class ApplyInnerJoin(BaseProcessor):
-    """Applies inner join to two manifests, i.e. creates a manifest from records that have matching values in both manifests.
-    For more information, please refer to the Pandas merge function documentation:
-    https://pandas.pydata.org/docs/reference/api/pandas.merge.html#pandas.merge
+class JoinManifests(BaseProcessor):
+    """
+    Applies a configurable join operation to two input manifests using `pandas.merge`.
 
+    This processor reads two manifest files (lists of JSON records), converts them to pandas DataFrames,
+    and performs a join (inner, outer, left, or right) based on the specified merge parameters.
+
+    It supports flexible control over the merging behavior via the `merge_params` dictionary.  
+    For available options, refer to:
+    https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.merge.html
 
     Args:
-        column_id (Union[str, List[str], None]): Field names to join on. These must be found in both manifests.
-            If `column_id` is None then this defaults to the intersection of the columns in both manifests.
-            Defaults to None.
-        left_manifest_file (Optional[str]): path to the left manifest. Defaults to `input_manifest_file`.
-        right_manifest_file (str): path to the right manifest.
+        right_manifest_file (str): Path to the right manifest file to join.
+        left_manifest_file (Optional[str]): Path to the left manifest file to join.  
+            If not provided, defaults to `input_manifest_file`.
+        merge_params (Dict): Dictionary of parameters passed directly to `pandas.merge`, such as:
+            - `on`: Column name or list of column names to join on.
+            - `how`: Type of join to perform: 'left', 'right', 'outer', or 'inner'.
+            - `suffixes`: Suffixes to apply to overlapping column names in the left and right DataFrames.
+            - `validate`: Check whether the merge is of a specified type (e.g., "one_to_one").
 
     Returns:
-        Inner join of two manifests.
+        A merged manifest file in JSON format, written to `output_manifest_file`.
     """
 
     def __init__(
         self,
         right_manifest_file: str,
         left_manifest_file: Optional[str] = None,
-        column_id: Union[str, List[str], None] = None,
+        merge_params: Dict = {},
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.left_manifest_file = left_manifest_file if left_manifest_file != None else self.input_manifest_file
         self.right_manifest_file = right_manifest_file
-        self.column_id = column_id
+        self.merge_params = merge_params
 
     def process(self):
         m1 = pd.DataFrame.from_records(load_manifest(Path(self.left_manifest_file)))
         m2 = pd.DataFrame.from_records(load_manifest(Path(self.right_manifest_file)))
-        m3 = pd.merge(m1, m2, on=self.column_id, how="inner")
+        m3 = pd.merge(m1, m2, **self.merge_params)
 
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for _, line in m3.iterrows():
                 fout.write(json.dumps(dict(line), ensure_ascii=False) + "\n")
+
+
+class DropSpecifiedFields(BaseProcessor):
+    """
+    A processor that removes specified fields from each data entry in the manifest.
+
+    This processor reads an input manifest line by line, drops the fields listed in `fields_to_drop` 
+    from each JSON entry, and writes the cleaned entries to the output manifest.
+
+    Args:
+        fields_to_drop (List[str]): A list of keys to remove from each manifest entry.
+        **kwargs: Additional arguments passed to the BaseProcessor (e.g., input/output manifest paths).
+
+    Returns:
+        A line-delimited JSON manifest, where each entry is the same as the input,
+        but with the specified fields removed.
+    """
+
+    def __init__(self, fields_to_drop: List[str], **kwargs):
+        super().__init__(**kwargs)
+        self.fields_to_drop = fields_to_drop
+
+    def process(self):
+        # Open the input and output manifest files
+        with open(self.input_manifest_file, "rt", encoding="utf8") as fin, open(
+            self.output_manifest_file, "wt", encoding="utf8"
+        ) as fout:
+            # Iterate over each line (entry) in the input manifest
+            for line in tqdm(fin):
+                # Parse JSON entry from the current line
+                entry = json.loads(line)
+                # Create a new entry by excluding the specified fields
+                new_line = {field: entry[field] for field in entry if field not in self.fields_to_drop}
+                # Write the cleaned entry to the output manifest
+                fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")
