@@ -49,6 +49,16 @@ class DownloadHiFiTTS2(BaseParallelProcessor):
         
         If exit_on_error is False, then an output manifest will be saved with manifest entries that fail to downlaod,
         with error information stored under the 'error_code' and 'error_reason' fields.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.DownloadHiFiTTS2
+              input_manifest_file: ${workspace_dir}/manifest_22khz.json
+              output_manifest_file: ${workspace_dir}/errors_22khz.json
+              audio_dir: ${workspace_dir}/audio_22khz
+              chapter_dir: ${workspace_dir}/chapters
+              max_workers: 8
     """
 
     def __init__(

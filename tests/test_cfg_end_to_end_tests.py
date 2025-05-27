@@ -247,7 +247,7 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         ),
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/english/hifitts2/config_22khz.yaml",
-            data_check_fn=partial(data_check_fn_generic, file_name="manifest_filtered_22khz.json"),
+            data_check_fn=partial(data_check_fn_generic, file_name="manifest_22khz.json"),
             processors_to_run="1:2"
         ),
         TestCase(
@@ -256,6 +256,7 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
             reference_manifest_filename="test_data_reference_bandwidth.json",
         ),
     ]
+
 
 def get_test_names():
     config_names = [

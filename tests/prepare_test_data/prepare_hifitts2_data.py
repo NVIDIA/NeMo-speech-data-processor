@@ -57,9 +57,10 @@ if __name__ == "__main__":
                     output_f.write(line)
 
     # Copy audio
+    manifest_path = args.test_data_folder / args.manifest_filename
     input_audio_dir = args.workspace_folder / args.audio_folder
     output_audio_dir = args.test_data_folder / args.audio_folder
-    with open(args.manifest_filename, "r", encoding="utf-8") as input_f:
+    with open(manifest_path, "r", encoding="utf-8") as input_f:
         for i, line in enumerate(input_f):
             if i >= args.num_entries:
                 break

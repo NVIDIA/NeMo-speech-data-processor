@@ -31,6 +31,14 @@ class RemovedFailedChapters(BaseProcessor):
 
     Returns:
         This outputs a manifest which is the same as its input manifest but with utterances in 'error_file' removed.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.RemovedFailedChapters
+              input_manifest_file: ${workspace_dir}/manifest_22khz.json
+              output_manifest_file: ${workspace_dir}/manifest_filtered_22khz.json
+              error_file: ${workspace_dir}/errors_22khz.json
     """
 
     def __init__(

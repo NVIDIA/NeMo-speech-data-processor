@@ -6,7 +6,8 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
 class EstimateBandwidth(BaseParallelProcessor):
-    """Adds estimated bandwidth to each utterance in the input manifest file.
+    """
+    Adds estimated bandwidth to each utterance in the input manifest file.
 
     Args:
         audio_dir (str): Root directory where audio files are stored.
@@ -26,6 +27,15 @@ class EstimateBandwidth(BaseParallelProcessor):
     Returns:
         This processor estimates the bandwidth of the audio file in the`input_audio_key` field and saves the estimate
             in the output_bandwidth_key` field.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.EstimateBandwidth
+              input_manifest_file: ${workspace_dir}/manifest.json
+              output_manifest_file: ${workspace_dir}/manifest_bandwidth.json
+              audio_dir: ${workspace_dir}/audio_22khz
+              max_workers: 8
     """
 
     def __init__(
