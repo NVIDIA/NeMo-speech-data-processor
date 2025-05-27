@@ -1,0 +1,44 @@
+documentation: |
+  HiFiTTS-2 Bandwidth Estimation
+  ##############################
+  
+  This config contains the bandwidth estimation code used for HiFiTTS and HiFiTTS-2.
+  This config can be used to estimate bandwidth for any dataset. For HiFiTTS-2 bandwidth
+  was estimated using the first 30 seconds of every audiobook chapter, but the estimate is still
+  reasonably accurate if run over a shorter duration or with individual utterances.
+
+  **Required arguments**.
+
+  * **workspace_dir**: The workspace folder where all audio files and manifests are stored.
+  * **audio_dir**: Folder in workspace containing audio files to estimate bandwidth of.
+  * **input_manifest_filename**: Manifest file in workspace containing relative paths to audio.
+ 
+  **Output format**.
+  
+  This config outputs a single manifest with the following field(s):
+
+  * **bandwidth (int)**: Estimated bandwidth of the audio file.
+
+processors_to_run: all
+workspace_dir: ???
+audio_dir_name: ???
+input_manifest_filename: ???
+output_manifest_filename: manifest_bandwidth.json
+audio_key: audio_filepath
+use_dask: false
+max_workers: 1
+chunksize: 1
+
+input_manifest_file: ${workspace_dir}/${input_manifest_filename}
+final_manifest: ${workspace_dir}/${output_manifest_filename}
+audio_dir: ${workspace_dir}/${audio_dir_name}
+
+processors:
+  - _target_: sdp.processors.EstimateBandwidth
+    input_manifest_file: ${input_manifest_file}
+    output_manifest_file: ${final_manifest}
+    audio_dir: ${audio_dir}
+    input_audio_key: ${audio_key}
+    use_dask: ${use_dask}
+    max_workers: ${max_workers}
+    chunksize: ${chunksize}
