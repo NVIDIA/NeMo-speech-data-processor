@@ -274,7 +274,8 @@ class InferenceCommandGenerator(BaseProcessor):
         prediction_directories_str = " ".join([os.path.dirname(path) for path in self.manifests])
         inference_config_paths_str = " ".join(self.inference_config_paths)        
         write_transcription_path = os.path.join(self.nemo_directory, "scripts/pseudo_labeling/write_transcribed_files.py")
-        update_inference_config_path = os.path.join(self.nemo_directory, "scripts/pseudo_labeling/update_inference_config.pys")
+        update_inference_config_path = os.path.join(self.nemo_directory, "scripts/pseudo_labeling/update_inference_config.py")
+        
         if first_run:
             cmd += f"{self.get_pl_inference_command(self.inference_config_paths, shuffle=False)}"
             cmd += (
@@ -287,15 +288,14 @@ class InferenceCommandGenerator(BaseProcessor):
                 f" && python {update_inference_config_path} "
                 f"--inference_configs {inference_config_paths_str} --p_cache {self.p_cache} --num_gpus {self.num_gpus}"
             )
-
-       
-        cmd += f" && {self.get_pl_inference_command(self.inference_config_paths, shuffle=True)}"
-        cmd += (
-            f" && python {write_transcription_path} "
-            f"--prediction_filepaths {prediction_directories_str} "
-        )
-        if self.is_tarred:
-            cmd += " --is_tarred"
+        else:
+            cmd += f" && {self.get_pl_inference_command(self.inference_config_paths, shuffle=True)}"
+            cmd += (
+                f" && python {write_transcription_path} "
+                f"--prediction_filepaths {prediction_directories_str} "
+            )
+            if self.is_tarred:
+                cmd += " --is_tarred"
 
         output_data = {"inference_command": cmd}
         with open(self.output_manifest_file, 'w') as f:
