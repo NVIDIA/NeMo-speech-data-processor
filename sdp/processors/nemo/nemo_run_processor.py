@@ -258,7 +258,6 @@ class NemoRunIPLProcessor(BaseProcessor):
         infer_proc = InferenceCommandGenerator(**inference_command_config)
 
         exec_cmd = self.get_export_variables_cmd(train_command_config["training_config_local"], train_command_config["nemo_directory"])
-
         exec_cmd += train_proc.process()
         exec_cmd += " && sleep 10"
         if avg_cmd:
