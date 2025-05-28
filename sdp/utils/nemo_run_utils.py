@@ -24,7 +24,7 @@ from sdp.utils.skills_utils import (
 )
 import logging
 import copy
-from sdp.processors.nemo import ipl_utils
+from sdp.utils import ipl_utils
 @lru_cache(maxsize=2)
 def get_tunnel(**ssh_tunnel):
     return SSHTunnel(**ssh_tunnel)
