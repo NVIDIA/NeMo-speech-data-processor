@@ -127,7 +127,7 @@ class NemoRunIPLProcessor(BaseProcessor):
                 "nemo_directory": nemo_root,
                 "inference_config_paths": inference_config_paths,
                 "manifests": manifests,
-                "p_cache": script_config.model.ipl_training.p_cache,
+                "p_cache": cluster_cfg.p_cache,
                 "num_gpus": num_nodes * num_gpus,
                 "is_tarred": getattr(script_config.model.train_ds, "is_tarred", False),
                 "output_manifest_file": "./inference_output_manifest_filepath.json",
@@ -137,7 +137,7 @@ class NemoRunIPLProcessor(BaseProcessor):
             cmd = self.get_pseudo_labeling_command(
                 train_command_generator_config,
                 inference_command_generator_config,
-                num_ipl_epochs=script_config.model.ipl_training.num_ipl_epochs,
+                num_ipl_epochs=cluster_cfg.num_ipl_epochs,
                 new_manifest_files=manifests,
                 new_tarr_files=tarr_paths,
                 first_run=True,
@@ -156,7 +156,7 @@ class NemoRunIPLProcessor(BaseProcessor):
                     cmd = self.get_pseudo_labeling_command(
                         train_command_generator_config,
                         inference_command_generator_config,
-                        num_ipl_epochs=script_config.model.ipl_training.num_ipl_epochs,
+                        num_ipl_epochs=cluster_cfg.num_ipl_epochs,
                         new_manifest_files=manifests,
                         new_tarr_files=tarr_paths,
                         first_run=False
