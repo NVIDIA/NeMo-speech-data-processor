@@ -1,5 +1,5 @@
-from sdp.processors.base_processor import BaseProcessor
 from sdp.processors.IPL.ipl_processors import TrainingCommandGenerator, InferenceCommandGenerator
+from sdp.processors.base_processor import BaseProcessor
 from omegaconf import OmegaConf, open_dict
 import os
 from pathlib import Path
