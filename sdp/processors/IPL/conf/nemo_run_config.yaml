@@ -1,0 +1,60 @@
+# The script to be run.
+script: # Script path  to run relative to directory 
+script_config: # Training config file for the script. ipl_epoch_stopper_callback should be provided in the config
+inference_config: # Inference config file of unlabeled data for transcribe_speech_parallel
+
+exp_name: null  # populated by exp_manager.name if not provided
+results_dir: # Where to store the results of the run
+
+nemo_directory: # Nemo directory path
+do_average: # Boolean value indicating whether to do average of checkpoints for pseudo-label generation
+p_cache: # Probability with which update pseudo-labeled set
+num_ipl_epochs: How many epochs do pseudo-labeling
+
+# Optional arguments
+num_runs: 
+num_gpus: 
+num_tasks_per_node: 
+max_runtime: # Specify for clusters
+
+########################################################################################################################
+
+executor: slurm # or local
+
+USER: ntadevosyan
+
+# Fields for cluster run
+ssh_tunnel:
+  host: 
+  # ------------------------------- Fill this up! -------------------------------
+  user: "${USER}"  # your username; or resolved from ${USER} environment variable ; or can be null which resolved from ${USER} environment variable
+  job_dir: "" # Job directory to keep created files
+  identity: ""
+  # -----------------------------------------------------------------------------
+
+account: 
+partition:
+job_name_prefix: 
+
+containers:
+  asr: # Container image
+
+
+env_vars:
+  - 'TOKENIZERS_PARALLELISM='
+  - 'AIS_ENDPOINT='
+  - 'LHOTSE_AUDIO_DURATION_MISMATCH_TOLERANCE='
+  - 'TORCH_CUDNN_V8_API_ENABLED='
+  - 'PYTORCH_CUDA_ALLOC_CONF='
+  - 'HYDRA_FULL_ERROR=1'
+
+required_env_vars:
+  - 'HF_TOKEN='
+  - 'WANDB_KEY=' 
+
+mounts:
+  # Replace with your own paths in your cluster config
+  - /path/to/mount:/where/to/mount/
+
+timeouts:
+  partition_name: # Specify time
