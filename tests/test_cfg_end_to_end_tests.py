@@ -257,7 +257,6 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         ),
     ]
 
-
 def get_test_names():
     config_names = [
         Path(t.config_path).parent.relative_to(DATASET_CONFIGS_ROOT).as_posix() for t in get_test_cases()

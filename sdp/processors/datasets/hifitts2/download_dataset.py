@@ -110,7 +110,9 @@ class DownloadHiFiTTS2(BaseParallelProcessor):
             except (urllib.error.HTTPError, urllib.error.URLError) as http_error:
                 error_msg = f"Encountered HTTP error when downloading {url}: {http_error}"
                 logger.warning(error_msg)
-                if str(http_error.code).startswith("5") and i < self.num_retries:
+
+                error_code = getattr(http_error, "code", 0)
+                if (not error_code or str(error_code).startswith("5")) and i < self.num_retries:
                     logger.info(f"Retry {i} for url {url}")
                     time.sleep(10)
                     continue
@@ -121,7 +123,7 @@ class DownloadHiFiTTS2(BaseParallelProcessor):
                 error_data = {
                     "url": url,
                     "chapter_filepath": chapter_filepath,
-                    "error_code": http_error.code,
+                    "error_code": error_code,
                     "error_reason": http_error.reason,
                     "utterances": utterances,
                 }
