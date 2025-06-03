@@ -17,10 +17,7 @@ from pathlib import Path
 
 import pandas
 
-from sdp.processors.base_processor import (
-    BaseParallelProcessor,
-    DataEntry,
-)
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
 class CreateInitialManifestByExt(BaseParallelProcessor):
@@ -30,7 +27,7 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
     Args:
         raw_data_dir (str): The root directory of the files to be added to the initial manifest. This processor will recursively look for files with the extension 'extension' inside this directory.
         output_file_key (str): The key to store the paths to the files in the dataset.
-        extension (str): The file extension of the of the files to be added to the manifest.
+        extension (str): The field stecify extension of the files to use them in the dataset.
         **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
 
     """
@@ -61,17 +58,18 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
 class CreateCombinedManifests(BaseParallelProcessor):
     """Reads JSON lines from specified files and creates a combined manifest.
 
-    This processor iterates over files listed in `manifest_list`, reads each file line by line, 
+    This processor iterates over files listed in `manifest_list`, reads each file line by line,
     and yields the parsed JSON data from each line.
 
     Args:
-        manifest_list (list(str)): A list of file paths or directories to process. The processor will 
+        manifest_list (list(str)): A list of file paths or directories to process. The processor will
                                    recursively read files within the directories and expect each file to contain JSON data.
         **kwargs: Additional keyword arguments passed to the base class `BaseParallelProcessor`.
 
     Returns:
         A generator that yields parsed JSON data from each line in the files listed in `manifest_list`.
     """
+
     def __init__(
         self,
         manifest_list: list[str],
@@ -88,6 +86,3 @@ class CreateCombinedManifests(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry):
         return [DataEntry(data=data_entry)]
-
-
-
