@@ -1,0 +1,46 @@
+FROM pytorch/pytorch:2.4.1-cuda12.1-cudnn9-devel
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+ENV TZ=America/Los_Angeles
+
+# Install basics
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    bzip2 \
+    ca-certificates \
+    libsox-fmt-mp3 \
+    cmake \
+    curl \
+    ffmpeg \
+    g++ \
+    sox \
+    unzip \
+    vim \
+    wget
+
+# Update pip
+RUN pip install --upgrade pip
+
+# Link all cudnn .so libraries for runtime
+RUN ln -s /opt/conda/lib/python3.11/site-packages/nvidia/cudnn/include/cudnn*.h /usr/include/
+RUN mkdir -p /usr/local/cuda/lib64
+RUN ln -s /opt/conda/lib/python3.11/site-packages/nvidia/cudnn/lib/libcudnn*.so* /usr/local/cuda/lib64/
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+
+
+# Copy NeMo SDP
+WORKDIR /src
+COPY . /src/NeMo-speech-data-processor
+RUN rm -rf /src/NeMo-speech-data-processor/.git
+
+# Install requirements
+WORKDIR /src/NeMo-speech-data-processor
+RUN pip install -r requirements/main.txt 
+RUN pip install -r requirements/tts.txt
+RUN pip install flash-attn --no-build-isolation
+RUN pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
+RUN pip install megatron-core transformer_engine[pytorch]
+RUN pip install nemo_toolkit['all']==2.1.0 
+
+WORKDIR /src/NeMo-speech-data-processor

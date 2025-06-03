@@ -2,7 +2,6 @@ import glob
 import os
 from pathlib import Path
 from typing import List
-from huggingface_hub import snapshot_download
 import pandas as pd
 
 import rarfile  #Needs to be installed
@@ -64,7 +63,11 @@ class CreateInitialManifestCORAA(BaseParallelProcessor):
         os.makedirs(self.resampled_audio_dir, exist_ok=True)
         os.makedirs(self.extract_archive_dir, exist_ok=True)
         if not self.already_downloaded:
-            snapshot_download(repo_id="gabrielrstan/CORAA-v1.1", repo_type='dataset', local_dir=self.raw_data_dir)
+            try:
+                from huggingface_hub import snapshot_download
+                snapshot_download(repo_id="gabrielrstan/CORAA-v1.1", repo_type='dataset', local_dir=self.raw_data_dir)
+            except ImportError:
+                raise ImportError("huggingface_hub is required to download the dataset. Please install it with pip install huggingface_hub")
         if not self.already_extracted:
 
             if self.data_split == 'train':

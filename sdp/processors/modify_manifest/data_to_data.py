@@ -15,16 +15,31 @@
 import collections
 import os
 import re
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import soundfile
+import torchaudio
+from docx import Document
 from sox import Transformer
+from tqdm import tqdm
+import json
 
 from sdp.logging import logger
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.processors.base_processor import (
+    BaseParallelProcessor,
+    BaseProcessor,
+    DataEntry,
+)
 from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
+from sdp.utils.metrics_computation import (
+    get_cer,
+    get_charrate,
+    get_wer,
+    get_wmr,
+    get_wordrate,
+)
 
 
 class GetAudioDuration(BaseParallelProcessor):
@@ -169,44 +184,76 @@ class ReadTxtLines(BaseParallelProcessor):
 
 
 class SoxConvert(BaseParallelProcessor):
-    """
-    Processor for converting audio files from one format to another using Sox,
-    and updating the dataset with the path to the converted audio files.
+    """Processor for Sox to convert audio files to specified format.
 
     Args:
-        converted_audio_dir (str): Directory to store the converted audio files.
-        input_audio_file_key (str): Field in the dataset representing the path to input audio files.
-        output_audio_file_key (str): Field to store the path to the converted audio files in the dataset.
-        output_format (str): Format of the output audio files (e.g., 'wav', 'mp3').
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        output_manifest_file (str): Path to the output manifest file.
+        input_audio_file_key (str): Key in the manifest file that contains the path to the input audio file.
+        output_audio_file_key (str): Key in the manifest file that contains the path to the output audio file.
+        converted_audio_dir (str): Path to the directory where the converted audio files will be stored.
+        output_format (str): Format of the output audio file.
+        rate (int): Sample rate of the output audio file.
+        channels (int): Number of channels of the output audio file.
+        workspace_dir (str, Optional): Path to the workspace directory. Defaults to None.
     """
 
     def __init__(
         self,
         converted_audio_dir: str,
-        input_audio_file_key: str,
-        output_audio_file_key: str,
-        output_format: str,
+        input_audio_file_key: str = "audio_filepath",
+        output_audio_file_key: str = "audio_filepath",
+        output_format: str = "wav",
+        rate: int = 16000,
+        channels: int = 1,
+        workspace_dir: Optional[str] = None,
         **kwargs,
     ):
+        # Extract workspace_dir from kwargs to avoid passing it to BaseProcessor
+        if "workspace_dir" in kwargs:
+            workspace_dir = kwargs.pop("workspace_dir")
+            
         super().__init__(**kwargs)
         self.input_audio_file_key = input_audio_file_key
         self.output_audio_file_key = output_audio_file_key
         self.converted_audio_dir = converted_audio_dir
         self.output_format = output_format
+        self.workspace_dir = workspace_dir
+
+        # Store the new parameters for later use:
+        self.rate = rate
+        self.channels = channels
 
     def prepare(self):
+        # Debug print for workspace_dir
+        logger.info(f"SoxConvert workspace_dir: {self.workspace_dir}")
         os.makedirs(self.converted_audio_dir, exist_ok=True)
 
     def process_dataset_entry(self, data_entry):
-        audio_file = data_entry[self.input_audio_file_key]
+        audio_path = data_entry[self.input_audio_file_key]
+        
+        # If workspace_dir is provided, join it with audio_path to get absolute path
+        if self.workspace_dir is not None:
+            full_audio_path = os.path.join(self.workspace_dir, audio_path)
+        else:
+            full_audio_path = audio_path
+            
+        # Debug print first file path
+        if not hasattr(self, '_debug_printed'):
+            logger.info(f"First audio_path from manifest: {audio_path}")
+            logger.info(f"First full_audio_path: {full_audio_path}")
+            logger.info(f"Path exists: {os.path.exists(full_audio_path)}")
+            self._debug_printed = True
 
-        key = os.path.splitext(audio_file)[0].split("/")[-1]
+        key = os.path.splitext(audio_path)[0].split("/")[-1]
         converted_file = os.path.join(self.converted_audio_dir, key) + f".{self.output_format}"
 
         if not os.path.isfile(converted_file):
             transformer = Transformer()
-            transformer.build(audio_file, converted_file)
+
+            transformer.rate(self.rate)
+            transformer.channels(self.channels)
+
+            transformer.build(full_audio_path, converted_file)
 
         data_entry[self.output_audio_file_key] = converted_file
         return [DataEntry(data=data_entry)]
@@ -596,7 +643,7 @@ class SubRegex(BaseParallelProcessor):
 
 class NormalizeText(BaseParallelProcessor):
     """This processor applies text normalization (TN) to the text. I.e. converts text from written form into its verbalized form.
-    E.g., “$123” is converted to “one hundred and twenty-three dollars.”
+    E.g., "$123" is converted to "one hundred and twenty-three dollars."
 
     Args:
         input_text_key (str): the text field that will be the input to the Normalizer. Defaults to: text.
@@ -643,7 +690,7 @@ class NormalizeText(BaseParallelProcessor):
 
 class InverseNormalizeText(BaseParallelProcessor):
     """This processor applies inverse text normalization (ITN) to the text. I.e. transforms spoken forms of numbers, dates, etc into their written equivalents.
-    E.g., “one hundred and twenty-three dollars.” is converted to “$123”.
+    E.g., "one hundred and twenty-three dollars." is converted to "$123".
 
     Args:
         input_text_key (str): the text field that will be the input to the InverseNormalizer. Defaults to: text.
@@ -690,3 +737,393 @@ class InverseNormalizeText(BaseParallelProcessor):
             data_entry[self.input_text_key], verbose=self.verbose
         )
         return [DataEntry(data=data_entry)]
+
+
+class CopyManifestData(BaseParallelProcessor):
+    """This processor copies files specified in the manifest to a new location.
+
+    It is useful for creating a consolidated dataset by gathering files from different sources
+    into a single directory.
+
+    Args:
+        copy_path (str): The destination directory where files will be copied.
+        source_filepath (str): The key in the manifest that contains the path to 
+            the file to be copied. Default: "audio_path".
+
+    Returns:
+        The same data as in the input manifest, but the files referenced in the manifest
+        will have been copied to the specified destination directory.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.modify_manifest.data_to_data.CopyManifestData
+              input_manifest_file: ${workspace_dir}/dataset.json
+              output_manifest_file: ${workspace_dir}/dataset_copied.json
+              copy_path: ${workspace_dir}/consolidated_data
+              source_filepath: "audio_filepath"
+    """
+    def __init__(
+        self,
+        copy_path: str,
+        source_filepath: str = "audio_path",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = source_filepath
+        self.copy_path = copy_path
+
+    def prepare(self):
+        os.makedirs(self.copy_path, exist_ok=True)
+
+    def process_dataset_entry(self, data_entry):
+        fname = data_entry[self.input_field]
+
+        dest_file_path = os.path.join(self.copy_path, os.path.basename(fname))
+        shutil.copy(fname, dest_file_path)
+        data_entry[self.input_field] = dest_file_path
+
+        return [DataEntry(data=data_entry)]
+
+
+class ReadDocxLines(BaseParallelProcessor):
+    """
+    Processor for reading text lines from a docx file and updating the manifest.
+
+    Args:
+        source_filepath (str): The field containing the file path in the manifest.
+        text_key (str): The field to store the read text lines in the manifest.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        source_filepath: str,
+        text_key: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_field = source_filepath
+        self.output_field = text_key
+
+    def process_dataset_entry(self, data_entry):
+        fname = data_entry[self.input_field]
+
+        # Skip hidden files and directories (e.g., .DS_Store, ._filename)
+        if os.path.basename(fname).startswith('.'):
+            logger.warning(f"Skipping hidden file: {fname}")
+            return []
+
+        data_list = []
+
+        try:
+            doc = Document(fname)
+            for para in doc.paragraphs:
+                line = para.text.strip()
+                if line:
+                    data = data_entry.copy()
+                    data[self.output_field] = line
+                    data_list.append(DataEntry(data=data))
+        except Exception as e:
+            logger.error(f"Error reading document {fname}: {e}")
+
+        return data_list
+
+
+class ExtractFromBrackets(BaseParallelProcessor):
+    """
+    A class for extracting text contained within specified bracket types from strings,
+    handling nested brackets.
+
+    Example Input:
+        data_entry = {
+            "text": "This is a [test] string with [multiple [nested] brackets]."
+        }
+
+    Example Output:
+        [
+            {
+                "text": "test"
+            },
+            {
+                "text": "multiple [nested] brackets"
+            }
+        ]
+
+    Explanation:
+        - It extracts "test" from the first occurrence of brackets.
+        - It extracts "multiple [nested] brackets" from the second occurrence, handling nested brackets correctly.
+
+    Attributes:
+        brackets (List[str]): A list where each element is a pair of strings representing
+                              the opening and closing brackets.
+        text_key (str): The key in the input data from which to extract text, defaults to "text".
+    """
+
+    def __init__(
+        self,
+        brackets: List[str],
+        text_key: str = "text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.brackets = brackets
+        self.text_key = text_key
+
+    def extract_text_within_brackets(self, text, brackets):
+        """
+        Extracts text within the specified brackets, including handling nested brackets.
+
+        Args:
+            text (str): The string from which to extract text.
+            brackets (tuple[str, str]): A tuple containing the opening and closing bracket.
+
+        Returns:
+            List[str]: A list of strings, each representing a segment of text found within
+                       the outermost brackets, including any nested brackets content.
+        """
+        open_bracket, close_bracket = brackets
+        depth = 0
+        buffer = ""
+        sentences = []
+
+        for char in text:
+            if char == open_bracket:
+                if depth > 0:
+                    buffer += char  # Add to buffer if already inside brackets
+                depth += 1
+            elif char == close_bracket:
+                depth -= 1
+                if depth == 0:  # Exiting outermost brackets
+                    if buffer:
+                        sentences.append(buffer)
+                        buffer = ""  # Reset buffer for next possible extraction
+                elif depth > 0:
+                    buffer += char  # Still inside nested brackets, continue adding
+            elif depth > 0:
+                buffer += char  # Add characters inside brackets to buffer
+
+        return sentences
+
+    def process_dataset_entry(self, data_entry) -> List:
+        data: list[dict] = []
+        sentences = []
+        text_in = data_entry[self.text_key]
+
+        for bracket in self.brackets:
+            sentences.extend(self.extract_text_within_brackets(text_in, bracket))
+
+        for sentence in sentences:
+            new_entry = data_entry.copy()
+            new_entry[self.text_key] = sentence
+            # new_entry["ORIGINAL TEXT"] = text_in  # for testing
+            data.append(new_entry)
+
+        data_list = []
+        for data_point in data:
+            data_list.append(DataEntry(data=data_point))
+
+        return data_list
+
+
+class GetWER(BaseParallelProcessor):
+    """This processor calculates Word Error Rate (WER) between predicted text and ground truth text.
+
+    It computes the WER for each entry in the manifest and adds the result as a new field.
+    
+    Args:
+        text_key (str): Key for the ground truth text field in the manifest. Default: "text".
+        pred_text_key (str): Key for the predicted text field in the manifest. Default: "pred_text".
+    
+    Returns:
+        The same data as in the input manifest with an additional 'wer' field containing 
+        the calculated Word Error Rate between the specified text fields.
+    """
+    def __init__(
+        self,
+        text_key: str = "text",
+        pred_text_key: str = "pred_text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.text_key = text_key
+        self.pred_text_key = pred_text_key
+
+    def process_dataset_entry(self, data_entry) -> List:
+        data_entry['wer'] = get_wer(data_entry[self.text_key], data_entry[self.pred_text_key])
+        return [DataEntry(data=data_entry)]
+
+
+class MakeSentence(BaseParallelProcessor):
+    """This processor formats text strings into proper sentences.
+
+    It capitalizes the first character of the text (if enabled) and appends
+    an end symbol if the text does not already end with punctuation.
+
+    Args:
+        text_key (str): The key in the manifest containing the text to be processed.
+            Default: "text".
+        end_symbol (str): The punctuation symbol to add at the end of the text if it
+            doesn't already have one. Default: ":".
+        make_uppercase (bool): Whether to capitalize the first character of the text.
+            Default: True.
+
+    Returns:
+        The same data as in the input manifest with the text field modified to have
+        proper sentence formatting.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.modify_manifest.data_to_data.MakeSentence
+              input_manifest_file: ${workspace_dir}/dataset.json
+              output_manifest_file: ${workspace_dir}/dataset_formatted.json
+              text_key: "transcript"
+              end_symbol: "."
+              make_uppercase: true
+    """
+    def __init__(
+        self,
+        text_key: str = "text",
+        end_symbol: str = ":",
+        make_uppercase: bool = True,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.make_uppercase = make_uppercase
+        self.text_key = text_key
+        self.end_symbol = end_symbol
+
+    def process_dataset_entry(self, data_entry) -> List:
+        if self.make_uppercase:
+            data_entry[self.text_key] = data_entry[self.text_key][0].upper() + data_entry[self.text_key][1:]
+
+        # Append end_symbol only if the text doesn't end with punctuation
+        if data_entry[self.text_key][-1].isalpha():
+            data_entry[self.text_key] += self.end_symbol
+        return [DataEntry(data=data_entry)]
+
+
+class ASRFileCheck(BaseProcessor):
+    """This processor validates audio files in the manifest and identifies corrupted files.
+
+    It attempts to load each audio file using the torchaudio library and moves corrupted
+    files to a specified directory.
+
+    Args:
+        audio_filepath_key (str): The key in the manifest that contains the path to
+            the audio file. Default: "audio_filepath".
+        corrupted_audio_dir (str): The directory where corrupted audio files will be moved.
+        workspace_dir (str, optional): The base directory for resolving relative paths.
+            Default: None.
+
+    Returns:
+        A manifest with corrupted audio files removed.
+
+    """
+    def __init__(self, audio_filepath_key: str = "audio_filepath", corrupted_audio_dir: str = None, workspace_dir: str = None, **kwargs):
+        """
+        Constructs the necessary attributes for the ASRFileCheck class.
+
+        Parameters:
+        ----------
+        audio_filepath_key : str, optional
+            The key in the manifest entries used to retrieve the path to the audio file. Defaults to 'audio_filepath'.
+        corrupted_audio_dir : str
+            The directory where corrupted audio files will be moved. This is required.
+        workspace_dir : str, optional
+            The base directory where audio files are stored. If provided, audio file paths will be resolved
+            relative to this directory. Defaults to None.
+        """
+        super().__init__(**kwargs)
+        self.audio_filepath_key = audio_filepath_key
+        
+        if corrupted_audio_dir is None:
+            raise ValueError("corrupted_audio_dir parameter is required. Please specify a directory to move corrupted files.")
+        
+        self.corrupted_audio_dir = corrupted_audio_dir
+        self.workspace_dir = workspace_dir
+        self.failed_files = []
+
+    def process(self):
+        """
+        Check each file listed in the manifest to ensure it can be loaded with torchaudio.
+
+        This method reads through the manifest file, attempts to load each audio file using torchaudio,
+        and moves corrupted files. A new manifest file is created with only the valid entries.
+        
+        Specific errors handled:
+        - FileNotFoundError: File doesn't exist
+        - RuntimeError: File format issues or codec problems
+        - Other exceptions: General issues with file loading
+        """
+        from sdp.logging import logger
+        
+        # Debug print to show workspace_dir
+        logger.info(f"ASRFileCheck workspace_dir: {self.workspace_dir}")
+        
+        with open(self.input_manifest_file, 'r') as f:
+            lines = f.readlines()
+
+        entries = []
+        total_lines = len(lines)
+
+        # Ensure the corrupted files directory exists
+        os.makedirs(self.corrupted_audio_dir, exist_ok=True)
+
+        for idx in tqdm(range(total_lines), desc="Checking Audio Files"):
+            line = lines[idx]
+            entry = json.loads(line)
+            audio_path = entry[self.audio_filepath_key]
+            
+            # Debug print first file path
+            if idx == 0:
+                logger.info(f"First audio_path from manifest: {audio_path}")
+            
+            # If workspace_dir is provided, join it with audio_path to get absolute path
+            if self.workspace_dir is not None:
+                full_audio_path = os.path.join(self.workspace_dir, audio_path)
+            else:
+                full_audio_path = audio_path
+            
+            # Debug print first full path
+            if idx == 0:
+                logger.info(f"First full_audio_path: {full_audio_path}")
+                logger.info(f"Path exists: {os.path.exists(full_audio_path)}")
+            
+            try:
+                # Attempt to load the audio file to check if it is corrupted
+                torchaudio.load(full_audio_path)
+                entries.append(entry)  # File is good, append to entries list
+            except FileNotFoundError:
+                logger.warning(f"File not found: {full_audio_path}")
+                self.failed_files.append(audio_path)
+            except RuntimeError as e:
+                logger.warning(f"Audio format error in {audio_path}: {e}")
+                self.failed_files.append(audio_path)
+                
+                # Move the corrupted audio file
+                if os.path.exists(full_audio_path):
+                    dest_path = os.path.join(self.corrupted_audio_dir, os.path.basename(audio_path))
+                    os.rename(full_audio_path, dest_path)
+                    logger.info(f"Moved corrupted file to: {dest_path}")
+            except Exception as e:
+                logger.warning(f"Unknown error loading {audio_path}: {e}")
+                self.failed_files.append(audio_path)
+                
+                # Move the corrupted audio file
+                if os.path.exists(full_audio_path):
+                    dest_path = os.path.join(self.corrupted_audio_dir, os.path.basename(audio_path))
+                    os.rename(full_audio_path, dest_path)
+                    logger.info(f"Moved corrupted file to: {dest_path}")
+
+        # Output non-corrupted entries to a new manifest file
+        with open(self.output_manifest_file, 'w', encoding='utf-8') as f_out:
+            for entry in entries:
+                json.dump(entry, f_out, ensure_ascii=False)
+                f_out.write("\n")
+
+        if self.failed_files:
+            logger.warning(f"Failed to process {len(self.failed_files)} files.")
+            logger.debug(f"Failed files: {self.failed_files}")

@@ -116,6 +116,12 @@ HuggingFace Datasets
 .. autodata:: sdp.processors.CreateInitialManifestHuggingFace
    :annotation:
 
+YTC Datasets
+''''''''''''
+
+.. autodata:: sdp.processors.datasets.ytc.create_initial_manifest.CreateInitialManifestYTC
+   :annotation:
+
 Lhotse processors
 #################
 
@@ -144,6 +150,22 @@ used in the downstream processing for additional enhancement or filtering.
 
 .. autodata:: sdp.processors.ASRTransformers
    :annotation:
+
+.. autodata:: sdp.processors.tts.pyannote.PyAnnoteDiarizationAndOverlapDetection
+   :annotation:
+
+.. autodata:: sdp.processors.tts.nemo_asr_align.NeMoASRAligner
+   :annotation:
+
+.. autodata:: sdp.processors.tts.text.InverseTextNormalizationProcessor
+   :annotation:
+
+.. autodata:: sdp.processors.tts.metrics.TorchSquimObjectiveQualityMetricsProcessor
+   :annotation:
+
+.. autodata:: sdp.processors.tts.metrics.BandwidthEstimationProcessor
+   :annotation:
+
 
 Text-only processors
 ####################
@@ -212,6 +234,9 @@ ASR-based processors
     ``text_key`` (defaults to "text") and ``pred_text_key`` (defaults to "text_pred")
     to control which fields contain transcription and ASR model predictions.
 
+.. autodata:: sdp.utils.BootstrapProcessor
+   :annotation:
+
 Data modifications
 ''''''''''''''''''
 
@@ -262,6 +287,29 @@ Data filtering
 .. autodata:: sdp.processors.DropRepeatedFields
    :annotation:
 
+.. autodata:: sdp.processors.DropDuplicates
+   :annotation:
+
+.. autodata:: sdp.processors.AcceptIfWERLess
+    :annotation:
+
+.. autodata:: sdp.processors.CreateTolokaPool
+    :annotation:
+
+.. autodata:: sdp.processors.CreateTolokaProject
+    :annotation:
+
+.. autodata:: sdp.processors.CreateSentenceSet
+    :annotation:
+
+.. autodata:: sdp.processors.CreateTolokaTaskSet
+    :annotation:
+
+.. autodata:: sdp.processors.GetTolokaResults
+    :annotation:
+
+.. autodata:: sdp.processors.RejectIfBanned
+    :annotation:
 
 Miscellaneous
 #############
@@ -301,6 +349,22 @@ Miscellaneous
 
 .. autodata:: sdp.processors.ApplyInnerJoin
    :annotation:
+
+.. autodata:: sdp.processors.CreateCombinedManifests
+   :annotation:
+
+.. autodata:: sdp.processors.tts.split.SplitLongAudio
+   :annotation:
+
+.. autodata:: sdp.processors.tts.split.JoinSplitAudioMetadata
+   :annotation:
+
+.. autodata:: sdp.processors.tts.merge_alignment_diarization.MergeAlignmentDiarization
+   :annotation:
+
+.. autodata:: sdp.processors.tts.prepare_tts_segments.PrepareTTSSegmentsProcessor
+   :annotation:
+
 
 .. _sdp-base-classes:
 

@@ -53,6 +53,5 @@ def gen_docs():
                 with open(destination_path, "wt", encoding="utf-8") as fout:
                     fout.write(docs + link)
 
-
 if __name__ == '__main__':
     gen_docs()

@@ -14,8 +14,12 @@ tqdm
 gdown
 webvtt-py
 wget
+python-docx
 pydub
+dask
+distributed
 
+# toloka-kit  # Temporarily disabled due to Toloka's technical pause; keep as reference for past and future API support
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
 # for some processers, additionally nemo_text_processing is required
 # for mcv: apt-get update && apt-get upgrade -y && apt-get install -y sox libsox-fmt-all

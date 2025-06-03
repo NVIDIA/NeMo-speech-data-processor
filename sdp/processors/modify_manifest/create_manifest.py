@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
+
+import pandas
 
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
@@ -42,9 +45,44 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         self.extension = extension
 
     def read_manifest(self):
-        input_files = [str(self.raw_data_dir / file) for file in self.raw_data_dir.rglob('*.' + self.extension)]
-        return input_files
+        # Get all files with the specified extension
+        files = list(self.raw_data_dir.rglob('*.' + self.extension))
+        # Get relative paths and then rebuild proper paths to avoid duplication
+        return [str(self.raw_data_dir / file.relative_to(self.raw_data_dir)) for file in files]
 
     def process_dataset_entry(self, data_entry):
         data = {self.output_file_key: data_entry}
         return [DataEntry(data=data)]
+
+
+class CreateCombinedManifests(BaseParallelProcessor):
+    """Reads JSON lines from specified files and creates a combined manifest.
+
+    This processor iterates over files listed in `manifest_list`, reads each file line by line,
+    and yields the parsed JSON data from each line.
+
+    Args:
+        manifest_list (list(str)): A list of file paths or directories to process. The processor will
+                                   recursively read files within the directories and expect each file to contain JSON data.
+        **kwargs: Additional keyword arguments passed to the base class `BaseParallelProcessor`.
+
+    Returns:
+        A generator that yields parsed JSON data from each line in the files listed in `manifest_list`.
+    """
+
+    def __init__(
+        self,
+        manifest_list: list[str],
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.manifest_list = manifest_list
+
+    def read_manifest(self):
+        for file in self.manifest_list:
+            with open(file, "rt", encoding="utf8") as fin:
+                for line in fin:
+                    yield json.loads(line)
+
+    def process_dataset_entry(self, data_entry):
+        return [DataEntry(data=data_entry)]

@@ -1,0 +1,188 @@
+documentation: |
+  Start Toloka for Armenian
+  #########################
+
+  This configuration represents the first of three stages for processing Armenian language datasets for the Toloka platform. 
+  It sets up the foundation for creating structured tasks by initializing a new Toloka project, preparing pools, and processing textual data to generate a clean and organized corpus.
+
+  **Stage Overview**:
+  
+  This stage focuses on preparing and refining the dataset through the following steps:
+  1. Creating a new Toloka project.
+  2. Creating a new pool for the project.
+  3. Generating an initial dataset manifest by saving file paths of a docs corpus.
+  4. Extracting text lines from `.docx` files.
+  5. Processing Armenian punctuation and converting it to English equivalents.
+  6. Extracting text within brackets to form an additional corpus.
+  7. Separating sentences in utterances in the additional corpus.
+  8. Separating sentences in utterances in the main corpus.
+  9. Merging the main and additional corpuses into a combined dataset.
+  10. Counting the number of words in each sentence.
+  11. Filtering out long sentences.
+  12. Filtering out short sentences.
+  13. Removing duplicate utterances.
+  14. Submitting the cleaned and processed data to the Toloka pool.
+
+  **Required Arguments**:
+  - `workspace_dir`: Specify the directory for storing intermediate and final output files.
+
+  **Output Files**:
+  - `${workspace_dir}/data_file.json`: Manifest with metadata of the Toloka project.
+  - `${workspace_dir}/taskpool.json`: Manifest with metadata of the Toloka pool.
+  - `${workspace_dir}/tasks_clear.json`: Final manifest of the clean text corpus.
+
+processors_to_run: all
+workspace_dir: ???
+final_manifest: ${workspace_dir}/tasks_clear.json
+
+processors:
+  - _target_: sdp.processors.CreateTolokaProject
+    project_name: "Հայերեն ձայնագրություններ"
+    project_description: "Սեղմել ձայնագրելու կոճակը և կարդալ տեքստը բարձրաձայն։"
+    project_instructions: |
+        <style scoped="">
+          h2,h3 { color: #1F3A93; }
+          h4 { color: #333333; }
+          ul,ol { padding-left: 10px; margin-left: 20px; }
+        </style>
+        <h3>Հանձնարարության մասին</h3>
+        <div>
+          <div>Ձայնագրությունները կօգնեն սովորեցնել հայերեն ավտոմատ խոսք հասկացող մոդել։</div>
+          <div>Ամեն մի հանձնարարությունը պարունակում է բառակապակցություն կամ նախադասություն։</div>
+          <div>Ձեր նպատակն է բարձրաձայն կարդալ և ձայնագրել տեքստը։</div>
+          <div>Ամեն մի նախադասության համար պետք է նոր ձայնագրություն անեք, եթե նույնիսկ դա արդեն հանդիպել է։</div>
+        </div>
+        <h3>Ներկայացում</h3>
+        <div>
+          <b>iOS Համակարգ (iPhone, iPad)</b>
+          <ol>
+            <li>Սեղմեք ձայնագրելու կոճակը։</li>
+            <li>Սկսեք խոսել միայն ձայնագրությունը միանալուց հետո, այս դեպքում խոսքի սկիզբը չի կորի։</li>
+            <li>Խոսքը ավարտելուց հետո սեղմեք կանգնեցնելու կոճակը։</li>
+            <li>Պահպանեք ձայնագրությունը, եթե ամեն ինչ ճիշտ է։ Եթե սխալ եք թույլ տվել, սեղմեք «Նորից սկսել»։</li>
+            <li>Ձայնագրության հաջող upload-ից հետո իր համարը կհայտնվի հանձնարարության մեջ։ Շարունակեք դեպի հաջորդ հանձնարարությունը։</li>
+          </ol>
+          <b>Android Համակարգ</b>
+          <ol>
+            <li>Սեղմեք ձայնագրելու կոճակը։</li>
+            <li>Սեղմեք ձայնագրությունը սկսելու կոճակը։ Սկսեք խոսել միայն ձայնագրությունը միանալուց հետո, այս դեպքում խոսքի սկիզբը չի կորի։</li>
+            <li>Խոսքը ավարտելուց հետո սեղմեք կանգնեցնելու կոճակը։</li>
+            <li>Պահպանեք ձայնագրությունը, եթե ամեն ինչ ճիշտ է։ Եթե սխալ եք թույլ տվել, սեղմեք «Նորից սկսել»։</li>
+            <li>Ձայնագրության հաջող upload-ից հետո իր համարը կհայտնվի հանձնարարության մեջ։ Շարունակեք դեպի հաջորդ հանձնարարությունը։</li>
+          </ol>
+        </div>
+        <h3>Հանձնարարության ավարտման ստուգում</h3>
+        <div>
+          <div>Ձայնագրությունների ստուգումը իրականացվում է 7 օրվա ընթացքում։</div>
+          <h4>Մերժման հնարավոր պատճառներն են՝</h4>
+          <ul>
+            <li>Ձայնագրությունները չեն պարունակում հանձնարարության մեջ ներկայացված նախադասությունը կամ բառակապակցությունը։</li>
+            <li>Նախադասությունները ձայնագրված չեն ամբողջությամբ։</li>
+            <li>Ձայնագրությունները շատ ցածր են և/կամ առկա է չափից դուրս ուժեղ աղմուկ։</li>
+            <li>Նույն ձայնագրությունը ներկայացված է մի քանի հանձնարարություններին։</li>
+          </ul>
+        </div>
+    output_manifest_file: ${workspace_dir}/data_file.json
+
+
+  - _target_: sdp.processors.CreateTolokaPool
+    input_manifest_file: ${workspace_dir}/data_file.json
+    output_manifest_file: ${workspace_dir}/taskpool.json
+
+  - _target_: sdp.processors.CreateInitialManifestByExt
+    raw_data_dir: ${workspace_dir}/arm_docs
+    extension: docx
+    output_file_key: source_filepath
+    output_manifest_file: ${workspace_dir}/docfiles.json
+
+  - _target_: sdp.processors.ReadDocxLines
+    source_filepath: source_filepath
+    text_key: text
+    output_manifest_file: ${workspace_dir}/lines.json
+
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: ${workspace_dir}/lines.json
+    output_manifest_file: ${workspace_dir}/lines1.json
+    text_key: text
+    regex_params_list:
+      - {"pattern": '։', "repl": ':'}
+      - {"pattern": '․', "repl": "."}
+      - {"pattern": '—', "repl": "-"}
+      - {"pattern": '–', "repl": "-"}
+      - {"pattern": '―', "repl": "-"} 
+      - {"pattern": '\.\.\.', "repl": "…"}
+      - {"pattern": "\\s+", "repl": " "}
+
+  - _target_: sdp.processors.ExtractFromBrackets
+    text_key: text
+    brackets: ["«»", "()", "[]"]
+    input_manifest_file: ${workspace_dir}/lines1.json
+    output_manifest_file: ${workspace_dir}/inbrackets.json
+
+  - _target_: sdp.processors.SplitLineBySentence
+    text_key: text
+    end_pattern: ':|\.|…'
+    input_manifest_file: ${workspace_dir}/inbrackets.json
+    output_manifest_file: ${workspace_dir}/inbrackets_splited.json
+  
+  - _target_: sdp.processors.SplitLineBySentence
+    text_key: text
+    end_pattern: ':|\.|…'
+    input_manifest_file: ${workspace_dir}/lines1.json
+    output_manifest_file: ${workspace_dir}/sentences0.json
+
+  - _target_: sdp.processors.CreateCombinedManifests
+    manifest_list: ["${workspace_dir}/inbrackets_splited.json", "${workspace_dir}/sentences0.json"]
+    output_manifest_file: ${workspace_dir}/sentences_combined.json
+
+  - _target_: sdp.processors.DropIfRegexMatch
+    input_manifest_file: ${workspace_dir}/sentences_combined.json
+    output_manifest_file: ${workspace_dir}/sentences1.json
+    regex_patterns:
+      - '[0-9]'
+      - '\('
+      - '\)'
+      - '\['
+      - '\]'
+      - '\*'
+      - '"'
+      - '[А-Яа-я]'
+      - '[A-Za-z]'
+      - '\+'
+      - '='
+      - '¬'
+      - '&'
+      - '«'
+      - '»'
+
+  - _target_: sdp.processors.CountNumWords
+    input_manifest_file: ${workspace_dir}/sentences1.json
+    output_manifest_file: ${workspace_dir}/sentences2.json
+    alphabet: "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՈՒԵ աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆուև"
+    text_key: text
+    num_words_key: num_words
+
+  - _target_: sdp.processors.PreserveByValue
+    input_manifest_file: ${workspace_dir}/sentences2.json
+    output_manifest_file: ${workspace_dir}/sentences3.json
+    input_value_key: num_words
+    target_value: 20
+    operator: le
+
+  - _target_: sdp.processors.PreserveByValue
+    input_manifest_file: ${workspace_dir}/sentences3.json
+    output_manifest_file: ${workspace_dir}/sentences4.json
+    input_value_key: num_words
+    target_value: 3
+    operator: ge
+
+  - _target_: sdp.processors.DropDuplicates
+    drop_key: "text"
+    input_manifest_file: ${workspace_dir}/sentences4.json
+    output_manifest_file: ${final_manifest}
+
+  - _target_: sdp.processors.CreateTolokaTaskSet
+    input_manifest_file: ${final_manifest}
+    input_pool_file: ${workspace_dir}/taskpool.json
+    input_data_file: ${workspace_dir}/data_file.json
+    limit: 1
