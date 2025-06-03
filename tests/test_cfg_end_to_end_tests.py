@@ -251,6 +251,11 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
             processors_to_run="1:2"
         ),
         TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/english/hifitts2/config_44khz.yaml",
+            data_check_fn=partial(data_check_fn_generic, file_name="manifest_44khz.json"),
+            processors_to_run="1:2"
+        ),
+        TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/english/hifitts2/config_bandwidth.yaml",
             data_check_fn=partial(data_check_fn_generic, file_name="manifest_22khz.json"),
             reference_manifest_filename="test_data_reference_bandwidth.json",
@@ -370,6 +375,10 @@ def test_configs(setup_data, tmp_path):
     if "english/hifitts2/config_22khz" in config_path:
         cfg.processors[1].input_manifest_file = (data_dir / "manifest_22khz.json").as_posix()
         cfg.processors[1].error_file = (data_dir / "errors_22khz.json").as_posix()
+
+    if "english/hifitts2/config_44khz" in config_path:
+        cfg.processors[1].input_manifest_file = (data_dir / "manifest_44khz.json").as_posix()
+        cfg.processors[1].error_file = (data_dir / "errors_44khz.json").as_posix()
 
     if "english/hifitts2/config_bandwidth" in config_path:
         cfg.processors[0].audio_dir = (data_dir / "audio_22khz").as_posix()
