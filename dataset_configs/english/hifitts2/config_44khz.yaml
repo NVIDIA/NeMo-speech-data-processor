@@ -2,7 +2,9 @@ documentation: |
   HiFiTTS-2 44kHz
   ##################
   
-  This config can be used to download the audio data for HiFiTTS-2 44kHz.
+  This config can be used to download the audio data for
+  `HiFiTTS-2 44kHz <https://huggingface.co/datasets/nvidia/hifitts-2>`_
+  
   
   1. Downloads HiFiTTS-2 audio from LibriVox.
   2. Outputs a new manifest in which LibriVox audiobook chapters which could not be downloaded (e.g. because they

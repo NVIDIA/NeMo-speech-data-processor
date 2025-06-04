@@ -389,7 +389,7 @@ YouTube Commons (YTC)
 HiFiTTS-2
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-**Dataset link:** TODO
+**Dataset link:** https://huggingface.co/datasets/nvidia/hifitts-2
 
 * **22kHz**:
    `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/hifitts2/config_22khz.yaml>`__ |
