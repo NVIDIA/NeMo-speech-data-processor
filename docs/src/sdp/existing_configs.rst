@@ -366,6 +366,13 @@ Armenian Toloka
    `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/toloka/pipeline_get_final_res.yaml>`__ |
    :doc:`documentation <config-docs/armenian/toloka/pipeline_get_final_res>`
 
+.. toctree::
+   :hidden:
+
+   config-docs/armenian/toloka/pipeline_start
+   config-docs/armenian/toloka/pipeline_validate_answers
+   config-docs/armenian/toloka/pipeline_get_final_res
+
 YouTube Commons (YTC)
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -396,6 +403,7 @@ HiFiTTS-2
 
 .. toctree::
    :hidden:
+
    
    config-docs/english/hifitts2/config_22khz
    config-docs/english/hifitts2/config_44khz
