@@ -1,0 +1,197 @@
+# Configuration for processing Earnings21/22 datasets to NeMo format
+# This config implements a 5-step pipeline with forced alignment:
+# 1. CreateInitialAudioAndManifest: Create full audio manifest with duration
+# 2. CreateFullAudioManifestEarnings21: Add ground truth text from NLP files
+# 3. SubRegex: Clean text patterns
+# 4. NeMoForcedAligner: Generate word-level CTM files using NeMo Forced Aligner
+# 5. CreateSentenceSegmentedManifest: Create sentence-level segments based on NeMo Forced Aligner CTM files
+# 6. SpeakerSegmentedManifest: Create speaker-level segments (optional)
+
+# Global parameters (ensure these are set, e.g., via command line or here)
+output_directory: ?? # E.g., /path/to/your/main_output_sdp/
+dataset_root: ?? # E.g., /disk7/datasets/speech-datasets/earnings21 or /disk7/datasets/speech-datasets/earnings22
+raw_audio_input_dir: ${dataset_root}/media # Raw audio source directory
+
+# Dataset configuration
+dataset_type: "earnings21"  # Options: "earnings21" or "earnings22"
+subset: "full"  # Options: "full" or "eval10" (earnings21 only)
+test_mode: false  # Set to true to process only 2 files for testing
+
+# Dask configuration
+use_dask: false
+
+# Text processing parameters
+preserve_punctuation: true
+preserve_capitalization: true
+
+# Output options
+include_speaker_info: true
+include_tags: false  # Set to true to include entity tags (earnings21 only)
+use_speaker_metadata_csv: false  # Set to true to map speaker IDs to names from speaker-metadata.csv (earnings21 only)
+
+# Forced Alignment parameters
+forced_alignment_model: nvidia/parakeet-tdt_ctc-1.1b # NeMo ASR model for forced alignment with CTC head
+device: "cuda"  # Device for forced alignment
+
+processors:
+  # Step 1: Create initial manifest with full audio files and duration
+  - _target_: sdp.processors.datasets.earnings21.CreateInitialAudioAndManifest
+    dataset_root: ${dataset_root}
+    raw_audio_source_dir: ${raw_audio_input_dir}
+    output_manifest_file: ${output_directory}/01_initial_audio_manifest.json
+    dataset_type: ${dataset_type}
+    subset: ${subset}
+    test_mode: ${test_mode}
+
+  # Step 2: Add ground truth text from NLP files to the manifest
+  - _target_: sdp.processors.datasets.earnings21.CreateFullAudioManifestEarnings21
+    input_manifest_file: ${output_directory}/01_initial_audio_manifest.json
+    dataset_root: ${dataset_root}
+    output_manifest_file: ${output_directory}/02_full_audio_with_text_manifest.json
+    dataset_type: ${dataset_type}
+    preserve_punctuation: ${preserve_punctuation}
+    preserve_capitalization: ${preserve_capitalization}
+
+  # Step 3: Clean text patterns
+  - _target_: sdp.processors.SubRegex
+    input_manifest_file: ${output_directory}/02_full_audio_with_text_manifest.json
+    output_manifest_file: ${output_directory}/03_full_audio_with_text_manifest_cleaned.json
+    regex_params_list:
+      - {"pattern": "[…+×]", "repl": ""}
+      # remove text inside <>
+      - {"pattern": "<.*?>", "repl": ""}
+      - {"pattern": "\\[.*?\\]", "repl": ""}
+
+  # Step 4: NeMo Forced Alignment - Generate word-level CTM files
+  - _target_: sdp.processors.datasets.earnings21.NeMoForcedAligner
+    input_manifest_file: ${output_directory}/03_full_audio_with_text_manifest_cleaned.json
+    output_manifest_file: ${output_directory}/04_aligned_manifest.json
+    output_dir: ${output_directory}/forced_alignment_output
+    pretrained_name: ${forced_alignment_model}
+    device: ${device}
+    batch_size: 1
+
+  # Step 5: Create sentence-level segments based on CTM files
+  - _target_: sdp.processors.datasets.earnings21.CreateSentenceSegmentedManifest
+    input_manifest_file: ${output_directory}/04_aligned_manifest.json
+    ctm_dir: ${output_directory}/forced_alignment_output/ctm/words
+    output_manifest_file: ${output_directory}/05_sentence_segmented_manifest.json
+
+  # Step 6: Create speaker-level segments (optional)
+  - _target_: sdp.processors.datasets.earnings21.SpeakerSegmentedManifest
+    input_manifest_file: ${output_directory}/03_full_audio_with_text_manifest_cleaned.json
+    dataset_root: ${dataset_root}
+    output_manifest_file: ${output_directory}/06_speaker_segmented_manifest.json
+    dataset_type: ${dataset_type}
+    preserve_punctuation: ${preserve_punctuation}
+    preserve_capitalization: ${preserve_capitalization}
+    include_speaker_info: ${include_speaker_info}
+    include_tags: ${include_tags}
+    use_speaker_metadata_csv: ${use_speaker_metadata_csv}
+
+  # Step 7: Filter manifest to keep only required fields
+  - _target_: sdp.processors.KeepOnlySpecifiedFields
+    input_manifest_file: ${output_directory}/05_sentence_segmented_manifest.json
+    output_manifest_file: ${output_directory}/07_final_filtered_manifest.json
+    fields_to_keep: ["audio_filepath", "duration", "offset", "text"]
+
+# Expected output from this 5-step pipeline:
+# 1. ${output_directory}/01_initial_audio_manifest.json - Full audio manifest with duration
+# 2. ${output_directory}/02_full_audio_with_text_manifest.json - Full audio with ground truth text
+# 3. ${output_directory}/03_full_audio_with_text_manifest_cleaned.json - Cleaned audio with text
+# 4. ${output_directory}/04_aligned_manifest.json - Final aligned manifest with word-level timestamps
+# 5. ${output_directory}/05_sentence_segmented_manifest.json - Sentence-level segments based on CTM files
+# 6. ${output_directory}/06_speaker_segmented_manifest.json - Speaker-level segments
+
+# Usage examples:
+# For Earnings21:
+# python main.py --config-path=dataset_configs/english/earnings21 --config-name=config dataset_type=earnings21 dataset_root=/path/to/earnings21 output_directory=/path/to/output
+#
+# For Earnings22:
+# python main.py --config-path=dataset_configs/english/earnings21 --config-name=config dataset_type=earnings22 dataset_root=/path/to/earnings22 output_directory=/path/to/output
+#
+# For eval10 subset (earnings21 only):
+# python main.py --config-path=dataset_configs/english/earnings21 --config-name=config dataset_type=earnings21 subset=eval10 dataset_root=/path/to/earnings21 output_directory=/path/to/output
+
+# Expected output format for Step 1 (full audio manifest):
+# {
+#   "audio_filepath": "/path/to/dataset/media/file_id.mp3",
+#   "duration": 1800.0,  # Actual audio duration in seconds
+#   "text": "",  # Placeholder text
+#   "file_id": "original_file_id"
+# }
+
+# Expected output format for Step 2 (full audio with text):
+# {
+#   "audio_filepath": "/path/to/dataset/media/file_id.mp3",
+#   "duration": 1800.0,  # Actual audio duration in seconds
+#   "text": "Complete transcribed text with punctuation and capitalization.",
+#   "file_id": "original_file_id"
+# }
+
+# Expected output format for Step 3 (cleaned audio with text):
+# {
+#   "audio_filepath": "/path/to/dataset/media/file_id.mp3",
+#   "duration": 1800.0,  # Actual audio duration in seconds
+#   "text": "Complete transcribed text with punctuation and capitalization.",
+#   "file_id": "original_file_id"
+# }
+
+# Expected output format for Step 4 (aligned manifest):
+# {
+#   "audio_filepath": "/path/to/dataset/media/file_id.mp3",
+#   "duration": 15.2,  # Actual segment duration from forced alignment
+#   "text": "This is the transcribed text for this speaker segment.",
+#   "file_id": "original_file_id",
+#   "segment_id": 0,
+#   "start_time": null,
+#   "end_time": null,
+#   "speaker": "speaker_1",
+#   "alignment": [  # Word-level alignments from NeMo Forced Aligner
+#     {"word": "This", "start": 0.0, "end": 0.3},
+#     {"word": "is", "start": 0.3, "end": 0.5},
+#     {"word": "the", "start": 0.5, "end": 0.7},
+#     ...
+#   ]
+# }
+
+# Expected output format for Step 5 (sentence-level segments):
+# {
+#   "audio_filepath": "/path/to/dataset/media/file_id.mp3",
+#   "duration": 15.2,  # Actual segment duration from forced alignment
+#   "text": "This is the transcribed text for this speaker segment.",
+#   "file_id": "original_file_id",
+#   "segment_id": 0,
+#   "start_time": null,
+#   "end_time": null,
+#   "speaker": "speaker_1",
+#   "alignment": [  # Word-level alignments from NeMo Forced Aligner
+#     {"word": "This", "start": 0.0, "end": 0.3},
+#     {"word": "is", "start": 0.3, "end": 0.5},
+#     {"word": "the", "start": 0.5, "end": 0.7},
+#     ...
+#   ]
+# }
+
+# Expected output format for Step 6 (speaker-level segments):
+# {
+#   "audio_filepath": "/path/to/dataset/media/file_id.mp3",
+#   "duration": 0,  # No duration calculation
+#   "text": "This is the transcribed text for this speaker segment.",
+#   "file_id": "original_file_id",
+#   "segment_id": 0,
+#   "start_time": null,  # No timing information
+#   "end_time": null,    # No timing information
+#   "speaker": "speaker_1"  # If include_speaker_info=true
+# }
+
+# Key features of this 5-step pipeline:
+# - Step 1: Creates full audio manifest with actual duration from audio files
+# - Step 2: Adds ground truth text from NLP files (full transcript per file)
+# - Step 3: Cleans text patterns
+# - Step 4: Adds word-level alignments using NeMo Forced Aligner while preserving ground truth text
+# - Step 5: Creates sentence-level segments based on CTM files
+# - Step 6: Creates speaker-level segments (optional)
+# - Final output includes precise timing information for each word
+# - Supports both earnings21 and earnings22
+# - Clean separation of concerns between steps 

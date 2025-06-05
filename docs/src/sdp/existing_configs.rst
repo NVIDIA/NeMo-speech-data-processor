@@ -404,6 +404,20 @@ HiFiTTS-2
 .. toctree::
    :hidden:
 
+   
    config-docs/english/hifitts2/config_22khz
    config-docs/english/hifitts2/config_44khz
    config-docs/english/hifitts2/config_bandwidth
+
+Earnings (21/22)
+~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://huggingface.co/datasets/Revai/earnings21, https://huggingface.co/datasets/distil-whisper/earnings22
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/earnings21/config.yaml>`__ |
+:doc:`documentation <config-docs/english/earnings21/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/english/earnings21/config
