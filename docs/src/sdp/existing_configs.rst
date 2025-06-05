@@ -376,7 +376,30 @@ YouTube Commons (YTC)
 
 .. toctree::
    :hidden:
+
    config-docs/tts/ytc/config
+
+HiFiTTS-2
+~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://huggingface.co/datasets/nvidia/hifitts-2
+
+* **22kHz**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/hifitts2/config_22khz.yaml>`__ |
+   :doc:`documentation <config-docs/english/hifitts2/config_22khz>`
+* **44kHz**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/hifitts2/config_44khz.yaml>`__ |
+   :doc:`documentation <config-docs/english/hifitts2/config_44khz>`
+* **Bandwidth Estimation**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/hifitts2/config_bandwidth.yaml>`__ |
+   :doc:`documentation <config-docs/english/hifitts2/config_bandwidth>`
+
+.. toctree::
+   :hidden:
+   
+   config-docs/english/hifitts2/config_22khz
+   config-docs/english/hifitts2/config_44khz
+   config-docs/english/hifitts2/config_bandwidth
 
 Earnings (21/22)
 ~~~~~~~~~~~~~~~~~~~~~~
