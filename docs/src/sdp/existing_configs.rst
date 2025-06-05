@@ -376,9 +376,17 @@ YouTube Commons (YTC)
 
 .. toctree::
    :hidden:
-
-   config-docs/armenian/toloka/pipeline_start
-   config-docs/armenian/toloka/pipeline_validate_answers
-   config-docs/armenian/toloka/pipeline_get_final_res
-
    config-docs/tts/ytc/config
+
+Earnings (21/22)
+~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://huggingface.co/datasets/Revai/earnings21, https://huggingface.co/datasets/distil-whisper/earnings22
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/earnings21/config.yaml>`__ |
+:doc:`documentation <config-docs/english/earnings21/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/english/earnings21/config
