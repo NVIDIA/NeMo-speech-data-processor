@@ -9,7 +9,7 @@ results_dir: # Where to store the results of the run
 nemo_directory: # Nemo directory path
 do_average: # Boolean value indicating whether to do average of checkpoints for pseudo-label generation
 p_cache: # Probability with which update pseudo-labeled set
-num_ipl_epochs: How many epochs do pseudo-labeling
+num_ipl_epochs: #How many epochs do pseudo-labeling
 
 # Optional arguments
 num_runs: 
