@@ -1,5 +1,4 @@
 import pytest
-import ndjson
 import boto3
 import json
 import os
@@ -7,6 +6,7 @@ import tarfile
 from pathlib import Path
 from omegaconf import OmegaConf
 from sdp.run_processors import run_processors
+from sdp.utils.common import load_manifest
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
 
@@ -68,16 +68,14 @@ def test_tts_sdp_end_to_end(get_tts_ytc_data):
 
     assert os.path.exists(cfg.final_manifest)
     output_file_data = {}
-    with open(cfg.final_manifest, "r") as f:
-        output_data = ndjson.load(f)
-        for item in output_data:
-            output_file_data[item["audio_item_id"]] = item
+    output_data = load_manifest(cfg.final_manifest, encoding="utf8")
+    for item in output_data:
+        output_file_data[item["audio_item_id"]] = item
     
     reference_file_data = {}
-    with open(reference_manifest_file, "r") as f:
-        reference_data = ndjson.load(f)
-        for item in reference_data:
-            reference_file_data[item["audio_item_id"]] = item
+    reference_data = load_manifest(reference_manifest_file, encoding="utf8")
+    for item in reference_data:
+        reference_file_data[item["audio_item_id"]] = item
     
     assert len(output_file_data) == len(reference_file_data)
     assert len(output_file_data) == 2
