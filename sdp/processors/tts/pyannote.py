@@ -16,7 +16,6 @@ import random
 import os
 import logging
 from time import time
-import json
 from pyannote.audio import Pipeline
 from pyannote.audio.pipelines.utils.hook import ProgressHook
 from whisperx.audio import SAMPLE_RATE
