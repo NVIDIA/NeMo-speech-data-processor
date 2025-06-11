@@ -16,7 +16,6 @@ import librosa
 import math
 import numpy as np
 from tqdm import tqdm
-import json
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
