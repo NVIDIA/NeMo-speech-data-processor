@@ -188,7 +188,7 @@ class NeMoASRAligner(BaseProcessor):
         1. Full audio processing (infer_segment_only=False)
         2. Segment-only processing (infer_segment_only=True)
 
-        Results are saved in NDJSON format with alignments and transcriptions added to the original metadata.
+        Results are saved in JSON format with alignments and transcriptions added to the original metadata.
         """
         manifest = load_manifest(self.input_manifest_file)
         
