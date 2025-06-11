@@ -19,17 +19,17 @@ import tarfile
 import urllib
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Union, Any
+from typing import Dict, List, Union, Any, Optional
 
 import wget
 
 from sdp.logging import logger
 
 
-def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
+def load_manifest(manifest: Path, encoding: Optional[str] = None) -> List[Dict[str, Union[str, float]]]:
     # read NeMo manifest as a list of dicts
     result = []
-    with manifest.open(encoding="utf8") as f:
+    with manifest.open(encoding=encoding) as f:
         for line in f:
             data = json.loads(line)
             result.append(data)

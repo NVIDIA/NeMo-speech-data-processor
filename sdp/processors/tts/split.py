@@ -177,10 +177,7 @@ class JoinSplitAudioMetadata(BaseProcessor):
         - Original entries for unsplit audio files
         - Combined entries for previously split audio files
         """
-        manifest = []
-        with open(self.input_manifest_file) as f:
-            for line in f:
-                manifest.append(json.loads(line.strip()))
+        manifest = load_manifest(self.input_manifest_file)
 
         fp_w = open(self.output_manifest_file, 'w')
 
