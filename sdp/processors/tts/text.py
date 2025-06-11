@@ -49,7 +49,7 @@ class InverseTextNormalizationProcessor(BaseParallelProcessor):
         ''' Reads metadata from JSON file in the input manifest
         and converts it to data entries '''
 
-        dataset_entries = load_manifest(self.input_manifest_file)
+        dataset_entries = load_manifest(self.input_manifest_file, encoding="utf8")
 
         return dataset_entries
 
