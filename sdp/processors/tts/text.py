@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
 import json
-import ndjson
+from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
+from sdp.utils.common import load_manifest, save_manifest
 from nemo_text_processing.inverse_text_normalization.inverse_normalize import InverseNormalizer
 from nemo.collections.nlp.models import PunctuationCapitalizationModel
 
@@ -47,11 +46,10 @@ class InverseTextNormalizationProcessor(BaseParallelProcessor):
         self.normalizer = InverseNormalizer(lang=language)
     
     def read_manifest(self):
-        ''' Reads metadata from NDJSON file in the input manifest
+        ''' Reads metadata from JSON file in the input manifest
         and converts it to data entries '''
 
-        with open(self.input_manifest_file, "r", encoding="utf8") as fin:
-            dataset_entries = ndjson.load(fin)
+        dataset_entries = load_manifest(self.input_manifest_file)
 
         return dataset_entries
 
@@ -102,8 +100,7 @@ class PunctuationAndCapitalizationOnSegmentsProcessor(BaseProcessor):
         self.pnc_model.cuda()
     
     def process(self):
-        with open(self.input_manifest_file) as f:
-            manifest = ndjson.load(f)
+        manifest = load_manifest(self.input_manifest_file)
 
         results = []
         all_text = []
@@ -123,8 +120,7 @@ class PunctuationAndCapitalizationOnSegmentsProcessor(BaseProcessor):
                     i+=1
             results.append(metadata)
 
-        with open(self.output_manifest_file, 'w') as f:
-            ndjson.dump(results, f)
+        save_manifest(results, self.output_manifest_file)
 
 class PunctuationAndCapitalizationProcessor(BaseProcessor):
     """This processor performs punctuation and capitalization on text data.
@@ -163,8 +159,7 @@ class PunctuationAndCapitalizationProcessor(BaseProcessor):
         self.pnc_model.cuda()
     
     def process(self):
-        with open(self.input_manifest_file) as f:
-            manifest = ndjson.load(f)
+        manifest = load_manifest(self.input_manifest_file)
 
         all_text = []
         

@@ -13,12 +13,12 @@
 # limitations under the License.
 
 from sdp.processors.base_processor import BaseProcessor, DataEntry
-import ndjson
 import json
 import os
 import torchaudio
 import math
 from copy import deepcopy
+from sdp.utils.common import load_manifest, save_manifest
 
 class SplitLongAudio(BaseProcessor):
     """This processor splits long audio files into smaller segments.
@@ -70,8 +70,7 @@ class SplitLongAudio(BaseProcessor):
         - Split entries with updated paths and durations
         - Meta-entries containing split information for later joining
         """
-        with open(self.input_manifest_file) as f:
-            manifest = ndjson.load(f)
+        manifest = load_manifest(self.input_manifest_file)
 
         results = []
         for metadata in manifest:
@@ -141,8 +140,7 @@ class SplitLongAudio(BaseProcessor):
             metadata['split_offsets'] = actual_splits
             results.append(metadata)
 
-        with open(self.output_manifest_file, 'w') as f:
-            ndjson.dump(results, f)
+        save_manifest(results, self.output_manifest_file)
 
 
 class JoinSplitAudioMetadata(BaseProcessor):
@@ -179,8 +177,10 @@ class JoinSplitAudioMetadata(BaseProcessor):
         - Original entries for unsplit audio files
         - Combined entries for previously split audio files
         """
+        manifest = []
         with open(self.input_manifest_file) as f:
-            manifest = ndjson.load(f)
+            for line in f:
+                manifest.append(json.loads(line.strip()))
 
         fp_w = open(self.output_manifest_file, 'w')
 

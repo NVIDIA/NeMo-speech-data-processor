@@ -16,7 +16,7 @@ import random
 import os
 import logging
 from time import time
-import ndjson
+import json
 from pyannote.audio import Pipeline
 from pyannote.audio.pipelines.utils.hook import ProgressHook
 from whisperx.audio import SAMPLE_RATE
@@ -26,6 +26,7 @@ import torchaudio
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
+from sdp.utils.common import load_manifest, save_manifest
 
 def has_overlap(turn, overlaps):
     """Check if a given turn overlaps with any segment in the overlaps list.
@@ -208,8 +209,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
         - Overlap segments
         - Non-speaker segments
         """
-        with open(self.input_manifest_file) as f:
-            manifest = ndjson.load(f)
+        manifest = load_manifest(self.input_manifest_file)
 
         results = []
         start_time = time()
@@ -292,6 +292,5 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
             results.append(metadata)
 
         logger.info(f'Completed diarization in {(time()-start_time)/3600} hrs')
-        with open(self.output_manifest_file, 'w') as f:
-            ndjson.dump(results, f)
+        save_manifest(results, self.output_manifest_file)
 

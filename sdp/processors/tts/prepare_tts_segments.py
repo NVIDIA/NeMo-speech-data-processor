@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ndjson
-from typing import List, Union
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.utils.common import load_manifest
 
 class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
     """This processor merges adjacent segments from the same speaker and splits segments to have a complete utterance.
@@ -60,11 +59,10 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
         self.punctuation_split_only = punctuation_split_only
     
     def read_manifest(self):
-        ''' Reads metadata from NDJSON file in the input manifest
+        ''' Reads metadata from JSON file in the input manifest
         and converts it to data entries '''
 
-        with open(self.input_manifest_file, "r", encoding="utf8") as fin:
-            dataset_entries = ndjson.load(fin)
+        dataset_entries = load_manifest(self.input_manifest_file)
 
         return dataset_entries
 
