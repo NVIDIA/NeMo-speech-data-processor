@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ndjson
 from sdp.processors.base_processor import BaseProcessor
-
+from sdp.utils.common import load_manifest, save_manifest
 
 class MergeAlignmentDiarization(BaseProcessor):
     """This processor merges alignment and diarization information from a manifest file.
@@ -41,8 +40,7 @@ class MergeAlignmentDiarization(BaseProcessor):
         super().__init__(**kwargs)
 
     def process(self):
-        with open(self.input_manifest_file) as f:
-            manifest = ndjson.load(f)
+        manifest = load_manifest(self.input_manifest_file)
 
         # Manifest here needs to contain both paths to alignment files and 'segments'
         # from pyannote. We identify all the words that belong in each pyannote segment
@@ -97,6 +95,5 @@ class MergeAlignmentDiarization(BaseProcessor):
                     segment['text'] = ' '.join([x['word'] for x in words_in_segment])
                     segment['words'] = words_in_segment
 
-        with open(self.output_manifest_file, 'w') as f:
-            ndjson.dump(manifest, f)
+        save_manifest(manifest, self.output_manifest_file)
 

@@ -17,7 +17,7 @@ import os
 import subprocess
 
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
-
+from sdp.utils.common import load_manifest
 
 class CreateInitialManifestYTC(BaseParallelProcessor):
     """A processor class for creating initial manifest files for a TTS dataset.
@@ -64,13 +64,11 @@ class CreateInitialManifestYTC(BaseParallelProcessor):
         os.makedirs(self.resampled_audio_dir, exist_ok=True)
 
     def read_manifest(self):
-        """ Reads metadata from NDJSON file in the input manifest
+        """ Reads metadata from JSONL file in the input manifest
           Returns:
-            list: A list of dataset entries parsed from the NDJSON manifest file
+            list: A list of dataset entries parsed from the JSONL manifest file
         """
-        import ndjson
-        with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
-            dataset_entries = ndjson.load(fin)
+        dataset_entries = load_manifest(self.input_manifest_file, encoding="utf8")
 
         return dataset_entries
 
