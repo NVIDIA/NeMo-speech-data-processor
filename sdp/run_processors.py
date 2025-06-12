@@ -141,9 +141,18 @@ def run_processors(cfg):
         except Exception as e:
             logger.error(f"An unexpected error occurred during management of imports: {e}")
 
-    processors_to_run = cfg.get("processors_to_run", "all")
-    use_dask = cfg.get("use_dask", True)
+    # Detecting dask
+    try:
+        from dask.distributed import Client
+        dask_available = True
+    except ImportError:
+        logger.warning("Dask not installed; using multiprocessing for all processors")
+        dask_available = False
+    
+    # look for global directions in cfg for dask usage
+    global_use_dask = bool(cfg.get("use_dask", True)) and dask_available
 
+    processors_to_run = cfg.get("processors_to_run", "all")
     if processors_to_run == "all":
         processors_to_run = ":"
     selected_cfgs = select_subset(cfg.processors, processors_to_run)
@@ -165,8 +174,6 @@ def run_processors(cfg):
     
     processors = []
     # Create a temporary directory to hold intermediate files if needed.
-
-
     with tempfile.TemporaryDirectory() as tmp_dir:
         # special check for the first processor.
         # In case user selected something that does not start from
@@ -180,7 +187,7 @@ def run_processors(cfg):
                         with open_dict(processors_cfgs[0]):
                             processors_cfgs[0]["input_manifest_file"] = cfg.processors[idx - 1]["output_manifest_file"]
                     break
-
+        
         for idx, processor_cfg in enumerate(processors_cfgs):
             logger.info('=> Building processor "%s"', processor_cfg["_target_"])
 
@@ -199,45 +206,48 @@ def run_processors(cfg):
                 with open_dict(processors_cfgs[idx + 1]):
                     processors_cfgs[idx + 1]["input_manifest_file"] = processor_cfg["output_manifest_file"]
             
-            if use_dask and "use_dask" not in processor_cfg:
-                with open_dict(processor_cfg):
-                    processor_cfg["use_dask"] = True
+            #check if we have processor level directions of using dask
+            flag=processor_cfg.get("use_dask", None)
+
+            # if no processor-specific flag, fallback to global; otherwise use provided value
+            if flag is None:
+                use_dask_flag = global_use_dask
+            else:
+                use_dask_flag = flag
 
             processor = hydra.utils.instantiate(processor_cfg)
+            processor.use_dask = use_dask_flag
             # running runtime tests to fail right-away if something is not
             # matching users expectations
             processor.test()
             processors.append(processor)
 
-            # Regular mode: each processor writes its own output file. 
+
+        # Start Dask client if any processor requires it
         dask_client = None
-        if use_dask:
+        if any(p.use_dask for p in processors):
             try:
-                from dask.distributed import Client
-                
                 num_cpus = psutil.cpu_count(logical=False) or 4
                 logger.info(f"Starting Dask client with {num_cpus} workers")
                 dask_client = Client(n_workers=num_cpus, processes=True)
-                logger.info(f"Dask client dashboard available at: {dask_client.dashboard_link}")
-            except ImportError:
-                logger.warning("Dask not available, falling back to multiprocessing")
-                use_dask = False
+                logger.info(f"Dask dashboard at: {dask_client.dashboard_link}")
             except Exception as e:
-                logger.warning(f"Failed to create Dask client: {e}. Falling back to multiprocessing")
-                use_dask = False
+                logger.warning(f"Failed to start Dask client: {e}")
+                dask_client = None
 
-            try:
-                for proc in processors:
-                    if hasattr(proc, 'dask_client') and dask_client is not None:
-                        proc.dask_client = dask_client
-                    logger.info('=> Running processor "%s"', proc)
-                    proc.process()
-            finally:
-                if dask_client is not None:
-                    logger.info("Shutting down Dask client...")
-                    dask_client.close(timeout="60s")
-                    logger.info("Dask client shutdown complete")
-    # tmp_dir is removed here after all processing finishes. !!!
+        # Run processors in order
+        try:
+            for proc in processors:
+                if proc.use_dask and dask_client is not None:
+                    proc.dask_client = dask_client
+                    logger.info('=> Running processor "%s" with Dask', proc)
+                else:
+                    logger.info('=> Running processor "%s" with Multiprocessing', proc)
+                proc.process()
+        finally:
+            if dask_client is not None:
+                logger.info("Shutting down Dask client...")
+                dask_client.close(timeout="60s")
+                logger.info("Dask client shutdown complete")
 
-
-
+#tmp_dir is removed here after all processing finishes. !!!

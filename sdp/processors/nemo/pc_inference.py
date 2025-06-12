@@ -39,9 +39,10 @@ class PCInference(BaseProcessor):
         output_text_field (str): the text field where the output of the PC model
             will be saved.
         batch_size (int): the batch sized used by the P&C model.
-        device (str): the device used by the P&C model. Can be skipped to auto-select.
-        pretrained_name (str): the pretrained_name of the P&C model.
-        model_path (str): the model path to the P&C model.
+        device (str, Optional): the device used by the P&C model. Can be skipped to auto-select.
+        pretrained_name (str, Optional): the pretrained_name of the P&C model.
+        model_path (str, Optional): the model path to the P&C model.
+        **kwargs: Additional keyword arguments to be passed to the base class `PCInference`.
 
     .. note::
         Either ``pretrained_name`` or ``model_path`` have to be specified.

@@ -23,21 +23,27 @@ from sdp.utils.common import load_manifest
 from typing import Optional
 
 class ASRTransformers(BaseProcessor):
-    """
-    Processor to transcribe using ASR Transformers model from HuggingFace.
+    """This processor transcribes audio files using HuggingFace ASR Transformer models.
+
+    It processes audio files from the manifest and adds transcriptions using the specified
+    pre-trained model from HuggingFace.
 
     Args:
-        pretrained_model (str): name of pretrained model on HuggingFace.
-        output_text_key (str): Key to save transcription result.
-        input_audio_key (str): Key to read audio file. Defaults to "audio_filepath".
-        input_duration_key (str): Audio duration key. Defaults to "duration".
-        device (str): Inference device.
-        batch_size (int): Inference batch size. Defaults to 1.
-        chunk_length_s (int): Length of the chunks (in seconds) into which the input audio should be divided.
-            Note: Some models perform the chunking on their own (for instance, Whisper chunks into 30s segments also by maintaining the context of the previous chunks).
-        torch_dtype (str): Tensor data type. Default to "float32"
-        max_new_tokens (Optional[int]): The maximum number of new tokens to generate.
-            If not specified, there is no hard limit on the number of tokens generated, other than model-specific constraints.
+        pretrained_model (str): Name of pretrained model on HuggingFace.
+        output_text_key (str): Key to save transcription result in the manifest.
+        input_audio_key (str): Key to read audio file paths from the manifest. Default: "audio_filepath".
+        input_duration_key (str): Key for audio duration in the manifest. Default: "duration".
+        device (str): Inference device (e.g., "cuda", "cpu"). Default: None.
+        batch_size (int): Inference batch size. Default: 1.
+        chunk_length_s (int): Length of audio chunks in seconds. Default: 0.
+        torch_dtype (str): Tensor data type for model inference. Default: "float32".
+        generate_task (str): Task type for generation. Default: "transcribe".
+        generate_language (str): Language for generation. Default: "english".
+        max_new_tokens (int, Optional): Maximum number of new tokens to generate. Default: None.
+
+    Returns:
+        A manifest with transcribed text added to each entry under the specified output_text_key.
+
     """
 
     def __init__(
@@ -91,18 +97,24 @@ class ASRTransformers(BaseProcessor):
         )
         self.model.to(self.device)
 
-        self.model.generation_config.language = self.generate_language
+        # Check if using Whisper/Seamless or NVIDIA model based on the model name
+        self.is_whisper_or_seamless = any(x in self.pretrained_model.lower() for x in ['whisper', 'seamless'])
+        
+        # Only set language in generation config for Whisper/Seamless models
+        if self.is_whisper_or_seamless and self.generate_language:
+            self.model.generation_config.language = self.generate_language
 
         processor = AutoProcessor.from_pretrained(self.pretrained_model)
+
         self.pipe = pipeline(
             "automatic-speech-recognition",
             model=self.model,
             tokenizer=processor.tokenizer,
             feature_extractor=processor.feature_extractor,
-            max_new_tokens=None,
+            max_new_tokens=self.max_new_tokens,
             chunk_length_s=self.chunk_length_s,
             batch_size=self.batch_size,
-            return_timestamps=True,
+            return_timestamps=self.is_whisper_or_seamless,  # Only set return_timestamps for Whisper/Seamless models
             torch_dtype=self.torch_dtype,
             device=self.device,
         )
@@ -119,9 +131,14 @@ class ASRTransformers(BaseProcessor):
                 batch = json_list_sorted[start_index : start_index + self.batch_size]
                 start_index += self.batch_size
                 audio_files = [item[self.input_audio_key] for item in batch]
-                results = self.pipe(
-                    audio_files, generate_kwargs={"language": self.generate_language, "task": self.generate_task}
-                )
+                
+                # Only pass generate_kwargs for Whisper/Seamless models
+                if self.is_whisper_or_seamless and self.generate_language and self.generate_task:
+                    results = self.pipe(
+                        audio_files, generate_kwargs={"language": self.generate_language, "task": self.generate_task}
+                    )
+                else:
+                    results = self.pipe(audio_files)
 
                 for i, item in enumerate(batch):
                     item[self.output_text_key] = results[i]["text"]

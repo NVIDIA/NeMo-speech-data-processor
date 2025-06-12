@@ -352,3 +352,58 @@ Tarteel AI's EveryAyah
    :hidden:
 
    config-docs/arabic/everyayah/config
+
+Armenian Toloka
+~~~~~~~~~~~~~~~
+
+* **Pipeline Start**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/toloka/pipeline_start.yaml>`__ |
+   :doc:`documentation <config-docs/armenian/toloka/pipeline_start>`
+* **Pipeline Validate Answers**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/toloka/pipeline_validate_answers.yaml>`__ |
+   :doc:`documentation <config-docs/armenian/toloka/pipeline_validate_answers>`
+* **Pipeline Get Final**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/armenian/toloka/pipeline_get_final_res.yaml>`__ |
+   :doc:`documentation <config-docs/armenian/toloka/pipeline_get_final_res>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/armenian/toloka/pipeline_start
+   config-docs/armenian/toloka/pipeline_validate_answers
+   config-docs/armenian/toloka/pipeline_get_final_res
+
+YouTube Commons (YTC)
+~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://huggingface.co/datasets/PleIAs/YouTube-Commons
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/tts/ytc/config.yaml>`__ |
+:doc:`documentation <config-docs/tts/ytc/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/tts/ytc/config
+
+HiFiTTS-2
+~~~~~~~~~~~~~~~~~~~~~~~
+
+**Dataset link:** https://huggingface.co/datasets/nvidia/hifitts-2
+
+* **22kHz**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/hifitts2/config_22khz.yaml>`__ |
+   :doc:`documentation <config-docs/english/hifitts2/config_22khz>`
+* **44kHz**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/hifitts2/config_44khz.yaml>`__ |
+   :doc:`documentation <config-docs/english/hifitts2/config_44khz>`
+* **Bandwidth Estimation**:
+   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/hifitts2/config_bandwidth.yaml>`__ |
+   :doc:`documentation <config-docs/english/hifitts2/config_bandwidth>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/english/hifitts2/config_22khz
+   config-docs/english/hifitts2/config_44khz
+   config-docs/english/hifitts2/config_bandwidth

@@ -36,9 +36,10 @@ class TestCase:
     """Class for keeping track of test cases."""
     config_path: str
     data_check_fn: Callable
-    # Fields in the manifest to ignore (can be set when non-deterministic processor was used)
     reference_manifest_filename: str = "test_data_reference.json"
+    # Fields in the manifest to ignore (can be set when non-deterministic processor was used)
     fields_to_ignore: List[str] = field(default_factory=list)
+    processors_to_run: str = ""
 
 def data_check_fn_generic(raw_data_dir: str, file_name: str, **kwargs) -> None:
     if callable(file_name):
@@ -86,6 +87,24 @@ def data_check_fn_uzbekvoice(raw_data_dir: str) -> None:
             return
         else:
             raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
+
+def data_check_fn_armenian_toloka_pipeline_start(raw_data_dir: str) -> None:
+    """Checks for the Armenian Toloka test data.
+    
+    For testing Toloka pipelines, we need a sample docx file to process.
+    """
+    expected_dir = Path(raw_data_dir) / "pipeline_start" / "arm_docs"
+    if not expected_dir.exists() or not any(expected_dir.glob("*.docx")):
+        raise ValueError(f"No docx files found in {str(expected_dir)}")
+
+def data_check_fn_armenian_toloka_pipeline_get_final_res(raw_data_dir: str) -> None:
+    """Checks for the Armenian Toloka test data.
+    
+    For testing Toloka pipelines, we need a sample docx file to process.
+    """
+    expected_dir = Path(raw_data_dir) / "pipeline_get_final_res"
+    if not expected_dir.exists():
+        raise ValueError(f"Directory not found: {str(expected_dir)}")
 
 # using Mock so coraal_processor will only try to use the files listed.
 # To reduce the amount of storage required by the test data, the S3 bucket contains
@@ -191,7 +210,7 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
             config_path=f"{DATASET_CONFIGS_ROOT}/arabic/masc/config.yaml", 
             data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz")
             ),
-        TestCase(
+        TestCase( 
             config_path=f"{DATASET_CONFIGS_ROOT}/arabic/masc/config_filter_noisy_train.yaml", 
             data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz"),
             reference_manifest_filename="test_data_reference_filter.json"
@@ -211,7 +230,36 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/arabic/everyayah/config.yaml", 
             data_check_fn=partial(data_check_fn_generic, file_name="everyayah.hf")
-        )
+        ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_start.yaml",
+            data_check_fn=data_check_fn_armenian_toloka_pipeline_start,
+            fields_to_ignore=['source_filepath'],
+            processors_to_run="2:14",
+            reference_manifest_filename="pipeline_start/test_data_reference.json"
+        ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_get_final_res.yaml",
+            data_check_fn=data_check_fn_armenian_toloka_pipeline_get_final_res,
+            reference_manifest_filename="pipeline_get_final_res/test_data_reference.json",
+            fields_to_ignore=['audio_filepath', 'duration'],
+            processors_to_run="1:6"
+        ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/english/hifitts2/config_22khz.yaml",
+            data_check_fn=partial(data_check_fn_generic, file_name="manifest_22khz.json"),
+            processors_to_run="1:2"
+        ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/english/hifitts2/config_44khz.yaml",
+            data_check_fn=partial(data_check_fn_generic, file_name="manifest_44khz.json"),
+            processors_to_run="1:2"
+        ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/english/hifitts2/config_bandwidth.yaml",
+            data_check_fn=partial(data_check_fn_generic, file_name="manifest_22khz.json"),
+            reference_manifest_filename="test_data_reference_bandwidth.json",
+        ),
     ]
 
 def get_test_names():
@@ -267,22 +315,23 @@ def setup_data(request):
         pytest.fail("Either TEST_DATA_ROOT needs to be defined or both AWS_SECRET_KEY "
     "and AWS_ACCESS_KEY to run e2e config tests")
         
-    config_path, data_check_fn, reference_manifest_filename, fields_to_ignore  = (request.param.config_path,                             
+    config_path, data_check_fn, reference_manifest_filename, fields_to_ignore, processors_to_run = (request.param.config_path,                             
                                                      request.param.data_check_fn, 
                                                      request.param.reference_manifest_filename,  
-                                                     request.param.fields_to_ignore)
+                                                     request.param.fields_to_ignore,
+                                                     request.param.processors_to_run)
 
     rel_path_from_root = Path(config_path).parent.relative_to(DATASET_CONFIGS_ROOT)
     test_data_root = get_e2e_test_data_path(str(rel_path_from_root))
     data_dir = Path(test_data_root, rel_path_from_root)
 
-    yield config_path, data_check_fn, reference_manifest_filename, data_dir, fields_to_ignore
+    yield config_path, data_check_fn, reference_manifest_filename, data_dir, fields_to_ignore, processors_to_run
     if os.getenv("CLEAN_UP_DATA_DIR", "0") != "0":
         shutil.rmtree(data_dir)
 
 
 def test_data_availability(setup_data):
-    _, data_check_fn, reference_manifest_filename, data_dir, _ = setup_data
+    _, data_check_fn, reference_manifest_filename, data_dir, fields_to_ignore, _ = setup_data
     try:
         data_check_fn(raw_data_dir=data_dir)
     except ValueError as e:
@@ -298,19 +347,42 @@ def test_configs(setup_data, tmp_path):
     # we expect DATASET_CONFIGS_ROOT and TEST_DATA_ROOT
     # to have the same structure (e.g. <lang>/<dataset>)
 
-    config_path,  _, reference_manifest_filename, data_dir, fields_to_ignore = setup_data
+    config_path, _, reference_manifest_filename, data_dir, fields_to_ignore, processors_to_run = setup_data
     reference_manifest = data_dir / reference_manifest_filename
 
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
-    cfg.processors_to_run = "all"
+    # Use custom processors_to_run if specified, otherwise use "all"
+    cfg.processors_to_run = processors_to_run if processors_to_run else "all"
     cfg.workspace_dir = str(tmp_path)
     cfg.final_manifest = str(tmp_path / "final_manifest.json")
     cfg.data_split = cfg.get("data_split", "train")
     cfg.processors[0].raw_data_dir = data_dir.as_posix()
+    
 
     if "already_downloaded" in cfg["processors"][0]:
         cfg["processors"][0]["already_downloaded"] = True
+
+    if "armenian/toloka/pipeline_start" in config_path:
+        cfg.processors[2].raw_data_dir = (data_dir / "pipeline_start" / "arm_docs").as_posix()
+
+    if "armenian/toloka/pipeline_get_final_res" in config_path:
+        cfg.processors[1].workspace_dir = (data_dir / "pipeline_get_final_res").as_posix()
+        cfg.processors[2].workspace_dir = (data_dir / "pipeline_get_final_res").as_posix()
+        # Set input_manifest_file for ASRFileCheck to use the existing manifest.json
+        cfg.processors[1].input_manifest_file = (data_dir / "pipeline_get_final_res" / "manifest.json").as_posix()
+
+    if "english/hifitts2/config_22khz" in config_path:
+        cfg.processors[1].input_manifest_file = (data_dir / "manifest_22khz.json").as_posix()
+        cfg.processors[1].error_file = (data_dir / "errors_22khz.json").as_posix()
+
+    if "english/hifitts2/config_44khz" in config_path:
+        cfg.processors[1].input_manifest_file = (data_dir / "manifest_44khz.json").as_posix()
+        cfg.processors[1].error_file = (data_dir / "errors_44khz.json").as_posix()
+
+    if "english/hifitts2/config_bandwidth" in config_path:
+        cfg.processors[0].audio_dir = (data_dir / "audio_22khz").as_posix()
+        cfg.processors[0].input_manifest_file = (data_dir / "manifest_22khz.json").as_posix()
 
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
