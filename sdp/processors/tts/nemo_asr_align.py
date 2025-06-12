@@ -249,4 +249,4 @@ class NeMoASRAligner(BaseProcessor):
 
                 results.extend(metadata_batch)
 
-            save_manifest(results, self.output_manifest_file)
+        save_manifest(results, self.output_manifest_file)
