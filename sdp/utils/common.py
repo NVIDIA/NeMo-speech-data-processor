@@ -19,7 +19,7 @@ import tarfile
 import urllib
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Any
 
 import wget
 
@@ -29,11 +29,16 @@ from sdp.logging import logger
 def load_manifest(manifest: Path) -> List[Dict[str, Union[str, float]]]:
     # read NeMo manifest as a list of dicts
     result = []
-    with manifest.open() as f:
+    with manifest.open(encoding="utf8") as f:
         for line in f:
             data = json.loads(line)
             result.append(data)
     return result
+
+def save_manifest(manifest: List[Dict[str, Any]], manifest_file: Path):
+    with manifest_file.open('w') as f:
+        for item in manifest:
+            f.write(json.dumps(item) + '\n')
 
 
 def download_file(source_url: str, target_directory: str, verbose=True):

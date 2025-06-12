@@ -14,12 +14,13 @@
 
 import librosa
 import math
-import ndjson
 import numpy as np
 from tqdm import tqdm
+import json
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
+from sdp.utils.common import load_manifest, save_manifest
 
 import torch
 import torchaudio
@@ -71,8 +72,7 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
             self.model = SQUIM_OBJECTIVE.get_model()
 
     def process(self):
-        with open(self.input_manifest_file) as f:
-            manifest = ndjson.load(f)
+        manifest = load_manifest(self.input_manifest_file)
 
         results = []
 
@@ -130,8 +130,7 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
                     continue
             results.append(metadata)
 
-        with open(self.output_manifest_file, 'w') as f:
-            ndjson.dump(results, f)
+        save_manifest(results, self.output_manifest_file)
 
 
 class BandwidthEstimationProcessor(BaseProcessor):
@@ -204,8 +203,7 @@ class BandwidthEstimationProcessor(BaseProcessor):
         return bandwidth
 
     def process(self):
-        with open(self.input_manifest_file) as f:
-            manifest = ndjson.load(f)
+        manifest = load_manifest(self.input_manifest_file)
 
         results = []
 
@@ -237,6 +235,5 @@ class BandwidthEstimationProcessor(BaseProcessor):
 
             results.append(metadata)
 
-        with open(self.output_manifest_file, 'w') as f:
-            ndjson.dump(results, f)
+        save_manifest(results, self.output_manifest_file)
 
