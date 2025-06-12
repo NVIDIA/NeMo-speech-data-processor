@@ -59,7 +59,7 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
         self.punctuation_split_only = punctuation_split_only
     
     def read_manifest(self):
-        ''' Reads metadata from JSON file in the input manifest
+        ''' Reads metadata from JSONL file in the input manifest
         and converts it to data entries '''
 
         dataset_entries = load_manifest(self.input_manifest_file, encoding="utf8")
