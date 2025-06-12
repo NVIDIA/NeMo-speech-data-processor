@@ -17,7 +17,7 @@ import os
 import subprocess
 
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
-from sdp.utils.manifest import load_manifest
+from sdp.utils.common import load_manifest
 
 class CreateInitialManifestYTC(BaseParallelProcessor):
     """A processor class for creating initial manifest files for a TTS dataset.
