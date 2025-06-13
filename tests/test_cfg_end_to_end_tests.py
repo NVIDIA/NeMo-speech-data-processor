@@ -88,6 +88,22 @@ def data_check_fn_uzbekvoice(raw_data_dir: str) -> None:
         else:
             raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
 
+def data_check_fn_unlabeled(raw_data_dir: str) -> None:
+    """Checks for  data and sets it up for unlabeled processing.
+    
+    Args:
+        raw_data_dir: Directory where data should be
+        language: Language code (e.g. 'portuguese')
+    """
+    # Get the MLS directory path (one level up from unlabeled)
+    if (Path(raw_data_dir) / "unlabeled").exists():
+        return
+    expected_file = Path(raw_data_dir) / "unlabeled.tar.gz"
+    if not expected_file.exists():
+        raise ValueError(f"No such file {str(expected_file)}")
+
+        
+
 def data_check_fn_armenian_toloka_pipeline_start(raw_data_dir: str) -> None:
     """Checks for the Armenian Toloka test data.
     
@@ -244,7 +260,12 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
             reference_manifest_filename="pipeline_get_final_res/test_data_reference.json",
             fields_to_ignore=['audio_filepath', 'duration'],
             processors_to_run="1:6"
-        )
+        ),
+
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/unlabeled/config.yaml", 
+            data_check_fn=partial(data_check_fn_unlabeled)
+            ),
     ]
 
 def get_test_names():
@@ -356,7 +377,6 @@ def test_configs(setup_data, tmp_path):
         cfg.processors[2].workspace_dir = (data_dir / "pipeline_get_final_res").as_posix()
         # Set input_manifest_file for ASRFileCheck to use the existing manifest.json
         cfg.processors[1].input_manifest_file = (data_dir / "pipeline_get_final_res" / "manifest.json").as_posix()
-
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
     # reference file (ignoring the file paths and additional fields explicitly specified to ignore)
