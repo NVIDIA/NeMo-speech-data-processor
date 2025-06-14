@@ -75,7 +75,7 @@ processors:
     output_manifest_file: ${manifest_dir}/vad
     input_manifest_arg: "manifest_filepath"
     output_manifest_arg: "output_dir"
-    cmd: 'export NEMO_PATH=$(python -c "import nemo, pathlib; print(pathlib.Path(nemo.__file__).parent.parent)") && python $NEMO_PATH/examples/asr/asr_vad/speech_to_text_with_vad.py audio_type=wav vad_model=vad_multilingual_frame_marblenet  vad_config=$NEMO_PATH/examples/asr/conf/vad/frame_vad_infer_postprocess.yaml'
+    cmd: 'python sdp/processors/nemo/speech_to_text_with_vad.py audio_type=wav vad_model=vad_multilingual_frame_marblenet  vad_config=sdp/processors/nemo/frame_vad_infer_postprocess.yaml'
 
   - _target_: sdp.processors.RenameFields
     input_manifest_file: ${manifest_dir}/vad/temp_manifest_vad_rttm-onset0.3-offset0.3-pad_onset0.2-pad_offset0.2-min_duration_on0.2-min_duration_off0.2-filter_speech_firstTrue.json
