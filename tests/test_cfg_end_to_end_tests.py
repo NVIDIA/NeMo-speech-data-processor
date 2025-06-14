@@ -101,6 +101,8 @@ def data_check_fn_unlabeled(raw_data_dir: str) -> None:
     expected_file = Path(raw_data_dir) / "unlabeled.tar.gz"
     if not expected_file.exists():
         raise ValueError(f"No such file {str(expected_file)}")
+    with tarfile.open(expected_file, 'r:gz') as tar:
+        tar.extractall(path=raw_data_dir)
 
         
 
