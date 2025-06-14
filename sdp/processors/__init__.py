@@ -24,6 +24,10 @@ from sdp.processors.datasets.coraal import (
 from sdp.processors.datasets.fleurs.create_initial_manifest import (
     CreateInitialManifestFleurs,
 )
+from sdp.processors.datasets.hifitts2.download_dataset import DownloadHiFiTTS2
+from sdp.processors.datasets.hifitts2.remove_failed_chapters import (
+    RemovedFailedChapters,
+)
 from sdp.processors.datasets.ksc2.create_initial_manifest import (
     CreateInitialManifestKSC2,
 )
@@ -129,6 +133,7 @@ from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
 )
 from sdp.processors.nemo.asr_inference import ASRInference
+from sdp.processors.nemo.estimate_bandwidth import EstimateBandwidth
 from sdp.processors.nemo.lid_inference import AudioLid
 from sdp.processors.nemo.pc_inference import PCInference
 from sdp.processors.toloka.accept_if import AcceptIfWERLess
