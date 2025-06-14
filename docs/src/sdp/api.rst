@@ -379,6 +379,14 @@ Miscellaneous
 .. autodata:: sdp.processors.tts.prepare_tts_segments.PrepareTTSSegmentsProcessor
    :annotation:
 
+.. autodata:: sdp.processors.ipl.NemoRunIPLProcessor
+   :annotation:
+
+.. autodata:: sdp.processors.ipl.TrainingCommandGenerator
+   :annotation:
+
+.. autodata:: sdp.processors.ipl.InferenceCommandGenerator
+   :annotation:
 
 .. _sdp-base-classes:
 
