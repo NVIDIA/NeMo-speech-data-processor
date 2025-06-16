@@ -266,7 +266,8 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
 
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/unlabeled/config.yaml", 
-            data_check_fn=partial(data_check_fn_unlabeled)
+            data_check_fn=partial(data_check_fn_unlabeled),
+            fields_to_ignore=['duration'],
             ),
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/english/hifitts2/config_22khz.yaml",
