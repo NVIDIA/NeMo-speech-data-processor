@@ -31,8 +31,15 @@ stop_every_n_epochs: 2
 ```
 
 ### Prerequisites
-- nemo_run
-- `pip install -r ipl.txt`
+
+Before using TopIPL, make sure the following are set up:
+
+- Clone the NeMo repository:
+  ```bash
+  git clone https://github.com/NVIDIA/NeMo.git /your/desired/path/to/nemo
+
+- Set the path to NeMo in your `nemo_run_config.yaml`: `nemo_directory: /your/desired/path/to/nemo`
+- `pip install -r requirements/ipl.txt`
 
 ### Running the Code
 
