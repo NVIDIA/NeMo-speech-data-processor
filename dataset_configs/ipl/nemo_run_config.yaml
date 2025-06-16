@@ -20,6 +20,12 @@ inference_config: # Inference config file of unlabeled data for transcribe_speec
 exp_name: null  # populated by exp_manager.name if not provided
 results_dir: # Where to store the results of the run
 
+# Path to the local NeMo repository. This is used to locate scripts and configs from NeMo.
+# To set this up:
+#   1. Clone the NeMo repository:
+#        git clone https://github.com/NVIDIA/NeMo.git /your/desired/path/to/nemo
+#   2. Set the path here:
+# Make sure this path is valid and NeMo is up to date if you're using its scripts.
 nemo_directory: # Nemo directory path
 do_average: # Boolean value indicating whether to do average of checkpoints for pseudo-label generation
 p_cache: # Probability with which update pseudo-labeled set
