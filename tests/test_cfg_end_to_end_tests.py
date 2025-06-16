@@ -104,8 +104,6 @@ def data_check_fn_unlabeled(raw_data_dir: str) -> None:
     with tarfile.open(expected_file, 'r:gz') as tar:
         tar.extractall(path=raw_data_dir)
 
-        
-
 def data_check_fn_armenian_toloka_pipeline_start(raw_data_dir: str) -> None:
     """Checks for the Armenian Toloka test data.
     
