@@ -76,8 +76,6 @@ class PreserveByValue(BaseParallelProcessor):
             )
 
     def process_dataset_entry(self, data_entry): 
-        print(f"self.input_value_key {self.input_value_key}")
-        print(f"data_entry {data_entry}")
         input_value = data_entry[self.input_value_key]
         target = self.target_value
         if self.operator(input_value, target):

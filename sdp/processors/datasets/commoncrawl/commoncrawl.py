@@ -67,8 +67,7 @@ class SplitByVttSentence(BaseParallelProcessor):
                         pass
                     end_c = end_sr
                     if len(text_c) > 0 and (
-                            end_c - start_c > self.duration_threshold * samplerate or
-                            text_c[-1] == "." or text_c[-1] == "?"):
+                            end_c - start_c > self.duration_threshold * samplerate):
                         res_list.append(
                             self.makeDataEntry(data_entry, data, vtt_file, samplerate, text_c, start_c, end_c))
                         text_c = ''

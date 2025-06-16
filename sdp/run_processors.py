@@ -160,8 +160,6 @@ def run_processors(cfg):
     # filtering out any processors that have should_run=False
     processors_cfgs = []
     for processor_cfg in selected_cfgs:
-        print("********************************************************************************")
-        print(f"processor_cfg {processor_cfg}")
         with open_dict(processor_cfg):
             should_run = processor_cfg.pop("should_run", True)
         if should_run:
@@ -244,9 +242,6 @@ def run_processors(cfg):
                     logger.info('=> Running processor "%s" with Dask', proc)
                 else:
                     logger.info('=> Running processor "%s" with Multiprocessing', proc)
-
-                print(f"p {proc}")
-                print(f"")
                 proc.process()
         finally:
             if dask_client is not None:
