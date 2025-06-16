@@ -49,6 +49,7 @@ processors:
     output_manifest_file: ${manifest_dir}/manifest2.json
     input_audio_key: audio_filepath
     output_lang_key: audio_lang
+    should_run: False
     device: cuda
     pretrained_model: "langid_ambernet"
     segment_duration: 20
@@ -57,6 +58,7 @@ processors:
   - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${manifest_dir}/manifest3.json
     input_value_key: audio_lang
+    should_run: False
     target_value: ${language_short}
 
   - _target_: sdp.processors.PreserveByValue
@@ -66,14 +68,14 @@ processors:
     target_value: 20000.0
   
   - _target_: sdp.processors.Subprocess
-    cmd: "rm -rf ${manifest_dir}/vad/*"
-      
+    cmd: 'rm -rf ${manifest_dir}/vad/*'
+     
   - _target_: sdp.processors.Subprocess
     input_manifest_file: ${manifest_dir}/manifest4.json
     output_manifest_file: ${manifest_dir}/vad
     input_manifest_arg: "manifest_filepath"
     output_manifest_arg: "output_dir"
-    cmd: "python ${nemo_path}/examples/asr/asr_vad/speech_to_text_with_vad.py audio_type=wav vad_model=vad_multilingual_frame_marblenet  vad_config=${nemo_path}/examples/asr/conf/vad/frame_vad_infer_postprocess.yaml"
+    cmd: 'python sdp/processors/nemo/speech_to_text_with_vad.py audio_type=wav vad_model=vad_multilingual_frame_marblenet  vad_config=sdp/processors/nemo/frame_vad_infer_postprocess.yaml'
 
   - _target_: sdp.processors.RenameFields
     input_manifest_file: ${manifest_dir}/vad/temp_manifest_vad_rttm-onset0.3-offset0.3-pad_onset0.2-pad_offset0.2-min_duration_on0.2-min_duration_off0.2-filter_speech_firstTrue.json
