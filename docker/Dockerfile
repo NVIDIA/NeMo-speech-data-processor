@@ -21,6 +21,9 @@ RUN apt-get update \
 # Update pip
 RUN pip install --upgrade pip
 
+#install typing-ext manually
+RUN pip install typing-extensions
+
 # Clone the NeMo SDP repository
 COPY . /src/NeMo-speech-data-processor
 RUN rm -rf /src/NeMo-speech-data-processor/.git
