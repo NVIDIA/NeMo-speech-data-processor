@@ -88,6 +88,22 @@ def data_check_fn_uzbekvoice(raw_data_dir: str) -> None:
         else:
             raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
 
+def data_check_fn_unlabeled(raw_data_dir: str) -> None:
+    """Checks for  data and sets it up for unlabeled processing.
+    
+    Args:
+        raw_data_dir: Directory where data should be
+        language: Language code (e.g. 'portuguese')
+    """
+    # Get the MLS directory path (one level up from unlabeled)
+    if (Path(raw_data_dir) / "unlabeled").exists():
+        return
+    expected_file = Path(raw_data_dir) / "unlabeled.tar.gz"
+    if not expected_file.exists():
+        raise ValueError(f"No such file {str(expected_file)}")
+    with tarfile.open(expected_file, 'r:gz') as tar:
+        tar.extractall(path=raw_data_dir)
+
 def data_check_fn_armenian_toloka_pipeline_start(raw_data_dir: str) -> None:
     """Checks for the Armenian Toloka test data.
     
@@ -122,129 +138,134 @@ coraal_processor.get_coraal_url_list = mock.Mock(
 def get_test_cases() -> List[Tuple[str, Callable]]:
     return [
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", 
-            data_check_fn=partial(data_check_fn_mls, language="spanish"),
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", 
+           data_check_fn=partial(data_check_fn_mls, language="spanish"),
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", 
-            data_check_fn=partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", 
+           data_check_fn=partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", 
-            data_check_fn=data_check_fn_voxpopuli
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", 
+           data_check_fn=data_check_fn_voxpopuli
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", 
-            data_check_fn=partial(data_check_fn_mls, language="italian")
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", 
+           data_check_fn=partial(data_check_fn_mls, language="italian")
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", 
-            data_check_fn=partial(data_check_fn_mls, language="portuguese")
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", 
+           data_check_fn=partial(data_check_fn_mls, language="portuguese")
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", 
-            data_check_fn=partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", 
+           data_check_fn=partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", 
-            data_check_fn=partial(data_check_fn_mtedx, language_id="pt")
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/mtedx/config.yaml", 
+           data_check_fn=partial(data_check_fn_mtedx, language_id="pt")
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/coraa/config.yaml", 
-            data_check_fn=data_check_fn_coraa
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/coraa/config.yaml", 
+           data_check_fn=data_check_fn_coraa
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", 
-            data_check_fn=lambda raw_data_dir: True
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/english/slr83/config.yaml", 
+           data_check_fn=lambda raw_data_dir: True
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", 
-            data_check_fn=lambda raw_data_dir: True
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/english/coraal/config.yaml", 
+           data_check_fn=lambda raw_data_dir: True
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", 
-            data_check_fn=data_check_fn_librispeech
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/english/librispeech/config.yaml", 
+           data_check_fn=data_check_fn_librispeech
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", 
-            data_check_fn=data_check_fn_fleurs
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/armenian/fleurs/config.yaml", 
+           data_check_fn=data_check_fn_fleurs
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", 
-            data_check_fn=lambda raw_data_dir: True
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/armenian/text_mcv/config.yaml", 
+           data_check_fn=lambda raw_data_dir: True
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/audio_books/config.yaml", 
-            data_check_fn=lambda raw_data_dir: True,
-            fields_to_ignore=['text'],
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/armenian/audio_books/config.yaml", 
+           data_check_fn=lambda raw_data_dir: True,
+           fields_to_ignore=['text'],
+           ),
         TestCase(
-            f"{DATASET_CONFIGS_ROOT}/kazakh/mcv/config.yaml", 
-            partial(data_check_fn_mcv, archive_file_stem="mcv_kk")
-            ),
+           f"{DATASET_CONFIGS_ROOT}/kazakh/mcv/config.yaml", 
+           partial(data_check_fn_mcv, archive_file_stem="mcv_kk")
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/kazakh/slr140/config.yaml", 
-            data_check_fn=data_check_fn_slr140
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/kazakh/slr140/config.yaml", 
+           data_check_fn=data_check_fn_slr140
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/kazakh/slr102/config.yaml", 
-            data_check_fn=partial(data_check_fn_generic, file_name="slr102_kk.tar.gz")
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/kazakh/slr102/config.yaml", 
+           data_check_fn=partial(data_check_fn_generic, file_name="slr102_kk.tar.gz")
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", 
-            data_check_fn=partial(data_check_fn_generic, file_name="ksc2_kk.tar.gz")
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/kazakh/ksc2/config.yaml", 
+           data_check_fn=partial(data_check_fn_generic, file_name="ksc2_kk.tar.gz")
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/uzbek/mcv/config.yaml", 
-            data_check_fn=partial(data_check_fn_mcv, archive_file_stem="mcv_uz")
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/uzbek/mcv/config.yaml", 
+           data_check_fn=partial(data_check_fn_mcv, archive_file_stem="mcv_uz")
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/uzbek/uzbekvoice/config.yaml", 
-            data_check_fn=data_check_fn_uzbekvoice
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/uzbek/uzbekvoice/config.yaml", 
+           data_check_fn=data_check_fn_uzbekvoice
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/uzbek/fleurs/config.yaml", 
-            data_check_fn=data_check_fn_fleurs
-            ),        
+           config_path=f"{DATASET_CONFIGS_ROOT}/uzbek/fleurs/config.yaml", 
+           data_check_fn=data_check_fn_fleurs
+           ),        
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/arabic/masc/config.yaml", 
-            data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz")
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/arabic/masc/config.yaml", 
+           data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz")
+           ),
         TestCase( 
-            config_path=f"{DATASET_CONFIGS_ROOT}/arabic/masc/config_filter_noisy_train.yaml", 
-            data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz"),
-            reference_manifest_filename="test_data_reference_filter.json"
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/arabic/masc/config_filter_noisy_train.yaml", 
+           data_check_fn=partial(data_check_fn_generic, file_name="masc.tar.gz"),
+           reference_manifest_filename="test_data_reference_filter.json"
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/arabic/mcv/config.yaml", 
-            data_check_fn=partial(data_check_fn_mcv, archive_file_stem="mcv.ar")
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/arabic/mcv/config.yaml", 
+           data_check_fn=partial(data_check_fn_mcv, archive_file_stem="mcv.ar")
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/arabic/fleurs/config.yaml", 
-            data_check_fn=data_check_fn_fleurs
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/arabic/fleurs/config.yaml", 
+           data_check_fn=data_check_fn_fleurs
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/arabic/mediaspeech/config.yaml", 
-            data_check_fn=partial(data_check_fn_generic, file_name="AR.tar.gz")
-            ),
+           config_path=f"{DATASET_CONFIGS_ROOT}/arabic/mediaspeech/config.yaml", 
+           data_check_fn=partial(data_check_fn_generic, file_name="AR.tar.gz")
+           ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/arabic/everyayah/config.yaml", 
-            data_check_fn=partial(data_check_fn_generic, file_name="everyayah.hf")
+           config_path=f"{DATASET_CONFIGS_ROOT}/arabic/everyayah/config.yaml", 
+           data_check_fn=partial(data_check_fn_generic, file_name="everyayah.hf")
         ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_start.yaml",
-            data_check_fn=data_check_fn_armenian_toloka_pipeline_start,
-            fields_to_ignore=['source_filepath'],
-            processors_to_run="2:14",
-            reference_manifest_filename="pipeline_start/test_data_reference.json"
+           config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_start.yaml",
+           data_check_fn=data_check_fn_armenian_toloka_pipeline_start,
+           fields_to_ignore=['source_filepath'],
+           processors_to_run="2:14",
+           reference_manifest_filename="pipeline_start/test_data_reference.json"
         ),
         TestCase(
-            config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_get_final_res.yaml",
-            data_check_fn=data_check_fn_armenian_toloka_pipeline_get_final_res,
-            reference_manifest_filename="pipeline_get_final_res/test_data_reference.json",
-            fields_to_ignore=['audio_filepath', 'duration'],
-            processors_to_run="1:6"
+           config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_get_final_res.yaml",
+           data_check_fn=data_check_fn_armenian_toloka_pipeline_get_final_res,
+           reference_manifest_filename="pipeline_get_final_res/test_data_reference.json",
+           fields_to_ignore=['audio_filepath', 'duration'],
+           processors_to_run="1:6"
         ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/unlabeled/config.yaml", 
+            data_check_fn=partial(data_check_fn_unlabeled),
+            fields_to_ignore=['duration'],
+            ),
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/english/hifitts2/config_22khz.yaml",
             data_check_fn=partial(data_check_fn_generic, file_name="manifest_22khz.json"),
