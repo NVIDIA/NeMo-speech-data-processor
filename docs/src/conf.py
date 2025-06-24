@@ -45,7 +45,6 @@ autodoc_mock_imports = [
     "numpy",
     "tqdm",
     "soundfile",
-    "ndjson",
     "boto3",
     "webvtt_py",
     "python_docx",

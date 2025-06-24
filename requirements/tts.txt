@@ -1,4 +1,3 @@
-ndjson
 transformers
 accelerate
 torchaudio
