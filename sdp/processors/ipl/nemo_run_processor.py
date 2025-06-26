@@ -278,7 +278,8 @@ class NemoRunIPLProcessor(BaseProcessor):
         exec_cmd += " && sleep 10"
         if avg_cmd:
             exec_cmd += " && " + avg_cmd
-        exec_cmd += " && " + infer_proc.process(first_run=first_run)
+    
+        exec_cmd += " " + infer_proc.process(first_run=first_run)
 
         for _ in range(num_ipl_epochs):
             exec_cmd += " && sleep 10"

@@ -291,7 +291,7 @@ class InferenceCommandGenerator(BaseProcessor):
         update_inference_config_path = os.path.join(self.nemo_directory, "scripts/pseudo_labeling/update_inference_config.py")
         
         if first_run:
-            cmd += f"{self.get_pl_inference_command(self.inference_config_paths, shuffle=False)}"
+            cmd += f" && {self.get_pl_inference_command(self.inference_config_paths, shuffle=False)}"
             cmd += (
                 f" && python {write_transcription_path} "
                 f"--prediction_filepaths {prediction_directories_str} --full_pass"
