@@ -148,11 +148,12 @@ class NemoRunIPLProcessor(BaseProcessor):
                 "output_manifest_file": "./inference_output_manifest_filepath.json",
             }
 
+            print(f"cluster_cf {cluster_cfg}")
             # Generate the complete IPL command
             cmd = self.get_pseudo_labeling_command(
                 train_command_generator_config,
                 inference_command_generator_config,
-                num_ipl_epochs=cluster_cfg.num_ipl_epochs,
+                num_ipl_epochs=cluster_cfg['num_ipl_epochs'],
                 new_manifest_files=manifests,
                 new_tarr_files=tarr_paths,
                 first_run=True,
@@ -171,7 +172,7 @@ class NemoRunIPLProcessor(BaseProcessor):
                     cmd = self.get_pseudo_labeling_command(
                         train_command_generator_config,
                         inference_command_generator_config,
-                        num_ipl_epochs=cluster_cfg.num_ipl_epochs,
+                        num_ipl_epochs=cluster_cfg['num_ipl_epochs'],
                         new_manifest_files=manifests,
                         new_tarr_files=tarr_paths,
                         first_run=False
