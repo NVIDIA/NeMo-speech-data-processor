@@ -78,6 +78,7 @@ jobs:
         pip install certifi
         export SSL_CERT_FILE=$(python -m certifi)
         python -m pip cache purge
+        
 
     - name: Run all tests
       env:
@@ -85,6 +86,9 @@ jobs:
         AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
         CLEAN_UP_TMP_PATH: 1
       run: |
+        wget https://uit.stanford.edu/sites/default/files/2023/10/11/incommon-rsa-ca2.pem
+        sudo cp incommon-rsa-ca2.pem     /usr/local/share/ca-certificates/incommon-rsa-server-ca-2.crt
+        sudo update-ca-certificates
         set -o pipefail # this will make sure next line returns non-0 exit code if tests fail
         python -m pytest tests/ --junitxml=pytest.xml --ignore=tests/test_tts_sdp_end_to_end.py --cov-report=term-missing:skip-covered --cov=sdp --durations=30 -rs | tee pytest-coverage.txt
 
