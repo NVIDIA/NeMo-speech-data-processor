@@ -1,4 +1,4 @@
-# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,16 +20,29 @@ from sdp.processors.base_processor import BaseProcessor, DataEntry
 
 
 class ApplyEarnings21Normalizations(BaseProcessor):
-    """Apply text normalizations using Earnings 21 normalization data.
-    
-    This processor uses the normalization files provided with the Earnings 21 dataset
-    to apply text normalizations based on probability scores.
-    
+    """Apply text normalizations using Earnings21 dataset normalization files.
+
+    This processor reads normalization files provided with the Earnings21 dataset
+    and applies text normalizations based on probability scores. It can use the
+    highest probability normalization candidate or fallback to original text.
+
     Args:
-        earnings21_root (str): path to the root directory of Earnings 21 dataset.
-        use_top_candidate (bool): whether to use the highest probability candidate. Defaults to True.
-        fallback_to_original (bool): whether to fallback to original text if no normalization available. Defaults to True.
-        preserve_entity_tags (bool): whether to preserve entity tags during normalization. Defaults to True.
+        earnings21_root (str): Path to the root directory of Earnings21 dataset.
+        use_top_candidate (bool): Whether to use the highest probability candidate. Defaults to True.
+        fallback_to_original (bool): Whether to fallback to original text if no normalization available. Defaults to True.
+        preserve_entity_tags (bool): Whether to preserve entity tags during normalization. Defaults to True.
+
+    Returns:
+        Manifest entries with normalized text field based on the normalization files.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.datasets.earnings21.ApplyEarnings21Normalizations
+              earnings21_root: /path/to/earnings21
+              use_top_candidate: true
+              fallback_to_original: true
+              preserve_entity_tags: true
     """
     
     def __init__(

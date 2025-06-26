@@ -96,6 +96,27 @@ UzbekVoice
 .. autodata:: sdp.processors.CreateInitialManifestUzbekvoice
    :annotation:
 
+Earnings21/22
+'''''''''''''
+
+.. autodata:: sdp.processors.datasets.earnings21.CreateInitialAudioAndManifest
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings21.CreateFullAudioManifestEarnings21
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings21.SpeakerSegmentedManifest
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings21.CreateSentenceSegmentedManifest
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings21.NeMoForcedAligner
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings21.ApplyEarnings21Normalizations
+   :annotation:
+
 
 MASC
 ''''''
