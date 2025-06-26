@@ -1,4 +1,4 @@
-# Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ from typing import List, Dict, Any, Optional
 
 import pandas as pd
 import librosa
-import soundfile as sf
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, BaseProcessor, DataEntry
@@ -30,14 +29,34 @@ from sdp.utils.common import extract_archive
 
 # Step 1: Create Initial Audio and Manifest (Full Audio)
 class CreateInitialAudioAndManifest(BaseParallelProcessor):
-    """
-    Step 1: Create initial manifest with full audio files.
-    
-    Features:
-    - Supports both earnings21 and earnings22
-    - Creates manifest pointing to original audio files
-    - No text processing (placeholder text)
-    - Gets audio duration from files
+    """Create initial audio manifest from Earnings21/22 dataset files.
+
+    This processor creates the initial manifest for Earnings21/22 datasets by discovering
+    audio files and creating manifest entries with duration information. Audio format 
+    conversion should be handled by a separate FfmpegConvert processor in the pipeline.
+
+    Args:
+        dataset_root (str): Path to the root directory of the dataset.
+        raw_audio_source_dir (str): Path to the directory containing raw audio files.
+        output_manifest_file (str): Path where the output manifest will be saved.
+        dataset_type (str): Type of dataset ("earnings21" or "earnings22"). Defaults to "earnings21".
+        subset (str): Dataset subset ("full" or "eval10" for earnings21 only). Defaults to "full".
+        test_mode (bool): If True, process only 2 files for testing. Defaults to False.
+
+    Returns:
+        Manifest entries with audio_filepath, duration, text (placeholder), and file_id fields.
+        Use FfmpegConvert processor afterwards for audio format standardization.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.datasets.earnings21.CreateInitialAudioAndManifest
+              dataset_root: /path/to/earnings21
+              raw_audio_source_dir: ${dataset_root}/media
+              output_manifest_file: ${output_dir}/01_initial_manifest.json
+              dataset_type: earnings21
+              subset: full
+              test_mode: false
     """
 
     def __init__(
@@ -57,10 +76,6 @@ class CreateInitialAudioAndManifest(BaseParallelProcessor):
         self.dataset_type = dataset_type
         self.subset = subset
         self.test_mode = test_mode
-        
-        # Create converted audio directory
-        self.converted_audio_dir = Path(self.output_manifest_file).parent / "converted_audio"
-        self.converted_audio_dir.mkdir(parents=True, exist_ok=True)
 
     def prepare(self):
         """Prepare the processor by loading file metadata."""
@@ -102,61 +117,7 @@ class CreateInitialAudioAndManifest(BaseParallelProcessor):
             
         logger.info(f"Loaded {len(self.file_ids)} file IDs for {self.dataset_type} subset {self.subset}.")
 
-    def _convert_audio_if_needed(self, audio_file: Path, file_id: str) -> Path:
-        """
-        Convert audio file to single-channel 16kHz WAV if needed.
-        
-        Args:
-            audio_file: Path to the original audio file
-            file_id: File ID for naming the converted file
-            
-        Returns:
-            Path to the audio file to use (original or converted)
-        """
-        try:
-            # Load audio to check properties
-            audio_data, sample_rate = librosa.load(str(audio_file), sr=None, mono=False)
-            
-            # Check if conversion is needed
-            needs_conversion = False
-            conversion_reasons = []
-            
-            # Check if it's MP3
-            if audio_file.suffix.lower() == '.mp3':
-                needs_conversion = True
-                conversion_reasons.append("MP3 format")
-            
-            # Check if it's multi-channel
-            if audio_data.ndim > 1:
-                needs_conversion = True
-                conversion_reasons.append(f"{audio_data.shape[0]} channels")
-            
-            # Check if sample rate is not 16kHz
-            if sample_rate != 16000:
-                needs_conversion = True
-                conversion_reasons.append(f"{sample_rate}Hz sample rate")
-            
-            if not needs_conversion:
-                logger.debug(f"No conversion needed for {file_id}")
-                return audio_file
-            
-            # Convert audio
-            logger.info(f"Converting {file_id}: {', '.join(conversion_reasons)} -> single-channel 16kHz WAV")
-            
-            # Load as mono and resample to 16kHz
-            audio_mono, _ = librosa.load(str(audio_file), sr=16000, mono=True)
-            
-            # Save as WAV
-            converted_file = self.converted_audio_dir / f"{file_id}.wav"
-            sf.write(str(converted_file), audio_mono, 16000)
-            
-            logger.debug(f"Converted audio saved to {converted_file}")
-            return converted_file
-            
-        except Exception as e:
-            logger.error(f"Error converting audio file {audio_file}: {e}")
-            # Return original file if conversion fails
-            return audio_file
+
 
     def read_manifest(self):
         """Read and process all files to create manifest entries."""
@@ -179,15 +140,12 @@ class CreateInitialAudioAndManifest(BaseParallelProcessor):
             return []
 
         try:
-            # Convert audio if needed (handles MP3, multi-channel, non-16kHz)
-            final_audio_file = self._convert_audio_if_needed(audio_file, file_id)
-            
-            # Get audio duration from the final audio file
-            duration = librosa.get_duration(path=str(final_audio_file))
+            # Get audio duration from the original audio file
+            duration = librosa.get_duration(path=str(audio_file))
             
             # Create manifest entry
             entry_data = {
-                "audio_filepath": str(final_audio_file),
+                "audio_filepath": str(audio_file),
                 "duration": duration,
                 "text": "",  # Placeholder text
                 "file_id": file_id,
@@ -202,13 +160,34 @@ class CreateInitialAudioAndManifest(BaseParallelProcessor):
 
 # Step 2: Populate Full Text for Manifest
 class CreateFullAudioManifestEarnings21(BaseParallelProcessor):
-    """
-    Step 2: Add ground truth text from NLP files to the manifest.
-    
-    Features:
-    - Supports both earnings21 and earnings22
-    - Reconstructs full text from NLP tokens
-    - Preserves punctuation and capitalization
+    """Add ground truth text from NLP token files to audio manifest.
+
+    This processor reconstructs the complete transcribed text for each audio file by reading
+    the corresponding NLP token files and combining tokens with proper spacing and punctuation.
+    It preserves the original punctuation and capitalization from the dataset.
+
+    Args:
+        input_manifest_file (str): Path to the input manifest file.
+        dataset_root (str): Path to the root directory of the dataset.
+        output_manifest_file (str): Path where the output manifest will be saved.
+        dataset_type (str): Type of dataset ("earnings21" or "earnings22"). Defaults to "earnings21".
+        preserve_punctuation (bool): Whether to preserve punctuation marks. Defaults to True.
+        preserve_capitalization (bool): Whether to preserve original capitalization. Defaults to True.
+
+    Returns:
+        Manifest entries with the original fields plus populated text field containing
+        the complete reconstructed transcript for each audio file.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.datasets.earnings21.CreateFullAudioManifestEarnings21
+              input_manifest_file: ${output_dir}/01_initial_manifest.json
+              dataset_root: /path/to/earnings21
+              output_manifest_file: ${output_dir}/02_manifest_with_text.json
+              dataset_type: earnings21
+              preserve_punctuation: true
+              preserve_capitalization: true
     """
 
     def __init__(
@@ -331,14 +310,37 @@ class CreateFullAudioManifestEarnings21(BaseParallelProcessor):
 
 # Step 3: Create Speaker-level Segmented Manifest (renamed from CreateFinalSegmentedManifest)
 class SpeakerSegmentedManifest(BaseParallelProcessor):
-    """
-    Step 6: Create speaker-segmented manifest without duration calculation.
-    
-    Features:
-    - Supports both earnings21 and earnings22
-    - Speaker-level segmentation based on NLP files
-    - No duration calculation (set to None)
-    - Optional speaker name mapping
+    """Create speaker-level segments based on speaker changes in NLP files.
+
+    This processor creates segments where each segment corresponds to continuous speech
+    from a single speaker. It reads NLP token files to detect speaker changes and creates
+    separate manifest entries for each speaker segment without timing calculations.
+
+    Args:
+        input_manifest_file (str): Path to the input manifest file.
+        dataset_root (str): Path to the root directory of the dataset.
+        output_manifest_file (str): Path where the output manifest will be saved.
+        dataset_type (str): Type of dataset ("earnings21" or "earnings22"). Defaults to "earnings21".
+        preserve_punctuation (bool): Whether to preserve punctuation marks. Defaults to True.
+        preserve_capitalization (bool): Whether to preserve original capitalization. Defaults to True.
+        include_speaker_info (bool): Whether to include speaker information. Defaults to True.
+        include_tags (bool): Whether to include entity tags (earnings21 only). Defaults to False.
+        use_speaker_metadata_csv (bool): Whether to use speaker metadata CSV for name mapping. Defaults to False.
+
+    Returns:
+        Manifest entries segmented by speaker with audio_filepath, duration (set to 0), 
+        text, file_id, segment_id, and optionally speaker and tags fields.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.datasets.earnings21.SpeakerSegmentedManifest
+              input_manifest_file: ${output_dir}/02_manifest_with_text.json
+              dataset_root: /path/to/earnings21
+              output_manifest_file: ${output_dir}/06_speaker_segments.json
+              dataset_type: earnings21
+              include_speaker_info: true
+              include_tags: false
     """
 
     def __init__(
@@ -606,19 +608,29 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
 
 # Step 5: Create Sentence-level Segmented Manifest based on CTM files
 class CreateSentenceSegmentedManifest(BaseParallelProcessor):
-    """
-    Step 5: Create sentence-level segments based on CTM files.
-    
-    This processor reads CTM files generated by the NeMo Forced Aligner and creates
-    sentence-level segments based on punctuation patterns. It segments on words ending
-    with !, ?, or . (excluding numbers like 42.12) where the next segment starts with
-    a capital letter.
-    
-    Features:
-    - Reads word-level CTM files with timing information
-    - Creates sentence-level segments based on punctuation
-    - Preserves word-level alignments within each segment
-    - Calculates accurate segment durations from CTM data
+    """Create sentence-level segments from word-level CTM alignment files.
+
+    This processor reads CTM (Conversation Time Mark) files generated by forced alignment
+    and creates sentence-level segments based on punctuation patterns. It intelligently
+    segments on sentence-ending punctuation while excluding abbreviations and numbers.
+
+    Args:
+        input_manifest_file (str): Path to the input manifest file.
+        ctm_dir (str): Path to the directory containing CTM files with word-level alignments.
+        output_manifest_file (str): Path where the output manifest will be saved.
+
+    Returns:
+        Manifest entries with sentence-level segments containing audio_filepath, duration
+        (calculated from CTM), text, file_id, segment_id, offset, end_time, and alignment
+        fields with word-level timing information.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.datasets.earnings21.CreateSentenceSegmentedManifest
+              input_manifest_file: ${output_dir}/04_aligned_manifest.json
+              ctm_dir: ${output_dir}/forced_alignment_output/ctm/words
+              output_manifest_file: ${output_dir}/05_sentence_segments.json
     """
 
     def __init__(
@@ -805,19 +817,35 @@ class CreateSentenceSegmentedManifest(BaseParallelProcessor):
 
 
 class NeMoForcedAligner(BaseProcessor):
-    """
-    Step 4: Apply NeMo Forced Aligner to get word-level timestamps.
-    
-    This processor wraps the NeMo Forced Aligner (NFA) script to generate
-    word-level alignments for the earnings21 segments. It uses the ground
-    truth text from the earnings21 dataset and aligns it with the audio
-    to produce precise timing information.
-    
-    Features:
-    - Uses NeMo's dedicated forced alignment script
-    - Preserves ground truth text from earnings21
-    - Generates word-level timestamps
-    - Outputs CTM files with alignment information
+    """Apply NeMo Forced Aligner to generate word-level timing alignments.
+
+    This processor uses NeMo's forced alignment capabilities to generate precise
+    word-level timing information by aligning ground truth text with audio files.
+    It produces CTM files containing word-level timestamps and updates the manifest
+    with alignment information.
+
+    Args:
+        input_manifest_file (str): Path to the input manifest file.
+        output_manifest_file (str): Path where the output manifest will be saved.
+        output_dir (str): Directory where CTM files and other outputs will be saved.
+        pretrained_name (str): Name or path of the NeMo ASR model to use for alignment.
+        device (str): Device for computation ("cuda" or "cpu"). Defaults to "cuda".
+        nemo_path (str): Optional path to NeMo installation directory.
+
+    Returns:
+        Manifest entries with added alignment field containing word-level timing
+        information and updated duration based on alignment results.
+
+    Example:
+        .. code-block:: yaml
+
+            - _target_: sdp.processors.datasets.earnings21.NeMoForcedAligner
+              input_manifest_file: ${output_dir}/03_cleaned_manifest.json
+              output_manifest_file: ${output_dir}/04_aligned_manifest.json
+              output_dir: ${output_dir}/forced_alignment_output
+              pretrained_name: nvidia/parakeet-tdt_ctc-1.1b
+              device: cuda
+              batch_size: 1
     """
 
     def __init__(
