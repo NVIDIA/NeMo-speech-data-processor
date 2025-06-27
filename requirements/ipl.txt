@@ -1,0 +1,11 @@
+nemo_run
+
+# Nemo repository path is also required, it is used to locate scripts and configs from NeMo.
+#
+# To set this up:
+#   1. Clone the NeMo repository:
+#        git clone https://github.com/NVIDIA/NeMo.git /your/desired/path/to/nemo
+#   2. Set the path in nemo_run_config.yaml:
+#        nemo_directory: /your/desired/path/to/nemo
+#
+# Make sure this path is valid and NeMo is up to date if you're using its scripts.
