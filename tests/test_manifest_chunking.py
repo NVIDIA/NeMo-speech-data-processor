@@ -21,97 +21,93 @@ processors work correctly even when chunking is used.
 import json
 
 import pytest
+from ray_curator.tasks import _EmptyTask
 
-from sdp.processors import DropNonAlphabet
-from sdp.processors import SubMakeLowercase
+from sdp.processors import DropNonAlphabet, SubMakeLowercase
+
 
 def test_submakelowercase_with_chunking(tmp_path):
+    input_lines = [
+        {"text": "ABC"},
+        {"text": "DEF"},
+        {"text": "GHI"},
+        {"text": "JKL"},
+        {"text": "MNO"},
+        {"text": "PQR"},
+        {"text": "STU"},
+        {"text": "VWX"},
+        {"text": "YZ"},
+    ]
 
-	input_lines = [
-		{"text": "ABC"},
-		{"text": "DEF"},
-		{"text": "GHI"},
-		{"text": "JKL"},
-		{"text": "MNO"},
-		{"text": "PQR"},
-		{"text": "STU"},
-		{"text": "VWX"},
-		{"text": "YZ"},
-	]
+    expected_output_lines = [
+        {"text": "abc"},
+        {"text": "def"},
+        {"text": "ghi"},
+        {"text": "jkl"},
+        {"text": "mno"},
+        {"text": "pqr"},
+        {"text": "stu"},
+        {"text": "vwx"},
+        {"text": "yz"},
+    ]
 
-	expected_output_lines = [
-		{"text": "abc"},
-		{"text": "def"},
-		{"text": "ghi"},
-		{"text": "jkl"},
-		{"text": "mno"},
-		{"text": "pqr"},
-		{"text": "stu"},
-		{"text": "vwx"},
-		{"text": "yz"},
-	]
+    # save input lines to manifest:
+    input_manifest_file = tmp_path / "input_manifest.json"
+    with open(input_manifest_file, "w") as f:
+        for line in input_lines:
+            f.write(json.dumps(line) + "\n")
 
+    # run make_lowercase processor:
+    output_manifest_file = tmp_path / "output_manifest_make_lowercase.json"
+    processor = SubMakeLowercase(
+        input_manifest_file=input_manifest_file, output_manifest_file=output_manifest_file, in_memory_chunksize=2
+    )
 
-	# save input lines to manifest:
-	input_manifest_file = tmp_path / "input_manifest.json"
-	with open(input_manifest_file, "w") as f:
-		for line in input_lines:
-			f.write(json.dumps(line) + "\n")
+    processor.process(_EmptyTask(task_id="empty", dataset_name="empty", data=None))
 
-	# run make_lowercase processor:
-	output_manifest_file = tmp_path / "output_manifest_make_lowercase.json"
-	processor = SubMakeLowercase(
-		input_manifest_file=input_manifest_file,
-		output_manifest_file=output_manifest_file,
-		in_memory_chunksize=2
-	)
+    # check that output manifest matches expected lines:
+    with open(output_manifest_file, "r") as f:
+        output_lines = [json.loads(line) for line in f]
 
-	processor.process()
-
-	# check that output manifest matches expected lines:
-	with open(output_manifest_file, "r") as f:
-		output_lines = [json.loads(line) for line in f]
-
-	assert output_lines == expected_output_lines
+    assert output_lines == expected_output_lines
 
 
 def test_dropnonalphabet_with_chunking(tmp_path):
+    input_lines = [
+        {"text": "ABC"},
+        {"text": "DEF"},
+        {"text": "GHI"},
+        {"text": "JKL"},
+        {"text": "MNO"},
+        {"text": "PQR"},
+        {"text": "STU"},
+        {"text": "VWX"},
+        {"text": "YZ"},
+    ]
 
-	input_lines = [
-		{"text": "ABC"},
-		{"text": "DEF"},
-		{"text": "GHI"},
-		{"text": "JKL"},
-		{"text": "MNO"},
-		{"text": "PQR"},
-		{"text": "STU"},
-		{"text": "VWX"},
-		{"text": "YZ"},
-	]
+    expected_output_lines = [
+        {"text": "ABC"},
+    ]
 
-	expected_output_lines = [
-		{"text": "ABC"},
-		]
+    # save input lines to manifest:
+    input_manifest_file = tmp_path / "input_manifest.json"
+    with open(input_manifest_file, "w") as f:
+        for line in input_lines:
+            f.write(json.dumps(line) + "\n")
 
-	# save input lines to manifest:
-	input_manifest_file = tmp_path / "input_manifest.json"
-	with open(input_manifest_file, "w") as f:
-		for line in input_lines:
-			f.write(json.dumps(line) + "\n")
+    # run make_lowercase processor:
+    output_manifest_file = tmp_path / "output_manifest_make_lowercase.json"
+    processor = DropNonAlphabet(
+        input_manifest_file=input_manifest_file,
+        output_manifest_file=output_manifest_file,
+        in_memory_chunksize=2,
+        alphabet="ABC",
+    )
 
-	# run make_lowercase processor:
-	output_manifest_file = tmp_path / "output_manifest_make_lowercase.json"
-	processor = DropNonAlphabet(
-		input_manifest_file=input_manifest_file,
-		output_manifest_file=output_manifest_file,
-		in_memory_chunksize=2,
-		alphabet="ABC"
-	)
+    processor.process(_EmptyTask(task_id="empty", dataset_name="empty", data=None))
 
-	processor.process()
+    # check that output manifest matches expected lines:
+    with open(output_manifest_file, "r") as f:
+        output_lines = [json.loads(line) for line in f]
 
-	# check that output manifest matches expected lines:
-	with open(output_manifest_file, "r") as f:
-		output_lines = [json.loads(line) for line in f]
-
-	assert output_lines == expected_output_lines
+    assert output_lines == expected_output_lines

@@ -20,6 +20,8 @@ import shutil
 import typing
 from urllib.parse import parse_qs, urlparse
 
+from ray_curator.tasks import _EmptyTask
+
 from sdp.processors.base_processor import BaseProcessor, DataEntry
 from sdp.utils.common import download_file, extract_archive
 
@@ -145,6 +147,7 @@ class CreateInitialManifestFleurs(BaseProcessor):
             os.remove(file_path)
             print(f'File {file_name} already exists in {target_folder}, deleted from source.')
 
-    def process(self):
+    def process(self, task: _EmptyTask) -> _EmptyTask:
         self.download_extract_files(self.raw_data_dir)
         self.process_data(self.raw_data_dir, self.output_manifest_file)
+        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)

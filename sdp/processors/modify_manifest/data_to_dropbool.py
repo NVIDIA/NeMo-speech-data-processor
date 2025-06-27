@@ -14,11 +14,12 @@
 
 import collections
 import json
+import os
 import re
-import os 
-import json
 from operator import eq, ge, gt, le, lt, ne
 from typing import List, Union
+
+from ray_curator.tasks import _EmptyTask
 
 from sdp.logging import logger
 from sdp.processors.base_processor import (
@@ -808,9 +809,9 @@ class DropRepeatedFields(BaseParallelProcessor):
     """Drops utterances from the current manifest if their text fields are present in other manifests.
 
     This class processes multiple manifest files and removes entries from the current manifest if the text field
-    matches any entry in the other manifests. It allows for optional punctuation removal from the text fields 
+    matches any entry in the other manifests. It allows for optional punctuation removal from the text fields
     before performing the check.
-    
+
     .. note::
         It is better to process Test/Dev/Train and then Other.tsv
 
@@ -819,19 +820,21 @@ class DropRepeatedFields(BaseParallelProcessor):
         current_manifest_file (str): Path to the current manifest file to be processed.
         punctuations (str): (Optional): String of punctuation characters to be removed from the text fields before checking for duplicates. Defaults to None.
         text_key (str): The key in the manifest entries that contains the text field. Defaults to "text".
-    
+
     Returns:
          The same data as in the input manifest with some entries dropped.
 
     """
-    def __init__(self,
-                 manifests_paths: List[str], 
-                 current_manifest_file: str,
-                 punctuations: str = None,
-                 text_key: str = "text",
-                 **kwargs
-                 ):
-        super().__init__( **kwargs)
+
+    def __init__(
+        self,
+        manifests_paths: List[str],
+        current_manifest_file: str,
+        punctuations: str = None,
+        text_key: str = "text",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
         self.manifests_paths = manifests_paths
         self.current_manifest_file = current_manifest_file
         self.text_key = text_key
@@ -851,10 +854,10 @@ class DropRepeatedFields(BaseParallelProcessor):
                         if self.punctuations is not None and len(self.punctuations) > 0:
                             line_text = self.remove_punctuation(line_text)
                         self.text_set.add(line_text)
-        
+
     def remove_punctuation(self, text):
         return re.sub(fr'[{self.punctuations}]', '', text)
-    
+
     def process_dataset_entry(self, data_entry) -> List:
         text_for_check = data_entry[self.text_key]
         if self.punctuations is not None and len(self.punctuations) > 0:
@@ -862,7 +865,7 @@ class DropRepeatedFields(BaseParallelProcessor):
         if text_for_check in self.text_set:
             return [DataEntry(data=None, metrics=1)]
         return [DataEntry(data=data_entry, metrics=0)]
-    
+
     def finalize(self, metrics: List):
         total_counter = 0
         for counter in metrics:
@@ -889,7 +892,7 @@ class DropDuplicates(BaseProcessor):
         self.drop_key = drop_key
         self.seen_texts = set()
 
-    def process(self):
+    def process(self, task: _EmptyTask) -> _EmptyTask:
         unique_entries = []
         with open(self.input_manifest_file, 'r', encoding='utf-8') as file:
             for line in file:
@@ -904,4 +907,4 @@ class DropDuplicates(BaseProcessor):
                 fout.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
         logger.info(f"Total number of entries after processing: {len(unique_entries)}")
-        return unique_entries
+        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)

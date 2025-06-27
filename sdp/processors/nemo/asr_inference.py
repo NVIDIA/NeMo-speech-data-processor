@@ -17,6 +17,8 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
+from ray_curator.tasks import _EmptyTask
+
 from sdp.processors.base_processor import BaseProcessor
 
 # Note that we do not re-use base parallel implementation, since the ASR
@@ -44,7 +46,7 @@ class ASRInference(BaseProcessor):
 
     def __init__(
         self,
-        pretrained_model: Optional[str]=None,
+        pretrained_model: Optional[str] = None,
         batch_size: int = 32,
         **kwargs,
     ):
@@ -53,7 +55,7 @@ class ASRInference(BaseProcessor):
         self.pretrained_model = pretrained_model
         self.batch_size = batch_size
 
-    def process(self):
+    def process(self, task: _EmptyTask) -> _EmptyTask:
         """This will add "pred_text" key into the output manifest."""
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         if self.pretrained_model.endswith(".nemo"):
@@ -76,3 +78,4 @@ class ASRInference(BaseProcessor):
                 shell=True,
                 check=True,
             )
+        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)

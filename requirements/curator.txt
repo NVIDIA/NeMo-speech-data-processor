@@ -1,0 +1,26 @@
+cd ray-api
+
+# pip install cosmos-xenna[gpu]
+git clone https://github.com/NVIDIA-NeMo/Curator.git
+git switch ray-api
+# install  NeMo
+pip install "nemo_toolkit[all]"
+
+# install nemo_text_processing
+pip install nemo_text_processing
+
+pip install -r requirements/main.txt 
+pip install -r requirements/tests.txt 
+pip install .
+RAY_ADDRESS=10.110.41.40:8265 python -m pytest tests/test_curator.py 
+
+# pip install loguru
+# pip install -U "ray[default]"
+
+# cd ~/workspace/Curator/ray-curator && pip install .
+# ray start --include-dashboard=True --head # ray status # ray stop
+    # import ray
+    # ray.init()
+    # RAY_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- python my_script.py 
+
+RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES="0" RAY_MAX_LIMIT_FROM_API_SERVER=40000 RAY_MAX_LIMIT_FROM_DATA_SOURCE=40000 ray start --include-dashboard=True --dashboard-host=0.0.0.0 --port=8265 --dashboard-port=8266 --head --temp-dir=/tmp

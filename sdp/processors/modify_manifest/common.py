@@ -15,7 +15,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 from tqdm import tqdm
@@ -27,6 +27,7 @@ from sdp.processors.base_processor import (
     LegacyParallelProcessor,
 )
 from sdp.utils.common import load_manifest
+
 
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.
@@ -104,24 +105,24 @@ class AddConstantFields(BaseParallelProcessor):
     This processor adds constant fields to all manifest entries using Dask BaseParallelProcessor.
     It is useful when you want to attach fixed information (e.g., a language label or metadata)
     to each entry for downstream tasks such as language identification model training.
-    
+
     Args:
         fields (dict): A dictionary containing key-value pairs of fields to add to each manifest entry.
             For example::
-    
+
                 {
                     "label": "en",
                     "metadata": "mcv-11.0-2022-09-21"
                 }
-    
+
     Returns:
         dict: The same data as in the input manifest with the added constant fields as specified in
         the ``fields`` dictionary.
-    
+
     Example:
-    
+
         .. code-block:: yaml
-    
+
             - _target_: sdp.processors.modify_manifest.common.AddConstantFields
               input_manifest_file: ${workspace_dir}/input_manifest.json
               output_manifest_file: ${workspace_dir}/output_manifest.json
@@ -139,7 +140,6 @@ class AddConstantFields(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
-
 class DuplicateFields(BaseParallelProcessor):
     """This processor duplicates fields in all manifest entries.
 
@@ -154,8 +154,8 @@ class DuplicateFields(BaseParallelProcessor):
 
     Returns:
         The same data as in the input manifest with duplicated fields
-        as specified in the ``duplicate_fields`` input dictionary. 
-    
+        as specified in the ``duplicate_fields`` input dictionary.
+
     Example:
         .. code-block:: yaml
 
@@ -165,6 +165,7 @@ class DuplicateFields(BaseParallelProcessor):
               duplicate_fields: {"text":"answer"}
 
     """
+
     def __init__(
         self,
         duplicate_fields: Dict,
@@ -334,7 +335,7 @@ class SortManifest(BaseProcessor):
                 fout.write(json.dumps(line, ensure_ascii=False) + "\n")
 
 
-class KeepOnlySpecifiedFields(BaseProcessor):
+class KeepOnlySpecifiedFields(BaseParallelProcessor):
     """Saves a copy of a manifest but only with a subset of the fields.
 
     Typically will be the final processor to save only relevant fields
@@ -354,14 +355,9 @@ class KeepOnlySpecifiedFields(BaseProcessor):
         super().__init__(**kwargs)
         self.fields_to_keep = fields_to_keep
 
-    def process(self):
-        with open(self.input_manifest_file, "rt", encoding="utf8") as fin, open(
-            self.output_manifest_file, "wt", encoding="utf8"
-        ) as fout:
-            for line in tqdm(fin):
-                line = json.loads(line)
-                new_line = {field: line[field] for field in self.fields_to_keep}
-                fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")
+    def process_dataset_entry(self, data_entry: Dict):
+        new_data_entry = {field: data_entry[field] for field in self.fields_to_keep}
+        return [DataEntry(data=new_data_entry)]
 
 
 class ApplyInnerJoin(BaseProcessor):

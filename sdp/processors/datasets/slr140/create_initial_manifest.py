@@ -19,6 +19,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import sox
+from ray_curator.tasks import _EmptyTask
 from tqdm import tqdm
 from tqdm.contrib.concurrent import thread_map
 
@@ -145,7 +146,7 @@ class CustomDataSplitSLR140(BaseProcessor):
         self.data_split = data_split
         self.split_audio_dir = split_audio_dir
 
-    def process(self):
+    def process(self, task: _EmptyTask) -> _EmptyTask:
         with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
             manifest_data = [json.loads(line) for line in fin.readlines()]
 
@@ -190,6 +191,7 @@ class CustomDataSplitSLR140(BaseProcessor):
 
         logger.info("Total number of entries after processing: %d", number_of_entries)
         logger.info("Total audio duration (hours) after processing: %.2f", total_duration / 3600)
+        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)
 
     def _accumulate_samples(
         self, manifest_data: List[dict], sample_idxs: List[int], duration_threshold: int
