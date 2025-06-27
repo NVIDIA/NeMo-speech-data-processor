@@ -84,6 +84,16 @@ class BaseProcessor(ABC):
         There are not tests by default.
         """
 
+    def inputs(self) -> tuple[list[str], list[str]]:
+        return [], []
+
+    def outputs(self) -> tuple[list[str], list[str]]:
+        return [], []
+
+    @property
+    def name(self) -> str:
+        return "BaseProcessor"
+
 
 class BaseParallelProcessor(BaseProcessor, ProcessingStage[_EmptyTask, _EmptyTask]):
     """

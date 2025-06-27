@@ -1,16 +1,26 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 import os
-import sys
 import tempfile
 from pathlib import Path
 
-import hydra
 import yaml
-from hydra import compose, initialize
-from omegaconf import DictConfig, OmegaConf, open_dict
+from omegaconf import OmegaConf
 
-from sdp.run_processors import run_processors, update_processor_imports
-from sdp.utils import BootstrapProcessor
+from sdp.run_processors import run_processors
 
 
 def _write_config(file_path: Path, dict_conf):
@@ -18,13 +28,7 @@ def _write_config(file_path: Path, dict_conf):
         yaml.dump(dict_conf, file)
 
 
-def read_yaml(config_path=".", config_name="config"):
-    with initialize(version_base=None, config_path=config_path):
-        cfg = compose(config_name=config_name)
-    return cfg
-
-
-def make_dict(output_manifest_file, use_backend=None):
+def _make_dict(output_manifest_file, use_backend=None):
     workspace_dir = os.path.join(os.getenv('TEST_DATA_ROOT'), "armenian/audio_books/mp3")
     return {
         "processors_to_run": "0:",
@@ -41,7 +45,7 @@ def make_dict(output_manifest_file, use_backend=None):
     }
 
 
-def make_expected_output():
+def _make_expected_output():
     workspace_dir = os.path.join(os.getenv('TEST_DATA_ROOT'), "armenian/audio_books/mp3")
     return {'audio_filepath': os.path.join(workspace_dir, "Eleonora/Eleonora30s.mp3")}
 
@@ -49,7 +53,7 @@ def make_expected_output():
 def test_curator():
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = os.path.join(tmpdir, "output_manifest_file.jsonl")
-        dict_conf = make_dict(output_manifest_file=output_path, use_backend="curator")
+        dict_conf = _make_dict(output_manifest_file=output_path, use_backend="curator")
         conf_path = Path(tmpdir) / "config.yaml"
         _write_config(conf_path, dict_conf)
 
@@ -59,15 +63,14 @@ def test_curator():
     with open(output_path, "r") as f:
         output = json.load(f)
 
-    expected_output = make_expected_output()
-
+    expected_output = _make_expected_output()
     assert output == expected_output, f"Expected {expected_output}, but got {output}"
 
 
 def test_multiprocessing():
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = os.path.join(tmpdir, "output_manifest_file.jsonl")
-        dict_conf = make_dict(output_manifest_file=output_path, use_backend=None)
+        dict_conf = _make_dict(output_manifest_file=output_path, use_backend=None)
         conf_path = Path(tmpdir) / "config.yaml"
         _write_config(conf_path, dict_conf)
 
@@ -77,14 +80,14 @@ def test_multiprocessing():
     with open(output_path, "r") as f:
         output = json.load(f)
 
-    expected_output = make_expected_output()
+    expected_output = _make_expected_output()
     assert output == expected_output, f"Expected {expected_output}, but got {output}"
 
 
 def test_dask():
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = os.path.join(tmpdir, "output_manifest_file.jsonl")
-        dict_conf = make_dict(output_manifest_file=output_path, use_backend="dask")
+        dict_conf = _make_dict(output_manifest_file=output_path, use_backend="dask")
         conf_path = Path(tmpdir) / "config.yaml"
         _write_config(conf_path, dict_conf)
 
@@ -94,5 +97,5 @@ def test_dask():
     with open(output_path, "r") as f:
         output = json.load(f)
 
-    expected_output = make_expected_output()
+    expected_output = _make_expected_output()
     assert output == expected_output, f"Expected {expected_output}, but got {output}"

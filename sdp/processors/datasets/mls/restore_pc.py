@@ -24,6 +24,7 @@ from typing import Optional
 
 import regex
 from joblib import Parallel, delayed
+from ray_curator.tasks import _EmptyTask
 from tqdm import tqdm
 
 from sdp.logging import logger
@@ -454,7 +455,7 @@ class RestorePCForMLS(BaseProcessor):
         self.n_jobs = n_jobs
         self.show_conversion_breakdown = show_conversion_breakdown
 
-    def process(self):
+    def process(self, task: _EmptyTask) -> _EmptyTask:
         """Main processing happens here.
 
         * Download & extract lv_text.
@@ -604,3 +605,4 @@ class RestorePCForMLS(BaseProcessor):
                     with open(manifest, "r") as fin:
                         for line in fin:
                             fout.write(line)
+        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)
