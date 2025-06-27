@@ -1,4 +1,3 @@
-
 documentation: |
   TopIPL
   ######
@@ -47,4 +46,3 @@ processors:
   - _target_: sdp.processors.IPL.nemo_run_processor.NemoRunIPLProcessor
     config_path: ./nemo_run_config.yaml
     output_manifest_file: ???
-
