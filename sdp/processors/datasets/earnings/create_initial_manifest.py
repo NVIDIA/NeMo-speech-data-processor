@@ -50,7 +50,7 @@ class CreateInitialAudioAndManifest(BaseParallelProcessor):
     Example:
         .. code-block:: yaml
 
-            - _target_: sdp.processors.datasets.earnings21.CreateInitialAudioAndManifest
+            - _target_: sdp.processors.datasets.earnings.CreateInitialAudioAndManifest
               dataset_root: /path/to/earnings21
               raw_audio_source_dir: ${dataset_root}/media
               output_manifest_file: ${output_dir}/01_initial_manifest.json
@@ -181,7 +181,7 @@ class CreateFullAudioManifestEarnings21(BaseParallelProcessor):
     Example:
         .. code-block:: yaml
 
-            - _target_: sdp.processors.datasets.earnings21.CreateFullAudioManifestEarnings21
+            - _target_: sdp.processors.datasets.earnings.CreateFullAudioManifestEarnings21
               input_manifest_file: ${output_dir}/01_initial_manifest.json
               dataset_root: /path/to/earnings21
               output_manifest_file: ${output_dir}/02_manifest_with_text.json
@@ -334,7 +334,7 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
     Example:
         .. code-block:: yaml
 
-            - _target_: sdp.processors.datasets.earnings21.SpeakerSegmentedManifest
+            - _target_: sdp.processors.datasets.earnings.SpeakerSegmentedManifest
               input_manifest_file: ${output_dir}/02_manifest_with_text.json
               dataset_root: /path/to/earnings21
               output_manifest_file: ${output_dir}/06_speaker_segments.json
@@ -627,7 +627,7 @@ class CreateSentenceSegmentedManifest(BaseParallelProcessor):
     Example:
         .. code-block:: yaml
 
-            - _target_: sdp.processors.datasets.earnings21.CreateSentenceSegmentedManifest
+            - _target_: sdp.processors.datasets.earnings.CreateSentenceSegmentedManifest
               input_manifest_file: ${output_dir}/04_aligned_manifest.json
               ctm_dir: ${output_dir}/forced_alignment_output/ctm/words
               output_manifest_file: ${output_dir}/05_sentence_segments.json
@@ -839,7 +839,7 @@ class NeMoForcedAligner(BaseProcessor):
     Example:
         .. code-block:: yaml
 
-            - _target_: sdp.processors.datasets.earnings21.NeMoForcedAligner
+            - _target_: sdp.processors.datasets.earnings.NeMoForcedAligner
               input_manifest_file: ${output_dir}/03_cleaned_manifest.json
               output_manifest_file: ${output_dir}/04_aligned_manifest.json
               output_dir: ${output_dir}/forced_alignment_output

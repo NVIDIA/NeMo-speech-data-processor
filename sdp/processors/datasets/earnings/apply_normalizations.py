@@ -38,7 +38,7 @@ class ApplyEarnings21Normalizations(BaseProcessor):
     Example:
         .. code-block:: yaml
 
-            - _target_: sdp.processors.datasets.earnings21.ApplyEarnings21Normalizations
+            - _target_: sdp.processors.datasets.earnings.ApplyEarnings21Normalizations
               earnings21_root: /path/to/earnings21
               use_top_candidate: true
               fallback_to_original: true
