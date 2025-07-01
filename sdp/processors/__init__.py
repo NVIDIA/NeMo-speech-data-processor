@@ -21,7 +21,7 @@ from sdp.processors.datasets.coraal import (
     CreateInitialManifestCORAAL,
     TrainDevTestSplitCORAAL,
 )
-from sdp.processors.datasets.earnings21 import (
+from sdp.processors.datasets.earnings import (
     CreateInitialAudioAndManifest,
     CreateFullAudioManifestEarnings21,
     SpeakerSegmentedManifest,
