@@ -31,15 +31,15 @@ def get_coraal_url_list():
     There are a few mistakes in the official url list that are fixed here.
     Can be overridden by tests to select a subset of urls.
     """
-    dataset_url = "http://lingtools.uoregon.edu/coraal/coraal_download_list.txt"
+    dataset_url = "https://lingtools.uoregon.edu/coraal/coraal_download_list.txt"
     urls = []
     for file_url in urllib.request.urlopen(dataset_url):
         file_url = file_url.decode('utf-8').strip()
         # fixing known errors in the urls
-        if file_url == 'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_metadata_2018.10.06.txt':
-            file_url = 'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_metadata_2021.07.txt'
-        if file_url == 'http://lingtools.uoregon.edu/coraal/vld/2021.07/VLD_metadata_2018.10.06.txt':
-            file_url = 'http://lingtools.uoregon.edu/coraal/vld/2021.07/VLD_metadata_2021.07.txt'
+        if file_url == 'https://lingtools.uoregon.edu/coraal/les/2021.07/LES_metadata_2018.10.06.txt':
+            file_url = 'https://lingtools.uoregon.edu/coraal/les/2021.07/LES_metadata_2021.07.txt'
+        if file_url == 'https://lingtools.uoregon.edu/coraal/vld/2021.07/VLD_metadata_2018.10.06.txt':
+            file_url = 'https://lingtools.uoregon.edu/coraal/vld/2021.07/VLD_metadata_2021.07.txt'
         urls.append(file_url)
     return urls
 
