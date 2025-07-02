@@ -191,5 +191,6 @@ nitpick_ignore = [
 
 #adding this especially for coraal, temporary
 linkcheck_ignore = [
-    r'http://lingtools\.uoregon\.edu/coraal/coraal_download_list\.txt',
+    r'https://lingtools\.uoregon\.edu/coraal/coraal_download_list\.txt',
 ]
+# https://lingtools.uoregon.edu/coraal/coraal_download_list.txt
