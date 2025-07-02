@@ -40,7 +40,6 @@ from nemo_run.core.execution.docker import DockerExecutor
 from nemo_run.core.execution.slurm import SlurmJobDetails, get_packaging_job_key
 from nemo_run.core.tunnel import SSHTunnel
 from omegaconf import DictConfig
-from torchx.specs.api import AppState
 
 LOG = logging.getLogger(__file__)
 
@@ -136,6 +135,7 @@ def get_exp_handles(expname: str, ignore_finished=True, ignore_exp_not_exists=Tr
     TODO: it's still possible that job submission fails if the tasks exist when this function
           is called, but finish before nemo-run submits a new job (which might take minutes)
     """
+    from torchx.specs.api import AppState
 
     def _get_handles(exp):
         handles = []
