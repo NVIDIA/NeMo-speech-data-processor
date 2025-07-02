@@ -554,23 +554,28 @@ class SubMakeLowercase(BaseParallelProcessor):
 
 
 class SubRegex(BaseParallelProcessor):
-    """Converts a regex match to a string, as defined by key-value pairs in ``regex_to_sub``.
+    """
+    Applies a sequence of regex substitutions to the specified text field in each data entry.
 
-    Before applying regex changes, we will add a space
-    character to the beginning and end of the ``text`` and ``pred_text``
-    keys for each data entry. After the the regex changes,
-    the extra spaces are removed. This includes the spaces in the beginning
-    and end of the text, as well as any double spaces ``"  "``.
+    This processor performs regex-based substitutions as defined in either a provided list of 
+    regex parameter dictionaries or a YAML configuration file. Each substitution is applied in 
+    the order specified.
+
+    Before substitutions are applied, a space is temporarily added to the beginning and end of the text 
+    to improve regex match consistency. After all substitutions, leading/trailing spaces and repeated 
+    spaces are removed.
 
     Args:
-        regex_params_list (list[dict]): list of dicts.
-            Each dict must contain a ``pattern`` and a ``repl`` key,
-            and optionally a ``count`` key (by default, ``count`` will be 0).
-            This processor will go through the list in order, and apply a ``re.sub`` operation on
-            the input text in ``data_entry[self.text_key]``, feeding in the specified ``pattern``, ``repl``
-            and ``count`` parameters to ``re.sub``.
-        text_key (str): a string indicating which key of the data entries
-            should be used to find the utterance transcript. Defaults to "text".
+        regex_params_list (List[Dict], optional): A list of dictionaries specifying the regex substitutions. 
+            Each dictionary must include:
+                - "pattern": A regex pattern to match.
+                - "repl": A replacement string.
+                - "count" (optional): Maximum number of replacements to make. Defaults to 0 (replace all).
+        regex_params_yaml (str, optional): Path to a YAML file that defines the same list of dictionaries 
+            as `regex_params_list`. Either `regex_params_list` or `regex_params_yaml` must be provided.
+            If both are provided, `regex_params_yaml` takes precedence.
+        text_key (str): The key in each data entry whose value will be modified. Defaults to "text".
+        **kwargs: Additional arguments passed to the BaseParallelProcessor.
 
     Returns:
          The same data as in the input manifest with ``<text_key>`` field changed.
@@ -578,12 +583,20 @@ class SubRegex(BaseParallelProcessor):
 
     def __init__(
         self,
-        regex_params_list: List[Dict],
+        regex_params_list: List[Dict] = None,
+        regex_params_yaml: str = None,
         text_key: str = "text",
         **kwargs,
     ):
         super().__init__(**kwargs)
+        if not regex_params_list and not regex_params_yaml:
+            raise ValueError(f'One of `regex_params_list` or `regex_params_yaml` should be provided.')
+        
         self.regex_params_list = regex_params_list
+        if regex_params_yaml:
+            with open(regex_params_yaml, 'r') as regex_params_file: 
+                self.regex_params_list = yaml.safe_load(regex_params_file)
+
         self.text_key = text_key
 
         # verify all dicts in regex_params_list have "pattern" and "repl" keys
