@@ -36,8 +36,8 @@ class TrainingCommandGenerator(BaseProcessor):
         training_config_cluster (str): Path to the cluster configuration file
         training_script_path (str): Path to the training script relative to nemo_directory
         nemo_directory (str): Base directory for NeMo framework
-        new_manifest_files (str, optional): New manifest files to add to the training configuration
-        new_tarred_audio_filepaths (str, optional): New tarred audio filepaths to add to the training configuration
+        new_manifest_files (str, Optional): New manifest files to add to the training configuration
+        new_tarred_audio_filepaths (str, Optional): New tarred audio filepaths to add to the training configuration
         **kwargs: Additional arguments passed to the parent BaseProcessor class
     """
 
@@ -109,8 +109,8 @@ class TrainingCommandGenerator(BaseProcessor):
             cluster_script_path (str): Path to the script to run on the cluster
             local_config (DictConfig): Local configuration loaded from training_config_local
             cluster_config_path (str): Path to the cluster configuration file
-            updated_manifest_filepaths (str, optional): Path to the updated manifest file
-            updated_tarred_filepaths (str, optional): Path to the updated tarred audio filepaths
+            updated_manifest_filepaths (str, Optional): Path to the updated manifest file
+            updated_tarred_filepaths (str, Optional): Path to the updated tarred audio filepaths
 
         Returns:
             str: Command to run the script on the cluster
@@ -279,7 +279,7 @@ class InferenceCommandGenerator(BaseProcessor):
         Generate the pseudo-labeling command for the given configuration and training parameters.
 
         Args:
-            first_run (bool, optional): Whether this is the first run of pseudo-labeling.
+            first_run (bool, Optional): Whether this is the first run of pseudo-labeling.
 
         Returns:
             str: The constructed pseudo-labeling command.
@@ -323,7 +323,7 @@ class InferenceCommandGenerator(BaseProcessor):
         Generate a command to run PL inference with multiple configuration files.
         Args:
             inference_configs (list): List of configuration file paths.
-            shuffle (bool, optional): Whether to enable shuffling in predict_ds.
+            shuffle (bool, Optional): Whether to enable shuffling in predict_ds.
 
         Returns:
             str: Combined command string to execute PL inference.

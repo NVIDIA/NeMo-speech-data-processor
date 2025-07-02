@@ -30,7 +30,7 @@ class NemoRunIPLProcessor(BaseProcessor):
     Args:
         config_path (str): Path to the YAML configuration file containing IPL settings
         output_manifest_file (str): Path where the output manifest file will be written
-        input_manifest_file (str, optional): Path to the input manifest file
+        input_manifest_file (str, Optional): Path to the input manifest file
     """
     
     def __init__(

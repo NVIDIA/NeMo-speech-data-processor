@@ -27,7 +27,7 @@ def separate_multiple_transcriptions(inference_config: dict) -> Tuple[List[str],
     Returns:
         Tuple[List[str], Optional[List[str]]]: A tuple containing:
             - A list of manifest file paths.
-            - An optional list of tarred audio file paths, or None if not applicable.
+            - An Optional list of tarred audio file paths, or None if not applicable.
     """
     
     if hasattr(inference_config.predict_ds, "is_tarred") and inference_config.predict_ds.is_tarred:

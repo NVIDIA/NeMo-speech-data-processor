@@ -121,7 +121,7 @@ def create_remote_directory(directory: str | list, cluster_config: dict):
         raise ValueError(f"Unsupported executor: {cluster_config.get('executor')}")
 
 
-def create_remote_config(config: dict | DictConfig, config_name: str, config_directory: str, cluster_config: dict):
+def create_remote_config(config: dict, config_name: str, config_directory: str, cluster_config: dict):
     """
     Utility to write a remote config file on the cluster using the cluster config.
 

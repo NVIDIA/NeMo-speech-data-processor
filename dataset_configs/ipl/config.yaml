@@ -15,30 +15,31 @@ documentation: |
   3. Maintains a dynamic cache of pseudo-labels for unlabeled data.
   4. Produces a new output manifest after each iteration.
 
-  **Required arguments**.
+  **Required arguments**
 
-  * **output_manifest_file**: path where the final manifest with pseudo-labels will be saved.
-  * **nemo_run_config**: YAML config file specifying the training, inference, and IPL parameters.
+  - **output_manifest_file**: path where the final manifest with pseudo-labels will be saved.
+  - **nemo_run_config**: YAML config file specifying the training, inference, and IPL parameters.
 
-  **Training config requirements**.
+  **Training config requirements**
 
   Your training config must include the following setting to enable IPL:
 
-  ```yaml
-  exp_manager:
-    create_ipl_epoch_stopper_callback: True
-  ```
+  .. code-block:: yaml
+
+    exp_manager:
+      create_ipl_epoch_stopper_callback: True
+
   If you're not using Lhotse, also include:
 
-  ```yaml
-  ipl_epoch_stopper_callback_params:
-  stop_every_n_epochs: 2
+  .. code-block:: yaml
 
-  ```
+    ipl_epoch_stopper_callback_params:
+      stop_every_n_epochs: 2
+
   ### Prerequisites
-  - nemo_run
-  - `pip install -r ipl.txt`
 
+  - nemo_run
+  - ``pip install -r ipl.txt``
 
 processors_to_run: all
 

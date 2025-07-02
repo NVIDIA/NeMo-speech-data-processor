@@ -31,7 +31,10 @@ from typing import Optional
 import nemo_run as run
 import yaml
 from huggingface_hub import get_token
-from invoke import StreamWatcher
+try:
+    from invoke import StreamWatcher
+except ImportError:
+    StreamWatcher = object  # fallback if invoke is not installed
 from nemo_run.config import set_nemorun_home
 from nemo_run.core.execution.docker import DockerExecutor
 from nemo_run.core.execution.slurm import SlurmJobDetails, get_packaging_job_key
@@ -1001,7 +1004,7 @@ def add_task(
     with_sandbox=False,
     sandbox_port: int | None = None,
     server_config=None,
-    reuse_code_exp: str | run.Experiment | None = None,
+    reuse_code_exp: str = None,
     reuse_code: bool = True,
     task_dependencies: list[str] = None,
     run_after: str | list[str] | None = None,

@@ -416,8 +416,12 @@ NemoRunIPL
 * **IPL**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/ipl/config.yaml>`__ |
   :doc:`documentation <config-docs/ipl/config>`
+* **NeMoRun**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/ipl/nemo_run_config.yaml>`__ |
+  :doc:`documentation <config-docs/ipl/nemo_run_config>`
 
 .. toctree::
    :hidden:
 
    config-docs/ipl/config
+   config-docs/ipl/nemo_run_config
