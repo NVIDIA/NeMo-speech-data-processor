@@ -22,6 +22,7 @@ test-venv
 
 # byte-compiled / optimized / DLL files
 __pycache__
+build
 
 # egg-info
 sdp.egg-info

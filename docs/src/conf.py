@@ -189,3 +189,8 @@ nitpick_ignore = [
 ]
 # nitpick_ignore_regex = [('py:class', '*')]
 
+# Ignore specific broken links during linkcheck
+linkcheck_ignore = [
+    r'https://ieeexplore\.ieee\.org/document/1326009',
+    r'http://lingtools\.uoregon\.edu/coraal/coraal_download_list\.txt',
+]
