@@ -36,9 +36,9 @@ jobs:
           pip install -r requirements/docs.txt
       - name: Build docs with sphinx
         run: |
-          wget https://uit.stanford.edu/sites/default/files/2023/10/11/incommon-rsa-ca2.pem #downloading cert manually [for CORAL]
-          sudo cp incommon-rsa-ca2.pem     /usr/local/share/ca-certificates/incommon-rsa-server-ca-2.crt # [cert for CORAL]
-          sudo update-ca-certificates # [cert for CORAL]
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates
+          sudo update-ca-certificates
           cd docs && make clean && make html
 
       - name: Upload artifact
