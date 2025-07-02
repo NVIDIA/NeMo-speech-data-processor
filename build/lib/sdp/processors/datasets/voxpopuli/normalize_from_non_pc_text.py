@@ -77,7 +77,7 @@ def restore_pc(orig_words, norm_words):
         # separately in normalized form, so just removing the comma here
         add_punct = ""
         if orig_text[idx_orig][0].isdigit() and not orig_text[idx_orig].isdigit():
-            number, word = re.split(r'(\d+)', orig_text[idx_orig])[1:]
+            number, word = re.split('(\d+)', orig_text[idx_orig])[1:]
             orig_text[idx_orig] = number
             if word in string.punctuation:
                 add_punct = word
@@ -87,7 +87,7 @@ def restore_pc(orig_words, norm_words):
         # another annoying case is if typo ends with number like here "dell'11"
         # same logic, but need to go back to the first check, so doing "continue" below
         if orig_text[idx_orig][-1].isdigit() and not orig_text[idx_orig].isdigit():
-            word, number = re.split(r'(\d+)', orig_text[idx_orig])[:-1]
+            word, number = re.split('(\d+)', orig_text[idx_orig])[:-1]
             orig_text[idx_orig] = word
             orig_text.insert(idx_orig + 1, number)
             continue
