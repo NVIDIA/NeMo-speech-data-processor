@@ -28,7 +28,6 @@ sys.path.insert(0, os.path.abspath("../../"))
 
 templates_path = ["_templates"]
 
-
 autodoc_mock_imports = [
     # TTS pipeline
     "pyannote.audio",
@@ -193,4 +192,9 @@ nitpick_ignore = [
 linkcheck_ignore = [
     r'https://ieeexplore\.ieee\.org/document/1326009',
     r'http://lingtools\.uoregon\.edu/coraal/coraal_download_list\.txt',
+    r'https://aclanthology.org/2020.lrec-1.804/',
 ]
+
+linkcheck_timeout = 10
+linkcheck_retries = 5
+linkcheck_workers = 2
