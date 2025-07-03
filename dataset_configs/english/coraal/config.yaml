@@ -18,7 +18,7 @@ documentation: |
   This config performs the following data processing.
 
   1. Downloads CORAAL data based on the
-     `official file list <https://lingtools.uoregon.edu/coraal/coraal_download_list.txt>`_.
+     `official file list <https://lingtools.uoregon.edu/coraal/coraal_download_list.txt>`_. #Official mirror link
      There are a couple of errors in the links there, which are fixed in our code.
   2. Drops all utterances which contain only pauses. Set ``drop_pauses=False`` to undo.
   3. Groups all consecutive segments from the same speaker until 20 seconds duration
