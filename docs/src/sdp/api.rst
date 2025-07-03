@@ -137,11 +137,23 @@ HuggingFace Datasets
 .. autodata:: sdp.processors.CreateInitialManifestHuggingFace
    :annotation:
 
+
 YTC Datasets
 ''''''''''''
 
 .. autodata:: sdp.processors.datasets.ytc.create_initial_manifest.CreateInitialManifestYTC
    :annotation:
+
+
+HiFiTTS-2
+''''''''''''''''''''
+
+.. autodata:: sdp.processors.DownloadHiFiTTS2
+   :annotation:
+
+.. autodata:: sdp.processors.RemovedFailedChapters
+   :annotation:
+
 
 Lhotse processors
 #################
@@ -172,6 +184,9 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.ASRTransformers
    :annotation:
 
+.. autodata:: sdp.processors.EstimateBandwidth
+   :annotation:
+
 .. autodata:: sdp.processors.tts.pyannote.PyAnnoteDiarizationAndOverlapDetection
    :annotation:
 
@@ -186,7 +201,6 @@ used in the downstream processing for additional enhancement or filtering.
 
 .. autodata:: sdp.processors.tts.metrics.BandwidthEstimationProcessor
    :annotation:
-
 
 Text-only processors
 ####################

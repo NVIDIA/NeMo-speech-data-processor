@@ -1,0 +1,64 @@
+documentation: |
+  HiFiTTS-2 44kHz
+  ##################
+  
+  This config can be used to download the audio data for
+  `HiFiTTS-2 44kHz <https://huggingface.co/datasets/nvidia/hifitts-2>`_
+  
+  
+  1. Downloads HiFiTTS-2 audio from LibriVox.
+  2. Outputs a new manifest in which LibriVox audiobook chapters which could not be downloaded (e.g. because they
+     were removed from the website) are removed.
+
+  **Required arguments**.
+
+  * **workspace_dir**: specify the workspace folder where all audio files and manifests will be stored.
+
+  Note that you can customize any part of this config either directly or from command-line.
+ 
+  **Output format**.
+
+  This config outputs 2 manifest files:
+
+  * ``${workspace_dir}/errors.json`` - entries from the input chapters file which failed to download from LibriVox.
+  * ``${workspace_dir}/manifest_filtered_44khz`` - input manifest file without utterances from failed chapters.
+
+processors_to_run: all
+workspace_dir: ???
+manifest_filename: manifest_44khz.json
+output_filename: manifest_filtered_44khz.json
+chapter_filename: chapters_44khz.json
+error_filename: errors_44khz.json
+audio_dir_name: audio_44khz
+chapter_audio_dir_name: chapters
+sample_rate: 44100
+delete_chapter_files: true
+exit_on_error: false
+use_dask: false
+max_workers: 8
+chunksize: 50
+
+input_manifest_file: ${workspace_dir}/${manifest_filename}
+chapter_file: ${workspace_dir}/${chapter_filename}
+error_file: ${workspace_dir}/${error_filename}
+audio_dir: ${workspace_dir}/${audio_dir_name}
+chapter_dir: ${workspace_dir}/${chapter_audio_dir_name}
+final_manifest: ${workspace_dir}/${output_filename}
+
+processors:
+  - _target_: sdp.processors.DownloadHiFiTTS2
+    audio_dir: ${audio_dir}
+    chapter_dir: ${chapter_dir}
+    sample_rate: ${sample_rate}
+    delete_chapter_files: ${delete_chapter_files}
+    exit_on_error: ${exit_on_error}
+    input_manifest_file: ${chapter_file}
+    output_manifest_file: ${error_file}
+    use_dask: ${use_dask}
+    max_workers: ${max_workers}
+    chunksize: ${chunksize}
+
+  - _target_: sdp.processors.RemovedFailedChapters
+    input_manifest_file: ${input_manifest_file}
+    output_manifest_file: ${final_manifest}
+    error_file: ${error_file}

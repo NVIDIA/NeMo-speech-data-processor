@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ndjson
 import omegaconf
 import torch
 import torchaudio
 import nemo.collections.asr as nemo_asr
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
+from sdp.utils.common import load_manifest, save_manifest
 
 class NeMoASRAligner(BaseProcessor):
     """This processor aligns text and audio using NeMo ASR models.
@@ -188,10 +188,9 @@ class NeMoASRAligner(BaseProcessor):
         1. Full audio processing (infer_segment_only=False)
         2. Segment-only processing (infer_segment_only=True)
 
-        Results are saved in NDJSON format with alignments and transcriptions added to the original metadata.
+        Results are saved in JSONL format with alignments and transcriptions added to the original metadata.
         """
-        with open(self.input_manifest_file) as f:
-           manifest = ndjson.load(f)
+        manifest = load_manifest(self.input_manifest_file)
         
         results = []
         if not self.infer_segment_only:
@@ -250,5 +249,4 @@ class NeMoASRAligner(BaseProcessor):
 
                 results.extend(metadata_batch)
 
-        with open(self.output_manifest_file, "w") as f:
-            ndjson.dump(results, f)
+        save_manifest(results, self.output_manifest_file)
