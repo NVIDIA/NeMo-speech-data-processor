@@ -554,26 +554,23 @@ class SubMakeLowercase(BaseParallelProcessor):
 
 
 class SubRegex(BaseParallelProcessor):
-    """Converts a regex match to a string, as defined by key-value pairs in ``regex_to_sub``.
+    """
+    Converts a regex match to a string, as defined by key-value pairs in ``regex_to_sub``.
 
-    Before applying regex changes, we will add a space
-    character to the beginning and end of the ``text`` and ``pred_text``
-    keys for each data entry. After the the regex changes,
-    the extra spaces are removed. This includes the spaces in the beginning
-    and end of the text, as well as any double spaces ``"  "``.
+    Before applying regex changes, a space character is added to the beginning and end
+    of the ``text`` and ``pred_text`` keys for each data entry. After the regex changes,
+    the extra spaces are removed, including leading and trailing spaces and any double spaces ``"  "``.
 
     Args:
-        regex_params_list (list[dict]): list of dicts.
-            Each dict must contain a ``pattern`` and a ``repl`` key,
-            and optionally a ``count`` key (by default, ``count`` will be 0).
-            This processor will go through the list in order, and apply a ``re.sub`` operation on
-            the input text in ``data_entry[self.text_key]``, feeding in the specified ``pattern``, ``repl``
-            and ``count`` parameters to ``re.sub``.
-        text_key (str): a string indicating which key of the data entries
-            should be used to find the utterance transcript. Defaults to "text".
+        regex_params_list (list of dict): A list of dictionaries.
+            Each dict must contain a ``pattern`` and a ``repl`` key, and optionally a ``count`` key
+            (by default, ``count`` is 0). This processor iterates over the list in order and applies
+            a ``re.sub`` operation on the input text in ``data_entry[self.text_key]``, using the specified
+            ``pattern``, ``repl``, and ``count`` parameters.
+        text_key (str): The key in the data entry that contains the utterance transcript. Defaults to ``"text"``.
 
     Returns:
-         The same data as in the input manifest with ``<text_key>`` field changed.
+        dict: The same data as in the input manifest with the ``<text_key>`` field modified.
     """
 
     def __init__(
@@ -1138,13 +1135,13 @@ class LambdaExpression(BaseParallelProcessor):
         expression (str): A Python expression to evaluate. It can reference fields of the data entry
             using the name specified by `lambda_param_name`.
         lambda_param_name (str, optional): The name to refer to the current data entry in the expression.
-            Default is "entry".
+            Default is `"entry"`.
         filter (bool, optional): If True, the expression result is treated as a condition.
-            The entry is kept only if the result is `True`. Default is False.
-        **kwargs: Additional keyword arguments passed to the BaseParallelProcessor class.
-    
+            The entry is kept only if the result is `True`. Default is `False`.
+        **kwargs: Additional keyword arguments passed to the `BaseParallelProcessor` class.
+
     Returns:
-        A line-delimited JSON manifest, where each line is a processed entry.
+        str: A line-delimited JSON manifest, where each line is a processed entry.
         The result may contain fewer entries than the input if `filter=True`.
     """
     def __init__(

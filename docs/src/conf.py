@@ -40,6 +40,7 @@ autodoc_mock_imports = [
     "nemo",
     "nemo.collections",
     "nemo.collections.asr",
+    "nemo_text_processing",
     "nemo_text_processing.inverse_text_normalization.inverse_normalize",
     "librosa",
     "numpy",
