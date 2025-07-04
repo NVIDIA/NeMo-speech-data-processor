@@ -219,6 +219,9 @@ Data modifications
 .. autodata:: sdp.processors.InverseNormalizeText
    :annotation:
 
+.. autodata:: sdp.processors.ListToEntries
+   :annotation:
+
 Data filtering
 ''''''''''''''
 
