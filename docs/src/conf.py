@@ -185,6 +185,7 @@ mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/mml-chtml.min.js"
 nitpick_ignore = [
     ('py:class', 'abc.ABC'),
     ('py:class', 'sdp.processors.base_processor.DataEntry'),
+    ('py:class', 'optional'),
 ]
 # nitpick_ignore_regex = [('py:class', '*')]
 
