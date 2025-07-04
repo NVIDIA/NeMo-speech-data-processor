@@ -562,28 +562,32 @@ class SubRegex(BaseParallelProcessor):
     """
     Applies a sequence of regex substitutions to the specified text field in each data entry.
 
-    This processor performs regex-based substitutions as defined in either a provided list of 
-    regex parameter dictionaries or a YAML configuration file. Each substitution is applied in 
+    This processor performs regex-based substitutions as defined in either a provided list of
+    regex parameter dictionaries or a YAML configuration file. Each substitution is applied in
     the order specified.
 
-    Before substitutions are applied, a space is temporarily added to the beginning and end of the text 
-    to improve regex match consistency. After all substitutions, leading/trailing spaces and repeated 
+    Before substitutions are applied, a space is temporarily added to the beginning and end of the text
+    to improve regex match consistency. After all substitutions, leading/trailing spaces and repeated
     spaces are removed.
 
     Args:
-        regex_params_list (List[Dict], optional): A list of dictionaries specifying the regex substitutions. 
-            Each dictionary must include:
+        regex_params_list (List[Dict], optional): A list of dictionaries specifying the regex substitutions.
+            Each dictionary must include::
+
                 - "pattern": A regex pattern to match.
                 - "repl": A replacement string.
                 - "count" (optional): Maximum number of replacements to make. Defaults to 0 (replace all).
-        regex_params_yaml (str, optional): Path to a YAML file that defines the same list of dictionaries 
+
+        regex_params_yaml (str, optional): Path to a YAML file that defines the same list of dictionaries
             as `regex_params_list`. Either `regex_params_list` or `regex_params_yaml` must be provided.
             If both are provided, `regex_params_yaml` takes precedence.
+
         text_key (str): The key in each data entry whose value will be modified. Defaults to "text".
+
         **kwargs: Additional arguments passed to the BaseParallelProcessor.
 
     Returns:
-         The same data as in the input manifest with ``<text_key>`` field changed.
+        The same data as in the input manifest with ``<text_key>`` field changed.
     """
 
     def __init__(
