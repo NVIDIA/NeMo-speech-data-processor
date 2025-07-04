@@ -254,13 +254,25 @@ ASR-based processors
 Data modifications
 ''''''''''''''''''
 
-.. autodata:: sdp.processors.SoxConvert
-   :annotation:
-
 .. autodata:: sdp.processors.InsIfASRInsertion
    :annotation:
 
 .. autodata:: sdp.processors.SubIfASRSubstitution
+   :annotation:
+
+Files management
+''''''''''''''''
+
+.. autodata:: sdp.processors.SoxConvert
+   :annotation:
+
+.. autodata:: sdp.processors.FfmpegConvert
+   :annotation:
+
+.. autodata:: sdp.processors.ExtractTar
+   :annotation:
+
+.. autodata:: sdp.processors.RemoveFiles
    :annotation:
 
 Data filtering
@@ -353,9 +365,6 @@ Miscellaneous
    :annotation:
 
 .. autodata:: sdp.processors.GetAudioDuration
-   :annotation:
-
-.. autodata:: sdp.processors.FfmpegConvert
    :annotation:
 
 .. autodata:: sdp.processors.CreateInitialManifestByExt
