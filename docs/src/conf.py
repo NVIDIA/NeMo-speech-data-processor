@@ -45,7 +45,6 @@ autodoc_mock_imports = [
     "numpy",
     "tqdm",
     "soundfile",
-    "ndjson",
     "boto3",
     "webvtt_py",
     "python_docx",
@@ -189,3 +188,8 @@ nitpick_ignore = [
 ]
 # nitpick_ignore_regex = [('py:class', '*')]
 
+#adding this especially for coraal, temporary
+linkcheck_ignore = [
+    r'https://lingtools\.uoregon\.edu/coraal/coraal_download_list\.txt',
+]
+# https://lingtools.uoregon.edu/coraal/coraal_download_list.txt
