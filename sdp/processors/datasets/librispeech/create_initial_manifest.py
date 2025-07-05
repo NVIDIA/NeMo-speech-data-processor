@@ -18,6 +18,8 @@ import json
 import os
 import typing
 
+from ray_curator.tasks import _EmptyTask
+
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import download_file, extract_archive
 
@@ -94,7 +96,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
         entries = []
         root = os.path.dirname(file_path)
 
-        print(f"Processing transcript file: {file_path}") 
+        print(f"Processing transcript file: {file_path}")
         with open(file_path, encoding="utf-8") as fin:
             for line in fin:
                 id, text = line[: line.index(" ")], line[line.index(" ") + 1 :]
@@ -135,6 +137,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
         data_file = f'{dst_folder}/{self.split}.tar.gz'
         extract_archive(str(data_file), str(dst_folder), force_extract=True)
 
-    def process(self):
+    def process(self, task: _EmptyTask) -> _EmptyTask:
         self.download_extract_files(self.raw_data_dir)
         self.process_data(self.raw_data_dir, self.output_manifest_file)
+        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)

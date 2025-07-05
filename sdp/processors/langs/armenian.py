@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+from ray_curator.tasks import _EmptyTask
 
 from sdp.processors.base_processor import (
     BaseParallelProcessor,
@@ -62,9 +63,10 @@ class MakeTsv(BaseProcessor):
 
     """
 
-    def process(self):
+    def process(self, task: _EmptyTask) -> _EmptyTask:
         df1 = pd.DataFrame.from_records(load_manifest(Path(self.input_manifest_file)))
         df1.to_csv(self.output_manifest_file, index=None, sep='\t')
+        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)
 
 
 class RandomTsvPart(BaseProcessor):
@@ -88,8 +90,9 @@ class RandomTsvPart(BaseProcessor):
         self.part = part
         self.random_state = random_state
 
-    def process(self):
+    def process(self, task: _EmptyTask) -> _EmptyTask:
         df1 = pd.read_csv(self.input_manifest_file, sep='\t')
         df1.sample(frac=self.part, random_state=self.random_state).to_csv(
             self.output_manifest_file, index=None, sep='\t'
         )
+        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)
