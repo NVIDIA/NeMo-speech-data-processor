@@ -23,7 +23,7 @@ from itertools import chain
 from typing import Any, Dict, List, Optional, Union
 
 from ray_curator.stages.base import ProcessingStage
-from ray_curator.tasks import _EmptyTask
+from ray_curator.tasks import Task, _EmptyTask
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
@@ -95,7 +95,7 @@ class BaseProcessor(ABC):
         return "BaseProcessor"
 
 
-class BaseParallelProcessor(BaseProcessor, ProcessingStage[_EmptyTask, _EmptyTask]):
+class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
     """
     A processor that performs per-entry processing in parallel (using Dask or multiprocessing).
 
@@ -125,7 +125,7 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[_EmptyTask, _EmptyTas
         chunksize: int = 100,
         in_memory_chunksize: int = 100000,
         test_cases: Optional[List[Dict]] = None,
-        use_backend: bool = True,
+        use_backend: Optional[str] = None,
         dask_client=None,
         **kwargs,
     ):
@@ -147,7 +147,7 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[_EmptyTask, _EmptyTas
         """Can be used in derived classes to prepare the processing."""
         pass
 
-    def process(self, task: _EmptyTask) -> _EmptyTask:
+    def process(self, task: Task) -> Task:
         """A fork in the road to pick dask or classic processing"""
         os.environ.setdefault("PATH", os.defpath)
 
@@ -163,7 +163,7 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[_EmptyTask, _EmptyTas
             self._process_with_multiprocessing(metrics)
         self.finalize(metrics)
 
-        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)
+        return task
 
     def inputs(self) -> tuple[list[str], list[str]]:
         return [], []

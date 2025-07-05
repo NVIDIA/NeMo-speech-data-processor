@@ -18,7 +18,7 @@ import os
 import typing
 
 import gdown
-from ray_curator.tasks import _EmptyTask
+from ray_curator.tasks import DocumentBatch, EmptyTask, _EmptyTask
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
@@ -107,11 +107,13 @@ class CreateInitialManifestUzbekvoice(BaseProcessor):
     def process_data(self, data_folder: str, manifest_file: str) -> None:
         entries = self.process_transcript(os.path.join(data_folder, "uzbekvoice-dataset", "voice_dataset.json"))
 
-        with open(manifest_file, "w", encoding="utf-8") as fout:
-            for m in entries:
-                fout.write(json.dumps(m, ensure_ascii=False) + "\n")
+        if self.use_backend is None or self.use_backend == "dask":
+            with open(manifest_file, "w", encoding="utf-8") as fout:
+                for m in entries:
+                    fout.write(json.dumps(m, ensure_ascii=False) + "\n")
+        return entries
 
-    def process(self, task: _EmptyTask) -> _EmptyTask:
+    def process(self, task: _EmptyTask) -> DocumentBatch:
         self.download_extract_files(self.raw_data_dir)
-        self.process_data(self.raw_data_dir, self.output_manifest_file)
-        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)
+        entries = self.process_data(self.raw_data_dir, self.output_manifest_file)
+        return DocumentBatch(entries)
