@@ -69,7 +69,6 @@ from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
 from sdp.processors.datasets.ytc.create_initial_manifest import (
     CreateInitialManifestYTC,
 )
-from sdp.processors.huggingface.speech_recognition import ASRTransformers
 from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
 
 from sdp.processors.modify_manifest.common import (
