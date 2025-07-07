@@ -1,37 +1,38 @@
-import pytest
-import boto3
 import json
 import os
 import tarfile
 from pathlib import Path
+
+import boto3
+import pytest
 from omegaconf import OmegaConf
+
 from sdp.run_processors import run_processors
 from sdp.utils.common import load_manifest
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
 
+
 @pytest.fixture
 def get_tts_ytc_data(tmpdir: str):
     # Download the data from S3
     s3 = boto3.client(
-        's3',
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_KEY")
+        's3', aws_access_key_id=os.getenv("AWS_ACCESS_KEY"), aws_secret_access_key=os.getenv("AWS_SECRET_KEY")
     )
     s3.download_file(
-       "sdp-test-data",
-       "test_data/tts/ytc/test_data_reference.json",
-       tmpdir/"test_data_reference.json",
+        "sdp-test-data",
+        "test_data/tts/ytc/test_data_reference.json",
+        tmpdir / "test_data_reference.json",
     )
 
     s3.download_file(
-       "sdp-test-data",
-       "test_data/tts/ytc/ytc.en.tar.gz",
-       tmpdir/"ytc.en.tar.gz",
+        "sdp-test-data",
+        "test_data/tts/ytc/ytc.en.tar.gz",
+        tmpdir / "ytc.en.tar.gz",
     )
 
     # Extract the tar.gz file
-    with tarfile.open(tmpdir/"ytc.en.tar.gz", "r:gz") as tar:
+    with tarfile.open(tmpdir / "ytc.en.tar.gz", "r:gz") as tar:
         tar.extractall(tmpdir)
 
     audio_files = Path(tmpdir).glob("audios/*")
@@ -44,6 +45,7 @@ def get_tts_ytc_data(tmpdir: str):
             f.write(json.dumps(data) + "\n")
 
     return tmpdir
+
 
 def test_tts_sdp_end_to_end(get_tts_ytc_data):
     data_dir = get_tts_ytc_data
@@ -71,12 +73,12 @@ def test_tts_sdp_end_to_end(get_tts_ytc_data):
     output_data = load_manifest(cfg.final_manifest, encoding="utf8")
     for item in output_data:
         output_file_data[item["audio_item_id"]] = item
-    
+
     reference_file_data = {}
     reference_data = load_manifest(reference_manifest_file, encoding="utf8")
     for item in reference_data:
         reference_file_data[item["audio_item_id"]] = item
-    
+
     assert len(output_file_data) == len(reference_file_data)
     assert len(output_file_data) == 2
     for audio_item_id in output_file_data:

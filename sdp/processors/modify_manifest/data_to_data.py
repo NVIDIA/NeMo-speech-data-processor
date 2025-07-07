@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import collections
+import json
 import os
 import re
 from typing import Dict, List, Optional
@@ -20,9 +21,9 @@ from typing import Dict, List, Optional
 import soundfile
 import torchaudio
 from docx import Document
+from ray_curator.tasks import _EmptyTask
 from sox import Transformer
 from tqdm import tqdm
-import json
 
 from sdp.logging import logger
 from sdp.processors.base_processor import (
@@ -211,7 +212,7 @@ class SoxConvert(BaseParallelProcessor):
         # Extract workspace_dir from kwargs to avoid passing it to BaseProcessor
         if "workspace_dir" in kwargs:
             workspace_dir = kwargs.pop("workspace_dir")
-            
+
         super().__init__(**kwargs)
         self.input_audio_file_key = input_audio_file_key
         self.output_audio_file_key = output_audio_file_key
@@ -230,13 +231,13 @@ class SoxConvert(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry):
         audio_path = data_entry[self.input_audio_file_key]
-        
+
         # If workspace_dir is provided, join it with audio_path to get absolute path
         if self.workspace_dir is not None:
             full_audio_path = os.path.join(self.workspace_dir, audio_path)
         else:
             full_audio_path = audio_path
-            
+
         # Debug print first file path
         if not hasattr(self, '_debug_printed'):
             logger.info(f"First audio_path from manifest: {audio_path}")
@@ -678,6 +679,7 @@ class NormalizeText(BaseParallelProcessor):
 
     def prepare(self):
         from nemo_text_processing.text_normalization.normalize import Normalizer
+
         try:
             self.normalizer = Normalizer(input_case=self.input_case, lang=self.input_language)
         except NotImplementedError as e:
@@ -726,7 +728,10 @@ class InverseNormalizeText(BaseParallelProcessor):
         self.verbose = verbose
 
     def prepare(self):
-        from nemo_text_processing.inverse_text_normalization.inverse_normalize import InverseNormalizer
+        from nemo_text_processing.inverse_text_normalization.inverse_normalize import (
+            InverseNormalizer,
+        )
+
         try:
             self.inverse_normalizer = InverseNormalizer(input_case=self.input_case, lang=self.input_language)
         except NotImplementedError as e:
@@ -747,7 +752,7 @@ class CopyManifestData(BaseParallelProcessor):
 
     Args:
         copy_path (str): The destination directory where files will be copied.
-        source_filepath (str): The key in the manifest that contains the path to 
+        source_filepath (str): The key in the manifest that contains the path to
             the file to be copied. Default: "audio_path".
 
     Returns:
@@ -763,6 +768,7 @@ class CopyManifestData(BaseParallelProcessor):
               copy_path: ${workspace_dir}/consolidated_data
               source_filepath: "audio_filepath"
     """
+
     def __init__(
         self,
         copy_path: str,
@@ -931,15 +937,16 @@ class GetWER(BaseParallelProcessor):
     """This processor calculates Word Error Rate (WER) between predicted text and ground truth text.
 
     It computes the WER for each entry in the manifest and adds the result as a new field.
-    
+
     Args:
         text_key (str): Key for the ground truth text field in the manifest. Default: "text".
         pred_text_key (str): Key for the predicted text field in the manifest. Default: "pred_text".
-    
+
     Returns:
-        The same data as in the input manifest with an additional 'wer' field containing 
+        The same data as in the input manifest with an additional 'wer' field containing
         the calculated Word Error Rate between the specified text fields.
     """
+
     def __init__(
         self,
         text_key: str = "text",
@@ -983,6 +990,7 @@ class MakeSentence(BaseParallelProcessor):
               end_symbol: "."
               make_uppercase: true
     """
+
     def __init__(
         self,
         text_key: str = "text",
@@ -1022,7 +1030,14 @@ class ASRFileCheck(BaseProcessor):
         A manifest with corrupted audio files removed.
 
     """
-    def __init__(self, audio_filepath_key: str = "audio_filepath", corrupted_audio_dir: str = None, workspace_dir: str = None, **kwargs):
+
+    def __init__(
+        self,
+        audio_filepath_key: str = "audio_filepath",
+        corrupted_audio_dir: str = None,
+        workspace_dir: str = None,
+        **kwargs,
+    ):
         """
         Constructs the necessary attributes for the ASRFileCheck class.
 
@@ -1038,31 +1053,33 @@ class ASRFileCheck(BaseProcessor):
         """
         super().__init__(**kwargs)
         self.audio_filepath_key = audio_filepath_key
-        
+
         if corrupted_audio_dir is None:
-            raise ValueError("corrupted_audio_dir parameter is required. Please specify a directory to move corrupted files.")
-        
+            raise ValueError(
+                "corrupted_audio_dir parameter is required. Please specify a directory to move corrupted files."
+            )
+
         self.corrupted_audio_dir = corrupted_audio_dir
         self.workspace_dir = workspace_dir
         self.failed_files = []
 
-    def process(self):
+    def process(self, task: _EmptyTask) -> _EmptyTask:
         """
         Check each file listed in the manifest to ensure it can be loaded with torchaudio.
 
         This method reads through the manifest file, attempts to load each audio file using torchaudio,
         and moves corrupted files. A new manifest file is created with only the valid entries.
-        
+
         Specific errors handled:
         - FileNotFoundError: File doesn't exist
         - RuntimeError: File format issues or codec problems
         - Other exceptions: General issues with file loading
         """
         from sdp.logging import logger
-        
+
         # Debug print to show workspace_dir
         logger.info(f"ASRFileCheck workspace_dir: {self.workspace_dir}")
-        
+
         with open(self.input_manifest_file, 'r') as f:
             lines = f.readlines()
 
@@ -1076,22 +1093,22 @@ class ASRFileCheck(BaseProcessor):
             line = lines[idx]
             entry = json.loads(line)
             audio_path = entry[self.audio_filepath_key]
-            
+
             # Debug print first file path
             if idx == 0:
                 logger.info(f"First audio_path from manifest: {audio_path}")
-            
+
             # If workspace_dir is provided, join it with audio_path to get absolute path
             if self.workspace_dir is not None:
                 full_audio_path = os.path.join(self.workspace_dir, audio_path)
             else:
                 full_audio_path = audio_path
-            
+
             # Debug print first full path
             if idx == 0:
                 logger.info(f"First full_audio_path: {full_audio_path}")
                 logger.info(f"Path exists: {os.path.exists(full_audio_path)}")
-            
+
             try:
                 # Attempt to load the audio file to check if it is corrupted
                 torchaudio.load(full_audio_path)
@@ -1102,7 +1119,7 @@ class ASRFileCheck(BaseProcessor):
             except RuntimeError as e:
                 logger.warning(f"Audio format error in {audio_path}: {e}")
                 self.failed_files.append(audio_path)
-                
+
                 # Move the corrupted audio file
                 if os.path.exists(full_audio_path):
                     dest_path = os.path.join(self.corrupted_audio_dir, os.path.basename(audio_path))
@@ -1111,7 +1128,7 @@ class ASRFileCheck(BaseProcessor):
             except Exception as e:
                 logger.warning(f"Unknown error loading {audio_path}: {e}")
                 self.failed_files.append(audio_path)
-                
+
                 # Move the corrupted audio file
                 if os.path.exists(full_audio_path):
                     dest_path = os.path.join(self.corrupted_audio_dir, os.path.basename(audio_path))
@@ -1127,3 +1144,4 @@ class ASRFileCheck(BaseProcessor):
         if self.failed_files:
             logger.warning(f"Failed to process {len(self.failed_files)} files.")
             logger.debug(f"Failed files: {self.failed_files}")
+        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)
