@@ -91,8 +91,8 @@ class Subprocess(BaseProcessor):
                 process_args.extend([self.input_manifest_arg + self.arg_separator + self.input_manifest_file])
             if self.output_manifest_arg:
                 process_args.extend([self.output_manifest_arg + self.arg_separator + self.output_manifest_file])
+        subprocess.run(" ".join(process_args), shell=True)
 
-        subprocess.run(process_args)
 
 
 class CombineSources(BaseParallelProcessor):
