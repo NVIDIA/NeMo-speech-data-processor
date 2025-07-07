@@ -46,7 +46,7 @@ class DownloadHiFiTTS2(BaseParallelProcessor):
 
     Returns:
         Utterance files are stored under 'audio_dir' and chapter files are downloaded under 'chapter_dir'.
-        
+
         If exit_on_error is False, then an output manifest will be saved with manifest entries that fail to downlaod,
         with error information stored under the 'error_code' and 'error_reason' fields.
 
@@ -107,12 +107,11 @@ class DownloadHiFiTTS2(BaseParallelProcessor):
             try:
                 urllib.request.urlretrieve(url=url, filename=chapter_path)
                 break
-            except (urllib.error.HTTPError, urllib.error.URLError) as http_error:
-                error_msg = f"Encountered HTTP error when downloading {url}: {http_error}"
+            except Exception as ex:
+                error_msg = f"Encountered exception when downloading {url}: {ex}"
                 logger.warning(error_msg)
 
-                error_code = getattr(http_error, "code", 0)
-                if (not error_code or str(error_code).startswith("5")) and i < self.num_retries:
+                if i < self.num_retries:
                     logger.info(f"Retry {i} for url {url}")
                     time.sleep(10)
                     continue
@@ -120,16 +119,39 @@ class DownloadHiFiTTS2(BaseParallelProcessor):
                 if self.exit_on_error:
                     raise RuntimeError(error_msg)
 
+                if isinstance(ex, urllib.error.URLError):
+                    error_reason = ex.reason
+                else:
+                    error_reason = repr(ex)
+
                 error_data = {
                     "url": url,
                     "chapter_filepath": chapter_filepath,
-                    "error_code": error_code,
-                    "error_reason": http_error.reason,
+                    "error_reason": error_reason,
                     "utterances": utterances,
                 }
                 return [DataEntry(data=error_data)]
 
         chapter_audio, sr = librosa.load(path=chapter_path, sr=self.sample_rate)
+        chapter_duration = librosa.get_duration(y=chapter_audio, sr=sr)
+
+        original_duration = data_entry["duration"]
+        duration_diff = abs(chapter_duration - original_duration)
+        if duration_diff > 0.1:
+            error_msg = f"Duration mismatch for {url}: original duration={original_duration}; " \
+                        f"downloaded duration={round(chapter_duration, 2)}"
+            logger.warning(error_msg)
+
+            if self.exit_on_error:
+                raise RuntimeError(error_msg)
+
+            error_data = {
+                "url": url,
+                "chapter_filepath": chapter_filepath,
+                "error_reason": error_msg,
+                "utterances": utterances,
+            }
+            return [DataEntry(data=error_data)]
 
         for utt in utterances:
             audio_filepath = utt["audio_filepath"]
