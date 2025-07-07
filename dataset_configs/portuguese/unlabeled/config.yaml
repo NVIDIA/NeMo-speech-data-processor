@@ -1,36 +1,36 @@
 documentation: |
-  Unlabeled data processing pipeline
-  ############################
+  Unlabeled Data Processing Pipeline
+  ##################################
 
-  This pipeline processes unlabeled data for iterative-pseudo labelling training.
-  
+  This pipeline processes unlabeled data for iterative pseudo-labeling training.
+
   The pipeline performs the following steps:
-  1. Creates initial manifest by searching all WAV files in raw_data_dir folder
-  2. Counts duration of each WAV file
-  3. Identify language using langid_ambernet NeMo model
-  4. Filers out audios that are marked by different language tag
-  5. Filers out audios that are longer than it can be processed
-  6. Applies VAD algorithm from NeMo repository 
-  7. Forms segments by joining adjacent segments up to duration threshold
-  8. Splits long audios into short segments 
-  9. Remove empty files and extra fields from manifest
+  1. Creates an initial manifest by searching for all WAV files in the `raw_data_dir` folder.
+  2. Counts the duration of each WAV file.
+  3. Identifies the language using the `langid_ambernet` NeMo model.
+  4. Filters out audios that are tagged with a different language.
+  5. Filters out audios that are too long to be processed.
+  6. Applies the VAD algorithm from the NeMo repository.
+  7. Forms segments by joining adjacent segments up to a duration threshold.
+  8. Splits long audios into shorter segments.
+  9. Removes empty files and extra fields from the manifest.
 
-  Required inputs:
-  - workspace_dir: Directory for intermediate files that contanes subfolders:
-    ${workspace_dir}/wavs/ - folder with sourse long files 
-    ${workspace_dir}/sdp/ - folder to keep manifests
-    ${workspace_dir}/sdp/vad/ - folder to keep temprorary files from VAD algorithm
-    ${workspace_dir}/splited_wavs/ - folder to keep splited short files
+  **Required inputs**:
+    - `workspace_dir`: Directory for intermediate files, containing the following subfolders:
+    - `${workspace_dir}/wavs/` - Folder with source long files.
+    - `${workspace_dir}/sdp/` - Folder to store manifests.
+    - `${workspace_dir}/sdp/vad/` - Folder to store temporary files from the VAD algorithm.
+    - `${workspace_dir}/splited_wavs/` - Folder to store split short files.
 
-  - language_short: 2-letter language code
-  - nemo_path: Path to NeMo installation
-  - final_manifest: Path for final output manifest
+  - `language_short`: Two-letter language code.
+  - `nemo_path`: Path to NeMo installation.
+  - `final_manifest`: Path to the final output manifest.
 
 processors_to_run: "0:"
-workspace_dir: ??? # /mnt/ssd8/multilang/portuguese/yt
+workspace_dir: ???
 manifest_dir: ${workspace_dir}/sdp
 language_short: pt
-nemo_path: ??? # /home/nkarpov/workspace/NeMo_old
+nemo_path: ??? 
 final_manifest: ${manifest_dir}/final_manifest.json
 
 processors:
