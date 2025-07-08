@@ -1,0 +1,11 @@
+use_dask: false
+processors_to_run: "all"
+
+workspace_dir: ""
+
+processors:
+  - _target_: sdp.processors.CreateInitialManifesVoiceAssistant
+    output_manifest_file: ${workspace_dir}/manifest_00.json
+    output_dir: ${workspace_dir}
+    max_workers: -1
+    chunksize: 1000
