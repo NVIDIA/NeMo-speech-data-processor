@@ -71,7 +71,9 @@ from sdp.processors.datasets.ytc.create_initial_manifest import (
 )
 from sdp.processors.huggingface.speech_recognition import ASRTransformers
 from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
-
+from sdp.processors.datasets.VoiceAssistant.create_initial_manifest import (
+    CreateInitialManifesVoiceAssistant,
+)
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ApplyInnerJoin,
