@@ -181,6 +181,12 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.tts.metrics.BandwidthEstimationProcessor
    :annotation:
 
+.. autodata:: sdp.processors.FasterWhisperInference
+   :annotation:
+
+.. autodata:: sdp.processors.vLLMInference
+   :annotation:
+
 Text-only processors
 ####################
 
@@ -323,6 +329,12 @@ Data filtering
     :annotation:
 
 .. autodata:: sdp.processors.RejectIfBanned
+    :annotation:
+
+.. autodata:: sdp.processors.DetectWhisperHallucinationFeatures
+    :annotation:
+   
+.. autodata:: sdp.processors.CleanQwenGeneration
     :annotation:
 
 Miscellaneous

@@ -25,3 +25,7 @@ datasets>=2.14.0,<3.0.0
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
 # for some processers, additionally nemo_text_processing is required
 # for mcv: apt-get update && apt-get upgrade -y && apt-get install -y sox libsox-fmt-all
+# for FasterWhisperInference processor is required: 
+    # pip install pytorch-lightning nvidia-cublas-cu12 nvidia-cudnn-cu12==9.* faster_whisper
+    # export LD_LIBRARY_PATH=`python3 -c 'import os; import nvidia.cublas.lib; import nvidia.cudnn.lib; print(os.path.dirname(nvidia.cublas.lib.__file__) + ":" + os.path.dirname(nvidia.cudnn.lib.__file__))'`
+# for vLLMInference processor is required: pip install "optree>=0.13.0" vllm

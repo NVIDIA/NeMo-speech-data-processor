@@ -69,7 +69,6 @@ from sdp.processors.datasets.voxpopuli.normalize_from_non_pc_text import (
 from sdp.processors.datasets.ytc.create_initial_manifest import (
     CreateInitialManifestYTC,
 )
-from sdp.processors.huggingface.speech_recognition import ASRTransformers
 from sdp.processors.huggingface.create_initial_manifest import CreateInitialManifestHuggingFace
 
 from sdp.processors.modify_manifest.common import (
@@ -128,9 +127,14 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
 )
-from sdp.processors.nemo.asr_inference import ASRInference
+from sdp.processors.inference.asr.nemo.asr_inference import ASRInference
+from sdp.processors.inference.asr.faster_whisper.faster_whisper_inference import FasterWhisperInference
+from sdp.processors.inference.asr.transformers.speech_recognition import ASRTransformers
+from sdp.processors.inference.asr.post_processing.whisper_hallucinations import DetectWhisperHallucinationFeatures
+from sdp.processors.inference.nlp.pc_inference import PCInference
+from sdp.processors.inference.llm.vllm.vllm import vLLMInference
+from sdp.processors.inference.llm.post_processing.qwen_cleaning import CleanQwenGeneration
 from sdp.processors.nemo.estimate_bandwidth import EstimateBandwidth
-from sdp.processors.nemo.pc_inference import PCInference
 from sdp.processors.toloka.accept_if import AcceptIfWERLess
 from sdp.processors.toloka.create_pool import CreateTolokaPool
 from sdp.processors.toloka.create_project import CreateTolokaProject
