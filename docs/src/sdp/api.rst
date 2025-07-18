@@ -240,6 +240,9 @@ Data modifications
 .. autodata:: sdp.processors.InverseNormalizeText
    :annotation:
 
+.. autodata:: sdp.processors.LambdaExpression
+   :annotation:
+
 Data filtering
 ''''''''''''''
 
