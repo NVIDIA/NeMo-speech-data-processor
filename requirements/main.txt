@@ -19,6 +19,7 @@ pydub
 dask
 distributed
 jiwer>=3.1.0,<4.0.0
+pyarrow<12.0.0
 # toloka-kit  # Temporarily disabled due to Toloka's technical pause; keep as reference for past and future API support
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
 # for some processers, additionally nemo_text_processing is required
