@@ -184,13 +184,14 @@ mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/mml-chtml.min.js"
 
 nitpick_ignore = [
     ('py:class', 'abc.ABC'),
-    ('py:class', 'sdp.processors.base_processor.DataEntry'),
     ('py:class', 'optional'),
+    ('py:mod', 'sdp.utils.apply_operators'),
 ]
 # nitpick_ignore_regex = [('py:class', '*')]
 
 #adding this especially for coraal, temporary
 linkcheck_ignore = [
     r'https://lingtools\.uoregon\.edu/coraal/coraal_download_list\.txt',
+    r'https://ieeexplore\.ieee\.org/document/1326009'
 ]
 # https://lingtools.uoregon.edu/coraal/coraal_download_list.txt
