@@ -219,6 +219,9 @@ Data modifications
 .. autodata:: sdp.processors.InverseNormalizeText
    :annotation:
 
+.. autodata:: sdp.processors.LambdaExpression
+   :annotation:
+  
 .. autodata:: sdp.processors.ListToEntries
    :annotation:
 
@@ -382,6 +385,14 @@ Miscellaneous
 .. autodata:: sdp.processors.tts.prepare_tts_segments.PrepareTTSSegmentsProcessor
    :annotation:
 
+.. autodata:: sdp.processors.ipl.nemo_run_processor.NemoRunIPLProcessor
+   :annotation:
+
+.. autodata:: sdp.processors.ipl.ipl_processors.TrainingCommandGenerator
+   :annotation:
+
+.. autodata:: sdp.processors.ipl.ipl_processors.InferenceCommandGenerator
+   :annotation:
 
 .. _sdp-base-classes:
 

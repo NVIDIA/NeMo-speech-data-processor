@@ -107,6 +107,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubMakeLowercase,
     SubRegex,
     ListToEntries,
+    LambdaExpression,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,
