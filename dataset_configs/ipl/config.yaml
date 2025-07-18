@@ -1,0 +1,49 @@
+documentation: |
+  TopIPL
+  ######
+
+  This config is used to run the `TopIPL: Iterative Pseudo-Labeling for ASR <https://arxiv.org/abs/2506.07659>`_ training algorithm using NeMo-Run.
+
+  TopIPL is a **semi-supervised training method** for automatic speech recognition (ASR) that iteratively alternates between model training and pseudo-label generation for unlabeled data. It uses a **top-N checkpoint averaging strategy** to create a strong teacher model and maintains a **dynamic cache** of pseudo-labels throughout the process.
+
+  The pipeline is implemented as a processor compatible with the `nemo_run` framework. It generates an output manifest containing updated labels based on pseudo-labeling iterations.
+
+  This config performs the following steps:
+
+  1. Runs training and inference commands using NeMo-Run.
+  2. Periodically stops training to generate pseudo-labels with a top-N checkpoint ensemble.
+  3. Maintains a dynamic cache of pseudo-labels for unlabeled data.
+  4. Produces a new output manifest after each iteration.
+
+  **Required arguments**
+
+  - **output_manifest_file**: path where the final manifest with pseudo-labels will be saved.
+  - **nemo_run_config**: YAML config file specifying the training, inference, and IPL parameters.
+
+  **Training config requirements**
+
+  Your training config must include the following setting to enable IPL:
+
+  .. code-block:: yaml
+
+    exp_manager:
+      create_ipl_epoch_stopper_callback: True
+
+  If you're not using Lhotse, also include:
+
+  .. code-block:: yaml
+
+    ipl_epoch_stopper_callback_params:
+      stop_every_n_epochs: 2
+
+  ### Prerequisites
+
+  - nemo_run
+  - ``pip install -r ipl.txt``
+
+processors_to_run: all
+
+processors:
+  - _target_: sdp.processors.IPL.nemo_run_processor.NemoRunIPLProcessor
+    config_path: ./nemo_run_config.yaml
+    output_manifest_file: ???
