@@ -586,6 +586,20 @@ class SubRegex(BaseParallelProcessor):
 
         **kwargs: Additional arguments passed to the BaseParallelProcessor.
 
+    Example YAML format for `regex_params_yaml`:
+        ```
+        # regex_params.yaml
+        - {"pattern": "♩", "repl": " "}
+        - {"pattern": "♭", "repl": " "}
+        - {"pattern": "\\|", "repl": " "}
+        - {"pattern": ":", "repl": " "}
+        - {"pattern": "-", "repl": " "}
+        - {"pattern": "[^ €₽₴$£%?!',.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЬЮЯабвгдежзийклмнопрстуфхцчшщъьюя]", "repl": ""}
+        - {"pattern": "\\s+\\.", "repl": "."}
+        - {"pattern": "\\?+", "repl": "?"}
+        - {"pattern": "\\.+", "repl": "."}
+        ```
+
     Returns:
         The same data as in the input manifest with ``<text_key>`` field changed.
     """
