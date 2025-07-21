@@ -32,13 +32,8 @@ from sdp.processors.base_processor import (
 from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
-from sdp.utils.metrics_computation import (
-    get_cer,
-    get_charrate,
-    get_wer,
-    get_wmr,
-    get_wordrate,
-)
+from sdp.utils.metrics_computation import get_wer
+from sdp.utils.apply_operators import evaluate_expression
 
 
 class GetAudioDuration(BaseParallelProcessor):
@@ -978,3 +973,99 @@ class ASRFileCheck(BaseProcessor):
         if self.failed_files:
             logger.warning(f"Failed to process {len(self.failed_files)} files.")
             logger.debug(f"Failed files: {self.failed_files}")
+
+
+class LambdaExpression(BaseParallelProcessor):
+    """
+    A dataset processor that evaluates a Python expression on each data entry and either stores
+    the result in a new field or uses it as a filtering condition.
+
+    This processor is useful for dynamic field computation or conditional filtering of entries based
+    on configurable expressions. It leverages ``evaluate_expression``, which safely evaluates expressions
+    using the abstract syntax tree (AST).
+
+    Filtering behavior:
+        If ``filter=True``, the expression is evaluated for each entry. Only entries for which the expression evaluates to ``True`` are kept; all others are filtered out (removed from the output).
+        If ``filter=False``, the result of the expression is stored in the field specified by ``new_field`` for each entry (no filtering occurs).
+
+    Examples::
+
+        # Example 1: Filtering entries where the duration is greater than 5.0 seconds
+        LambdaExpression(
+            new_field="keep",  # This field is ignored when filter=True
+            expression="entry['duration'] > 5.0",
+            lambda_param_name="entry",
+            filter=True
+        )
+        # Only entries with duration > 5.0 will be kept in the output manifest.
+
+        # Example 2: Adding a new field with the number of words in the text
+        LambdaExpression(
+            new_field="num_words",
+            expression="len(entry['text'].split())",
+            lambda_param_name="entry",
+            filter=False
+        )
+        # Each entry will have a new field 'num_words' with the word count of the 'text' field.
+
+    Supported operations:
+
+        The expression supports a safe subset of Python operations, including:
+
+        - Arithmetic: ``+``, ``-``, ``*``, ``/``, ``//``, ``%``, ``**``
+        - Comparisons: ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``, ``is``, ``is not``
+        - Logical: ``and``, ``or``, ``not``
+        - Bitwise: ``|``, ``&``, ``^``, ``~``, ``<<``, ``>>``
+        - Indexing and slicing: ``entry['key']``, ``entry[0]``, ``entry[1:3]``
+        - Conditional (ternary) expressions: ``a if cond else b``
+        - List and dict literals: ``[a, b]``, ``{k: v}``
+        - Attribute access: ``entry.attr``
+        - Function calls (limited): ``max``, ``min``, ``len``, ``sum``, ``abs``, ``sorted``
+
+        For the full list, see the ``OPERATORS`` and ``SAFE_FUNCTIONS`` in :mod:`sdp.utils.apply_operators`.
+        See also: https://docs.python.org/3/library/operator.html
+
+    Args:
+        new_field (str): The name of the field to store the result of the expression (ignored if filter=True).
+        expression (str): A Python expression to evaluate. It can reference fields of the data entry
+            using the name specified by ``lambda_param_name`` (default: 'entry').
+        lambda_param_name (str, optional): The name to refer to the current data entry in the expression.
+            Default is "entry".
+        filter (bool, optional): If True, the expression result is treated as a condition.
+            The entry is kept only if the result is ``True``. Default is ``False``.
+        **kwargs: Additional keyword arguments passed to the ``BaseParallelProcessor`` class.
+
+    Returns:
+        str: A line-delimited JSON manifest, where each line is a processed entry.
+        The result may contain fewer entries than the input if ``filter=True``.
+    """
+    def __init__(
+        self,
+        new_field: str,
+        expression: str,
+        lambda_param_name: str = "entry",
+        filter: bool = False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.new_field = new_field
+        self.expression = expression
+        self.lambda_param_name = lambda_param_name
+        self.filter = filter
+
+    def process_dataset_entry(self, data_entry) -> List[DataEntry]:
+        """
+        Process a single data entry by evaluating the expression.
+
+        If `filter` is True, the entry is only retained if the expression evaluates to True.
+        Otherwise, the result is stored in `new_field`.
+        """
+        value = evaluate_expression(self.expression,  data_entry, self.lambda_param_name)
+        if self.filter:
+            if value is not True:
+                return []
+        data_entry[self.new_field] = value   
+        return [DataEntry(data=data_entry)]
+
+    def finalize(self, metrics):
+        super().finalize(metrics)
