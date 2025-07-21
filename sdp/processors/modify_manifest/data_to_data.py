@@ -1136,10 +1136,6 @@ class ListToEntries(BaseParallelProcessor):
         field_with_list (str): The name of the field in the input entry that contains a list.
         output_field (str, optional): The name of the output field to assign to items in the list
             if they are not dictionaries. Required if the list contains primitive types (e.g., strings).
-        fields_to_save (list[str], optional): A list of field names to preserve from the original entry.
-            All other fields will be removed.
-        fields_to_remove (list[str], optional): A list of field names to explicitly remove from the original entry,
-            in addition to those excluded by `fields_to_save`.
         **kwargs: Additional arguments passed to the BaseParallelProcessor.
 
     Raises:
@@ -1225,15 +1221,11 @@ class ListToEntries(BaseParallelProcessor):
     def __init__(self, 
         field_with_list: str,
         output_field: str = None,
-        fields_to_save: list[str] = None,
-        fields_to_remove: list[str] = None,
         **kwargs):
         super().__init__(**kwargs)
         self.field_with_list = field_with_list
         self.output_field = output_field
-        self.fields_to_save = fields_to_save
-        self.fields_to_remove = fields_to_remove
-        
+
     def process_dataset_entry(self, data_entry):
         _entries = []
 
@@ -1247,21 +1239,7 @@ class ListToEntries(BaseParallelProcessor):
         # If items are not dicts, output_field must be specified to store the item
         if not isinstance(items_list[0], dict) and not self.output_field:
             raise ValueError(f'Type of items in items list `{self.field_with_list}` is not dict ({type(items_list[0])}). In this case `output_field` should be provided.')
-
-        # Determine which fields to remove from the entry before expanding
-        fields_to_remove = set()
-        if self.fields_to_save is not None:
-            for field in data_entry:
-                if field not in self.fields_to_save:
-                    fields_to_remove.add(field)
-
-        if self.fields_to_remove is not None:
-            fields_to_remove.update(self.fields_to_remove)
-
-        # Remove specified fields
-        for field in fields_to_remove:
-            data_entry.pop(field)
-
+        
         # Expand the list into multiple entries
         for item in items_list:
             _entry = data_entry.copy()
