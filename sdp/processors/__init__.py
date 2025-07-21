@@ -21,6 +21,13 @@ from sdp.processors.datasets.coraal import (
     CreateInitialManifestCORAAL,
     TrainDevTestSplitCORAAL,
 )
+from sdp.processors.datasets.earnings import (
+    CreateInitialAudioAndManifest,
+    CreateFullAudioManifestEarnings21,
+    SpeakerSegmentedManifest,
+    CreateSentenceSegmentedManifest,
+    ApplyEarnings21Normalizations,
+)
 from sdp.processors.datasets.fleurs.create_initial_manifest import (
     CreateInitialManifestFleurs,
 )
@@ -105,6 +112,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
+    LambdaExpression,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,

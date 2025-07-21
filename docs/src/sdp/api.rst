@@ -96,6 +96,27 @@ UzbekVoice
 .. autodata:: sdp.processors.CreateInitialManifestUzbekvoice
    :annotation:
 
+Earnings21/22
+'''''''''''''
+
+.. autodata:: sdp.processors.datasets.earnings21.CreateInitialAudioAndManifest
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings21.CreateFullAudioManifestEarnings21
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings21.SpeakerSegmentedManifest
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings21.CreateSentenceSegmentedManifest
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings21.NeMoForcedAligner
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings21.ApplyEarnings21Normalizations
+   :annotation:
+
 
 MASC
 ''''''
@@ -223,6 +244,9 @@ Data modifications
    :annotation:
    
 .. autodata:: sdp.processors.InverseNormalizeText
+   :annotation:
+
+.. autodata:: sdp.processors.LambdaExpression
    :annotation:
 
 Data filtering
@@ -391,6 +415,14 @@ Miscellaneous
 .. autodata:: sdp.processors.tts.prepare_tts_segments.PrepareTTSSegmentsProcessor
    :annotation:
 
+.. autodata:: sdp.processors.ipl.nemo_run_processor.NemoRunIPLProcessor
+   :annotation:
+
+.. autodata:: sdp.processors.ipl.ipl_processors.TrainingCommandGenerator
+   :annotation:
+
+.. autodata:: sdp.processors.ipl.ipl_processors.InferenceCommandGenerator
+   :annotation:
 
 .. _sdp-base-classes:
 

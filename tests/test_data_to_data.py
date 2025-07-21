@@ -19,6 +19,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
+    LambdaExpression,
 )
 
 from sdp.processors.inference.llm.post_processing.qwen_cleaning import CleanQwenGeneration
@@ -85,9 +86,96 @@ test_params_list.extend(
     [
         (
             SubRegex,
-            {"regex_params_list": [{"pattern": "\s<.*>\s", "repl": " "}]},
+            {"regex_params_list": [{"pattern": r"\s<.*>\s", "repl": " "}]},
             {"text": "hello <cough> world"},
             [{"text": "hello world"}],
+        ),
+    ]
+)
+
+
+test_params_list.extend(
+    [
+        # Simple arithmetic expression
+        (
+            LambdaExpression,
+            {"new_field": "duration_x2", "expression": "entry.duration * 2"},
+            {"duration": 3.5},
+            [{"duration": 3.5, "duration_x2": 7.0}],
+        ),
+
+        # Ternary expression
+        (
+            LambdaExpression,
+            {"new_field": "label", "expression": "'long' if entry.duration > 10 else 'short'"},
+            {"duration": 12.0},
+            [{"duration": 12.0, "label": "long"}],
+        ),
+
+        # Filtering: entry should be dropped (condition is False)
+        (
+            LambdaExpression,
+            {"new_field": "valid", "expression": "entry.duration > 10", "filter": True},
+            {"duration": 5.0},
+            [],
+        ),
+
+        # Filtering: entry should be kept (condition is True)
+        (
+            LambdaExpression,
+            {"new_field": "valid", "expression": "entry.duration > 10", "filter": True},
+            {"duration": 12.0},
+            [{"duration": 12.0, "valid": True}],
+        ),
+
+        # Using built-in function len()
+        (
+            LambdaExpression,
+            {"new_field": "num_chars", "expression": "len(entry.text)"},
+            {"text": "hello world"},
+            [{"text": "hello world", "num_chars": 11}],
+        ),
+
+        # Using built-in max() with sub-expressions
+        (
+            LambdaExpression,
+            {"new_field": "score", "expression": "max(entry.a, entry.b * 2)"},
+            {"a": 4, "b": 3},
+            [{"a": 4, "b": 3, "score": 6}],
+        ),
+
+        # Expression using variable prefix (e.g., entry.a + entry.b)
+        (
+            LambdaExpression,
+            {
+                "new_field": "sum",
+                "expression": "entry.a + entry.b",
+                "lambda_param_name": "entry",
+            },
+            {"a": 1, "b": 2},
+            [{"a": 1, "b": 2, "sum": 3}],
+        ),
+
+        # Logical expression using `and`
+        (
+            LambdaExpression,
+            {
+                "new_field": "check",
+                "expression": "entry.a > 0 and entry.b < 5",
+            },
+            {"a": 1, "b": 4},
+            [{"a": 1, "b": 4, "check": True}],
+        ),
+
+        # Boolean expression without filtering (entry is always returned)
+        (
+            LambdaExpression,
+            {
+                "new_field": "is_zero",
+                "expression": "entry.value == 0",
+            },
+            {"value": 5},
+            [{"value": 5, "is_zero": False}],
         ),
     ]
 )
