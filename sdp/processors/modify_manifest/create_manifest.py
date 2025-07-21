@@ -17,10 +17,7 @@ from pathlib import Path
 
 import pandas
 
-from sdp.processors.base_processor import (
-    BaseParallelProcessor,
-    DataEntry,
-)
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
 class CreateInitialManifestByExt(BaseParallelProcessor):
@@ -55,23 +52,30 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry):
         data = {self.output_file_key: data_entry}
-        return [DataEntry(data=data)]
+        return [
+            DataEntry(
+                data=data,
+                task_id=0,
+                dataset_name=str(self.raw_data_dir / "*.") + self.extension,
+            )
+        ]
 
 
 class CreateCombinedManifests(BaseParallelProcessor):
     """Reads JSON lines from specified files and creates a combined manifest.
 
-    This processor iterates over files listed in `manifest_list`, reads each file line by line, 
+    This processor iterates over files listed in `manifest_list`, reads each file line by line,
     and yields the parsed JSON data from each line.
 
     Args:
-        manifest_list (list(str)): A list of file paths or directories to process. The processor will 
+        manifest_list (list(str)): A list of file paths or directories to process. The processor will
                                    recursively read files within the directories and expect each file to contain JSON data.
         **kwargs: Additional keyword arguments passed to the base class `BaseParallelProcessor`.
 
     Returns:
         A generator that yields parsed JSON data from each line in the files listed in `manifest_list`.
     """
+
     def __init__(
         self,
         manifest_list: list[str],
@@ -87,7 +91,10 @@ class CreateCombinedManifests(BaseParallelProcessor):
                     yield json.loads(line)
 
     def process_dataset_entry(self, data_entry):
-        return [DataEntry(data=data_entry)]
-
-
-
+        return [
+            DataEntry(
+                data=data_entry,
+                task_id=0,
+                dataset_name=self.__class__.__name__,
+            )
+        ]

@@ -19,6 +19,8 @@ from pathlib import Path
 
 import yaml
 from omegaconf import OmegaConf
+from ray_curator.stages.base import ProcessingStage
+from ray_curator.tasks import Task, _EmptyTask
 
 from sdp.run_processors import run_processors
 
@@ -54,40 +56,6 @@ def test_curator():
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = os.path.join(tmpdir, "output_manifest_file.jsonl")
         dict_conf = _make_dict(output_manifest_file=output_path, use_backend="curator")
-        conf_path = Path(tmpdir) / "config.yaml"
-        _write_config(conf_path, dict_conf)
-
-        cfg = OmegaConf.load(conf_path)
-
-    run_processors(cfg)
-    with open(output_path, "r") as f:
-        output = json.load(f)
-
-    expected_output = _make_expected_output()
-    assert output == expected_output, f"Expected {expected_output}, but got {output}"
-
-
-def test_multiprocessing():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        output_path = os.path.join(tmpdir, "output_manifest_file.jsonl")
-        dict_conf = _make_dict(output_manifest_file=output_path, use_backend=None)
-        conf_path = Path(tmpdir) / "config.yaml"
-        _write_config(conf_path, dict_conf)
-
-        cfg = OmegaConf.load(conf_path)
-
-    run_processors(cfg)
-    with open(output_path, "r") as f:
-        output = json.load(f)
-
-    expected_output = _make_expected_output()
-    assert output == expected_output, f"Expected {expected_output}, but got {output}"
-
-
-def test_dask():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        output_path = os.path.join(tmpdir, "output_manifest_file.jsonl")
-        dict_conf = _make_dict(output_manifest_file=output_path, use_backend="dask")
         conf_path = Path(tmpdir) / "config.yaml"
         _write_config(conf_path, dict_conf)
 

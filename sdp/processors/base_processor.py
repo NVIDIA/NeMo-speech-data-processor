@@ -31,11 +31,18 @@ from sdp.logging import logger
 
 
 @dataclass
-class DataEntry:
+class DataEntry(Task[list]):
     """A wrapper for data entry + any additional metrics."""
 
     data: Optional[Dict]  # can be None to drop the entry
     metrics: Any = None
+
+    @property
+    def num_items(self) -> int:
+        return len(self.data)
+
+    def validate(self) -> bool:
+        return True
 
 
 class BaseProcessor(ABC):
@@ -107,14 +114,14 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
         in_memory_chunksize (int): Maximum number of entries to load at once.
         test_cases (list[dict]): Optional list of test cases.
         use_backend (str): Use {None, dask, curator} for parallelization. Use None for multiprocessing.
-        dask_client: (Optional) An existing Dask client.
+        backend_client: (Optional) An existing backend client.
     """
 
     def __getstate__(self):
         state = self.__dict__.copy()
         # Remove the Dask client from state (it is not picklable)
-        if 'dask_client' in state:
-            state['dask_client'] = None
+        if 'backend_client' in state:
+            state['backend_client'] = None
         return state
 
     def __init__(
@@ -126,7 +133,7 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
         in_memory_chunksize: int = 100000,
         test_cases: Optional[List[Dict]] = None,
         use_backend: Optional[str] = None,
-        dask_client=None,
+        backend_client=None,
         **kwargs,
     ):
         kwargs.pop("use_backend", None)  #
@@ -141,7 +148,7 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
         self.start_time = time.time()
         self.test_cases = test_cases or []
         self.use_backend = use_backend
-        self.dask_client = dask_client
+        self.backend_client = backend_client
 
     def prepare(self):
         """Can be used in derived classes to prepare the processing."""
@@ -157,10 +164,10 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
         metrics = []
 
         # Ability to work sa legacy and as dask
-        if self.use_backend == "dask":
-            self._process_with_dask(metrics)
+        if self.use_backend == "curator":
+            task = self._process_with_ray(metrics)
         else:
-            self._process_with_multiprocessing(metrics)
+            task = self._process_with_multiprocessing(metrics)
         self.finalize(metrics)
 
         return task
@@ -169,7 +176,7 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
         return [], []
 
     def outputs(self) -> tuple[list[str], list[str]]:
-        return [], []
+        return ["data"], []
 
     @property
     def name(self) -> str:
@@ -179,9 +186,9 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
         import dask.bag as db
         from dask.distributed import Client
 
-        if self.dask_client is None:
-            self.dask_client = Client()
-        client = self.dask_client
+        if self.backend_client is None:
+            self.backend_client = Client()
+        client = self.backend_client
         from sdp.logging import logger
 
         logger.info(f"Using Dask client with dashboard at: {client.dashboard_link}")
@@ -210,6 +217,22 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
                     self.total_duration += entry.data.get("duration", 0)
         logger.info(f"Processed {total_entries} entries using Dask.")
 
+    def _process_with_ray(self, metrics):
+        tasks = []
+        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
+            for manifest_chunk in self._chunk_manifest():
+                data = self.process_dataset_entry(manifest_chunk)
+                for data_entry in tqdm(data):
+                    metrics.append(data_entry.metrics)
+                    if data_entry.data is None:
+                        continue
+                    json.dump(data_entry.data, fout, ensure_ascii=False)
+                    fout.write("\n")
+                    self.number_of_entries += 1
+                    self.total_duration += data_entry.data.get("duration", 0)
+                tasks.extend(data)
+        return tasks
+
     def _process_with_multiprocessing(self, metrics):
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for manifest_chunk in self._chunk_manifest():
@@ -229,6 +252,7 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
                     fout.write("\n")
                     self.number_of_entries += 1
                     self.total_duration += data_entry.data.get("duration", 0)
+        return data
 
     def _chunk_manifest(self):
         """Splits the input manifest into chunks of in_memory_chunksize size.
