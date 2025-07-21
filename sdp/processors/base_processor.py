@@ -39,7 +39,7 @@ class DataEntry(Task[list]):
 
     @property
     def num_items(self) -> int:
-        return len(self.data)
+        return 1
 
     def validate(self) -> bool:
         return True
