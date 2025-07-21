@@ -99,7 +99,6 @@ from sdp.processors.modify_manifest.data_to_data import (
     CopyManifestData,
     CountNumWords,
     ExtractFromBrackets,
-    FfmpegConvert,
     GetAudioDuration,
     GetWER,
     InsIfASRInsertion,
@@ -108,7 +107,6 @@ from sdp.processors.modify_manifest.data_to_data import (
     MakeSentence,
     ReadDocxLines,
     ReadTxtLines,
-    SoxConvert,
     SplitLineBySentence,
     SubIfASRSubstitution,
     SubMakeLowercase,
@@ -135,6 +133,16 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
 )
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
+)
+from sdp.processors.manage_files.convert_audio import (
+    FfmpegConvert,
+    SoxConvert,
+)
+from sdp.processors.manage_files.extract import (
+    ExtractTar,
+)
+from sdp.processors.manage_files.remove import (
+    RemoveFiles,
 )
 from sdp.processors.nemo.asr_inference import ASRInference
 from sdp.processors.nemo.estimate_bandwidth import EstimateBandwidth
