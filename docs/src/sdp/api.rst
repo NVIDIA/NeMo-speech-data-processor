@@ -99,22 +99,22 @@ UzbekVoice
 Earnings21/22
 '''''''''''''
 
-.. autodata:: sdp.processors.datasets.earnings21.CreateInitialAudioAndManifest
+.. autodata:: sdp.processors.datasets.earnings.CreateInitialAudioAndManifest
    :annotation:
 
-.. autodata:: sdp.processors.datasets.earnings21.CreateFullAudioManifestEarnings21
+.. autodata:: sdp.processors.datasets.earnings.CreateFullAudioManifestEarnings21
    :annotation:
 
-.. autodata:: sdp.processors.datasets.earnings21.SpeakerSegmentedManifest
+.. autodata:: sdp.processors.datasets.earnings.SpeakerSegmentedManifest
    :annotation:
 
-.. autodata:: sdp.processors.datasets.earnings21.CreateSentenceSegmentedManifest
+.. autodata:: sdp.processors.datasets.earnings.CreateSentenceSegmentedManifest
    :annotation:
 
-.. autodata:: sdp.processors.datasets.earnings21.NeMoForcedAligner
+.. autodata:: sdp.processors.datasets.earnings.NeMoForcedAligner
    :annotation:
 
-.. autodata:: sdp.processors.datasets.earnings21.ApplyEarnings21Normalizations
+.. autodata:: sdp.processors.datasets.earnings.ApplyEarnings21Normalizations
    :annotation:
 
 
