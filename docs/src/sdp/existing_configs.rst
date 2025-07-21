@@ -425,3 +425,17 @@ NemoRunIPL
 
    config-docs/ipl/config
    config-docs/ipl/nemo_run_config
+
+Earnings21/22
+~~~~~~~~~~~~~
+
+**Supported configs**.
+
+* **English**:
+  `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/earnings/config.yaml>`__ |
+  :doc:`documentation <config-docs/english/earnings/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/english/earnings/config
