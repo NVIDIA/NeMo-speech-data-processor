@@ -98,7 +98,6 @@ from sdp.processors.modify_manifest.data_to_data import (
     CopyManifestData,
     CountNumWords,
     ExtractFromBrackets,
-    FfmpegConvert,
     GetAudioDuration,
     GetWER,
     InsIfASRInsertion,
@@ -107,7 +106,6 @@ from sdp.processors.modify_manifest.data_to_data import (
     MakeSentence,
     ReadDocxLines,
     ReadTxtLines,
-    SoxConvert,
     SplitLineBySentence,
     SubIfASRSubstitution,
     SubMakeLowercase,
@@ -143,6 +141,17 @@ from sdp.processors.inference.asr.post_processing.whisper_hallucinations import 
 from sdp.processors.inference.nlp.pc_inference import PCInference
 from sdp.processors.inference.llm.vllm.vllm import vLLMInference
 from sdp.processors.inference.llm.post_processing.qwen_cleaning import CleanQwenGeneration
+
+from sdp.processors.manage_files.convert_audio import (
+    FfmpegConvert,
+    SoxConvert,
+)
+from sdp.processors.manage_files.extract import (
+    ExtractTar,
+)
+from sdp.processors.manage_files.remove import (
+    RemoveFiles,
+)
 from sdp.processors.toloka.accept_if import AcceptIfWERLess
 from sdp.processors.toloka.create_pool import CreateTolokaPool
 from sdp.processors.toloka.create_project import CreateTolokaProject

@@ -19,7 +19,6 @@ import os
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from itertools import chain
 from typing import Any, Dict, List, Optional, Union
 
 from tqdm import tqdm
