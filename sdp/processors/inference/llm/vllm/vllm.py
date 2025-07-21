@@ -51,7 +51,7 @@ class vLLMInference(BaseProcessor):
     .. note::
         For detailed parameter options, refer to the following documentation:
 
-        - model: https://docs.vllm.ai/en/latest/api/vllm/vllm.entrypoints.llm.html#vllm.entrypoints.llm.LLM
+        - model: https://docs.vllm.ai/en/latest/api/vllm/index.html#vllm.LLM
         - inference: https://docs.vllm.ai/en/v0.6.4/dev/sampling_params.html
         - apply_chat_template: https://huggingface.co/docs/transformers/main/en/chat_templating#applychattemplate
 
