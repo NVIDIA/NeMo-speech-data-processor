@@ -113,6 +113,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubMakeLowercase,
     SubRegex,
     LambdaExpression,
+    EstimateBandwidth,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,
@@ -142,7 +143,6 @@ from sdp.processors.inference.asr.post_processing.whisper_hallucinations import 
 from sdp.processors.inference.nlp.pc_inference import PCInference
 from sdp.processors.inference.llm.vllm.vllm import vLLMInference
 from sdp.processors.inference.llm.post_processing.qwen_cleaning import CleanQwenGeneration
-from sdp.processors.nemo.estimate_bandwidth import EstimateBandwidth
 from sdp.processors.toloka.accept_if import AcceptIfWERLess
 from sdp.processors.toloka.create_pool import CreateTolokaPool
 from sdp.processors.toloka.create_project import CreateTolokaProject

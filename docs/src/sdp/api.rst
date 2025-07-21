@@ -184,9 +184,6 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.ASRTransformers
    :annotation:
 
-.. autodata:: sdp.processors.EstimateBandwidth
-   :annotation:
-
 .. autodata:: sdp.processors.tts.pyannote.PyAnnoteDiarizationAndOverlapDetection
    :annotation:
 
@@ -247,6 +244,9 @@ Data modifications
    :annotation:
 
 .. autodata:: sdp.processors.LambdaExpression
+   :annotation:
+
+.. autodata:: sdp.processors.EstimateBandwidth
    :annotation:
 
 Data filtering
