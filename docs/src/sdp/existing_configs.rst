@@ -431,7 +431,7 @@ Earnings21/22
 
 **Supported configs**.
 
-* **IPL**:
+* **English**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/english/earnings/config.yaml>`__ |
   :doc:`documentation <config-docs/english/earnings/config>`
 
