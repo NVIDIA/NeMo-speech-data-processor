@@ -89,6 +89,7 @@ from sdp.processors.modify_manifest.common import (
     RenameFields,
     SortManifest,
     SplitOnFixedDuration,
+    DropSpecifiedFields,
 )
 from sdp.processors.modify_manifest.create_manifest import (
     CreateCombinedManifests,
