@@ -412,6 +412,9 @@ Miscellaneous
 .. autodata:: sdp.processors.ipl.ipl_processors.InferenceCommandGenerator
    :annotation:
 
+.. autodata:: sdp.processors.DropSpecifiedFields
+   :annotation:
+
 .. _sdp-base-classes:
 
 Base classes
