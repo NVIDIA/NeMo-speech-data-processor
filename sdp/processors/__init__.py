@@ -144,6 +144,12 @@ from sdp.processors.manage_files.extract import (
 from sdp.processors.manage_files.remove import (
     RemoveFiles,
 )
+from sdp.processors.manage_files.remove import (
+    RemoveFiles,
+)
+from sdp.processors.manage_files.convert_to_tarred_audio_dataset import (
+    ConvertToTarredAudioDataset,
+)
 from sdp.processors.nemo.asr_inference import ASRInference
 from sdp.processors.nemo.estimate_bandwidth import EstimateBandwidth
 from sdp.processors.nemo.pc_inference import PCInference
