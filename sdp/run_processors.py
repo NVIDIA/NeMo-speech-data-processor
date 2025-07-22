@@ -214,7 +214,6 @@ def run_processors(cfg):
                 use_dask_flag = global_use_dask
             else:
                 use_dask_flag = flag
-
             processor = hydra.utils.instantiate(processor_cfg)
             processor.use_dask = use_dask_flag
             # running runtime tests to fail right-away if something is not
@@ -222,10 +221,10 @@ def run_processors(cfg):
             processor.test()
             processors.append(processor)
 
-
         # Start Dask client if any processor requires it
         dask_client = None
         if any(p.use_dask for p in processors):
+            
             try:
                 num_cpus = psutil.cpu_count(logical=False) or 4
                 logger.info(f"Starting Dask client with {num_cpus} workers")
