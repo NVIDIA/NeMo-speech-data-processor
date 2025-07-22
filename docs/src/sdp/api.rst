@@ -242,6 +242,9 @@ Data modifications
 
 .. autodata:: sdp.processors.LambdaExpression
    :annotation:
+  
+.. autodata:: sdp.processors.ListToEntries
+   :annotation:
 
 Data filtering
 ''''''''''''''
@@ -422,6 +425,9 @@ Miscellaneous
    :annotation:
 
 .. autodata:: sdp.processors.ipl.ipl_processors.InferenceCommandGenerator
+   :annotation:
+
+.. autodata:: sdp.processors.DropSpecifiedFields
    :annotation:
 
 .. _sdp-base-classes:
