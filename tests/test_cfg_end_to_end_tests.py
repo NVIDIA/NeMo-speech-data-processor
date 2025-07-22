@@ -100,6 +100,23 @@ def data_check_fn_uzbekvoice(raw_data_dir: str) -> None:
             raise ValueError(f"No such file {str(expected_file)} at {str(raw_data_dir)}")
 
 
+def data_check_fn_unlabeled(raw_data_dir: str) -> None:
+    """Checks for  data and sets it up for unlabeled processing.
+
+    Args:
+        raw_data_dir: Directory where data should be
+        language: Language code (e.g. 'portuguese')
+    """
+    # Get the MLS directory path (one level up from unlabeled)
+    if (Path(raw_data_dir) / "unlabeled").exists():
+        return
+    expected_file = Path(raw_data_dir) / "unlabeled.tar.gz"
+    if not expected_file.exists():
+        raise ValueError(f"No such file {str(expected_file)}")
+    with tarfile.open(expected_file, 'r:gz') as tar:
+        tar.extractall(path=raw_data_dir)
+
+
 def data_check_fn_armenian_toloka_pipeline_start(raw_data_dir: str) -> None:
     """Checks for the Armenian Toloka test data.
 
@@ -243,6 +260,11 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
             reference_manifest_filename="pipeline_get_final_res/test_data_reference.json",
             fields_to_ignore=['audio_filepath', 'duration'],
             processors_to_run="1:6",
+        ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/unlabeled/config.yaml",
+            data_check_fn=partial(data_check_fn_unlabeled),
+            fields_to_ignore=['duration'],
         ),
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/english/hifitts2/config_22khz.yaml",

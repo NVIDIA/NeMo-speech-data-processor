@@ -215,7 +215,6 @@ def run_processors(cfg):
                 use_dask_flag = global_use_dask
             else:
                 use_dask_flag = flag
-
             processor = hydra.utils.instantiate(processor_cfg)
             processor.use_dask = use_dask_flag
             # running runtime tests to fail right-away if something is not
