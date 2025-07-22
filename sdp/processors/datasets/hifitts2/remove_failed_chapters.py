@@ -15,6 +15,7 @@
 
 import json
 from pathlib import Path
+
 from tqdm import tqdm
 
 from sdp.processors.base_processor import BaseProcessor

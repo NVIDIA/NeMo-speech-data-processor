@@ -1,11 +1,12 @@
-import os
 import glob
+import os
+from typing import Optional
 
 import soundfile as sf
 
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.logging import logger
-from typing import Optional
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+
 
 class CreateInitialManifestHuggingFace(BaseParallelProcessor):
     """Processor to create initial manifest for HuggingFace dataset.
@@ -24,7 +25,7 @@ class CreateInitialManifestHuggingFace(BaseParallelProcessor):
 
     Returns:
         This processor generates an initial manifest file with the following fields::
-        
+
             {
                 "audio_filepath": <path to the audio file>,
                 "duration": <duration of the audio in seconds>,
@@ -55,7 +56,7 @@ class CreateInitialManifestHuggingFace(BaseParallelProcessor):
 
     def read_manifest(self):
         import datasets
-        
+
         # checking if dataset should be loaded from disk
         if self.already_downloaded:
             if os.path.exists(self.raw_data_dir):

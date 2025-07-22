@@ -22,11 +22,11 @@ from sdp.processors.base_processor import BaseParallelProcessor
 try:
     import toloka.client
     import toloka.client.project.template_builder
+
     TOLOKA_AVAILABLE = True
 except ImportError:
     TOLOKA_AVAILABLE = False
     toloka = None
-    
 
 
 class CreateTolokaPool(BaseParallelProcessor):
@@ -42,6 +42,7 @@ class CreateTolokaPool(BaseParallelProcessor):
     Returns:
         A newly created pool on the Toloka platform, configured and ready for task assignment.
     """
+
     def __init__(
         self,
         lang: str = 'HY',
@@ -59,11 +60,11 @@ class CreateTolokaPool(BaseParallelProcessor):
         self.API_KEY = os.getenv('TOLOKA_API_KEY')
         if not self.API_KEY:
             raise ValueError("TOLOKA_API_KEY environment variable is not set")
-            
+
         self.platform = os.getenv('TOLOKA_PLATFORM')
         if not self.platform:
             raise ValueError("TOLOKA_PLATFORM environment variable is not set")
-            
+
         # Project ID will be read from the input manifest file in process_dataset_entry
         self.project_id = None
         self.lang = lang
@@ -86,7 +87,7 @@ class CreateTolokaPool(BaseParallelProcessor):
         list
             A list containing a DataEntry object with the new pool ID if successful, or an empty list if failed.
         """
-        
+
         if self.toloka_available != True:
             logger.warning("Toloka is currently not supported. CreatePool processor functionality will be limited.")
 

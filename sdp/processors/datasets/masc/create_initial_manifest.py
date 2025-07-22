@@ -12,21 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import logging
+import os
 from pathlib import Path
+
 import pandas as pd
 from sox import Transformer
 
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import extract_archive
 
+
 class CreateInitialManifestMASC(BaseParallelProcessor):
     """
     Processor for creating initial manifest for Massive Arabic Speech Corpus (MASC). \n
     Dataset link: https://ieee-dataport.org/open-access/masc-massive-arabic-speech-corpus.
     Prior to calling processor download the tarred dataset and store it under `raw_dataset_dir/masc.tar.gz`.
-    
+
     Creates manifest from samples in . `dataset_dir/subsets/data_split.csv`. All meta information is kept.
 
     Args:
@@ -78,7 +80,7 @@ class CreateInitialManifestMASC(BaseParallelProcessor):
         super().__init__(**kwargs)
         self.raw_dataset_dir = Path(raw_data_dir)
         self.data_split = data_split
-        
+
         # in original dataset there are no train, dev and test splits. These are added to support end-to-end tests.
         if self.data_split == "train":
             self.data_split = "clean_train"
@@ -86,21 +88,31 @@ class CreateInitialManifestMASC(BaseParallelProcessor):
             self.data_split = "clean_dev"
         if self.data_split == "test":
             self.data_split = "clean_test"
-        
+
         self.extract_archive_dir = extract_archive_dir
         self.resampled_audios_dir = Path(resampled_audios_dir)
         self.already_extracted = already_extracted
-        
+
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
 
         self.output_manifest_sample_id_key = output_manifest_sample_id_key
         self.output_manifest_vtt_filapath_key = output_manifest_vtt_filapath_key
         self.output_manifest_audio_filapath_key = output_manifest_audio_filapath_key
-        
+
         self.verbose = verbose
 
-        data_split_values = ["train", "dev", "test", "clean_train", "clean_dev", "clean_test", "noisy_train", "noisy_dev", "noisy_test"]
+        data_split_values = [
+            "train",
+            "dev",
+            "test",
+            "clean_train",
+            "clean_dev",
+            "clean_test",
+            "noisy_train",
+            "noisy_dev",
+            "noisy_test",
+        ]
         if self.data_split not in data_split_values:
             raise ValueError(f'Data split value must be from {data_split_values}. "{self.data_split}" was given.')
 
@@ -120,7 +132,7 @@ class CreateInitialManifestMASC(BaseParallelProcessor):
         else:
             logging.info("Skipping dataset untarring...")
             self.dataset_dir = Path(self.extract_archive_dir) / "masc"
-            
+
         self.vtts_dir = self.dataset_dir / "subtitles"
         self.audios_dir = self.dataset_dir / "audios"
         if self.data_split == "clean_train" or self.data_split == "noisy_train":
@@ -136,9 +148,9 @@ class CreateInitialManifestMASC(BaseParallelProcessor):
 
         if not self.audios_dir.exists():
             raise FileNotFoundError(f"{self.audios_dir} not found.")
-        
+
         os.makedirs(self.resampled_audios_dir, exist_ok=True)
-        
+
     def read_manifest(self):
         csv = pd.read_csv(self.csv_filepath)
         return [row.to_dict() for _, row in csv.iterrows()]
@@ -148,11 +160,11 @@ class CreateInitialManifestMASC(BaseParallelProcessor):
         source_audio_filepath = self.audios_dir / f"{sample_id}.wav"
         target_audio_filepath = self.resampled_audios_dir / f"{sample_id}.wav"
         vtt_filepath = self.vtts_dir / f"{sample_id}.ar.vtt"
-        
+
         # if source audio or vtt file do not exist skip
         if not (os.path.exists(source_audio_filepath) and os.path.exists(vtt_filepath)):
             return []
-        
+
         # if target audio exists skip resampling
         if not os.path.exists(target_audio_filepath):
             tfm = Transformer()
@@ -170,5 +182,5 @@ class CreateInitialManifestMASC(BaseParallelProcessor):
                 self.output_manifest_audio_filapath_key: str(target_audio_filepath),
             }
         )
-        
+
         return [DataEntry(data=sample_data)]

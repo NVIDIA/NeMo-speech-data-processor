@@ -49,8 +49,8 @@ autodoc_mock_imports = [
     "webvtt_py",
     "python_docx",
     "webvtt",
-    "docx",    
-    "pyannote"
+    "docx",
+    "pyannote",
 ]
 
 _skipped_autodoc_mock_imports = []
@@ -189,9 +189,9 @@ nitpick_ignore = [
 ]
 # nitpick_ignore_regex = [('py:class', '*')]
 
-#adding this especially for coraal, temporary
+# adding this especially for coraal, temporary
 linkcheck_ignore = [
     r'https://lingtools\.uoregon\.edu/coraal/coraal_download_list\.txt',
-    r'https://ieeexplore\.ieee\.org/document/1326009'
+    r'https://ieeexplore\.ieee\.org/document/1326009',
 ]
 # https://lingtools.uoregon.edu/coraal/coraal_download_list.txt

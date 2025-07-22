@@ -12,17 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
 import os
 import shutil
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
+
 from tqdm import tqdm
-import itertools
 from tqdm.contrib.concurrent import process_map
 
-
 from sdp.logging import logger
-from sdp.processors.base_processor import DataEntry, BaseParallelProcessor
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
 class RemoveFiles(BaseParallelProcessor):
@@ -34,42 +34,37 @@ class RemoveFiles(BaseParallelProcessor):
 
     Args:
         filepath_field (str): The key in the data entry that holds the path to the file or directory to remove.
-        
+
         drop_filepath_field (bool): Whether to remove the filepath field from the resulting data entry. Defaults to True.
 
         recursive (bool): Whether to recursively remove files from directories. Defaults to False.
-        
+
         **kwargs: Additional arguments passed to the BaseParallelProcessor.
-    
+
     Returns:
         A manifest where each entry is the same as the input, optionally without the filepath field,
         and with the file or directory at the specified path removed from disk.
-    
+
     Example entry before processing::
-    
+
         {
             "id": "abc123",
             "path_to_remove": "/tmp/some_file.wav"
         }
-    
+
     Example entry after processing (if `drop_filepath_field=True`)::
-    
+
         {
             "id": "abc123"
         }
     """
 
-    def __init__(self,
-                filepath_field: str,
-                drop_filepath_field: bool = True,
-                recursive: bool = False,
-                **kwargs):
-
+    def __init__(self, filepath_field: str, drop_filepath_field: bool = True, recursive: bool = False, **kwargs):
         super().__init__(**kwargs)
         self.filepath_field = filepath_field
         self.drop_filepath_field = drop_filepath_field
         self.recursive = recursive
-    
+
     def _count_files(self, data_entry):
         """
         Count the number of files to be removed.
@@ -81,7 +76,7 @@ class RemoveFiles(BaseParallelProcessor):
             else:
                 raise IsADirectoryError(f"Directory {filepath} is not empty and recursive is False")
         else:
-            file_counter = Counter({filepath.suffix : 1})
+            file_counter = Counter({filepath.suffix: 1})
         return file_counter
 
     def prepare(self):

@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import nemo.collections.asr as nemo_asr
 import omegaconf
 import torch
 import torchaudio
-import nemo.collections.asr as nemo_asr
+
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import load_manifest, save_manifest
+
 
 class NeMoASRAligner(BaseProcessor):
     """This processor aligns text and audio using NeMo ASR models.
@@ -53,51 +55,52 @@ class NeMoASRAligner(BaseProcessor):
               output_manifest_file: ${workspace_dir}/manifest_aligned.json
               parakeet: True
     """
-    def __init__(self,
-            model_name="nvidia/parakeet-tdt_ctc-1.1b",
-            model_path=None,
-            min_len: float = 0.1,
-            max_len: float = 40,
-            parakeet: bool = True,
-            ctc: bool = False,
-            batch_size: int = 32,
-            num_workers: int = 10,
-            split_batch_size: int = 5000,
-            timestamp_type: str = "word",
-            infer_segment_only: bool = False,
-            device: str = "cuda",
-            **kwargs):
+
+    def __init__(
+        self,
+        model_name="nvidia/parakeet-tdt_ctc-1.1b",
+        model_path=None,
+        min_len: float = 0.1,
+        max_len: float = 40,
+        parakeet: bool = True,
+        ctc: bool = False,
+        batch_size: int = 32,
+        num_workers: int = 10,
+        split_batch_size: int = 5000,
+        timestamp_type: str = "word",
+        infer_segment_only: bool = False,
+        device: str = "cuda",
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         if model_path is not None:
             self.asr_model = nemo_asr.models.ASRModel.restore_from(restore_path=model_path)
         else:
             self.asr_model = nemo_asr.models.ASRModel.from_pretrained(model_name=model_name)
-        
+
         if not torch.cuda.is_available():
             device = "cpu"
             logger.warning("CUDA is not available, using CPU")
-        
+
         self.asr_model.to(device)
         # Configuring attention to work with longer files
-        self.asr_model.change_attention_model(
-            self_attention_model="rel_pos_local_attn", att_context_size=[128, 128]
-        )
+        self.asr_model.change_attention_model(self_attention_model="rel_pos_local_attn", att_context_size=[128, 128])
         self.asr_model.change_subsampling_conv_chunking_factor(1)
         self.min_len = min_len
         self.max_len = max_len
-        self.parakeet = parakeet # if model type is parakeet or not, determines time stride
-        self.ctc = ctc # if decoder type is ctc or not, determines timestamp substraction
+        self.parakeet = parakeet  # if model type is parakeet or not, determines time stride
+        self.ctc = ctc  # if decoder type is ctc or not, determines timestamp substraction
         self.timestamp_type = timestamp_type
         self.infer_segment_only = infer_segment_only
 
-        cfg =  self.asr_model.cfg.decoding
+        cfg = self.asr_model.cfg.decoding
         with omegaconf.open_dict(cfg):
-            cfg['compute_timestamps']=True
-            cfg['preserve_alignments']=True
+            cfg['compute_timestamps'] = True
+            cfg['preserve_alignments'] = True
             if ctc:
                 cfg.strategy = "greedy_batch"
             else:
-                cfg['rnnt_timestamp_type'] = self.timestamp_type 
+                cfg['rnnt_timestamp_type'] = self.timestamp_type
         self.asr_model.change_decoding_strategy(decoding_cfg=cfg)
 
         # set batch size
@@ -119,7 +122,7 @@ class NeMoASRAligner(BaseProcessor):
                 - list: List of dictionaries with word alignments (word, start, end)
                 - str: The transcribed text
         """
-        timestamp_dict = hypotheses.timestep # extract timesteps from hypothesis of first (and only) audio file
+        timestamp_dict = hypotheses.timestep  # extract timesteps from hypothesis of first (and only) audio file
 
         # For a FastConformer model, you can display the word timestamps as follows:
         # 80ms is duration of a timestep at output of the Conformer
@@ -134,8 +137,8 @@ class NeMoASRAligner(BaseProcessor):
         for stamp in word_timestamps:
             if self.ctc:
                 start = stamp['start_offset'] * time_stride
-                end = stamp['end_offset'] * time_stride 
-            else: # if rnnt or tdt decoder
+                end = stamp['end_offset'] * time_stride
+            else:  # if rnnt or tdt decoder
                 start = max(0, stamp['start_offset'] * time_stride - 0.08)
                 end = max(0, stamp['end_offset'] * time_stride - 0.08)
 
@@ -145,8 +148,7 @@ class NeMoASRAligner(BaseProcessor):
         text = hypotheses.text
         text = text.replace("⁇", "")
         return alignments, text
-    
-    
+
     def _prepare_metadata_batch(self, metadata_batch):
         """Prepare audio data and segment mapping for a batch of metadata files.
 
@@ -166,7 +168,7 @@ class NeMoASRAligner(BaseProcessor):
 
             for segment_idx, segment in enumerate(metadata['segments']):
                 duration = segment['end'] - segment['start']
-                if duration >= self.min_len and segment['speaker']!='no-speaker':
+                if duration >= self.min_len and segment['speaker'] != 'no-speaker':
                     start = int(segment['start'] * sr)
                     end = int(segment['end'] * sr)
                     audio_segment = audio[:, start:end].squeeze(0)
@@ -175,7 +177,6 @@ class NeMoASRAligner(BaseProcessor):
                         segment_indices.append((metadata_idx, segment_idx))
 
         return all_segments, segment_indices
-
 
     def process(self):
         """Process the input manifest file to generate word alignments and transcriptions.
@@ -191,49 +192,49 @@ class NeMoASRAligner(BaseProcessor):
         Results are saved in JSONL format with alignments and transcriptions added to the original metadata.
         """
         manifest = load_manifest(self.input_manifest_file)
-        
+
         results = []
         if not self.infer_segment_only:
             transcribe_manifest = []
             for data in manifest:
-                if  (('split_filepaths' in data and data['split_filepaths'] is None) or ('split_filepaths' not in data)) and data['duration'] > self.min_len:
+                if (
+                    ('split_filepaths' in data and data['split_filepaths'] is None) or ('split_filepaths' not in data)
+                ) and data['duration'] > self.min_len:
                     transcribe_manifest.append(data)
                 else:
                     data['text'] = ''
                     data['alignment'] = []
                     results.append(data)
 
-
             files = [x['resampled_audio_filepath'] for x in transcribe_manifest]
 
             for i in range(0, len(files), self.split_batch_size):
-                batch = files[i:i + self.split_batch_size]
+                batch = files[i : i + self.split_batch_size]
                 with torch.no_grad():
                     hypotheses_list = self.asr_model.transcribe(batch, override_config=self.override_cfg)
                 # if hypotheses form a tuple (from RNNT), extract just "best" hypotheses
                 if type(hypotheses_list) == tuple and len(hypotheses_list) == 2:
                     hypotheses_list = hypotheses_list[0]
-                    
-                metadatas = transcribe_manifest[i:i + self.split_batch_size]
+
+                metadatas = transcribe_manifest[i : i + self.split_batch_size]
                 for idx, metadata in enumerate(metadatas):
-                    hypotheses =  hypotheses_list[idx]
+                    hypotheses = hypotheses_list[idx]
                     alignments, text = self.get_alignments_text(hypotheses)
                     metadata['text'] = text
-                    metadata['alignment']= alignments
+                    metadata['alignment'] = alignments
                     results.append(metadata)
         else:
             for i in range(0, len(manifest), self.split_batch_size):
-                metadata_batch = manifest[i:i + self.split_batch_size]
+                metadata_batch = manifest[i : i + self.split_batch_size]
                 all_segments, segment_indices = self._prepare_metadata_batch(metadata_batch)
-                
+
                 try:
                     with torch.no_grad():
                         hypotheses_list = self.asr_model.transcribe(all_segments, override_config=self.override_cfg)
                 except Exception as e:
-                    files_list = [ item['resampled_audio_filepath'] for item in metadata_batch ]
+                    files_list = [item['resampled_audio_filepath'] for item in metadata_batch]
                     raise ValueError(f"Exception occurred for audio filepath list: {files_list}, Error is : {str(e)}")
 
-                
                 if type(hypotheses_list) == tuple and len(hypotheses_list) == 2:
                     hypotheses_list = hypotheses_list[0]
 
@@ -244,8 +245,8 @@ class NeMoASRAligner(BaseProcessor):
                     for word in alignments:
                         word['start'] = round(word['start'] + segment['start'], 3)
                         word['end'] = round(word['end'] + segment['start'], 3)
-                    
-                    segment['words']= alignments
+
+                    segment['words'] = alignments
 
                 results.extend(metadata_batch)
 

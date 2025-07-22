@@ -15,9 +15,9 @@
 """Will take the downloaded tar file and create a version with only X entries."""
 
 import argparse
+import glob
 import os
 import shutil
-import glob
 import tarfile
 import tempfile
 from pathlib import Path
@@ -34,24 +34,24 @@ if __name__ == "__main__":
     parser.add_argument("--test_data_folder", required=True, help="Where to place the prepared data")
 
     args = parser.parse_args()
-    
+
     os.makedirs(args.test_data_folder, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
-        
+
         audio_filepaths = glob.glob(f"{args.extracted_data_path}/*.flac")
         for idx, src_audio_filepath in enumerate(audio_filepaths):
             if idx == args.num_entries:
                 break
-            
+
             sample_id = os.path.basename(src_audio_filepath).split(".")[0]
             src_text_filepath = os.path.join(args.extracted_data_path, f"{sample_id}.txt")
             dst_text_filepath = os.path.join(tmpdir, f"{sample_id}.txt")
             dst_audio_filepath = os.path.join(tmpdir, f"{sample_id}.flac")
-            
+
             shutil.copy(src_text_filepath, dst_text_filepath)
             shutil.copy(src_audio_filepath, dst_audio_filepath)
-            
+
         with tarfile.open(os.path.join(args.test_data_folder, f"{args.archive_file_stem}.tar.gz"), "w:gz") as tar:
             # has to be the same as what's before .tar.gz
             tar.add(tmpdir, arcname=args.archive_file_stem)

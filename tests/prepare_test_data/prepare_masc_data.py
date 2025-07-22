@@ -15,11 +15,11 @@
 """Will take the downloaded tar file and create a version with only X entries."""
 
 import argparse
+import csv
 import os
 import shutil
 import tarfile
 import tempfile
-import csv
 from pathlib import Path
 
 if __name__ == "__main__":
@@ -34,42 +34,40 @@ if __name__ == "__main__":
     parser.add_argument("--test_data_folder", required=True, help="Where to place the prepared data")
 
     args = parser.parse_args()
-    
+
     # Define a dictionary to map splits to filenames
-    filename_map = {
-        "train": "clean_train.csv",
-        "dev": "clean_dev_meta.csv",
-        "test": "clean_test_meta.csv"
-    }
-    
+    filename_map = {"train": "clean_train.csv", "dev": "clean_dev_meta.csv", "test": "clean_test_meta.csv"}
+
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
         os.makedirs(tmpdir_path / "audios")
         os.makedirs(tmpdir_path / "subtitles")
         os.makedirs(tmpdir_path / "subsets")
-        
+
         for split in ["train", "dev", "test"]:
             transcript_path = Path(args.extracted_data_path) / "subsets" / filename_map[split]
-            with open(transcript_path, "rt", encoding="utf8") as fin, open(tmpdir_path / "subsets" / filename_map[split], "wt", encoding="utf8") as fout:
-                csv_reader = csv.reader(fin)        # creating CSV reader object
-                csv_writer = csv.writer(fout)       # creating CSV reader object
-                
-                csv_writer.writerow(next(csv_reader))   # writing colomns line 
+            with open(transcript_path, "rt", encoding="utf8") as fin, open(
+                tmpdir_path / "subsets" / filename_map[split], "wt", encoding="utf8"
+            ) as fout:
+                csv_reader = csv.reader(fin)  # creating CSV reader object
+                csv_writer = csv.writer(fout)  # creating CSV reader object
+
+                csv_writer.writerow(next(csv_reader))  # writing colomns line
                 for idx, row in enumerate(csv_reader):
                     if idx == args.num_entries:
                         break
                     utt_id = row[0]
-                    
+
                     # copying audio file
                     src_audio_path = os.path.join(args.extracted_data_path, "audios", f"{utt_id}.wav")
                     tgt_audio_path = os.path.join(tmpdir_path, "audios", f"{utt_id}.wav")
                     shutil.copy(src_audio_path, tgt_audio_path)
-                    
+
                     # copying transcription file
                     src_transcript_path = os.path.join(args.extracted_data_path, "subtitles", f"{utt_id}.ar.vtt")
                     tgt_transcript_path = os.path.join(tmpdir_path, "subtitles", f"{utt_id}.ar.vtt")
                     shutil.copy(src_transcript_path, tgt_transcript_path)
-                    
+
                     csv_writer.writerow(row)
 
         os.makedirs(args.test_data_folder, exist_ok=True)

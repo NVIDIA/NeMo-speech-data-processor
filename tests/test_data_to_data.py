@@ -16,11 +16,11 @@ import pytest
 
 from sdp.processors.modify_manifest.data_to_data import (
     InsIfASRInsertion,
+    LambdaExpression,
+    ListToEntries,
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
-    ListToEntries,
-    LambdaExpression,
 )
 
 test_params_list = []
@@ -98,15 +98,25 @@ test_params_list.extend(
         (
             ListToEntries,
             {"field_with_list": "segments"},
-            {"audio_filepath": "a.wav", "segments": [{"start": 0.0, "end": 1.0, "text": "Hello"}, {"start": 1.1, "end": 2.0, "text": "World"}], "duration": 2.5},
-            [{"audio_filepath": "a.wav", "duration": 2.5, "start": 0.0, "end": 1.0, "text": "Hello"}, {"audio_filepath": "a.wav", "duration": 2.5, "start": 1.1, "end": 2.0, "text": "World"}]
+            {
+                "audio_filepath": "a.wav",
+                "segments": [{"start": 0.0, "end": 1.0, "text": "Hello"}, {"start": 1.1, "end": 2.0, "text": "World"}],
+                "duration": 2.5,
+            },
+            [
+                {"audio_filepath": "a.wav", "duration": 2.5, "start": 0.0, "end": 1.0, "text": "Hello"},
+                {"audio_filepath": "a.wav", "duration": 2.5, "start": 1.1, "end": 2.0, "text": "World"},
+            ],
         ),
         # Test: list of primitive values (strings), requires output_field
         (
             ListToEntries,
             {"field_with_list": "text_chunks", "output_field": "text"},
             {"audio_filepath": "b.wav", "text_chunks": ["Привет", "Мир"], "lang": "ru"},
-            [{"audio_filepath": "b.wav", "lang": "ru", "text": "Привет"}, {"audio_filepath": "b.wav", "lang": "ru", "text": "Мир"}]
+            [
+                {"audio_filepath": "b.wav", "lang": "ru", "text": "Привет"},
+                {"audio_filepath": "b.wav", "lang": "ru", "text": "Мир"},
+            ],
         ),
     ]
 )
@@ -120,7 +130,6 @@ test_params_list.extend(
             {"duration": 3.5},
             [{"duration": 3.5, "duration_x2": 7.0}],
         ),
-
         # Ternary expression
         (
             LambdaExpression,
@@ -128,7 +137,6 @@ test_params_list.extend(
             {"duration": 12.0},
             [{"duration": 12.0, "label": "long"}],
         ),
-
         # Filtering: entry should be dropped (condition is False)
         (
             LambdaExpression,
@@ -136,7 +144,6 @@ test_params_list.extend(
             {"duration": 5.0},
             [],
         ),
-
         # Filtering: entry should be kept (condition is True)
         (
             LambdaExpression,
@@ -144,7 +151,6 @@ test_params_list.extend(
             {"duration": 12.0},
             [{"duration": 12.0, "valid": True}],
         ),
-
         # Using built-in function len()
         (
             LambdaExpression,
@@ -152,7 +158,6 @@ test_params_list.extend(
             {"text": "hello world"},
             [{"text": "hello world", "num_chars": 11}],
         ),
-
         # Using built-in max() with sub-expressions
         (
             LambdaExpression,
@@ -160,7 +165,6 @@ test_params_list.extend(
             {"a": 4, "b": 3},
             [{"a": 4, "b": 3, "score": 6}],
         ),
-
         # Expression using variable prefix (e.g., entry.a + entry.b)
         (
             LambdaExpression,
@@ -172,7 +176,6 @@ test_params_list.extend(
             {"a": 1, "b": 2},
             [{"a": 1, "b": 2, "sum": 3}],
         ),
-
         # Logical expression using `and`
         (
             LambdaExpression,
@@ -183,7 +186,6 @@ test_params_list.extend(
             {"a": 1, "b": 4},
             [{"a": 1, "b": 4, "check": True}],
         ),
-
         # Boolean expression without filtering (entry is always returned)
         (
             LambdaExpression,

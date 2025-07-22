@@ -1,6 +1,6 @@
-transformers
 accelerate
-torchaudio
-pyannote-audio
 ffmpeg-python
+pyannote-audio
+torchaudio
+transformers
 whisperx==3.3.1

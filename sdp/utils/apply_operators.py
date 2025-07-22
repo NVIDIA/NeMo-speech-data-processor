@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import operator
 import ast
+import operator
 import re
 from typing import Any, Dict
 

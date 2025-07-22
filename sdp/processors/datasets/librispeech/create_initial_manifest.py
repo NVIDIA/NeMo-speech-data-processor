@@ -94,7 +94,7 @@ class CreateInitialManifestLibrispeech(BaseProcessor):
         entries = []
         root = os.path.dirname(file_path)
 
-        print(f"Processing transcript file: {file_path}") 
+        print(f"Processing transcript file: {file_path}")
         with open(file_path, encoding="utf-8") as fin:
             for line in fin:
                 id, text = line[: line.index(" ")], line[line.index(" ") + 1 :]

@@ -16,11 +16,12 @@ import glob
 import json
 import os
 import typing
+
 import gdown
 
+from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import extract_archive
-from sdp.logging import logger
 
 
 class CreateInitialManifestUzbekvoice(BaseProcessor):
@@ -30,7 +31,7 @@ class CreateInitialManifestUzbekvoice(BaseProcessor):
     Will download all files, extract them, and create a manifest file with the
     "audio_filepath", "text" and "duration" fields.
 
-    Args:    
+    Args:
         raw_data_dir (str): Path to the folder where the data archive should be downloaded and extracted.
 
     Returns:
@@ -59,8 +60,10 @@ class CreateInitialManifestUzbekvoice(BaseProcessor):
         # for big files google drive doesn't allow to try downlaoding them more than once
         # so, in case of receiveing gdown error we need to download them manually
 
-        #check if clisp.zip and uzbekvoice-dataset.zip are already in dst_folder
-        if os.path.exists(os.path.join(dst_folder, 'clips.zip')) and os.path.exists(os.path.join(dst_folder, 'uzbekvoice-dataset.zip')):
+        # check if clisp.zip and uzbekvoice-dataset.zip are already in dst_folder
+        if os.path.exists(os.path.join(dst_folder, 'clips.zip')) and os.path.exists(
+            os.path.join(dst_folder, 'uzbekvoice-dataset.zip')
+        ):
             print("Files already exist in the folder. Skipping download.")
         else:
             print(f"Downloading files from {self.URL}...")
@@ -73,7 +76,6 @@ class CreateInitialManifestUzbekvoice(BaseProcessor):
         for file in glob.glob(os.path.join(dst_folder, '*.zip')):
             extract_archive(file, str(dst_folder), force_extract=True)
             print(f"Extracted {file}")
-
 
     def process_transcript(self, file_path: str) -> list[dict[str, typing.Any]]:
         """
@@ -93,13 +95,8 @@ class CreateInitialManifestUzbekvoice(BaseProcessor):
                 utter_length = entry["clip_duration"]
                 number_of_entries += 1
                 entries.append(
-                    {
-                        "audio_filepath": os.path.abspath(audio_file), 
-                        "text": transcript, 
-                        "duration": utter_length
-                    }
+                    {"audio_filepath": os.path.abspath(audio_file), "text": transcript, "duration": utter_length}
                 )
-            
 
             logger.info("Total number of entries after processing: %d", number_of_entries)
             logger.info("Total audio duration (hours) after processing: %.2f", total_duration / 3600)
@@ -112,8 +109,6 @@ class CreateInitialManifestUzbekvoice(BaseProcessor):
         with open(manifest_file, "w", encoding="utf-8") as fout:
             for m in entries:
                 fout.write(json.dumps(m, ensure_ascii=False) + "\n")
-
-
 
     def process(self):
         self.download_extract_files(self.raw_data_dir)

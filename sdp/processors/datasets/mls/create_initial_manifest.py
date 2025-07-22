@@ -103,8 +103,6 @@ class CreateInitialManifestMLS(BaseParallelProcessor):
                 " specified `target_samplerate` or `target_nchannels`, they will be ignored."
             )
 
-
-
         # will be initialized in self.prepare method
         self.audio_path_prefix = None
         self.transcription_file = None

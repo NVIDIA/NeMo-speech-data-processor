@@ -12,20 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import random
-import os
 import logging
+import os
+import random
 from time import time
+
+import torch
+import torchaudio
 from pyannote.audio import Pipeline
 from pyannote.audio.pipelines.utils.hook import ProgressHook
 from whisperx.audio import SAMPLE_RATE
 from whisperx.vad import load_vad_model, merge_chunks
-import torch
-import torchaudio
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import load_manifest, save_manifest
+
 
 def has_overlap(turn, overlaps):
     """Check if a given turn overlaps with any segment in the overlaps list.
@@ -51,6 +53,7 @@ def has_overlap(turn, overlaps):
             turn_overlaps = True
             break
     return turn_overlaps
+
 
 class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
     """This processor performs speaker diarization and overlap detection using PyAnnote.
@@ -79,29 +82,27 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
               output_manifest_file: ${workspace_dir}/manifest_diarized.json
               hf_token: ${hf_token}
     """
-    
-    def __init__(self,
-                 hf_token: str,
-                 segmentation_batch_size: int = 128,
-                 embedding_batch_size: int = 128,
-                 min_length: float = 0.5,
-                 max_length: float = 40,
-                 device: str = "cuda",
-                 **kwargs
-        ):
 
+    def __init__(
+        self,
+        hf_token: str,
+        segmentation_batch_size: int = 128,
+        embedding_batch_size: int = 128,
+        min_length: float = 0.5,
+        max_length: float = 40,
+        device: str = "cuda",
+        **kwargs,
+    ):
         super().__init__(**kwargs)
 
-
-        self.pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization-3.1",
-                                    use_auth_token=hf_token)
+        self.pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization-3.1", use_auth_token=hf_token)
         self.pipeline.segmentation_batch_size = segmentation_batch_size
         self.pipeline.embedding_batch_size = embedding_batch_size
 
         if not torch.cuda.is_available():
             device = "cpu"
             logging.warning("CUDA is not available, using CPU")
-        
+
         self.pipeline.to(torch.device(device))
 
         self.min_length = min_length
@@ -111,12 +112,9 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
         self.vad_offset = 0.363
 
         default_vad_options = {"vad_onset": self.vad_onset, "vad_offset": self.vad_offset}
-        self.vad_model = load_vad_model(
-            torch.device(device), use_auth_token=None, **default_vad_options
-        )
+        self.vad_model = load_vad_model(torch.device(device), use_auth_token=None, **default_vad_options)
         random.seed(42)
-        
-    
+
     def get_vad_segments(self, audio, merge_max_length=3):
         """Get voice activity detection segments for the given audio.
 
@@ -128,16 +126,16 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
             list: List of VAD segments with start and end times
         """
         vad_segments = self.vad_model(
-                {
-                    "waveform": audio,
-                    "sample_rate": SAMPLE_RATE,
-                }
-            )
-        
+            {
+                "waveform": audio,
+                "sample_rate": SAMPLE_RATE,
+            }
+        )
+
         vad_segments = merge_chunks(vad_segments, merge_max_length, onset=self.vad_onset)
-        
+
         return vad_segments
-    
+
     def add_vad_segments(self, audio, fs, start, end, segments, speaker_id):
         """Add VAD segments for a given audio region to the segments list.
 
@@ -155,7 +153,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
         """
         segment_duration = end - start
         if segment_duration > self.max_length:
-            audio_seg = audio[: , int(start * fs): int(end * fs)]
+            audio_seg = audio[:, int(start * fs) : int(end * fs)]
             vad_segments = self.get_vad_segments(audio_seg)
             i = 0
             n = len(vad_segments)
@@ -172,14 +170,14 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
                     segment_data_entry['start'] = start + start_seg
                     segment_data_entry['end'] = start + end_seg
                     segments.append(segment_data_entry)
-                    i += 1  
+                    i += 1
                     continue
 
                 # Merge segments until the random duration is reached
                 while i < n and (vad_segments[i]['end'] - start_seg) < random_duration:
                     end_seg = vad_segments[i]['end']  # Extend the end time
                     i += 1
-                    
+
                 segment_data_entry = {}
                 segment_data_entry['speaker'] = speaker_id
                 segment_data_entry['start'] = start + start_seg
@@ -216,7 +214,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
         for metadata in manifest:
             file_path = metadata['resampled_audio_filepath']
             logger.info(file_path)
-            
+
             s, fs = torchaudio.load(file_path)
             with ProgressHook() as hook:
                 diarization = self.pipeline({'waveform': s, 'sample_rate': fs}, hook=hook)
@@ -225,7 +223,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
             # Due to a bug in PyAnnote-Audio, diarization might have timestamps longer than
             # the audio, so we crop it to the audio length
             # https://github.com/pyannote/pyannote-audio/issues/1611
-            diarization.crop(0, len(s)/fs)
+            diarization.crop(0, len(s) / fs)
 
             # write in RTTM format
             logger.info("Writing {} turns to RTTM file".format(len(diarization._tracks)))
@@ -244,7 +242,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
                     speaker_id = metadata['speaker_id'] + '_' + speaker
                 else:
                     raise ValueError('No speaker identifier in sample {}'.format(metadata['resampled_audio_filepath']))
-                
+
                 if has_overlap(speech_turn, overlaps):
                     segment_data_entry = {}
                     segment_data_entry['speaker'] = speaker_id
@@ -271,7 +269,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
             # If there is any remaining audio after the last speaker segment
             if last_end_time < audio_duration:
                 non_speaker_segments.append((last_end_time, audio_duration))
-            
+
             for start, end in non_speaker_segments:
                 speaker_id = "no-speaker"
                 current_start = start
@@ -283,7 +281,7 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
                     segment_data_entry['end'] = current_end
                     segments.append(segment_data_entry)
                     current_start = current_end
-                
+
             # Sort all segments by start time
             segments.sort(key=lambda x: x['start'])
             metadata['segments'] = segments
@@ -292,4 +290,3 @@ class PyAnnoteDiarizationAndOverlapDetection(BaseProcessor):
 
         logger.info(f'Completed diarization in {(time()-start_time)/3600} hrs')
         save_manifest(results, self.output_manifest_file)
-

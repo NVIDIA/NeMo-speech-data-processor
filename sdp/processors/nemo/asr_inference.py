@@ -44,7 +44,7 @@ class ASRInference(BaseProcessor):
 
     def __init__(
         self,
-        pretrained_model: Optional[str]=None,
+        pretrained_model: Optional[str] = None,
         batch_size: int = 32,
         **kwargs,
     ):

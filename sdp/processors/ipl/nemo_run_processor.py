@@ -1,4 +1,3 @@
-
 # Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,34 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from sdp.processors.ipl.ipl_processors import TrainingCommandGenerator, InferenceCommandGenerator
-from sdp.processors.base_processor import BaseProcessor
-from omegaconf import OmegaConf, open_dict
+import datetime
+import logging
 import os
 from pathlib import Path
-import logging
-import datetime
+
 import nemo_run as run
+from omegaconf import OmegaConf, open_dict
+
+from sdp.processors.base_processor import BaseProcessor
+from sdp.processors.ipl.ipl_processors import (
+    InferenceCommandGenerator,
+    TrainingCommandGenerator,
+)
 from sdp.utils import nemo_run_utils
+
 
 class NemoRunIPLProcessor(BaseProcessor):
     """
     A processor that handles Iterative Pseudo-Labeling (IPL) training workflow.
-    
+
     Args:
         config_path (str): Path to the YAML configuration file containing IPL settings
         output_manifest_file (str): Path where the output manifest file will be written
         input_manifest_file (str, Optional): Path to the input manifest file
     """
-    
-    def __init__(
-        self,
-        config_path: str,
-        **kwargs
-    ):
+
+    def __init__(self, config_path: str, **kwargs):
         super().__init__(**kwargs)
         self.config_path = config_path
-        
+
     def process(self):
         """
         Main processing method that implements the IPL workflow.
@@ -51,7 +52,7 @@ class NemoRunIPLProcessor(BaseProcessor):
         """
         # Load the cluster config from YAML
         cluster_cfg = OmegaConf.load(self.config_path)
-        
+
         # Process the required arguments from the cluster config
         script_path = cluster_cfg.script
         script_config_path = cluster_cfg.script_config
@@ -82,7 +83,7 @@ class NemoRunIPLProcessor(BaseProcessor):
         if "ipl_training" not in script_config.model:
             raise KeyError("Parameters for `IPL` training are not provided.")
         # Check all paths in configs are properly mounted
-   
+
         self.check_config_mount_paths(script_config, cluster_cfg)
         # Resolve experiment name
         exp_name = cluster_cfg.exp_name
@@ -102,7 +103,9 @@ class NemoRunIPLProcessor(BaseProcessor):
 
             # Copy the merged config file to remote location's /results/configs directory
             config_dir = os.path.join(results_dir, 'configs')
-            train_config_cluster = nemo_run_utils.create_remote_config(script_config, config_name, config_dir, cluster_cfg)
+            train_config_cluster = nemo_run_utils.create_remote_config(
+                script_config, config_name, config_dir, cluster_cfg
+            )
 
             # Get run parameters from the config
             num_runs = cluster_cfg.num_runs
@@ -119,7 +122,7 @@ class NemoRunIPLProcessor(BaseProcessor):
                 os.path.join(script_config.exp_manager.exp_dir, script_config.exp_manager.name), "checkpoints"
             )
             checkpoint_name = os.path.join(checkpoint_dir, script_config.exp_manager.name + ".nemo")
-            
+
             # Create remote inference config
             if do_average:
                 avg_cmd, averaged_checkpoint = self.average_checkpoints(checkpoint_name, nemo_root)
@@ -131,13 +134,13 @@ class NemoRunIPLProcessor(BaseProcessor):
             )
             self.check_config_mount_paths(inference_config, cluster_cfg)
             # Configure command generators
-            train_command_generator_config = { 
+            train_command_generator_config = {
                 "nemo_directory": nemo_root,
                 "training_config_local": script_config,
                 "training_config_cluster": train_config_cluster,
                 "training_script_path": script_path,
                 "output_manifest_file": "./train_output_manifest_filepath.json",
-            }   
+            }
             inference_command_generator_config = {
                 "nemo_directory": nemo_root,
                 "inference_config_paths": inference_config_paths,
@@ -157,7 +160,7 @@ class NemoRunIPLProcessor(BaseProcessor):
                 new_manifest_files=manifests,
                 new_tarr_files=tarr_paths,
                 first_run=True,
-                avg_cmd=avg_cmd
+                avg_cmd=avg_cmd,
             )
 
             # Cast the cluster config to a dictionary for compatibility with NeMo Run
@@ -175,7 +178,7 @@ class NemoRunIPLProcessor(BaseProcessor):
                         num_ipl_epochs=cluster_cfg['num_ipl_epochs'],
                         new_manifest_files=manifests,
                         new_tarr_files=tarr_paths,
-                        first_run=False
+                        first_run=False,
                     )
                     task = [task]
 
@@ -199,7 +202,7 @@ class NemoRunIPLProcessor(BaseProcessor):
     def gather_mounts(self, cluster_cfg):
         """
         Gather all mounts from the cluster config including ones which are disjoint from the cluster_cfg.mounts list.
-        
+
         Args:
             cluster_cfg: Cluster config dictionary
         """
@@ -210,7 +213,9 @@ class NemoRunIPLProcessor(BaseProcessor):
         with open_dict(cluster_cfg):
             for k in keys:
                 if k.startswith("mount_"):
-                    logging.info(f"Found additional mount flag in the cluster config `{k}`. Adding it to the mounts list.")
+                    logging.info(
+                        f"Found additional mount flag in the cluster config `{k}`. Adding it to the mounts list."
+                    )
                     mounts.append(cluster_cfg[k])
                     del cluster_cfg[k]
 
@@ -220,11 +225,12 @@ class NemoRunIPLProcessor(BaseProcessor):
     def check_config_mount_paths(self, script_config, cluster_config):
         """
         Check if all path-like strings in the script config are mounted paths in the cluster config.
-        
+
         Args:
             script_config: Script config dictionary
             cluster_config: Cluster config dictionary
         """
+
         def filepath_check(v, cluster_cfg):
             if v.startswith(os.path.sep):
                 logging.info(f"Checking if {v} is a mounted path")
@@ -254,7 +260,7 @@ class NemoRunIPLProcessor(BaseProcessor):
         new_manifest_files,
         new_tarr_files,
         first_run: bool = False,
-        avg_cmd: str = None
+        avg_cmd: str = None,
     ) -> str:
         """
         Generate the pseudo-labeling command for the given configuration and training parameters.
@@ -273,12 +279,14 @@ class NemoRunIPLProcessor(BaseProcessor):
         train_proc = TrainingCommandGenerator(**train_command_config)
         infer_proc = InferenceCommandGenerator(**inference_command_config)
 
-        exec_cmd = self.get_export_variables_cmd(train_command_config["training_config_local"], train_command_config["nemo_directory"])
+        exec_cmd = self.get_export_variables_cmd(
+            train_command_config["training_config_local"], train_command_config["nemo_directory"]
+        )
         exec_cmd += train_proc.process()
         exec_cmd += " && sleep 10"
         if avg_cmd:
             exec_cmd += " && " + avg_cmd
-    
+
         exec_cmd += " " + infer_proc.process(first_run=first_run)
 
         for _ in range(num_ipl_epochs):
@@ -290,7 +298,7 @@ class NemoRunIPLProcessor(BaseProcessor):
 
         return exec_cmd
 
-    def get_export_variables_cmd(self, merged_cfg , nemo_root):
+    def get_export_variables_cmd(self, merged_cfg, nemo_root):
         """Generate command to export required environment variables."""
         wandb_key = os.environ.get("WANDB_API_KEY") or os.environ.get("WANDB") or os.environ.get("WANDB_KEY", "")
         if not wandb_key:
@@ -306,29 +314,30 @@ class NemoRunIPLProcessor(BaseProcessor):
             "nvidia-smi && "
             f"export PYTHONPATH={nemo_root} && "
             f"export HF_TOKEN={os.getenv('HF_TOKEN', '')} && "
-            f"export WANDB_API_KEY={wandb_key} && ")
-        
+            f"export WANDB_API_KEY={wandb_key} && "
+        )
+
         return cmd
-    
-    def average_checkpoints(self, checkpoint_path: str, nemo_root:str) -> str:
+
+    def average_checkpoints(self, checkpoint_path: str, nemo_root: str) -> str:
         """
         Generates the command to average all checkpoints in the given directory and returns the path to the averaged checkpoint.
-        
+
         Args:
             checkpoint_path (str): Path to the directory containing checkpoints
-            
+
         Returns:
             tuple: (command to run, path to the averaged checkpoint file)
         """
         # Get the directory containing the checkpoints
         checkpoint_dir = os.path.dirname(checkpoint_path)
-        
+
         # Construct the command for checkpoint averaging
         cmd = f"python {nemo_root}/scripts/checkpoint_averaging/legacy/checkpoint_averaging.py {checkpoint_dir}"
-        
+
         # The averaged checkpoint will have the same name but with '-averaged' suffix
         checkpoint_name = os.path.basename(checkpoint_path)
         base_name = os.path.splitext(checkpoint_name)[0]
         averaged_checkpoint = os.path.join(checkpoint_dir, f"{base_name}-averaged.nemo")
-        
+
         return cmd, averaged_checkpoint

@@ -1,13 +1,15 @@
-import tempfile
-import os
 import json
+import os
+import tempfile
 from pathlib import Path
-from sdp.utils.import_manager import ImportManager
+from typing import Dict, List, Optional, Union
+
 import pytest
-from typing import Dict, List, Union, Optional
+
+from sdp.utils.import_manager import ImportManager
 
 # Example YAML content with processors
-#Content is right, additional {} is needed because of the format function
+# Content is right, additional {} is needed because of the format function
 TEST_YAML_CONTENT = """ 
 use_import_manager: True
 processors_to_run: ":"  # Run all processors
@@ -27,8 +29,9 @@ processors:
 # Example manifest content
 EXAMPLE_MANIFEST = [
     {"id": 1, "text": "hello", "duration": 10, "audio_filepath": "path1"},
-    {"id": 2, "text": "world", "duration": 12, "audio_filepath": "path2"}
+    {"id": 2, "text": "world", "duration": 12, "audio_filepath": "path2"},
 ]
+
 
 def _write_manifest(file_path, content: List[Dict]):
     """json lines to a file."""
@@ -36,12 +39,13 @@ def _write_manifest(file_path, content: List[Dict]):
         for entry in content:
             f.write(json.dumps(entry) + "\n")
 
+
 def test_import_manager_with_workspace():
     """
     Test ImportManager's functionality with a workspace directory and example manifests.
     """
     with tempfile.TemporaryDirectory() as tmp_workspace:
-        #workspace_dir = Path
+        # workspace_dir = Path
         workspace_dir = Path(tmp_workspace)
 
         # Step 1: example manifest files
@@ -78,5 +82,3 @@ def test_import_manager_with_workspace():
         assert test1_path.exists(), "test1.json should exist"
         assert not test2_path.exists(), "test2.json should not be overwritten yet"
         assert not test3_path.exists(), "test3.json should not be overwritten yet"
-
-        

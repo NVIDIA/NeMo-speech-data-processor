@@ -12,19 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import os
 import tempfile
 import uuid
 from typing import List, Optional
-import psutil
-import json
 
 import hydra
+import psutil
 from omegaconf import OmegaConf, open_dict
 
 from sdp.logging import logger
-
 from sdp.utils.import_manager import ImportManager
 
 # registering new resolvers to simplify config files
@@ -46,16 +45,18 @@ logger.handlers
 logger.addHandler(handler)
 logger.propagate = False
 
+
 def update_processor_imports(config_path: str, init_file: str = None):
     """
     Update processor imports based on config file.
-    
+
     Args:
         config_path: Path to the YAML config file
         init_file: Optional path to __init__.py file to update
     """
     try:
         import yaml
+
         manager = ImportManager()
         manager.sync_with_config(config_path, init_file)
         logger.info(f"Successfully updated imports for config: {config_path}")
@@ -120,13 +121,14 @@ def run_processors(cfg):
     if cfg.get("use_import_manager", False):
         try:
             import yaml
+
             yaml_path = cfg.get("config_path")
             if not yaml_path:
                 raise ValueError("No configuration path provided in 'config_path'. Please specify the path.")
 
             if not os.path.exists(yaml_path):
                 raise FileNotFoundError(f"Configuration file not found: {yaml_path}")
-            
+
             logger.info(f"Managing imports for config: {yaml_path}")
             manager = ImportManager()
             manager.sync_with_config(yaml_path)
@@ -144,11 +146,12 @@ def run_processors(cfg):
     # Detecting dask
     try:
         from dask.distributed import Client
+
         dask_available = True
     except ImportError:
         logger.warning("Dask not installed; using multiprocessing for all processors")
         dask_available = False
-    
+
     # look for global directions in cfg for dask usage
     global_use_dask = bool(cfg.get("use_dask", True)) and dask_available
 
@@ -156,7 +159,7 @@ def run_processors(cfg):
     if processors_to_run == "all":
         processors_to_run = ":"
     selected_cfgs = select_subset(cfg.processors, processors_to_run)
-    
+
     # filtering out any processors that have should_run=False
     processors_cfgs = []
     for processor_cfg in selected_cfgs:
@@ -169,9 +172,7 @@ def run_processors(cfg):
         "Specified to run the following processors: %s ",
         [proc_cfg["_target_"] for proc_cfg in processors_cfgs],
     )
-    
-    
-    
+
     processors = []
     # Create a temporary directory to hold intermediate files if needed.
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -187,7 +188,7 @@ def run_processors(cfg):
                         with open_dict(processors_cfgs[0]):
                             processors_cfgs[0]["input_manifest_file"] = cfg.processors[idx - 1]["output_manifest_file"]
                     break
-        
+
         for idx, processor_cfg in enumerate(processors_cfgs):
             logger.info('=> Building processor "%s"', processor_cfg["_target_"])
 
@@ -205,9 +206,9 @@ def run_processors(cfg):
             if idx != len(processors_cfgs) - 1 and "input_manifest_file" not in processors_cfgs[idx + 1]:
                 with open_dict(processors_cfgs[idx + 1]):
                     processors_cfgs[idx + 1]["input_manifest_file"] = processor_cfg["output_manifest_file"]
-            
-            #check if we have processor level directions of using dask
-            flag=processor_cfg.get("use_dask", None)
+
+            # check if we have processor level directions of using dask
+            flag = processor_cfg.get("use_dask", None)
 
             # if no processor-specific flag, fallback to global; otherwise use provided value
             if flag is None:
@@ -221,7 +222,6 @@ def run_processors(cfg):
             # matching users expectations
             processor.test()
             processors.append(processor)
-
 
         # Start Dask client if any processor requires it
         dask_client = None
@@ -250,4 +250,5 @@ def run_processors(cfg):
                 dask_client.close(timeout="60s")
                 logger.info("Dask client shutdown complete")
 
-#tmp_dir is removed here after all processing finishes. !!!
+
+# tmp_dir is removed here after all processing finishes. !!!

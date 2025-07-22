@@ -17,6 +17,7 @@ from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.utils.common import load_manifest
 
+
 class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
     """This processor merges adjacent segments from the same speaker and splits segments to have a complete utterance.
 
@@ -44,23 +45,26 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
               min_duration: 5
               max_duration: 20
     """
-    def __init__(self, 
-                min_duration: float = 5, 
-                max_duration: float = 20, 
-                max_pause: float = 2, 
-                terminal_punct_marks: str = ".!?。？？！。",
-                punctuation_split_only: bool = False,
-                **kwargs):
+
+    def __init__(
+        self,
+        min_duration: float = 5,
+        max_duration: float = 20,
+        max_pause: float = 2,
+        terminal_punct_marks: str = ".!?。？？！。",
+        punctuation_split_only: bool = False,
+        **kwargs
+    ):
         super().__init__(**kwargs)
         self.min_duration = min_duration
         self.max_duration = max_duration
         self.max_pause = max_pause
         self.terminal_punct_marks = terminal_punct_marks
         self.punctuation_split_only = punctuation_split_only
-    
+
     def read_manifest(self):
-        ''' Reads metadata from JSONL file in the input manifest
-        and converts it to data entries '''
+        '''Reads metadata from JSONL file in the input manifest
+        and converts it to data entries'''
 
         dataset_entries = load_manifest(self.input_manifest_file, encoding="utf8")
 
@@ -72,7 +76,11 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
         """
         words = []
         for segment in segments:
-            if ("text" in segment and segment["text"].strip() == "") or (segment["speaker"]=="no-speaker") or (not "text" in segment):
+            if (
+                ("text" in segment and segment["text"].strip() == "")
+                or (segment["speaker"] == "no-speaker")
+                or (not "text" in segment)
+            ):
                 continue
 
             if 'words' in segment:
@@ -93,19 +101,21 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
                 logger.info('Found no words in segment')
 
         return words
-    
+
     def is_valid_segment(self, segment):
         """
         This method checks if the segment is valid
         """
-        if len(segment["words"]) ==1 and segment["words"][0]["end"] - segment["words"][0]["start"] > self.max_duration:
+        if (
+            len(segment["words"]) == 1
+            and segment["words"][0]["end"] - segment["words"][0]["start"] > self.max_duration
+        ):
             return False
         sentence = " ".join([word["word"] for word in segment["words"]])
         if sentence:
             return True
         return False
- 
-    
+
     def split_segment_by_duration(self, segment):
         """
         This method splits the segment by duration, pauses, and bandwidth changes
@@ -118,7 +128,7 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
             "words": [],
         }
         segments = []
-        
+
         for word in words:
             if not current_segment["words"]:
                 current_segment = {
@@ -128,7 +138,7 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
                     "words": [word],
                 }
                 continue
-            
+
             # break the current segment if the duration is greater than the max duration and start a new segment
             if (word["end"] - current_segment["start"]) > self.max_duration:
                 if self.is_valid_segment(current_segment):
@@ -140,9 +150,11 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
                     "words": [word],
                 }
                 continue
-            
+
             # break the current segment if the pause is greater than the max pause and start a new segment
-            if (word["start"] - current_segment["end"] > self.max_pause)  and (current_segment["end"] - current_segment["start"] >= self.min_duration):
+            if (word["start"] - current_segment["end"] > self.max_pause) and (
+                current_segment["end"] - current_segment["start"] >= self.min_duration
+            ):
                 if self.is_valid_segment(current_segment):
                     segments.append(current_segment)
                 current_segment = {
@@ -152,9 +164,11 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
                     "words": [word],
                 }
                 continue
-            
+
             # break the current segment if the bandwidth is different and start a new segment
-            if (current_segment['words'] and word['bandwidth']!=current_segment['words'][-1]['bandwidth'] ) and (current_segment["end"] - current_segment["start"] >= self.min_duration):
+            if (current_segment['words'] and word['bandwidth'] != current_segment['words'][-1]['bandwidth']) and (
+                current_segment["end"] - current_segment["start"] >= self.min_duration
+            ):
                 if self.is_valid_segment(current_segment):
                     segments.append(current_segment)
                 current_segment = {
@@ -167,14 +181,14 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
 
             current_segment["words"].append(word)
             current_segment["end"] = word["end"]
-        
+
         # add the last segment if it is valid
         if current_segment["words"]:
             if self.is_valid_segment(current_segment):
                 segments.append(current_segment)
-        
+
         return segments
-    
+
     def split_segment_by_punctuation(self, segment):
         """
         This method splits the given single speaker segment by punctuation marks, if no punctuation marks are found then it splits the segment by duration.
@@ -185,9 +199,7 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
         words = segment["words"]
         # get the punctuation split points
         split_points = [
-            i
-            for i, word in enumerate(words)
-            if word["word"] and word["word"][-1] in self.terminal_punct_marks
+            i for i, word in enumerate(words) if word["word"] and word["word"][-1] in self.terminal_punct_marks
         ]
         segments = []
         # if no punctuation marks, split the segment by duration
@@ -207,7 +219,11 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
             if current_duration < self.min_duration:
                 # merge with the next split points until the maximum duration is reached
                 next_end = current_end + 1
-                while next_end < len(split_points) and words[split_points[next_end]]["end"] - words[split_points[current_start]]["start"] <= self.max_duration:
+                while (
+                    next_end < len(split_points)
+                    and words[split_points[next_end]]["end"] - words[split_points[current_start]]["start"]
+                    <= self.max_duration
+                ):
                     next_end += 1
 
                 if next_end > current_end + 1:
@@ -221,17 +237,17 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
                 new_split_points.append(split_points[current_end])
                 current_start = current_end + 1
                 current_end = current_end + 1
-        
+
         # now split the segment at the new split points
         # if the duration of the segment is greater than the max duration, split the segment by duration
         start = 0
         for end in new_split_points:
             duration = words[end]["end"] - words[start]["start"]
             sub_segment = {
-                    "speaker": segment["speaker"],
-                    "start": words[start]["start"],
-                    "end": words[end]["end"],
-                    "words": words[start : end + 1],
+                "speaker": segment["speaker"],
+                "start": words[start]["start"],
+                "end": words[end]["end"],
+                "words": words[start : end + 1],
             }
             if duration <= self.max_duration:
                 if self.is_valid_segment(sub_segment):
@@ -239,7 +255,7 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
             else:
                 segments.extend(self.split_segment_by_duration(sub_segment))
             start = end + 1
-        
+
         # remaining clause in a new segment
         if start < len(words):
             remaining_segment = {
@@ -253,7 +269,6 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
         return segments
 
     def add_new_segments_to_metadata(self, metadata, new_segments):
-
         segments = []
 
         for new_segment in new_segments:
@@ -262,7 +277,9 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
                 "start": new_segment["start"],
                 "end": new_segment["end"],
                 "text": " ".join(word["word"] for word in new_segment["words"]),
-                "words": [{"word": word["word"], "start": word["start"], "end": word["end"]} for word in new_segment["words"]],
+                "words": [
+                    {"word": word["word"], "start": word["start"], "end": word["end"]} for word in new_segment["words"]
+                ],
                 "pesq_squim": [word["pesq_squim"] for word in new_segment["words"]],
                 "stoi_squim": [word["stoi_squim"] for word in new_segment["words"]],
                 "sisdr_squim": [word["sisdr_squim"] for word in new_segment["words"]],
@@ -310,10 +327,9 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
                 else:
                     current_segment["words"].append(word)
                     current_segment["end"] = word["end"]
-            
+
             if current_segment["words"]:
                 speaker_segments.append(current_segment)
-            
 
             # split the segments at the punctuation marks, pauses, and bandwidth changes
             for speaker_segment in speaker_segments:
@@ -323,10 +339,8 @@ class PrepareTTSSegmentsProcessor(BaseParallelProcessor):
 
             # add the new segments to the metadata
             self.add_new_segments_to_metadata(metadata, new_segments)
-            
+
         else:
             logger.info('Found no segments in metadata for audio file: ', metadata['audio_filepath'])
-        
+
         return [DataEntry(data=metadata)]
-
-

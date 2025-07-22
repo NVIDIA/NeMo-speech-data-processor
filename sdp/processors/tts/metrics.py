@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import librosa
 import math
+
+import librosa
 import numpy as np
+import torch
+import torchaudio
+import torchaudio.functional as F
+from torchaudio.pipelines import SQUIM_OBJECTIVE
 from tqdm import tqdm
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import load_manifest, save_manifest
-
-import torch
-import torchaudio
-import torchaudio.functional as F
-from torchaudio.pipelines import SQUIM_OBJECTIVE
 
 
 class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
@@ -35,13 +35,13 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
 
         PESQ (Perceptual Evaluation of Speech Quality)
         A measure of overall quality for speech (originally designed to detect codec distortions but highly correlated to all kinds of distortion.
-        
+
         STOI (Short-Time Objective Intelligibility)
-        A measure of speech intelligibility, basically measures speech envelope integrity. 
+        A measure of speech intelligibility, basically measures speech envelope integrity.
         A STOI value of 1.0 means 100% of the speech being evaluated is intelligible on average.
 
         SI-SDR (Scale-Invariant Signal-to-Distortion Ratio)
-        A measure of how strong the speech signal is vs. all the distortion present in the audio, in decibels. 
+        A measure of how strong the speech signal is vs. all the distortion present in the audio, in decibels.
         0 dB means the energies of speech and distortion are the same. A value between 15-20 dB is what is considered "clean enough" speech in general.
 
     Args:
@@ -58,13 +58,14 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
               input_manifest_file: ${workspace_dir}/manifest.json
               output_manifest_file: ${workspace_dir}/manifest_squim.json
     """
+
     def __init__(self, device: str = "cuda", **kwargs):
         super().__init__(**kwargs)
 
         if not torch.cuda.is_available():
-            device="cpu"
+            device = "cpu"
             logger.warning("CUDA is not available, using CPU")
-        
+
         if device == "cuda":
             self.model = SQUIM_OBJECTIVE.get_model().cuda()
         else:
@@ -79,14 +80,14 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
             info = torchaudio.info(metadata['resampled_audio_filepath'])
             sr = info.sample_rate
 
-            try: 
+            try:
                 audio, _ = librosa.load(path=metadata['resampled_audio_filepath'], sr=sr)
             except Exception as ex:
                 logger.info(f"Failed to load {metadata['resampled_audio_filepath']}, exception={ex}")
                 continue
 
             for segment in metadata["segments"]:
-                if ("text" in segment and segment["text"].strip() == "") or (segment["speaker"]=="no-speaker"):
+                if ("text" in segment and segment["text"].strip() == "") or (segment["speaker"] == "no-speaker"):
                     continue
                 start = segment["start"]
                 end = segment["end"]
@@ -95,9 +96,9 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
                 end = math.floor(end * sr)
                 num_samples = end - start
 
-                y = audio[start: end]
+                y = audio[start:end]
                 y = torch.from_numpy(y)
-                y = torch.unsqueeze(y, dim=0) # needed otherwise throws input size error
+                y = torch.unsqueeze(y, dim=0)  # needed otherwise throws input size error
 
                 if sr != 16000:
                     y = F.resample(y, sr, 16000)
@@ -122,10 +123,11 @@ class TorchSquimObjectiveQualityMetricsProcessor(BaseProcessor):
                     segment['metrics'] = metrics
                 except Exception as e:
                     torch.cuda.empty_cache()
-                    logger.info('Failed to extract Squim metrics {} with frame_offset={} and num_frames={}'.format(
-                        metadata['resampled_audio_filepath'],
-                        start,
-                        num_samples))
+                    logger.info(
+                        'Failed to extract Squim metrics {} with frame_offset={} and num_frames={}'.format(
+                            metadata['resampled_audio_filepath'], start, num_samples
+                        )
+                    )
                     continue
             results.append(metadata)
 
@@ -156,13 +158,14 @@ class BandwidthEstimationProcessor(BaseProcessor):
               input_manifest_file: ${workspace_dir}/manifest.json
               output_manifest_file: ${workspace_dir}/manifest_with_bandwidth.json
     """
+
     def __init__(
         self,
         n_fft: int = 512,
         stride_seconds: float = 0.01,
         top_db: float = 100.0,
         frequency_threshold: float = -50.0,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.n_fft = n_fft
@@ -172,14 +175,14 @@ class BandwidthEstimationProcessor(BaseProcessor):
 
     def _estimate_bandwidth(self, audio, sample_rate):
         """Estimates the bandwidth of an audio signal.
-        
+
         This method calculates the power spectrogram of the audio signal and determines
         the bandwidth based on a frequency threshold.
-        
+
         Args:
             audio (np.ndarray): The audio signal to estimate the bandwidth of
             sample_rate (int): The sample rate of the audio signal
-            
+
         Returns:
             int: The estimated bandwidth of the audio signal
         """
@@ -208,19 +211,19 @@ class BandwidthEstimationProcessor(BaseProcessor):
 
         for metadata in tqdm(manifest):
             audio_filepath = metadata['audio_filepath']
-            try: 
+            try:
                 audio, sample_rate = librosa.load(path=audio_filepath, sr=None)
             except Exception as ex:
                 logger.info(f"Failed to load {audio_filepath}, exception={ex}")
                 continue
 
             for segment in metadata['segments']:
-                if ("text" in segment and segment["text"].strip() == "") or (segment["speaker"]=="no-speaker"):
+                if ("text" in segment and segment["text"].strip() == "") or (segment["speaker"] == "no-speaker"):
                     continue
                 start = segment['start']
                 end = segment['end']
 
-                audio_segment = audio[int(start*sample_rate): int(end*sample_rate)]
+                audio_segment = audio[int(start * sample_rate) : int(end * sample_rate)]
 
                 bandwidth = self._estimate_bandwidth(audio=audio_segment, sample_rate=sample_rate)
 
@@ -235,4 +238,3 @@ class BandwidthEstimationProcessor(BaseProcessor):
             results.append(metadata)
 
         save_manifest(results, self.output_manifest_file)
-

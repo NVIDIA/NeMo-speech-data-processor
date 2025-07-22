@@ -14,12 +14,13 @@
 
 
 import json
-import librosa
-from pathlib import Path
-import soundfile as sf
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
+
+import librosa
+import soundfile as sf
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
@@ -138,8 +139,10 @@ class DownloadHiFiTTS2(BaseParallelProcessor):
         original_duration = data_entry["duration"]
         duration_diff = abs(chapter_duration - original_duration)
         if duration_diff > 0.1:
-            error_msg = f"Duration mismatch for {url}: original duration={original_duration}; " \
-                        f"downloaded duration={round(chapter_duration, 2)}"
+            error_msg = (
+                f"Duration mismatch for {url}: original duration={original_duration}; "
+                f"downloaded duration={round(chapter_duration, 2)}"
+            )
             logger.warning(error_msg)
 
             if self.exit_on_error:

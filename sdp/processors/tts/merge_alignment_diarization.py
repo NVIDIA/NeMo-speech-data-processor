@@ -15,6 +15,7 @@
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import load_manifest, save_manifest
 
+
 class MergeAlignmentDiarization(BaseProcessor):
     """This processor merges alignment and diarization information from a manifest file.
 
@@ -35,8 +36,8 @@ class MergeAlignmentDiarization(BaseProcessor):
               input_manifest_file: ${workspace_dir}/manifest.json
               output_manifest_file: ${workspace_dir}/manifest_merged.json
     """
-    def __init__(self,
-            **kwargs):
+
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def process(self):
@@ -44,8 +45,8 @@ class MergeAlignmentDiarization(BaseProcessor):
 
         # Manifest here needs to contain both paths to alignment files and 'segments'
         # from pyannote. We identify all the words that belong in each pyannote segment
-        # and join them together. 
-        
+        # and join them together.
+
         for metadata in manifest:
             alignment = metadata['alignment']
             segments = metadata['segments']
@@ -74,7 +75,9 @@ class MergeAlignmentDiarization(BaseProcessor):
                             # Check overlap with the next segment, if it exists
                             if i < len(segments) - 1:
                                 next_segment = segments[i + 1]
-                                next_overlap = max(0, min(word_end, next_segment['end']) - max(word_start, next_segment['start']))
+                                next_overlap = max(
+                                    0, min(word_end, next_segment['end']) - max(word_start, next_segment['start'])
+                                )
                             else:
                                 next_overlap = 0
 
@@ -87,7 +90,7 @@ class MergeAlignmentDiarization(BaseProcessor):
                             else:
                                 # If no overlap with current or next segment, increment to avoid infinite loop
                                 last_word_idx += 1
-                        
+
                         # If we are at the last word, break
                         if last_word_idx == len(alignment):
                             break
@@ -96,4 +99,3 @@ class MergeAlignmentDiarization(BaseProcessor):
                     segment['words'] = words_in_segment
 
         save_manifest(manifest, self.output_manifest_file)
-

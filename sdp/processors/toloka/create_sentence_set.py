@@ -32,6 +32,7 @@ class CreateSentenceSet(BaseParallelProcessor):
     Returns:
         A list of `DataEntry` objects, each containing a single extracted sentence.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

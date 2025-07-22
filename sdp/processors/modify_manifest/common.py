@@ -15,7 +15,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 from tqdm import tqdm
@@ -27,6 +27,7 @@ from sdp.processors.base_processor import (
     LegacyParallelProcessor,
 )
 from sdp.utils.common import load_manifest
+
 
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.
@@ -104,24 +105,24 @@ class AddConstantFields(BaseParallelProcessor):
     This processor adds constant fields to all manifest entries using Dask BaseParallelProcessor.
     It is useful when you want to attach fixed information (e.g., a language label or metadata)
     to each entry for downstream tasks such as language identification model training.
-    
+
     Args:
         fields (dict): A dictionary containing key-value pairs of fields to add to each manifest entry.
             For example::
-    
+
                 {
                     "label": "en",
                     "metadata": "mcv-11.0-2022-09-21"
                 }
-    
+
     Returns:
         dict: The same data as in the input manifest with the added constant fields as specified in
         the ``fields`` dictionary.
-    
+
     Example:
-    
+
         .. code-block:: yaml
-    
+
             - _target_: sdp.processors.modify_manifest.common.AddConstantFields
               input_manifest_file: ${workspace_dir}/input_manifest.json
               output_manifest_file: ${workspace_dir}/output_manifest.json
@@ -139,7 +140,6 @@ class AddConstantFields(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
-
 class DuplicateFields(BaseParallelProcessor):
     """This processor duplicates fields in all manifest entries.
 
@@ -154,8 +154,8 @@ class DuplicateFields(BaseParallelProcessor):
 
     Returns:
         The same data as in the input manifest with duplicated fields
-        as specified in the ``duplicate_fields`` input dictionary. 
-    
+        as specified in the ``duplicate_fields`` input dictionary.
+
     Example:
         .. code-block:: yaml
 
@@ -165,6 +165,7 @@ class DuplicateFields(BaseParallelProcessor):
               duplicate_fields: {"text":"answer"}
 
     """
+
     def __init__(
         self,
         duplicate_fields: Dict,
@@ -407,7 +408,7 @@ class DropSpecifiedFields(BaseProcessor):
     """
     A processor that removes specified fields from each data entry in the manifest.
 
-    This processor reads an input manifest line by line, drops the fields listed in `fields_to_drop` 
+    This processor reads an input manifest line by line, drops the fields listed in `fields_to_drop`
     from each JSON entry, and writes the cleaned entries to the output manifest.
 
     Args:

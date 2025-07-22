@@ -56,23 +56,24 @@ LAM_ALEF = u'\uFEFB'
 LAM_ALEF_HAMZA_ABOVE = u'\uFEF7'
 LAM_ALEF_HAMZA_BELOW = u'\uFEF9'
 LAM_ALEF_MADDA_ABOVE = u'\uFEF5'
-LIGATURES=(LAM_ALEF, LAM_ALEF_HAMZA_ABOVE, LAM_ALEF_HAMZA_BELOW, LAM_ALEF_MADDA_ABOVE)
+LIGATURES = (LAM_ALEF, LAM_ALEF_HAMZA_ABOVE, LAM_ALEF_HAMZA_BELOW, LAM_ALEF_MADDA_ABOVE)
 
 # Punctuation marks
 QUESTION_MARK = "\u061F"
 SAMICOLON = "\u061B"
 COMMA = "\u060C"
 
-DIACRITICS = [chr(x) for x in range(0x0600, 0x06ff) if unicodedata.category(chr(x)) == "Mn"]
-PUNCTUATION_MARKS = ["?", "!", ":", ";", "-", ".", ",", "؟","،", "؛"]
+DIACRITICS = [chr(x) for x in range(0x0600, 0x06FF) if unicodedata.category(chr(x)) == "Mn"]
+PUNCTUATION_MARKS = ["?", "!", ":", ";", "-", ".", ",", "؟", "،", "؛"]
 ALEFS = (ALEF, ALEF_MADDA, ALEF_HAMZA_ABOVE, ALEF_HAMZA_BELOW)
+
 
 class ArabicTextPreprocessor(BaseParallelProcessor):
     """Class for Arabic text preprocessing.
 
     Operates on the text in the ``input_text_key``, and saves output text in
     the ``output_text_key``.
-    
+
     Args:
         input_text_key (str):       the text field that will be the input to the processor.
         output_text_key (str):      the text field that will contain processed text.
@@ -92,6 +93,7 @@ class ArabicTextPreprocessor(BaseParallelProcessor):
             normalization of ligatures: `LAM_ALEF`, `LAM_ALEF_HAMZA_ABOVE`, `LAM_ALEF_HAMZA_BELOW`, `LAM_ALEF_MADDA_ABOVE` ligatures will be replaces by two letters `LAM` and `ALEF`.
             letter `TEH_MARBUTA` will be replaced by `HEH`. Defaults to False.
     """
+
     def __init__(
         self,
         input_text_key: str = "text",
@@ -120,9 +122,7 @@ class ArabicTextPreprocessor(BaseParallelProcessor):
         self.apply_nfkc = apply_nfkc
 
     def process_dataset_entry(self, data_entry):
-        data_entry[self.output_text_key] = self.clean_data(
-            data_entry[self.input_text_key]
-        )
+        data_entry[self.output_text_key] = self.clean_data(data_entry[self.input_text_key])
         return [DataEntry(data=data_entry)]
 
     def _remove_diacritics(self, text):
@@ -138,11 +138,11 @@ class ArabicTextPreprocessor(BaseParallelProcessor):
     def _normalize_teh(self, text):
         text = text.replace(TEH_MARBUTA, HEH)
         return text
-    
+
     def _normalize_ligature(self, text):
         LIGUATURES_PATTERN = re.compile(u"[" + u"".join(LIGATURES) + u"]", re.UNICODE)
         return LIGUATURES_PATTERN.sub(u'%s%s' % (LAM, ALEF), text)
-    
+
     def _normalize_alef(self, text):
         ALEFS_PATTERN = re.compile(u"[" + u"".join(ALEFS) + u"]", re.UNICODE)
         return re.sub(ALEFS_PATTERN, ALEF, text)

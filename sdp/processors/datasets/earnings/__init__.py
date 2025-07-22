@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from sdp.processors.datasets.earnings.create_initial_manifest import (
-    CreateInitialAudioAndManifest,
-    CreateFullAudioManifestEarnings21,
-    SpeakerSegmentedManifest,
-    CreateSentenceSegmentedManifest,
-    NeMoForcedAligner,
-)
 from sdp.processors.datasets.earnings.apply_normalizations import (
     ApplyEarnings21Normalizations,
-) 
+)
+from sdp.processors.datasets.earnings.create_initial_manifest import (
+    CreateFullAudioManifestEarnings21,
+    CreateInitialAudioAndManifest,
+    CreateSentenceSegmentedManifest,
+    NeMoForcedAligner,
+    SpeakerSegmentedManifest,
+)
