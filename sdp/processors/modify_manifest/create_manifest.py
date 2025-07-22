@@ -74,6 +74,10 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         self.output_file_key = output_file_key
         self.extension = extension
 
+    def setup_on_node(self, _, __):
+        if self.output_manifest_file:
+            open(self.output_manifest_file, 'w').close()
+
     def read_manifest(self):
         # Get all files with the specified extension
         files = list(self.raw_data_dir.rglob('*.' + self.extension))

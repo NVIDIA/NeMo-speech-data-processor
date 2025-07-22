@@ -42,9 +42,6 @@ def _make_dict(output_manifest_file, use_backend=None):
                 "raw_data_dir": workspace_dir,
                 "extension": "mp3",
                 "output_file_key": "audio_filepath",
-            },
-            {
-                "_target_": "sdp.processors.SaveJsonl",
                 "output_manifest_file": output_manifest_file,
             },
         ],
@@ -60,6 +57,23 @@ def test_curator():
     tmpdir = tempfile.TemporaryDirectory()
     output_path = os.path.join(tmpdir.name, "output_manifest_file.jsonl")
     dict_conf = _make_dict(output_manifest_file=output_path, use_backend="curator")
+    conf_path = Path(tmpdir.name) / "config.yaml"
+    _write_config(conf_path, dict_conf)
+
+    cfg = OmegaConf.load(conf_path)
+
+    run_processors(cfg)
+
+    output = load_manifest(output_path)
+    tmpdir.cleanup()
+    expected_output = _make_expected_output()
+    assert output == expected_output, f"Expected {expected_output}, but got {output}"
+
+
+def test_multiprocessing():
+    tmpdir = tempfile.TemporaryDirectory()
+    output_path = os.path.join(tmpdir.name, "output_manifest_file.jsonl")
+    dict_conf = _make_dict(output_manifest_file=output_path, use_backend=None)
     conf_path = Path(tmpdir.name) / "config.yaml"
     _write_config(conf_path, dict_conf)
 

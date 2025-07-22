@@ -24,7 +24,7 @@ import psutil
 from omegaconf import OmegaConf, open_dict
 from ray_curator.backends.xenna import XennaExecutor
 from ray_curator.pipeline import Pipeline
-from ray_curator.tasks import _EmptyTask
+from ray_curator.tasks import EmptyTask, _EmptyTask
 
 from sdp.logging import logger
 from sdp.utils.import_manager import ImportManager
@@ -150,8 +150,6 @@ def run_processors(cfg):
     try:
         import ray
 
-        ray.init()
-
         ray_available = True
     except ImportError:
         logger.warning("Dask not installed; using multiprocessing for all processors")
@@ -236,8 +234,8 @@ def run_processors(cfg):
         if any(p.use_backend for p in processors):
             try:
                 num_cpus = psutil.cpu_count(logical=False) or 4
-                logger.info(f"Starting Dask client with {num_cpus} workers")
-                backend_client = Client(n_workers=num_cpus, processes=True)
+                logger.info(f"Starting Ray client with {num_cpus} workers")
+                backend_client = ray.init()  # Client(n_workers=num_cpus, processes=True)
                 logger.info(f"Dask dashboard at: {backend_client.dashboard_link}")
             except Exception as e:
                 logger.warning(f"Failed to start Dask client: {e}")
@@ -252,17 +250,16 @@ def run_processors(cfg):
                     pipeline.add_stage(stage)
 
                 executor = XennaExecutor()
-                results = pipeline.run(executor)
-                # raise ValueError("results" + results)
+                pipeline.run(executor)
             else:
+                t = EmptyTask
                 for proc in processors:
                     if proc.use_backend == "dask" and backend_client is not None:
                         proc.backend_client = backend_client
                         logger.info('=> Running processor "%s" with Dask', proc)
                     else:
                         logger.info('=> Running processor "%s" with Multiprocessing', proc)
-                    # raise ValueError("_EmptyTask_EmptyTask")
-                    proc.process(_EmptyTask(task_id="empty", dataset_name="empty", data=None))
+                    t = proc.process(t)
         finally:
             if backend_client is not None:
                 logger.info("Shutting down Dask client...")

@@ -67,7 +67,9 @@ class BaseProcessor(ProcessingStage[Task, Task]):
             as ``input_manifest_file``.
     """
 
-    def __init__(self, output_manifest_file: str, input_manifest_file: Optional[str] = None, **kwargs):
+    def __init__(
+        self, output_manifest_file: Optional[str] = None, input_manifest_file: Optional[str] = None, **kwargs
+    ):
         if output_manifest_file and input_manifest_file and (output_manifest_file == input_manifest_file):
             # we cannot have the same input and output manifest file specified because we need to be able to
             # read from the input_manifest_file and write to the output_manifest_file at the same time
@@ -77,7 +79,7 @@ class BaseProcessor(ProcessingStage[Task, Task]):
         self.input_manifest_file = input_manifest_file
 
     @abstractmethod
-    def process(self):
+    def process(self, tasks: Task) -> Task:
         """Should be overriden by the child classes to implement some data processing."""
         pass
 
@@ -217,6 +219,8 @@ class BaseParallelProcessor(BaseProcessor):
         logger.info(f"Processed {total_entries} entries using Dask.")
 
     def _process_with_ray(self, metrics):
+        if self.output_manifest_file:
+            fout = open(self.output_manifest_file, "wt", encoding="utf8")
         tasks = []
         for manifest_chunk in self._chunk_manifest():
             for row in manifest_chunk:
@@ -225,6 +229,9 @@ class BaseParallelProcessor(BaseProcessor):
                     metrics.append(data_entry.metrics)
                     if data_entry.data is None:
                         continue
+                    if self.output_manifest_file:
+                        json.dump(data_entry.data, fout, ensure_ascii=False)
+                        fout.write("\n")
                     self.number_of_entries += 1
                     self.total_duration += data_entry.data.get("duration", 0)
                 tasks.extend(data)
