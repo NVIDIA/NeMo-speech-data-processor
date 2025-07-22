@@ -197,7 +197,8 @@ class FasterWhisperInference(BaseProcessor):
         https://github.com/SYSTRAN/faster-whisper
     
     Example:
-        .. code-block:: bash
+        .. code-block:: yaml
+        
             - _target_: sdp.processors.FasterWhisperInference
                input_manifest_file: /your/input/manifest.json
                output_manifest_file: /your/output/manifest.json
