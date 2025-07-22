@@ -20,7 +20,6 @@ from typing import Dict, List, Optional
 import soundfile
 import torchaudio
 from docx import Document
-from sox import Transformer
 from tqdm import tqdm
 import json
 
@@ -33,13 +32,8 @@ from sdp.processors.base_processor import (
 from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
-from sdp.utils.metrics_computation import (
-    get_cer,
-    get_charrate,
-    get_wer,
-    get_wmr,
-    get_wordrate,
-)
+from sdp.utils.metrics_computation import get_wer
+from sdp.utils.apply_operators import evaluate_expression
 
 
 class GetAudioDuration(BaseParallelProcessor):
@@ -76,78 +70,6 @@ class GetAudioDuration(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
-class FfmpegConvert(BaseParallelProcessor):
-    """
-    Processor for converting video or audio files to audio using FFmpeg and updating the dataset with the path to the resampled audio.
-    If ``id_key`` is not None, the output file path will be ``<resampled_audio_dir>/<id_key>.wav``.
-    If ``id_key`` is None, the output file path will be ``<resampled_audio_dir>/<input file name without extension>.wav``.
-
-    .. note:: ``id_key`` can be used to create subdirectories inside ``resampled_audio_dir`` (by using forward slashes ``/``).
-        e.g. if ``id_key`` takes the form ``dir_name1/dir_name2/filename``, the output file path will be
-
-        ``<resampled_audio_dir>/dir_name1/dirname2/filename.wav``.
-
-    Args:
-        converted_audio_dir (str): The directory to store the resampled audio files.
-        input_file_key (str): The field in the dataset representing the path to the input video or audio files.
-        output_file_key (str): The field in the dataset representing the path to the resampled audio files with ``output_format``. If ``id_key`` is None, the output file path will be ``<resampled_audio_dir>/<input file name without extension>.wav``.
-        id_key (str): (Optional) The field in the dataset representing the unique ID or identifier for each entry. If ``id_key`` is not None, the output file path will be ``<resampled_audio_dir>/<id_key>.wav``. Defaults to None.
-        output_format (str): (Optional) Format of the output audio files. Defaults to `wav`.
-        target_samplerate (int): (Optional) The target sampling rate for the resampled audio. Defaults to 16000.
-        target_nchannels (int): (Optional) The target number of channels for the resampled audio. Defaults to 1.
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
-
-    """
-
-    def __init__(
-        self,
-        converted_audio_dir: str,
-        input_file_key: str,
-        output_file_key: str,
-        id_key: str = None,
-        output_format: str = "wav",
-        base_dir: str = None,
-        target_samplerate: int = 16000,
-        target_nchannels: int = 1,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.converted_audio_dir = converted_audio_dir
-        self.input_file_key = input_file_key
-        self.output_file_key = output_file_key
-        self.output_format = output_format
-        self.id_key = id_key
-        self.base_dir = base_dir
-        self.target_samplerate = target_samplerate
-        self.target_nchannels = target_nchannels
-
-    def prepare(self):
-        assert self.output_format == "wav", "Currently only wav format is supported"
-        os.makedirs(self.converted_audio_dir, exist_ok=True)
-
-    def process_dataset_entry(self, data_entry):
-        input_file = data_entry[self.input_file_key]
-        if self.id_key:
-            key = data_entry[self.id_key]
-            os.makedirs(os.path.join(self.converted_audio_dir, *key.split("/")[:-1]), exist_ok=True)
-        else:
-            key = os.path.splitext(input_file)[0].split("/")[-1]
-
-        if self.base_dir:
-            new_dir = os.path.dirname(os.path.relpath(input_file, self.base_dir))
-            os.makedirs(os.path.join(self.converted_audio_dir, new_dir), exist_ok=True)
-
-            key = os.path.join(new_dir, key)
-
-        audio_file = os.path.join(self.converted_audio_dir, key) + "." + self.output_format
-
-        if not os.path.isfile(audio_file):
-            ffmpeg_convert(input_file, audio_file, self.target_samplerate, self.target_nchannels)
-
-        data_entry[self.output_file_key] = audio_file
-        return [DataEntry(data=data_entry)]
-
-
 class ReadTxtLines(BaseParallelProcessor):
     """
     The text file specified in source_filepath will be read, and each line in it will be added as a line in the output manifest,
@@ -181,82 +103,6 @@ class ReadTxtLines(BaseParallelProcessor):
                     data[self.text_key] = line
                     data_list.append(DataEntry(data=data))
         return data_list
-
-
-class SoxConvert(BaseParallelProcessor):
-    """Processor for Sox to convert audio files to specified format.
-
-    Args:
-        output_manifest_file (str): Path to the output manifest file.
-        input_audio_file_key (str): Key in the manifest file that contains the path to the input audio file.
-        output_audio_file_key (str): Key in the manifest file that contains the path to the output audio file.
-        converted_audio_dir (str): Path to the directory where the converted audio files will be stored.
-        output_format (str): Format of the output audio file.
-        rate (int): Sample rate of the output audio file.
-        channels (int): Number of channels of the output audio file.
-        workspace_dir (str, Optional): Path to the workspace directory. Defaults to None.
-    """
-
-    def __init__(
-        self,
-        converted_audio_dir: str,
-        input_audio_file_key: str = "audio_filepath",
-        output_audio_file_key: str = "audio_filepath",
-        output_format: str = "wav",
-        rate: int = 16000,
-        channels: int = 1,
-        workspace_dir: Optional[str] = None,
-        **kwargs,
-    ):
-        # Extract workspace_dir from kwargs to avoid passing it to BaseProcessor
-        if "workspace_dir" in kwargs:
-            workspace_dir = kwargs.pop("workspace_dir")
-            
-        super().__init__(**kwargs)
-        self.input_audio_file_key = input_audio_file_key
-        self.output_audio_file_key = output_audio_file_key
-        self.converted_audio_dir = converted_audio_dir
-        self.output_format = output_format
-        self.workspace_dir = workspace_dir
-
-        # Store the new parameters for later use:
-        self.rate = rate
-        self.channels = channels
-
-    def prepare(self):
-        # Debug print for workspace_dir
-        logger.info(f"SoxConvert workspace_dir: {self.workspace_dir}")
-        os.makedirs(self.converted_audio_dir, exist_ok=True)
-
-    def process_dataset_entry(self, data_entry):
-        audio_path = data_entry[self.input_audio_file_key]
-        
-        # If workspace_dir is provided, join it with audio_path to get absolute path
-        if self.workspace_dir is not None:
-            full_audio_path = os.path.join(self.workspace_dir, audio_path)
-        else:
-            full_audio_path = audio_path
-            
-        # Debug print first file path
-        if not hasattr(self, '_debug_printed'):
-            logger.info(f"First audio_path from manifest: {audio_path}")
-            logger.info(f"First full_audio_path: {full_audio_path}")
-            logger.info(f"Path exists: {os.path.exists(full_audio_path)}")
-            self._debug_printed = True
-
-        key = os.path.splitext(audio_path)[0].split("/")[-1]
-        converted_file = os.path.join(self.converted_audio_dir, key) + f".{self.output_format}"
-
-        if not os.path.isfile(converted_file):
-            transformer = Transformer()
-
-            transformer.rate(self.rate)
-            transformer.channels(self.channels)
-
-            transformer.build(full_audio_path, converted_file)
-
-        data_entry[self.output_audio_file_key] = converted_file
-        return [DataEntry(data=data_entry)]
 
 
 class CountNumWords(BaseParallelProcessor):
@@ -559,36 +405,67 @@ class SubMakeLowercase(BaseParallelProcessor):
 
 
 class SubRegex(BaseParallelProcessor):
-    """Converts a regex match to a string, as defined by key-value pairs in ``regex_to_sub``.
+    """
+    Applies a sequence of regex substitutions to the specified text field in each data entry.
 
-    Before applying regex changes, we will add a space
-    character to the beginning and end of the ``text`` and ``pred_text``
-    keys for each data entry. After the the regex changes,
-    the extra spaces are removed. This includes the spaces in the beginning
-    and end of the text, as well as any double spaces ``"  "``.
+    This processor performs regex-based substitutions as defined in either a provided list of
+    regex parameter dictionaries or a YAML configuration file. Each substitution is applied in
+    the order specified.
+
+    Before substitutions are applied, a space is temporarily added to the beginning and end of the text
+    to improve regex match consistency. After all substitutions, leading/trailing spaces and repeated
+    spaces are removed.
 
     Args:
-        regex_params_list (list[dict]): list of dicts.
-            Each dict must contain a ``pattern`` and a ``repl`` key,
-            and optionally a ``count`` key (by default, ``count`` will be 0).
-            This processor will go through the list in order, and apply a ``re.sub`` operation on
-            the input text in ``data_entry[self.text_key]``, feeding in the specified ``pattern``, ``repl``
-            and ``count`` parameters to ``re.sub``.
-        text_key (str): a string indicating which key of the data entries
-            should be used to find the utterance transcript. Defaults to "text".
+        regex_params_list (List[Dict], optional): A list of dictionaries specifying the regex substitutions.
+            Each dictionary must include::
+
+                - "pattern": A regex pattern to match.
+                - "repl": A replacement string.
+                - "count" (optional): Maximum number of replacements to make. Defaults to 0 (replace all).
+
+        regex_params_yaml (str, optional): Path to a YAML file that defines the same list of dictionaries
+            as `regex_params_list`. Either `regex_params_list` or `regex_params_yaml` must be provided.
+            If both are provided, `regex_params_yaml` takes precedence.
+
+        text_key (str): The key in each data entry whose value will be modified. Defaults to "text".
+
+        **kwargs: Additional arguments passed to the BaseParallelProcessor.
+
+    Example YAML format for `regex_params_yaml`:
+        ```
+        # regex_params.yaml
+        - {"pattern": "♩", "repl": " "}
+        - {"pattern": "♭", "repl": " "}
+        - {"pattern": "\\|", "repl": " "}
+        - {"pattern": ":", "repl": " "}
+        - {"pattern": "-", "repl": " "}
+        - {"pattern": "[^ €₽₴$£%?!',.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЬЮЯабвгдежзийклмнопрстуфхцчшщъьюя]", "repl": ""}
+        - {"pattern": "\\s+\\.", "repl": "."}
+        - {"pattern": "\\?+", "repl": "?"}
+        - {"pattern": "\\.+", "repl": "."}
+        ```
 
     Returns:
-         The same data as in the input manifest with ``<text_key>`` field changed.
+        The same data as in the input manifest with ``<text_key>`` field changed.
     """
 
     def __init__(
         self,
-        regex_params_list: List[Dict],
+        regex_params_list: List[Dict] = None,
+        regex_params_yaml: str = None,
         text_key: str = "text",
         **kwargs,
     ):
         super().__init__(**kwargs)
+        if not regex_params_list and not regex_params_yaml:
+            raise ValueError(f'One of `regex_params_list` or `regex_params_yaml` should be provided.')
+        
         self.regex_params_list = regex_params_list
+        if regex_params_yaml:
+            with open(regex_params_yaml, 'r') as regex_params_file: 
+                self.regex_params_list = yaml.safe_load(regex_params_file)
+
         self.text_key = text_key
 
         # verify all dicts in regex_params_list have "pattern" and "repl" keys
@@ -1127,3 +1004,231 @@ class ASRFileCheck(BaseProcessor):
         if self.failed_files:
             logger.warning(f"Failed to process {len(self.failed_files)} files.")
             logger.debug(f"Failed files: {self.failed_files}")
+
+
+class ListToEntries(BaseParallelProcessor):
+    """
+    A dataset processor that transforms a single entry containing a list of items into multiple entries,
+    one for each item in the list.
+
+    This is useful when a manifest field (e.g., "segments") contains a list of sub-entries, and you want
+    to flatten these into individual records for further processing.
+
+    Args:
+        field_with_list (str): The name of the field in the input entry that contains a list.
+        output_field (str, optional): The name of the output field to assign to items in the list
+            if they are not dictionaries. Required if the list contains primitive types (e.g., strings).
+        **kwargs: Additional arguments passed to the BaseParallelProcessor.
+
+    Raises:
+        TypeError: If the specified list field is not of type list.
+        ValueError: If the list items are not dictionaries and `output_field` is not provided.
+    
+    Returns:
+        A manifest where each entry corresponds to one item in the original list from the input entry. 
+        This effectively transforms a single input entry containing a list of items into multiple standalone 
+        entries, each suitable for further dataset processing.
+
+    .. admonition:: Example 1 (list of dicts)
+        
+        .. code-block:: yaml
+    
+            - _target_: sdp.processors.ListToEntries
+              input_manifest_file: ${workspace_dir}/input_manifest.json
+              output_manifest_file: ${workspace_dir}/output_manifest.json
+              field_with_list: "segments"
+                
+        Input::
+ 
+            {
+                "audio_filepath": "sample.wav",
+                "segments": [
+                    {"start": 0.0, "end": 1.5, "text": "Hello"},
+                    {"start": 1.6, "end": 3.0, "text": "World"}
+                ]
+            }
+
+        Output::
+
+            [
+                {
+                    "audio_filepath": "sample.wav",
+                    "start": 0.0,
+                    "end": 1.5,
+                    "text": "Hello"
+                },
+                {
+                    "audio_filepath": "sample.wav",
+                    "start": 1.6,
+                    "end": 3.0,
+                    "text": "World"
+                }
+            ]
+    
+    .. admonition:: Example 2 (list of primitives)
+        
+        .. code-block:: yaml
+    
+            - _target_: sdp.processors.ListToEntries
+              input_manifest_file: ${workspace_dir}/input_manifest.json
+              output_manifest_file: ${workspace_dir}/output_manifest.json
+              field_with_list: "text_chunks"
+              output_field: "text"
+                
+        Input::
+ 
+            {
+                "audio_filepath": "sample.wav",
+                "text_chunks": [
+                    "Hello",
+                    "World"
+                ]
+            }
+
+        Output::
+
+            [
+                {
+                    "audio_filepath": "sample.wav",
+                    "text": "Hello"
+                },
+                {
+                    "audio_filepath": "sample.wav",
+                    "text": "World"
+                }
+            ]
+
+    """
+
+    def __init__(self, 
+        field_with_list: str,
+        output_field: str = None,
+        **kwargs):
+        super().__init__(**kwargs)
+        self.field_with_list = field_with_list
+        self.output_field = output_field
+
+    def process_dataset_entry(self, data_entry):
+        _entries = []
+
+        # Check that the target field is actually a list
+        if not isinstance(data_entry[self.field_with_list], list):
+            raise TypeError(f'Values of {self.field_with_list} field should be list type only: {data_entry}')
+        
+        # Remove the list field from the entry and get the list of items
+        items_list = data_entry.pop(self.field_with_list)
+
+        # If items are not dicts, output_field must be specified to store the item
+        if not isinstance(items_list[0], dict) and not self.output_field:
+            raise ValueError(f'Type of items in items list `{self.field_with_list}` is not dict ({type(items_list[0])}). In this case `output_field` should be provided.')
+        
+        # Expand the list into multiple entries
+        for item in items_list:
+            _entry = data_entry.copy()
+
+            # If item is a dict, merge its keys; otherwise, store it in `output_field`
+            if isinstance(item, dict):
+                _entry.update(item)
+            else: 
+                _entry[self.output_field] = item
+
+            _entry = DataEntry(_entry)
+            _entries.append(_entry)
+
+        return _entries
+
+
+class LambdaExpression(BaseParallelProcessor):
+    """
+    A dataset processor that evaluates a Python expression on each data entry and either stores
+    the result in a new field or uses it as a filtering condition.
+
+    This processor is useful for dynamic field computation or conditional filtering of entries based
+    on configurable expressions. It leverages ``evaluate_expression``, which safely evaluates expressions
+    using the abstract syntax tree (AST).
+
+    Filtering behavior:
+        If ``filter=True``, the expression is evaluated for each entry. Only entries for which the expression evaluates to ``True`` are kept; all others are filtered out (removed from the output).
+        If ``filter=False``, the result of the expression is stored in the field specified by ``new_field`` for each entry (no filtering occurs).
+
+    Examples::
+
+        # Example 1: Filtering entries where the duration is greater than 5.0 seconds
+        LambdaExpression(
+            new_field="keep",  # This field is ignored when filter=True
+            expression="entry['duration'] > 5.0",
+            lambda_param_name="entry",
+            filter=True
+        )
+        # Only entries with duration > 5.0 will be kept in the output manifest.
+
+        # Example 2: Adding a new field with the number of words in the text
+        LambdaExpression(
+            new_field="num_words",
+            expression="len(entry['text'].split())",
+            lambda_param_name="entry",
+            filter=False
+        )
+        # Each entry will have a new field 'num_words' with the word count of the 'text' field.
+
+    Supported operations:
+
+        The expression supports a safe subset of Python operations, including:
+
+        - Arithmetic: ``+``, ``-``, ``*``, ``/``, ``//``, ``%``, ``**``
+        - Comparisons: ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``, ``is``, ``is not``
+        - Logical: ``and``, ``or``, ``not``
+        - Bitwise: ``|``, ``&``, ``^``, ``~``, ``<<``, ``>>``
+        - Indexing and slicing: ``entry['key']``, ``entry[0]``, ``entry[1:3]``
+        - Conditional (ternary) expressions: ``a if cond else b``
+        - List and dict literals: ``[a, b]``, ``{k: v}``
+        - Attribute access: ``entry.attr``
+        - Function calls (limited): ``max``, ``min``, ``len``, ``sum``, ``abs``, ``sorted``
+
+        For the full list, see the ``OPERATORS`` and ``SAFE_FUNCTIONS`` in :mod:`sdp.utils.apply_operators`.
+        See also: https://docs.python.org/3/library/operator.html
+
+    Args:
+        new_field (str): The name of the field to store the result of the expression (ignored if filter=True).
+        expression (str): A Python expression to evaluate. It can reference fields of the data entry
+            using the name specified by ``lambda_param_name`` (default: 'entry').
+        lambda_param_name (str, optional): The name to refer to the current data entry in the expression.
+            Default is "entry".
+        filter (bool, optional): If True, the expression result is treated as a condition.
+            The entry is kept only if the result is ``True``. Default is ``False``.
+        **kwargs: Additional keyword arguments passed to the ``BaseParallelProcessor`` class.
+
+    Returns:
+        str: A line-delimited JSON manifest, where each line is a processed entry.
+        The result may contain fewer entries than the input if ``filter=True``.
+    """
+    def __init__(
+        self,
+        new_field: str,
+        expression: str,
+        lambda_param_name: str = "entry",
+        filter: bool = False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.new_field = new_field
+        self.expression = expression
+        self.lambda_param_name = lambda_param_name
+        self.filter = filter
+
+    def process_dataset_entry(self, data_entry) -> List[DataEntry]:
+        """
+        Process a single data entry by evaluating the expression.
+
+        If `filter` is True, the entry is only retained if the expression evaluates to True.
+        Otherwise, the result is stored in `new_field`.
+        """
+        value = evaluate_expression(self.expression,  data_entry, self.lambda_param_name)
+        if self.filter:
+            if value is not True:
+                return []
+        data_entry[self.new_field] = value   
+        return [DataEntry(data=data_entry)]
+
+    def finalize(self, metrics):
+        super().finalize(metrics)

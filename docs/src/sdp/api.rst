@@ -96,6 +96,27 @@ UzbekVoice
 .. autodata:: sdp.processors.CreateInitialManifestUzbekvoice
    :annotation:
 
+Earnings21/22
+'''''''''''''
+
+.. autodata:: sdp.processors.datasets.earnings.CreateInitialAudioAndManifest
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings.CreateFullAudioManifestEarnings21
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings.SpeakerSegmentedManifest
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings.CreateSentenceSegmentedManifest
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings.NeMoForcedAligner
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings.ApplyEarnings21Normalizations
+   :annotation:
+
 
 MASC
 ''''''
@@ -219,6 +240,12 @@ Data modifications
 .. autodata:: sdp.processors.InverseNormalizeText
    :annotation:
 
+.. autodata:: sdp.processors.LambdaExpression
+   :annotation:
+  
+.. autodata:: sdp.processors.ListToEntries
+   :annotation:
+
 Data filtering
 ''''''''''''''
 
@@ -254,13 +281,25 @@ ASR-based processors
 Data modifications
 ''''''''''''''''''
 
-.. autodata:: sdp.processors.SoxConvert
-   :annotation:
-
 .. autodata:: sdp.processors.InsIfASRInsertion
    :annotation:
 
 .. autodata:: sdp.processors.SubIfASRSubstitution
+   :annotation:
+
+Files management
+''''''''''''''''
+
+.. autodata:: sdp.processors.SoxConvert
+   :annotation:
+
+.. autodata:: sdp.processors.FfmpegConvert
+   :annotation:
+
+.. autodata:: sdp.processors.ExtractTar
+   :annotation:
+
+.. autodata:: sdp.processors.RemoveFiles
    :annotation:
 
 Data filtering
@@ -355,9 +394,6 @@ Miscellaneous
 .. autodata:: sdp.processors.GetAudioDuration
    :annotation:
 
-.. autodata:: sdp.processors.FfmpegConvert
-   :annotation:
-
 .. autodata:: sdp.processors.CreateInitialManifestByExt
    :annotation:
 
@@ -386,6 +422,9 @@ Miscellaneous
    :annotation:
 
 .. autodata:: sdp.processors.ipl.ipl_processors.InferenceCommandGenerator
+   :annotation:
+
+.. autodata:: sdp.processors.DropSpecifiedFields
    :annotation:
 
 .. _sdp-base-classes:

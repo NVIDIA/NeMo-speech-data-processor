@@ -21,6 +21,13 @@ from sdp.processors.datasets.coraal import (
     CreateInitialManifestCORAAL,
     TrainDevTestSplitCORAAL,
 )
+from sdp.processors.datasets.earnings import (
+    CreateInitialAudioAndManifest,
+    CreateFullAudioManifestEarnings21,
+    SpeakerSegmentedManifest,
+    CreateSentenceSegmentedManifest,
+    ApplyEarnings21Normalizations,
+)
 from sdp.processors.datasets.fleurs.create_initial_manifest import (
     CreateInitialManifestFleurs,
 )
@@ -86,6 +93,8 @@ from sdp.processors.modify_manifest.common import (
     SortManifest,
     SplitOnFixedDuration,
     Subprocess,
+    DropSpecifiedFields,
+
 )
 from sdp.processors.modify_manifest.create_manifest import (
     CreateCombinedManifests,
@@ -96,7 +105,6 @@ from sdp.processors.modify_manifest.data_to_data import (
     CopyManifestData,
     CountNumWords,
     ExtractFromBrackets,
-    FfmpegConvert,
     GetAudioDuration,
     GetWER,
     InsIfASRInsertion,
@@ -105,11 +113,12 @@ from sdp.processors.modify_manifest.data_to_data import (
     NormalizeText,
     ReadDocxLines,
     ReadTxtLines,
-    SoxConvert,
     SplitLineBySentence,
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
+    ListToEntries,
+    LambdaExpression,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,
@@ -131,6 +140,16 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
 )
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
+)
+from sdp.processors.manage_files.convert_audio import (
+    FfmpegConvert,
+    SoxConvert,
+)
+from sdp.processors.manage_files.extract import (
+    ExtractTar,
+)
+from sdp.processors.manage_files.remove import (
+    RemoveFiles,
 )
 from sdp.processors.nemo.asr_inference import ASRInference
 from sdp.processors.nemo.estimate_bandwidth import EstimateBandwidth
