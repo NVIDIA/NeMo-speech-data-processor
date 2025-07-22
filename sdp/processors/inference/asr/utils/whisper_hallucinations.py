@@ -22,8 +22,28 @@ class DetectWhisperHallucinationFeatures(BaseParallelProcessor):
     This processor analyzes the transcript text and flags common hallucination patterns by computing
     boolean features such as:
     - Repeated or low-diversity n-grams (`hall_repeated_ngrams`)
+        
+        **Example:**
+
+        .. code-block:: text
+            
+            yes yes yes yes yes yes yes yes yes yes yes yes
+
     - Unusually long or disproportionately long words (`hall_long_word`)
+    
+        **Example:**
+
+        .. code-block:: text
+
+          short mid reallyreallyreallyreallyreallyreallyreallylong
+
     - Matches with known hallucinated phrases (`hall_frequent_single_word`)
+    
+        **Example:**
+
+        .. code-block:: text
+
+            lorem ipsum dolor sit amet
 
     It appends these features to each entry in the manifest for downstream filtering or analysis.
 

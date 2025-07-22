@@ -63,6 +63,11 @@ def serialize(obj):
 
 @dataclass
 class InferenceConfig:
+    """
+    Configuration for FasterWhisper inference.
+    To know more about the parameters, refer to the documentation:
+        https://github.com/SYSTRAN/faster-whisper/blob/master/faster_whisper/transcribe.py#L303
+    """
     language: Optional[str] = None
     task: str = "transcribe"
     log_progress: bool = False
@@ -190,7 +195,13 @@ class FasterWhisperInference(BaseProcessor):
 
         For detailed configuration options and advanced usage of FasterWhisper, refer to the official repository:
         https://github.com/SYSTRAN/faster-whisper
-
+    
+    Example:
+        .. code-block:: bash
+            - _target_: sdp.processors.FasterWhisperInference
+               input_manifest_file: /your/input/manifest.json
+               output_manifest_file: /your/output/manifest.json
+               model_size_or_path: base
     """
     def __init__(self, 
                  input_manifest_file: str,
@@ -330,7 +341,7 @@ class FasterWhisperInference(BaseProcessor):
             for line in fin:
                 yield json.loads(line)
     
-    def get_entries_for_device(self, device_id: int):
+    def _get_entries_for_device(self, device_id: int):
         """
         Yields manifest entries assigned to a given device.
 
@@ -342,7 +353,7 @@ class FasterWhisperInference(BaseProcessor):
             for entry in batch:
                 yield entry
     
-    def get_audio_segment(self, audio_filepath: str, offset: float, duration: float):
+    def _get_audio_segment(self, audio_filepath: str, offset: float, duration: float):
         """Loads a segment of audio based on offset and duration."""
         audio, sr = librosa.load(audio_filepath, sr=None)
         start_sample = int(offset * sr)
@@ -350,7 +361,7 @@ class FasterWhisperInference(BaseProcessor):
         audio_segment = audio[start_sample : end_sample]
         return audio_segment 
 
-    def write_timestamps(self, filename: str, segments: List[Dict]):
+    def _write_timestamps(self, filename: str, segments: List[Dict]):
         """Saves timestamp information (segments and optionally word-level) to separate files."""
 
         output_segments_filepath = os.path.join(self.config.dataset.output_dir, 'segments', f'{filename}.json')
@@ -366,7 +377,7 @@ class FasterWhisperInference(BaseProcessor):
                 line = json.dumps(segment)
                 output_manifest.writelines(f'{line}\n')
         
-        def write_words(words: List[Dict]):
+        def _write_words(words: List[Dict]):
             output_manifest_filepath = os.path.join(self.config.dataset.output_dir, 'words', f'{filename}.json')
             with open(output_manifest_filepath, 'w', encoding = 'utf8') as output_manifest:
                 for word in words:
@@ -376,11 +387,11 @@ class FasterWhisperInference(BaseProcessor):
 
         output_words_filepath = None
         if self.config.inference.word_timestamps:
-            output_words_filepath = write_words(output_words_filepath, sample_words)
+            output_words_filepath = _write_words(output_words_filepath, sample_words)
         
         return dict(segments = output_segments_filepath, words = output_words_filepath)
 
-    def transcribe(self, device_id: int):
+    def _transcribe(self, device_id: int):
         """""
         Transcribes all samples assigned to a given device.
 
@@ -400,7 +411,7 @@ class FasterWhisperInference(BaseProcessor):
         output_manifest_file = os.path.join(self.config.dataset.output_dir, f'prediction_{device_id}.json')
         
         with open(output_manifest_file, 'w', encoding='utf8') as fout:
-            for entry in tqdm(self.get_entries_for_device(device_id), desc = f"Transcribing ({self.config.model.device.upper()} {device_id})"):
+            for entry in tqdm(self._get_entries_for_device(device_id), desc = f"Transcribing ({self.config.model.device.upper()} {device_id})"):
                 audio_filepath = entry[self.audio_filepath_field]
 
                 if self.language_detection_only:
@@ -424,7 +435,7 @@ class FasterWhisperInference(BaseProcessor):
                 else:
                     try:
                         if self.config.dataset.offset:
-                            audio = self.get_audio_segment(audio_filepath, entry['offset'], entry['duration'])
+                            audio = self._get_audio_segment(audio_filepath, entry['offset'], entry['duration'])
                         else:
                             audio = audio_filepath
                     
@@ -450,7 +461,7 @@ class FasterWhisperInference(BaseProcessor):
 
                     if self.config.dataset.save_timestamps_separately:
                         audio_filename = os.path.splitext(os.path.basename(audio_filepath))[0]
-                        timestamps_filepaths = self.write_timestamps(audio_filename, segments)
+                        timestamps_filepaths = self._write_timestamps(audio_filename, segments)
                         result.update(timestamps_filepaths)
                     else:
                         result['segments'] = segments
@@ -474,7 +485,7 @@ class FasterWhisperInference(BaseProcessor):
         self.prepare()
 
         with Pool(processes=len(self.device_ids)) as pool:
-            output_rank_manifests = pool.map(self.transcribe, self.device_ids)
+            output_rank_manifests = pool.map(self._transcribe, self.device_ids)
         
         with open(self.output_manifest_file, 'w', encoding='utf8') as output_manifest:
             for rank_manifest_filepath in tqdm(output_rank_manifests, desc = "Writing output manifest.."):
