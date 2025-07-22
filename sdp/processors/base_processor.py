@@ -35,7 +35,10 @@ class DataEntry(Task[list]):
     """A wrapper for data entry + any additional metrics."""
 
     data: Optional[Dict]  # can be None to drop the entry
-    metrics: Any = None
+
+    def __init__(self, metrics: Any = None, dataset_name: str = "", task_id: int = 0, **kwargs):
+        self.metrics = metrics
+        super().__init__(task_id=task_id, dataset_name=dataset_name, **kwargs)
 
     @property
     def num_items(self) -> int:

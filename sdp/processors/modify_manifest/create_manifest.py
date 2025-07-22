@@ -89,7 +89,6 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         return [
             DataEntry(
                 data=data,
-                task_id=0,
                 dataset_name=str(self.raw_data_dir / "*.") + self.extension,
             )
         ]
