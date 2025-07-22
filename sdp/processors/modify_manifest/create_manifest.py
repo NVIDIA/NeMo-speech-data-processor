@@ -26,21 +26,14 @@ from sdp.processors.base_processor import (
 )
 
 
-class SaveJsonl(BaseProcessor, ProcessingStage[Task, Task]):
+class SaveJsonl(BaseProcessor):
     """
-    Processor for creating an initial dataset manifest by saving filepaths with a common extension to the field specified in output_field.
+    Processor for saving tasks as a one JSONL file.
 
     Args:
-        raw_data_dir (str): The root directory of the files to be added to the initial manifest. This processor will recursively look for files with the extension 'extension' inside this directory.
-        output_file_key (str): The key to store the paths to the files in the dataset.
-        extension (str): The file extension of the of the files to be added to the manifest.
-        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
 
     """
-
-    name: str = "SaveManifest"
-    resources: Resources = Resources(cpus=1.0, gpu_memory_gb=10.0)
-    batch_size: int = 100000
 
     def __init__(
         self,
@@ -48,8 +41,7 @@ class SaveJsonl(BaseProcessor, ProcessingStage[Task, Task]):
     ):
         super().__init__(**kwargs)
 
-    def setup(self, a):
-        # Path(self.output_manifest_file).touch()
+    def setup_on_node(self, _, __):
         open(self.output_manifest_file, 'w').close()
 
     def process(self, tasks: DataEntry) -> DataEntry:

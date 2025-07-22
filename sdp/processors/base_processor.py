@@ -45,7 +45,7 @@ class DataEntry(Task[list]):
         return True
 
 
-class BaseProcessor(ABC):
+class BaseProcessor(ProcessingStage[Task, Task]):
     """Abstract class for SDP processors.
 
     All processor classes inherit from the ``BaseProcessor`` class.
@@ -102,7 +102,7 @@ class BaseProcessor(ABC):
         return "BaseProcessor"
 
 
-class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
+class BaseParallelProcessor(BaseProcessor):
     """
     A processor that performs per-entry processing in parallel (using Dask or multiprocessing).
 

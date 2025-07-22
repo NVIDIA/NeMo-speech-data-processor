@@ -57,18 +57,17 @@ def _make_expected_output():
 
 
 def test_curator():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # output_path = os.path.join(tmpdir, "output_manifest_file.jsonl")
-        output_path = "/tmp/output_manifest_file.jsonl"
-        dict_conf = _make_dict(output_manifest_file=output_path, use_backend="curator")
-        conf_path = Path(tmpdir) / "config.yaml"
-        _write_config(conf_path, dict_conf)
+    tmpdir = tempfile.TemporaryDirectory()
+    output_path = os.path.join(tmpdir.name, "output_manifest_file.jsonl")
+    dict_conf = _make_dict(output_manifest_file=output_path, use_backend="curator")
+    conf_path = Path(tmpdir.name) / "config.yaml"
+    _write_config(conf_path, dict_conf)
 
-        cfg = OmegaConf.load(conf_path)
+    cfg = OmegaConf.load(conf_path)
 
     run_processors(cfg)
 
     output = load_manifest(output_path)
-
+    tmpdir.cleanup()
     expected_output = _make_expected_output()
     assert output == expected_output, f"Expected {expected_output}, but got {output}"
