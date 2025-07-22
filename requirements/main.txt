@@ -25,3 +25,5 @@ datasets>=2.14.0,<3.0.0
 # for some processers, additionally https://github.com/NVIDIA/NeMo is required
 # for some processers, additionally nemo_text_processing is required
 # for mcv: apt-get update && apt-get upgrade -y && apt-get install -y sox libsox-fmt-all
+
+# for ConvertToTarredAudioDatasetConfig processor can be additionally required: pip install lhotse "nemo-toolkit[common]"
