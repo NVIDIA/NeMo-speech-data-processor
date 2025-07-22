@@ -15,9 +15,47 @@
 import json
 from pathlib import Path
 
-import pandas
+from ray_curator.stages.base import ProcessingStage
+from ray_curator.stages.resources import Resources
+from ray_curator.tasks import Task
 
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.processors.base_processor import (
+    BaseParallelProcessor,
+    BaseProcessor,
+    DataEntry,
+)
+
+
+class SaveJsonl(BaseProcessor, ProcessingStage[Task, Task]):
+    """
+    Processor for creating an initial dataset manifest by saving filepaths with a common extension to the field specified in output_field.
+
+    Args:
+        raw_data_dir (str): The root directory of the files to be added to the initial manifest. This processor will recursively look for files with the extension 'extension' inside this directory.
+        output_file_key (str): The key to store the paths to the files in the dataset.
+        extension (str): The file extension of the of the files to be added to the manifest.
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseParallelProcessor`.
+
+    """
+
+    name: str = "SaveManifest"
+    resources: Resources = Resources(cpus=1.0, gpu_memory_gb=10.0)
+    batch_size: int = 100000
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+
+    def setup(self, a):
+        # Path(self.output_manifest_file).touch()
+        open(self.output_manifest_file, 'w').close()
+
+    def process(self, tasks: DataEntry) -> DataEntry:
+        with open(self.output_manifest_file, 'a', encoding="utf8") as f:
+            f.write(json.dumps(tasks.data) + '\n')
+        return tasks
 
 
 class CreateInitialManifestByExt(BaseParallelProcessor):

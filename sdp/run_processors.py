@@ -146,18 +146,20 @@ def run_processors(cfg):
         except Exception as e:
             logger.error(f"An unexpected error occurred during management of imports: {e}")
 
-    # Detecting dask
+    # Detecting ray
     try:
-        from dask.distributed import Client
+        import ray
 
-        dask_available = True
+        ray.init()
+
+        ray_available = True
     except ImportError:
         logger.warning("Dask not installed; using multiprocessing for all processors")
-        dask_available = False
+        ray_available = False
 
     # look for global directions in cfg for dask usage
-    if bool(cfg.get("use_backend", None) == "dask") and dask_available:
-        global_use_backend = "dask"
+    if bool(cfg.get("use_backend", None) == "ray") and ray_available:
+        global_use_backend = "ray"
     else:
         global_use_backend = cfg.get("use_backend", None)
 
@@ -230,40 +232,41 @@ def run_processors(cfg):
             processors.append(processor)
 
         # Start Dask client if any processor requires it
-        dask_client = None
+        backend_client = None
         if any(p.use_backend for p in processors):
             try:
                 num_cpus = psutil.cpu_count(logical=False) or 4
                 logger.info(f"Starting Dask client with {num_cpus} workers")
-                dask_client = Client(n_workers=num_cpus, processes=True)
-                logger.info(f"Dask dashboard at: {dask_client.dashboard_link}")
+                backend_client = Client(n_workers=num_cpus, processes=True)
+                logger.info(f"Dask dashboard at: {backend_client.dashboard_link}")
             except Exception as e:
                 logger.warning(f"Failed to start Dask client: {e}")
-                dask_client = None
+                backend_client = None
 
         # Run processors in order
         try:
             if global_use_backend == "curator":
                 pipeline = Pipeline(name="processing", description="Process data from JSONL files")
                 for p in cfg.processors:
-                    stage = hydra.utils.instantiate(processor_cfg)
+                    stage = hydra.utils.instantiate(p, use_backend="curator", backend_client=backend_client)
                     pipeline.add_stage(stage)
 
                 executor = XennaExecutor()
                 results = pipeline.run(executor)
-                # raise ValueError("results", results)
+                # raise ValueError("results" + results)
             else:
                 for proc in processors:
-                    if proc.use_backend == "dask" and dask_client is not None:
-                        proc.dask_client = dask_client
+                    if proc.use_backend == "dask" and backend_client is not None:
+                        proc.backend_client = backend_client
                         logger.info('=> Running processor "%s" with Dask', proc)
                     else:
                         logger.info('=> Running processor "%s" with Multiprocessing', proc)
+                    # raise ValueError("_EmptyTask_EmptyTask")
                     proc.process(_EmptyTask(task_id="empty", dataset_name="empty", data=None))
         finally:
-            if dask_client is not None:
+            if backend_client is not None:
                 logger.info("Shutting down Dask client...")
-                dask_client.close(timeout="60s")
+                backend_client.close(timeout="60s")
                 logger.info("Dask client shutdown complete")
 
 

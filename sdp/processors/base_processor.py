@@ -23,7 +23,7 @@ from itertools import chain
 from typing import Any, Dict, List, Optional, Union
 
 from ray_curator.stages.base import ProcessingStage
-from ray_curator.tasks import Task, _EmptyTask
+from ray_curator.tasks import Task
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
@@ -154,7 +154,7 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
         """Can be used in derived classes to prepare the processing."""
         pass
 
-    def process(self, task: Task) -> Task:
+    def process(self, tasks: Task) -> Task:
         """A fork in the road to pick dask or classic processing"""
         os.environ.setdefault("PATH", os.defpath)
 
@@ -165,12 +165,11 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
 
         # Ability to work sa legacy and as dask
         if self.use_backend == "curator":
-            task = self._process_with_ray(metrics)
+            tasks = self._process_with_ray(metrics)
         else:
-            task = self._process_with_multiprocessing(metrics)
+            tasks = self._process_with_multiprocessing(metrics)
         self.finalize(metrics)
-
-        return task
+        return tasks
 
     def inputs(self) -> tuple[list[str], list[str]]:
         return [], []
@@ -219,15 +218,13 @@ class BaseParallelProcessor(BaseProcessor, ProcessingStage[Task, Task]):
 
     def _process_with_ray(self, metrics):
         tasks = []
-        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
-            for manifest_chunk in self._chunk_manifest():
-                data = self.process_dataset_entry(manifest_chunk)
+        for manifest_chunk in self._chunk_manifest():
+            for row in manifest_chunk:
+                data = self.process_dataset_entry(row)
                 for data_entry in tqdm(data):
                     metrics.append(data_entry.metrics)
                     if data_entry.data is None:
                         continue
-                    json.dump(data_entry.data, fout, ensure_ascii=False)
-                    fout.write("\n")
                     self.number_of_entries += 1
                     self.total_duration += data_entry.data.get("duration", 0)
                 tasks.extend(data)

@@ -23,6 +23,7 @@ from ray_curator.stages.base import ProcessingStage
 from ray_curator.tasks import Task, _EmptyTask
 
 from sdp.run_processors import run_processors
+from sdp.utils.common import load_manifest
 
 
 def _write_config(file_path: Path, dict_conf):
@@ -41,6 +42,9 @@ def _make_dict(output_manifest_file, use_backend=None):
                 "raw_data_dir": workspace_dir,
                 "extension": "mp3",
                 "output_file_key": "audio_filepath",
+            },
+            {
+                "_target_": "sdp.processors.SaveJsonl",
                 "output_manifest_file": output_manifest_file,
             },
         ],
@@ -49,12 +53,13 @@ def _make_dict(output_manifest_file, use_backend=None):
 
 def _make_expected_output():
     workspace_dir = os.path.join(os.getenv('TEST_DATA_ROOT'), "armenian/audio_books/mp3")
-    return {'audio_filepath': os.path.join(workspace_dir, "Eleonora/Eleonora30s.mp3")}
+    return [{'audio_filepath': os.path.join(workspace_dir, "Eleonora/Eleonora30s.mp3")}]
 
 
 def test_curator():
     with tempfile.TemporaryDirectory() as tmpdir:
-        output_path = os.path.join(tmpdir, "output_manifest_file.jsonl")
+        # output_path = os.path.join(tmpdir, "output_manifest_file.jsonl")
+        output_path = "/tmp/output_manifest_file.jsonl"
         dict_conf = _make_dict(output_manifest_file=output_path, use_backend="curator")
         conf_path = Path(tmpdir) / "config.yaml"
         _write_config(conf_path, dict_conf)
@@ -62,8 +67,8 @@ def test_curator():
         cfg = OmegaConf.load(conf_path)
 
     run_processors(cfg)
-    with open(output_path, "r") as f:
-        output = json.load(f)
+
+    output = load_manifest(output_path)
 
     expected_output = _make_expected_output()
     assert output == expected_output, f"Expected {expected_output}, but got {output}"
