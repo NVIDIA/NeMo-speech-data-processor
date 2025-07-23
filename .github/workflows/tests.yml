@@ -72,7 +72,7 @@ jobs:
         sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
         pip install pytorch_lightning
         pip install Cython wheel  # need to pre-install to avoid error in nemo installation
-        pip install nemo-toolkit[asr,nlp]==2.3.2
+        pip install nemo-toolkit[asr,nlp]==2.3.1
         pip install nemo_text_processing
         pip install -r requirements/huggingface.txt
         pip install certifi #this needed to avoid problems with certificates [COORAL]
@@ -85,7 +85,6 @@ jobs:
         AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
         AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
         CLEAN_UP_TMP_PATH: 1
-        PATH: /usr/local/bin:/usr/bin:/bin
       run: |
 
         wget https://uit.stanford.edu/sites/default/files/2023/10/11/incommon-rsa-ca2.pem #downloading cert manually [for CORAL]
