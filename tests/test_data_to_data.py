@@ -23,6 +23,9 @@ from sdp.processors.modify_manifest.data_to_data import (
     LambdaExpression,
 )
 
+from sdp.processors.inference.llm.utils.qwen_cleaning import CleanQwenGeneration
+from sdp.processors.inference.asr.utils.whisper_hallucinations import DetectWhisperHallucinationFeatures
+
 test_params_list = []
 
 test_params_list.extend(
@@ -197,6 +200,87 @@ test_params_list.extend(
     ]
 )
 
+test_params_list.extend(
+    [
+        # Case: generation is fine, no replacement
+        (
+            CleanQwenGeneration,
+            {"cer_threshold": 10, "upper_case_threshold": 0.6},
+            {"text": "hello world", "generation": "hello world"},
+            [{"text": "hello world", "generation": "hello world"}],
+        ),
+
+        # Case: generation is completely uppercase → replaced
+        (
+            CleanQwenGeneration,
+            {"cer_threshold": 10, "upper_case_threshold": 0.5},
+            {"text": "hello world", "generation": "HELLO WORLD"},
+            [{"text": "hello world", "generation": "hello world"}],
+        ),
+
+        # Case: generation contains <|endoftext|> and prompt remnants → cleaned
+        (
+            CleanQwenGeneration,
+            {},
+            {"text": "hello", "generation": "Input transcript: hello\nOutput transcript: hello<|endoftext|>"},
+            [{"text": "hello", "generation": "hello"}],
+        ),
+
+        # Case: generation is too different → high CER → replaced
+        (
+            CleanQwenGeneration,
+            {"cer_threshold": 0.2},
+            {"text": "hello world", "generation": "xyz abc"},
+            [{"text": "hello world", "generation": "hello world"}],
+        ),
+
+        # Case: generation is empty → replaced
+        (
+            CleanQwenGeneration,
+            {},
+            {"text": "reference", "generation": ""},
+            [{"text": "reference", "generation": "reference"}],
+        ),
+
+        # Case: text is empty → fallback to replacement
+        (
+            CleanQwenGeneration,
+            {},
+            {"text": "", "generation": "some output"},
+            [{"text": "", "generation": ""}],
+        ),
+    ]
+)
+
+@pytest.mark.parametrize(
+    "text,expected_flags",
+    [
+        # repeated n-grams
+        ("yes yes yes yes yes", {"hall_repeated_ngrams": True, "hall_long_word": False, "hall_frequent_single_word": False}),
+        # long word
+        ("short reallyreallyreallyreallyreallyreallyreallylong", {"hall_repeated_ngrams": False, "hall_long_word": True, "hall_frequent_single_word": False}),
+        # known hallucinated phrase
+        ("lorem ipsum dolor sit amet", {"hall_repeated_ngrams": False, "hall_long_word": False, "hall_frequent_single_word": True}),
+        # no hallucination
+        ("this is a normal sentence", {"hall_repeated_ngrams": False, "hall_long_word": False, "hall_frequent_single_word": False}),
+    ]
+)
+def test_detect_whisper_hallucinations(tmp_path, text, expected_flags):
+    # prepare common phrases file
+    common_phrases_path = tmp_path / "common_phrases.txt"
+    common_phrases_path.write_text("lorem ipsum dolor sit amet\n")
+
+    processor = DetectWhisperHallucinationFeatures(
+        common_hall_file=str(common_phrases_path),
+        output_manifest_file=None  # assuming it's optional or handled elsewhere
+    )
+
+    input_entry = {"text": text}
+    result_entry = processor.process_dataset_entry(input_entry)[0].data
+
+    # check each expected flag
+    for key, value in expected_flags.items():
+        assert result_entry[key] == value, f"Failed for text='{text}' on key='{key}'"
 
 @pytest.mark.parametrize("test_class,class_kwargs,test_input,expected_output", test_params_list, ids=str)
 def test_data_to_data(test_class, class_kwargs, test_input, expected_output):

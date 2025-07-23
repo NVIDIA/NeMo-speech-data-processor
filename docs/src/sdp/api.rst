@@ -184,9 +184,6 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.ASRTransformers
    :annotation:
 
-.. autodata:: sdp.processors.EstimateBandwidth
-   :annotation:
-
 .. autodata:: sdp.processors.tts.pyannote.PyAnnoteDiarizationAndOverlapDetection
    :annotation:
 
@@ -200,6 +197,15 @@ used in the downstream processing for additional enhancement or filtering.
    :annotation:
 
 .. autodata:: sdp.processors.tts.metrics.BandwidthEstimationProcessor
+   :annotation:
+
+.. autodata:: sdp.processors.FasterWhisperInference
+   :annotation:
+
+.. autodata:: sdp.processors.vLLMInference
+   :annotation:
+
+.. autodata:: sdp.processors.AudioLid
    :annotation:
 
 Text-only processors
@@ -244,6 +250,9 @@ Data modifications
    :annotation:
   
 .. autodata:: sdp.processors.ListToEntries
+   :annotation:
+
+.. autodata:: sdp.processors.EstimateBandwidth
    :annotation:
 
 Data filtering
@@ -365,6 +374,18 @@ Data filtering
     :annotation:
 
 .. autodata:: sdp.processors.RejectIfBanned
+    :annotation:
+
+.. autodata:: sdp.processors.DetectWhisperHallucinationFeatures
+    :annotation:
+   
+.. autodata:: sdp.processors.CleanQwenGeneration
+    :annotation:
+
+.. autodata:: sdp.processors.GetRttmSegments
+    :annotation:
+
+.. autodata:: sdp.processors.SplitAudioFile
     :annotation:
 
 Miscellaneous

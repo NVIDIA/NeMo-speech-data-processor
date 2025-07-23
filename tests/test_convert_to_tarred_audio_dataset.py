@@ -33,11 +33,6 @@ import pytest
 
 from sdp.processors import ConvertToTarredAudioDataset
 
-import os
-
-if 'PATH' not in os.environ:
-    os.environ['PATH'] = '/usr/bin:/bin'
-
 EPSILON = 1e-7
 NUM_WORKERS = max(1, os.cpu_count() // 2)
 

@@ -408,8 +408,19 @@ HiFiTTS-2
    config-docs/english/hifitts2/config_44khz
    config-docs/english/hifitts2/config_bandwidth
 
+
+Unlabeled Portuguese Data
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/portuguese/unlabeled/config.yaml>`__ |
+:doc:`documentation <config-docs/portuguese/unlabeled/config>`
+
+.. toctree::
+   :hidden:
+
+   config-docs/portuguese/unlabeled/config
+
 NemoRunIPL
-~~~~~~~~~~
 
 **Supported configs**.
 
@@ -419,13 +430,13 @@ NemoRunIPL
 * **NeMoRun**:
   `config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/ipl/nemo_run_config.yaml>`__ |
   :doc:`documentation <config-docs/ipl/nemo_run_config>`
-
+  
 .. toctree::
    :hidden:
 
    config-docs/ipl/config
    config-docs/ipl/nemo_run_config
-
+   
 Earnings21/22
 ~~~~~~~~~~~~~
 
