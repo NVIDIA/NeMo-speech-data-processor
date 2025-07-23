@@ -1,5 +1,7 @@
-import webvtt  # pip install webvtt-py
 from datetime import datetime
+
+import webvtt  # pip install webvtt-py
+
 from sdp.logging import logger
 
 
@@ -42,4 +44,3 @@ def split_by_vtt(vtt_file, samplerate):
     except Exception as e:
         logger.warning(str(e) + vtt_file)
         return None, None, None
-

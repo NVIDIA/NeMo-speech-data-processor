@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import logging
+import os
+
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.processors.datasets.masc.utils import parse_captions
+
 
 class GetCaptionFileSegments(BaseParallelProcessor):
     """
@@ -26,7 +28,7 @@ class GetCaptionFileSegments(BaseParallelProcessor):
         input_caption_file_key (str): The field name in the input manifest containing path to the caption file.
         output_segments_key (str): The field name to store segment information. Defaults to "segments".
         verbose (bool): Set true for outputing logging information.
-        
+
     Returns:
         This processor adds an output_segments field to the input manifest with a list of segments.
         Each segment has a structure:
@@ -37,6 +39,7 @@ class GetCaptionFileSegments(BaseParallelProcessor):
                 "text":         <segment text>
             }
     """
+
     def __init__(
         self,
         input_caption_file_key: str,
@@ -51,7 +54,7 @@ class GetCaptionFileSegments(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry):
         caption_file = data_entry[self.caption_file_key]
-        
+
         if not os.path.exists(caption_file):
             if self.verbose:
                 logging.info(f"File {caption_file} does not exist.")

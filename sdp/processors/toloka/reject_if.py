@@ -21,11 +21,12 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 try:
     import toloka.client
     import toloka.client.project.template_builder
+
     TOLOKA_AVAILABLE = True
 except ImportError:
     TOLOKA_AVAILABLE = False
     toloka = None
-    
+
 
 from docx import Document
 from tqdm import tqdm
@@ -34,7 +35,7 @@ from tqdm import tqdm
 class RejectIfBanned(BaseParallelProcessor):
     """Rejects Toloka assignments if the user is banned.
 
-    This class connects to Toloka, checks the user’s ban status, and rejects any assignments 
+    This class connects to Toloka, checks the user’s ban status, and rejects any assignments
     from users who are identified as banned.
 
     Args:
@@ -48,6 +49,7 @@ class RejectIfBanned(BaseParallelProcessor):
     Returns:
         A list of rejected assignments for users who are banned.
     """
+
     def __init__(
         self,
         input_data_file: str,
@@ -160,4 +162,3 @@ class RejectIfBanned(BaseParallelProcessor):
         print("REJECTION LIST -------------------------", reject_list)
         for assignment_id in tqdm(reject_list, desc="Rejecting assignments"):
             self.toloka_client.reject_assignment(assignment_id=assignment_id, public_comment='Bad quality of audio.')
-

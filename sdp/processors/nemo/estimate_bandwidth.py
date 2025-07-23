@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import librosa
 import numpy as np
-from pathlib import Path
 
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 

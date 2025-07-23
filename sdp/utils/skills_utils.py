@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
-#This file is maintained in sync with `nemo_skills/pipeline/utils.py`
+#
+# This file is maintained in sync with `nemo_skills/pipeline/utils.py`
 # and is intended to be copied as-is to ensure consistency across projects.
 
 import logging
@@ -31,6 +31,7 @@ from typing import Optional
 import nemo_run as run
 import yaml
 from huggingface_hub import get_token
+
 try:
     from invoke import StreamWatcher
 except ImportError:
@@ -73,7 +74,6 @@ EXTERNAL_REPOS = {
         name='nemo_skills', path=Path(__file__).absolute().parents[1]
     ),  # path to nemo_skills repo
 }
-
 
 
 def register_external_repo(metadata: RepoMetadata):
@@ -906,14 +906,14 @@ def get_executor(
         env_vars["SLURM_MASTER_NODE"] = "$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n1)"
     else:
         # master node will be within the same group
-        env_vars["SLURM_MASTER_NODE"] = (
-            f"$(scontrol show hostnames $SLURM_JOB_NODELIST_HET_GROUP_{het_group} | head -n1)"
-        )
+        env_vars[
+            "SLURM_MASTER_NODE"
+        ] = f"$(scontrol show hostnames $SLURM_JOB_NODELIST_HET_GROUP_{het_group} | head -n1)"
         # in addition defining master nodes for all groups to allow communication
         for group in range(total_het_groups):
-            env_vars[f"SLURM_MASTER_NODE_HET_GROUP_{group}"] = (
-                f"$(scontrol show hostnames $SLURM_JOB_NODELIST_HET_GROUP_{group} | head -n1)"
-            )
+            env_vars[
+                f"SLURM_MASTER_NODE_HET_GROUP_{group}"
+            ] = f"$(scontrol show hostnames $SLURM_JOB_NODELIST_HET_GROUP_{group} | head -n1)"
 
     partition = partition or cluster_config.get("partition")
     if 'timeouts' not in cluster_config:

@@ -19,16 +19,14 @@ from typing import List, Optional
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
-
 try:
     import toloka.client
     import toloka.client.project.template_builder
+
     TOLOKA_AVAILABLE = True
 except ImportError:
     TOLOKA_AVAILABLE = False
     toloka = None
-
-
 
 
 class CreateTolokaTaskSet(BaseParallelProcessor):
@@ -45,6 +43,7 @@ class CreateTolokaTaskSet(BaseParallelProcessor):
     Returns:
         A set of tasks created and uploaded to the specified Toloka pool.
     """
+
     def __init__(
         self,
         input_data_file: str,
@@ -58,19 +57,16 @@ class CreateTolokaTaskSet(BaseParallelProcessor):
         self.limit = limit
         self.pool_id = None
         self.toloka_available = TOLOKA_AVAILABLE
-        
-        
 
-        
         # Get API key and platform from environment variables
         self.API_KEY = os.getenv('TOLOKA_API_KEY')
         if not self.API_KEY:
             raise ValueError("TOLOKA_API_KEY environment variable is not set")
-            
+
         self.platform = os.getenv('TOLOKA_PLATFORM')
         if not self.platform:
             raise ValueError("TOLOKA_PLATFORM environment variable is not set")
-        
+
         self.toloka_client = None
 
     def prepare(self):
@@ -133,7 +129,7 @@ class CreateTolokaTaskSet(BaseParallelProcessor):
         Creates Toloka tasks based on manifest data and adds them to the specified pool.
 
         This method reads the input manifest, creates task objects for Toloka, and submits
-        them to the specified pool. It also writes the manifest data to an output file after 
+        them to the specified pool. It also writes the manifest data to an output file after
         tasks have been created.
 
         Raises:

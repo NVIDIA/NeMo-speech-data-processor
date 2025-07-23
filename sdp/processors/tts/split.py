@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from sdp.processors.base_processor import BaseProcessor, DataEntry
 import json
-import os
-import torchaudio
 import math
+import os
 from copy import deepcopy
+
+import torchaudio
+
+from sdp.processors.base_processor import BaseProcessor, DataEntry
 from sdp.utils.common import load_manifest, save_manifest
+
 
 class SplitLongAudio(BaseProcessor):
     """This processor splits long audio files into smaller segments.
@@ -43,12 +46,8 @@ class SplitLongAudio(BaseProcessor):
               output_manifest_file: ${workspace_dir}/manifest_split.json
               suggested_max_len: 3600
     """
-    def __init__(self,
-                 suggested_max_len: float = 3600,
-                 min_pause_len: float = 1.0,
-                 min_len: float = 1.0,
-                 **kwargs
-        ):
+
+    def __init__(self, suggested_max_len: float = 3600, min_pause_len: float = 1.0, min_len: float = 1.0, **kwargs):
         super().__init__(**kwargs)
         self.suggested_max_len = suggested_max_len
         self.min_pause_len = min_pause_len
@@ -107,24 +106,29 @@ class SplitLongAudio(BaseProcessor):
             actual_splits = []
             split_durations = []
             for k, split in enumerate(splits):
-                split_filepath = os.path.join(path, filename[:-4] + '.{}_of_{}.wav'.format(k+1, 1+len(splits)))
-                split_end = math.ceil(split*sr)
-                if split_end-split_start > self.min_len * sr:
+                split_filepath = os.path.join(path, filename[:-4] + '.{}_of_{}.wav'.format(k + 1, 1 + len(splits)))
+                split_end = math.ceil(split * sr)
+                if split_end - split_start > self.min_len * sr:
                     torchaudio.save(split_filepath, audio[:, split_start:split_end], sr)
                     split_filepaths.append(split_filepath)
-                    actual_splits.append(split_start/sr)
-                    split_durations.append((split_end-split_start)/sr)
+                    actual_splits.append(split_start / sr)
+                    split_durations.append((split_end - split_start) / sr)
                     split_start = split_end
 
             # Write last split
-            split_filepath = os.path.join(path, filename[:-4] + '.{}_of_{}.wav'.format(1+len(splits), 1+len(splits)))
-            last_frame = len(audio[0])-1
+            split_filepath = os.path.join(
+                path, filename[:-4] + '.{}_of_{}.wav'.format(1 + len(splits), 1 + len(splits))
+            )
+            last_frame = len(audio[0]) - 1
             # skip audios that are too short
-            if last_frame-split_start > self.min_len * sr and last_frame-split_start < (self.suggested_max_len + 1)*sr:
+            if (
+                last_frame - split_start > self.min_len * sr
+                and last_frame - split_start < (self.suggested_max_len + 1) * sr
+            ):
                 torchaudio.save(split_filepath, audio[:, split_start:], sr)
                 split_filepaths.append(split_filepath)
-                split_durations.append((last_frame-split_start)/sr)
-                actual_splits.append(split_start/sr)
+                split_durations.append((last_frame - split_start) / sr)
+                actual_splits.append(split_start / sr)
 
             # Add split_filepaths to results without split_filepaths field and resampled_audio_filepath replaced
             # with the corresponding splits
@@ -146,7 +150,7 @@ class SplitLongAudio(BaseProcessor):
 class JoinSplitAudioMetadata(BaseProcessor):
     """A processor for joining metadata of previously split audio files.
 
-    This processor combines the metadata (transcripts and alignments) of audio files 
+    This processor combines the metadata (transcripts and alignments) of audio files
     that were previously split by the SplitLongAudio processor. It adjusts timestamps
     and concatenates transcripts to recreate the original audio's metadata.
 
@@ -156,9 +160,8 @@ class JoinSplitAudioMetadata(BaseProcessor):
     Returns:
         The same data as in the input manifest, but with split audio files joined together.
     """
-    def __init__(self,
-                 **kwargs
-        ):
+
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def process(self):
@@ -209,7 +212,5 @@ class JoinSplitAudioMetadata(BaseProcessor):
             # Remove 'split_filepaths' field from meta entry to turn it into a real entry
             del meta_entry['split_filepaths']
             fp_w.write(f"{json.dumps(meta_entry)}\n")
-        
+
         fp_w.close()
-
-

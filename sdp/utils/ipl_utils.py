@@ -18,6 +18,7 @@ from typing import List, Optional, Tuple, Union
 
 from omegaconf import OmegaConf
 
+
 def separate_multiple_transcriptions(inference_config: dict) -> Tuple[List[str], Optional[List[str]]]:
     """
     Separates and returns the manifest and tarred audio file paths from the configuration.
@@ -29,7 +30,7 @@ def separate_multiple_transcriptions(inference_config: dict) -> Tuple[List[str],
             - A list of manifest file paths.
             - An Optional list of tarred audio file paths, or None if not applicable.
     """
-    
+
     if hasattr(inference_config.predict_ds, "is_tarred") and inference_config.predict_ds.is_tarred:
         tarred_audio_filepaths = inference_config.predict_ds.tarred_audio_filepaths
         manifest_filepaths = inference_config.predict_ds.manifest_filepath
@@ -120,7 +121,6 @@ def create_transcribed_manifests(
         # Open and read the original predictions_all.json file
         with open(transcripted_name, 'w', encoding='utf-8') as f:
             with open(prediction_name, 'r', encoding='utf-8') as pred_f:
-
                 for line in pred_f.readlines():
                     data_entry = json.loads(line)
                     if 'text' in data_entry:
@@ -187,12 +187,11 @@ def write_sampled_shard_transcriptions(manifest_filepaths: List[str]) -> List[Li
                         json.dump(data_entry, f, ensure_ascii=False)
                     f.write("\n")
 
-    shard_manifest_filepath = os.path.join(
-        prediction_filepath, f"transcribed_manifest__OP_0..{max_shard_id}_CL_.json"
-    )
+    shard_manifest_filepath = os.path.join(prediction_filepath, f"transcribed_manifest__OP_0..{max_shard_id}_CL_.json")
     all_manifest_filepaths.append([shard_manifest_filepath])
 
     return all_manifest_filepaths
+
 
 def write_sampled_transcriptions(manifest_filepaths: List[str]) -> List[str]:
     """
@@ -217,7 +216,7 @@ def write_sampled_transcriptions(manifest_filepaths: List[str]) -> List[str]:
             for line in f:
                 data_entry = json.loads(line)
                 path = data_entry['audio_filepath']
-    
+
                 predicted_data[path] = data_entry
         full_path = os.path.join(prediction_filepath, f"transcribed_manifest.json")
         all_data_entries = []
@@ -227,7 +226,6 @@ def write_sampled_transcriptions(manifest_filepaths: List[str]) -> List[str]:
                 count += 1
                 data_entry = json.loads(line)
                 all_data_entries.append(data_entry)
-               
 
         output_filename = os.path.join(prediction_filepath, f"transcribed_manifest.json")
         with open(output_filename, 'w') as f:
@@ -302,7 +300,6 @@ def update_training_sets(
             print(f"merged_config.model.train_ds.manifest_filepath {merged_config.model.train_ds.manifest_filepath}")
             print(f"final_cache_manifests {final_cache_manifests}")
             merged_config.model.train_ds.manifest_filepath += final_cache_manifests
-
 
     return merged_config
 

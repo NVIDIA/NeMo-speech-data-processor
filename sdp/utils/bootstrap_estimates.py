@@ -14,17 +14,21 @@
 
 import json
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Union
+
 import numpy as np
 from tqdm import tqdm
+
 from sdp.processors.base_processor import BaseProcessor
-from typing import List, Dict, Union, Optional, Tuple
+
 from . import metrics_computation as metrics
+
 
 class BootstrapProcessor(BaseProcessor):
     """This processor evaluates ASR performance metrics using bootstrapped confidence intervals.
 
-    It calculates metrics such as Word Error Rate (WER), Character Error Rate (CER), Word Match 
-    Rate (WMR), character rate, and word rate. When `calculate_pairwise` is set to `True`, it also 
+    It calculates metrics such as Word Error Rate (WER), Character Error Rate (CER), Word Match
+    Rate (WMR), character rate, and word rate. When `calculate_pairwise` is set to `True`, it also
     computes the Probability of Improvement (POI) between different ASR models.
 
     This implementation leverages bootstrapping to provide robust confidence intervals for each metric,
@@ -64,10 +68,10 @@ class BootstrapProcessor(BaseProcessor):
         self,
         bootstrap_manifest_files: List[str],
         raw_data_dir: str,
-        output_file: str, 
+        output_file: str,
         num_bootstraps: int = 1000,
         bootstrap_sample_ratio: float = 1.0,
-        calculate_pairwise: bool = True, 
+        calculate_pairwise: bool = True,
         metric_type: str = 'wer',
         text_key: str = 'text',
         pred_text_key: str = 'pred_text',
@@ -86,23 +90,24 @@ class BootstrapProcessor(BaseProcessor):
         self.calculate_pairwise = calculate_pairwise
         self.metric_type = metric_type.lower()
         self.text_key = text_key
-        self.pred_text_key = pred_text_key 
+        self.pred_text_key = pred_text_key
         self.ci_lower = ci_lower
-        self.ci_upper = ci_upper 
-        self.random_state = random_state 
-
+        self.ci_upper = ci_upper
+        self.random_state = random_state
 
         if self.random_state is not None:
             np.random.seed(self.random_state)
 
         if self.metric_type not in ['wer', 'cer', 'wmr', 'charrate', 'wordrate']:
-            raise ValueError(f"Invalid metric_type '{self.metric_type}'! Must be one of ['wer', 'cer', 'wmr', 'charrate', 'wordrate']")
+            raise ValueError(
+                f"Invalid metric_type '{self.metric_type}'! Must be one of ['wer', 'cer', 'wmr', 'charrate', 'wordrate']"
+            )
 
     def read_manifest(self, manifest_path: Path) -> List[Dict[str, Union[str, float]]]:
         manifest_data = []
         with manifest_path.open('r', encoding='utf-8') as f:
             for line in f:
-                data = json.loads(line.strip()) 
+                data = json.loads(line.strip())
                 manifest_data.append(data)
 
         return manifest_data
@@ -125,7 +130,9 @@ class BootstrapProcessor(BaseProcessor):
         else:
             raise ValueError(f"Unsupported metric_type: {self.metric_type}")
 
-    def bootstrap_metric(self, hypotheses: List[str], references: List[str], durations: Optional[List[float]] = None) -> np.ndarray:
+    def bootstrap_metric(
+        self, hypotheses: List[str], references: List[str], durations: Optional[List[float]] = None
+    ) -> np.ndarray:
         """
         Bootstraps metric computation (WER, CER, etc.) to calculate confidence intervals.
 
@@ -147,15 +154,25 @@ class BootstrapProcessor(BaseProcessor):
             sampled_references = [references[i] for i in indices]
             if durations:
                 sampled_durations = [durations[i] for i in indices]
-                metric = [self.calculate_metric(sampled_references[i], sampled_hypotheses[i], sampled_durations[i])
-                          for i in range(sample_size)]
+                metric = [
+                    self.calculate_metric(sampled_references[i], sampled_hypotheses[i], sampled_durations[i])
+                    for i in range(sample_size)
+                ]
             else:
-                metric = [self.calculate_metric(sampled_references[i], sampled_hypotheses[i]) for i in range(sample_size)]
+                metric = [
+                    self.calculate_metric(sampled_references[i], sampled_hypotheses[i]) for i in range(sample_size)
+                ]
             metric_bootstrap.append(np.mean(metric))
 
         return np.array(metric_bootstrap)
 
-    def bootstrap_wer_difference(self, predictions1: List[str], predictions2: List[str], references: List[str], durations: Optional[List[float]] = None) -> Tuple[np.ndarray, float]:
+    def bootstrap_wer_difference(
+        self,
+        predictions1: List[str],
+        predictions2: List[str],
+        references: List[str],
+        durations: Optional[List[float]] = None,
+    ) -> Tuple[np.ndarray, float]:
         """
         Calculates the bootstrapped difference in metrics between two sets of predictions and the probability of improvement.
 
@@ -182,8 +199,14 @@ class BootstrapProcessor(BaseProcessor):
 
             if durations:
                 sampled_durations = [durations[i] for i in indices]
-                metric1 = [self.calculate_metric(sampled_refs[i], sampled_pred1[i], sampled_durations[i]) for i in range(sample_size)]
-                metric2 = [self.calculate_metric(sampled_refs[i], sampled_pred2[i], sampled_durations[i]) for i in range(sample_size)]
+                metric1 = [
+                    self.calculate_metric(sampled_refs[i], sampled_pred1[i], sampled_durations[i])
+                    for i in range(sample_size)
+                ]
+                metric2 = [
+                    self.calculate_metric(sampled_refs[i], sampled_pred2[i], sampled_durations[i])
+                    for i in range(sample_size)
+                ]
             else:
                 metric1 = [self.calculate_metric(sampled_refs[i], sampled_pred1[i]) for i in range(sample_size)]
                 metric2 = [self.calculate_metric(sampled_refs[i], sampled_pred2[i]) for i in range(sample_size)]
@@ -200,7 +223,7 @@ class BootstrapProcessor(BaseProcessor):
 
     def process(self):
         """
-        Main processing function that loads data, performs metric bootstrapping and optionally 
+        Main processing function that loads data, performs metric bootstrapping and optionally
         pairwise comparison, and saves the results to a JSON file.
         """
         self.prepare()
@@ -240,7 +263,7 @@ class BootstrapProcessor(BaseProcessor):
             results["individual_results"][bootstrap_manifest_files[idx].name] = {
                 f"mean_{self.metric_type}": mean_metric,
                 "ci_lower": ci_lower_value,
-                "ci_upper": ci_upper_value
+                "ci_upper": ci_upper_value,
             }
 
         # Pairwise comparison between models (only if calculate_pairwise is True)
@@ -250,24 +273,29 @@ class BootstrapProcessor(BaseProcessor):
             for i in range(num_files):
                 for j in range(i + 1, num_files):
                     if durations:
-                        delta_metric_bootstrap, poi = self.bootstrap_wer_difference(predicted_texts[i], predicted_texts[j], ground_truth, durations[i])
+                        delta_metric_bootstrap, poi = self.bootstrap_wer_difference(
+                            predicted_texts[i], predicted_texts[j], ground_truth, durations[i]
+                        )
                     else:
-                        delta_metric_bootstrap, poi = self.bootstrap_wer_difference(predicted_texts[i], predicted_texts[j], ground_truth)
+                        delta_metric_bootstrap, poi = self.bootstrap_wer_difference(
+                            predicted_texts[i], predicted_texts[j], ground_truth
+                        )
 
                     mean_delta_metric = np.mean(delta_metric_bootstrap)
                     ci_lower_value = np.percentile(delta_metric_bootstrap, self.ci_lower)
                     ci_upper_value = np.percentile(delta_metric_bootstrap, self.ci_upper)
 
-                    results["pairwise_comparisons"].append({
-                        "file_1": bootstrap_manifest_files[i].name,
-                        "file_2": bootstrap_manifest_files[j].name,
-                        f"delta_{self.metric_type}_mean": mean_delta_metric,
-                        "ci_lower": ci_lower_value,
-                        "ci_upper": ci_upper_value,
-                        "poi": poi
-                    })
+                    results["pairwise_comparisons"].append(
+                        {
+                            "file_1": bootstrap_manifest_files[i].name,
+                            "file_2": bootstrap_manifest_files[j].name,
+                            f"delta_{self.metric_type}_mean": mean_delta_metric,
+                            "ci_lower": ci_lower_value,
+                            "ci_upper": ci_upper_value,
+                            "poi": poi,
+                        }
+                    )
 
         output_path = Path(self.output_file)
         with output_path.open('w') as out_file:
             json.dump(results, out_file, indent=4)
-

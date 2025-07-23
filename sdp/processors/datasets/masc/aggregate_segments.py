@@ -12,17 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import logging
+import os
+
 from pydub import AudioSegment
+
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 from sdp.processors.datasets.masc.utils import save_audio_segment
+
 
 class AggregateSegments(BaseParallelProcessor):
     """
     Aggregates short segments into segments with duration not longer than `max_duration`.
     The algorithm works by iterating from left to right, merging consecutive segments into the current segment until the total duration reaches `max_duration`.
-    
+
     output_audio_dir (str): Directory where aggregated audio segments will be stored, if `save_aggregated_audio_segments` is True.
         If `save_aggregated_audio_segments` is False, this path is used to create the audio file paths in the manifest.
     input_segments_key (str): The field name that contains list of segments in the input manifest. Defaults to "segments".
@@ -37,6 +40,7 @@ class AggregateSegments(BaseParallelProcessor):
         Defaults to True.
     verbose (bool): Set to True to enable more detailed logging. Defaults to False.
     """
+
     def __init__(
         self,
         output_audio_dir: str,
@@ -74,17 +78,17 @@ class AggregateSegments(BaseParallelProcessor):
         segments = data_entry[self.input_segments_key]
         if len(segments) == 0:
             return []
-        
+
         audio = AudioSegment.from_wav(data_entry[self.input_audio_filepath_key])
-        
+
         audio_basename = os.path.basename(data_entry[self.input_audio_filepath_key]).split(".")[0]
         agg_segments = []
         aggregated_segment = {**segments[0]}
         for segment in segments[1:]:
             # checking if adding another segment will cause the total duration to exceed max_duration
-            if (segment["end_time"] > audio.duration_seconds or segment["start_time"] > audio.duration_seconds):
+            if segment["end_time"] > audio.duration_seconds or segment["start_time"] > audio.duration_seconds:
                 continue
-            
+
             start_time = min(segment["start_time"], aggregated_segment["start_time"])
             end_time = max(segment["end_time"], aggregated_segment["end_time"])
             if end_time - start_time >= self.max_duration:
@@ -96,36 +100,37 @@ class AggregateSegments(BaseParallelProcessor):
                     aggregated_segment["text"] += f" {segment['text']}".strip()
                 else:
                     aggregated_segment["text"] = f"{segment['text']} {aggregated_segment['text']}"
-                    
-                aggregated_segment["start"] = start_time    # updating aggregated segment start time
-                aggregated_segment["end_time"] = end_time   # updating aggregated segment end time
+
+                aggregated_segment["start"] = start_time  # updating aggregated segment start time
+                aggregated_segment["end_time"] = end_time  # updating aggregated segment end time
         else:
-            # adding the last aggregated segment 
+            # adding the last aggregated segment
             if aggregated_segment not in agg_segments:
                 agg_segments.append(aggregated_segment)
-            
+
         valid_segments = []
         for aggregated_segment in agg_segments:
             aggregated_segment.update(data_entry)
-            
+
             start_time = aggregated_segment.pop("start_time")
             end_time = aggregated_segment.pop("end_time")
-            
+
             aggregated_segment[self.output_duration_key] = end_time - start_time
-            aggregated_segment[self.output_splitted_audio_filepath_key] = os.path.join(self.output_audio_dir, f"{audio_basename}_{start_time}_{end_time}.wav")
-            
+            aggregated_segment[self.output_splitted_audio_filepath_key] = os.path.join(
+                self.output_audio_dir, f"{audio_basename}_{start_time}_{end_time}.wav"
+            )
+
             if self.save_aggregated_audio_segments:
                 try:
                     save_audio_segment(
                         audio=audio,
                         start_time=start_time,
                         end_time=end_time,
-                        output_audio_filepath=aggregated_segment[self.output_splitted_audio_filepath_key]
+                        output_audio_filepath=aggregated_segment[self.output_splitted_audio_filepath_key],
                     )
                     valid_segments.append(aggregated_segment)
                 except IndexError as e:
                     if self.verbose:
                         logging.warning(f"Invalid segment boundaries in {audio_basename}. Skipping...")
-                
+
         return [DataEntry(data=segment) for segment in valid_segments]
-        

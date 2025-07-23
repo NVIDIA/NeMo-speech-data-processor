@@ -19,7 +19,7 @@ import tarfile
 import urllib
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Union, Any, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import wget
 
@@ -34,6 +34,7 @@ def load_manifest(manifest: Union[Path, str], encoding: Optional[str] = None) ->
             data = json.loads(line)
             result.append(data)
     return result
+
 
 def save_manifest(manifest: List[Dict[str, Any]], manifest_file: Union[Path, str]):
     with open(manifest_file, 'w') as f:

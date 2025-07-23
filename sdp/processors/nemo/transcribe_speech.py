@@ -22,12 +22,17 @@ from typing import List, Optional, Union
 
 import pytorch_lightning as pl
 import torch
-from omegaconf import OmegaConf, open_dict
-
-from nemo.collections.asr.models import EncDecCTCModel, EncDecHybridRNNTCTCModel, EncDecMultiTaskModel
+from nemo.collections.asr.models import (
+    EncDecCTCModel,
+    EncDecHybridRNNTCTCModel,
+    EncDecMultiTaskModel,
+)
 from nemo.collections.asr.modules.conformer_encoder import ConformerChangeConfig
 from nemo.collections.asr.parts.submodules.ctc_decoding import CTCDecodingConfig
-from nemo.collections.asr.parts.submodules.multitask_decoding import MultiTaskDecoding, MultiTaskDecodingConfig
+from nemo.collections.asr.parts.submodules.multitask_decoding import (
+    MultiTaskDecoding,
+    MultiTaskDecodingConfig,
+)
 from nemo.collections.asr.parts.submodules.rnnt_decoding import RNNTDecodingConfig
 from nemo.collections.asr.parts.utils.eval_utils import cal_write_wer
 from nemo.collections.asr.parts.utils.rnnt_utils import Hypothesis
@@ -40,6 +45,7 @@ from nemo.collections.asr.parts.utils.transcribe_utils import (
 )
 from nemo.core.config import hydra_runner
 from nemo.utils import logging
+from omegaconf import OmegaConf, open_dict
 
 """
 Transcribe audio file on a single CPU/GPU. Useful for transcription of moderate amounts of audio data.
@@ -106,7 +112,6 @@ python transcribe_speech.py \
 
 @dataclass
 class ModelChangeConfig:
-
     # Sub-config for changes specific to the Conformer Encoder
     conformer: ConformerChangeConfig = ConformerChangeConfig()
 

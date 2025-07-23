@@ -57,25 +57,23 @@ See more options in the `InferenceConfig` class.
 import contextlib
 import json
 import os
-
 import time
-from dataclasses import dataclass, is_dataclass, field
+from dataclasses import dataclass, field, is_dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
 import torch
 import torch.amp
 import yaml
-from omegaconf import DictConfig, OmegaConf
-from torch.profiler import ProfilerActivity, profile, record_function
-from tqdm import tqdm
-
 from nemo.collections.asr.data import feature_to_text_dataset
 from nemo.collections.asr.metrics.wer import word_error_rate
 from nemo.collections.asr.models import ASRModel, EncDecClassificationModel
 from nemo.collections.asr.parts.submodules.ctc_decoding import CTCDecodingConfig
 from nemo.collections.asr.parts.submodules.rnnt_decoding import RNNTDecodingConfig
-from nemo.collections.asr.parts.utils.manifest_utils import read_manifest, write_manifest
+from nemo.collections.asr.parts.utils.manifest_utils import (
+    read_manifest,
+    write_manifest,
+)
 from nemo.collections.asr.parts.utils.vad_utils import (
     generate_overlap_vad_seq,
     generate_vad_segment_table,
@@ -85,6 +83,9 @@ from nemo.collections.asr.parts.utils.vad_utils import (
 )
 from nemo.core.config import hydra_runner
 from nemo.utils import logging
+from omegaconf import DictConfig, OmegaConf
+from torch.profiler import ProfilerActivity, profile, record_function
+from tqdm import tqdm
 
 
 @dataclass
@@ -99,9 +100,9 @@ class InferenceConfig:
     use_rttm: bool = True  # whether to use RTTM
     rttm_mode: str = "mask"  # how to use RTTM files, choices=[`mask`, `drop`]
     feat_mask_val: Optional[float] = None  # value used to mask features based on RTTM, set None to use defaults
-    normalize: Optional[str] = (
-        "post_norm"  # whether and where to normalize audio feature, choices=[None, `pre_norm`, `post_norm`]
-    )
+    normalize: Optional[
+        str
+    ] = "post_norm"  # whether and where to normalize audio feature, choices=[None, `pre_norm`, `post_norm`]
     normalize_type: str = "per_feature"  # how to determine mean and std used for normalization
     normalize_audio_db: Optional[float] = None  # set to normalize RMS DB of audio before extracting audio features
 
@@ -136,7 +137,6 @@ class InferenceConfig:
 
 @hydra_runner(config_name="InferenceConfig", schema=InferenceConfig)
 def main(cfg):
-
     if is_dataclass(cfg):
         cfg = OmegaConf.structured(cfg)
 
@@ -171,7 +171,6 @@ def main(cfg):
     with profile_fn(
         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, profile_memory=True
     ) as prof:
-
         input_manifest_file = extract_audio_features(input_manifest_file, cfg, record_fn)
 
         if cfg.vad_model is not None:
@@ -190,7 +189,6 @@ def main(cfg):
 
 
 def prepare_inference_manifest(cfg: DictConfig) -> str:
-
     if cfg.audio_dir is not None and cfg.manifest_filepath is None:
         manifest_data = []
         for audio_file in Path(cfg.audio_dir).glob(f"**/*.{cfg.audio_type}"):

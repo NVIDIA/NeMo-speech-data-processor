@@ -35,7 +35,10 @@ class MakeLettersUppercaseAfterPeriod(BaseParallelProcessor):
     """
 
     def __init__(
-        self, punctuation=".!?", text_key: str = "text", **kwargs,
+        self,
+        punctuation=".!?",
+        text_key: str = "text",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.punctuation = punctuation

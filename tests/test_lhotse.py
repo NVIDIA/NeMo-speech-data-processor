@@ -2,9 +2,8 @@ import json
 
 import pytest
 import soundfile
-
-from lhotse.testing.dummies import DummyManifest
 from lhotse import CutSet
+from lhotse.testing.dummies import DummyManifest
 
 from sdp.processors.datasets.lhotse import LhotseImport
 
@@ -35,9 +34,7 @@ def cuts_path(tmp_path):
 def test_lhotse_import(tmp_path, cuts_path):
     out_path = tmp_path / "nemo_manifest.json"
 
-    processor = LhotseImport(
-        input_manifest_file=cuts_path, output_manifest_file=out_path
-    )
+    processor = LhotseImport(input_manifest_file=cuts_path, output_manifest_file=out_path)
     processor.process()
 
     EXPECTED_KEYS = {

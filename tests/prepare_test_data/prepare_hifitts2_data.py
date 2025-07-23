@@ -17,8 +17,8 @@
 import argparse
 import json
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Preparing HiFiTTS-2 test data")
@@ -30,13 +30,25 @@ if __name__ == "__main__":
     )
     parser.add_argument("--test_data_folder", required=True, type=Path, help="Where to place the prepared data")
     parser.add_argument(
-        "--manifest_filename", default="manifest_22khz.json", type=str, required=False, help="Name of manifest manifest."
+        "--manifest_filename",
+        default="manifest_22khz.json",
+        type=str,
+        required=False,
+        help="Name of manifest manifest.",
     )
     parser.add_argument(
-        "--chapters_filename", default="chapters_22khz.json", type=str, required=False, help="Name of chapter manifest."
+        "--chapters_filename",
+        default="chapters_22khz.json",
+        type=str,
+        required=False,
+        help="Name of chapter manifest.",
     )
     parser.add_argument(
-        "--error_filename", default="errors_22khz.json", type=str, required=False, help="Name of chapter error manifest."
+        "--error_filename",
+        default="errors_22khz.json",
+        type=str,
+        required=False,
+        help="Name of chapter error manifest.",
     )
     parser.add_argument("--num_entries", default=20, type=int, help="How many entries to keep from each manifest")
 

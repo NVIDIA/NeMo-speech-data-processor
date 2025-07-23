@@ -14,27 +14,32 @@
 
 
 import argparse
-import os
-import shutil
-import tempfile
-from pathlib import Path
-import zipfile
-import subprocess  # For external commands (e.g., for rar)
-import random
 import csv
-import glob 
+import glob
+import os
+import random
+import shutil
+import subprocess  # For external commands (e.g., for rar)
+import tempfile
+import zipfile
+from pathlib import Path
+
 
 def create_zip_archive(source_dir, output_path):
     with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(source_dir):
             for file in files:
-                zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), os.path.join(source_dir, '..')))
+                zipf.write(
+                    os.path.join(root, file), os.path.relpath(os.path.join(root, file), os.path.join(source_dir, '..'))
+                )
+
 
 def create_rar_archive(source_dir, output_path):
     parent_dir = os.path.dirname(source_dir)
     target_folder_name = os.path.basename(source_dir)
     command = ['rar', 'a', '-r', '-v20m', output_path, target_folder_name]
     subprocess.run(command, check=True, cwd=parent_dir)
+
 
 def sample_and_copy_entries(transcript_path, tmpdir_path, num_entries, extracted_data_path, output_metadata_path):
     with open(transcript_path, "rt", encoding="utf8") as fin:
@@ -53,6 +58,7 @@ def sample_and_copy_entries(transcript_path, tmpdir_path, num_entries, extracted
             shutil.copy(src_path, tgt_path)
             writer.writerow(row)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Preparing Coraa test data")
     parser.add_argument("--extracted_data_path", required=True, help="Path to the downloaded and extracted data.")
@@ -67,7 +73,9 @@ if __name__ == "__main__":
         for split in ["train", "dev", "test"]:
             transcript_path = Path(args.extracted_data_path) / f"metadata_{split}_final.csv"
             output_metadata_path = Path(args.test_data_folder) / f"metadata_{split}_final.csv"
-            sample_and_copy_entries(transcript_path, tmpdir_path, args.num_entries, args.extracted_data_path, output_metadata_path)
+            sample_and_copy_entries(
+                transcript_path, tmpdir_path, args.num_entries, args.extracted_data_path, output_metadata_path
+            )
             archive_path = os.path.join(args.test_data_folder, split)
             source_dir = os.path.join(tmpdir_path, split)
             if split in ['dev', 'test']:
@@ -78,4 +86,4 @@ if __name__ == "__main__":
                 create_rar_archive(source_dir, archive_path)
                 pattern = os.path.join(args.test_data_folder, 'train*.rar')
                 for file_path in glob.glob(pattern):
-                    shutil.move(file_path,train_folder)
+                    shutil.move(file_path, train_folder)

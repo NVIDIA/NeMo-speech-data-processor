@@ -20,12 +20,11 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 try:
     import toloka.client
+
     TOLOKA_AVAILABLE = True
 except ImportError:
     TOLOKA_AVAILABLE = False
     toloka = None
-    
-
 
 
 class GetTolokaResults(BaseParallelProcessor):
@@ -47,6 +46,7 @@ class GetTolokaResults(BaseParallelProcessor):
     Returns:
         A set of task results from Toloka, stored in the specified output directory.
     """
+
     def __init__(
         self,
         input_data_file: str,
@@ -120,7 +120,9 @@ class GetTolokaResults(BaseParallelProcessor):
         This method loads necessary configurations and initializes the Toloka client to interact with Toloka's API.
         """
         if self.toloka_available != True:
-            logger.warning("Toloka is currently not supported. DownloadResponses processor functionality will be limited.")
+            logger.warning(
+                "Toloka is currently not supported. DownloadResponses processor functionality will be limited."
+            )
 
         if not self.API_KEY or not self.platform or not self.pool_id:
             try:
@@ -246,4 +248,3 @@ class GetTolokaResults(BaseParallelProcessor):
         }
 
         return [DataEntry(data=task_info)]
-

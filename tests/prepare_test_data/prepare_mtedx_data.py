@@ -36,19 +36,17 @@ if __name__ == "__main__":
         data_path = os.path.join(tmpdir_path, "data")
         os.makedirs(data_path, exist_ok=True)
         for split in ["train", "valid", "test"]:
-            vtt_path_dest= os.path.join(data_path, split, "vtt")
-            flac_path_dest= os.path.join(data_path, split,  "wav") 
-            os.makedirs(vtt_path_dest, exist_ok=True)    
-            os.makedirs(flac_path_dest, exist_ok=True)        
-            for idx, vtt_file in enumerate(os.listdir(os.path.join(
-                        args.extracted_data_path, "data", split, "vtt"))):
+            vtt_path_dest = os.path.join(data_path, split, "vtt")
+            flac_path_dest = os.path.join(data_path, split, "wav")
+            os.makedirs(vtt_path_dest, exist_ok=True)
+            os.makedirs(flac_path_dest, exist_ok=True)
+            for idx, vtt_file in enumerate(os.listdir(os.path.join(args.extracted_data_path, "data", split, "vtt"))):
                 if idx == args.num_entries:
                     break
                 flac_file = vtt_file.split(".")[0] + ".flac"
-                vtt_file_src = os.path.join(args.extracted_data_path,"data", split, "vtt", vtt_file)
+                vtt_file_src = os.path.join(args.extracted_data_path, "data", split, "vtt", vtt_file)
                 flac_file_src = os.path.join(args.extracted_data_path, "data", split, "wav", flac_file)
                 shutil.copy(vtt_file_src, vtt_path_dest)
                 shutil.copy(flac_file_src, flac_path_dest)
         with tarfile.open(os.path.join(args.test_data_folder, f"mtedx_{args.language_id}.tgz"), "w:gz") as tar:
             tar.add(tmpdir, arcname=f"mtedx_{args.language_id}")
-

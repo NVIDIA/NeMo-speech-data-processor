@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import collections
+import json
 import os
 import re
 from typing import Dict, List, Optional
@@ -21,7 +22,6 @@ import soundfile
 import torchaudio
 from docx import Document
 from tqdm import tqdm
-import json
 
 from sdp.logging import logger
 from sdp.processors.base_processor import (
@@ -29,11 +29,11 @@ from sdp.processors.base_processor import (
     BaseProcessor,
     DataEntry,
 )
+from sdp.utils.apply_operators import evaluate_expression
 from sdp.utils.common import ffmpeg_convert
 from sdp.utils.edit_spaces import add_start_end_spaces, remove_extra_spaces
 from sdp.utils.get_diff import get_diff_with_subs_grouped
 from sdp.utils.metrics_computation import get_wer
-from sdp.utils.apply_operators import evaluate_expression
 
 
 class GetAudioDuration(BaseParallelProcessor):
@@ -460,10 +460,10 @@ class SubRegex(BaseParallelProcessor):
         super().__init__(**kwargs)
         if not regex_params_list and not regex_params_yaml:
             raise ValueError(f'One of `regex_params_list` or `regex_params_yaml` should be provided.')
-        
+
         self.regex_params_list = regex_params_list
         if regex_params_yaml:
-            with open(regex_params_yaml, 'r') as regex_params_file: 
+            with open(regex_params_yaml, 'r') as regex_params_file:
                 self.regex_params_list = yaml.safe_load(regex_params_file)
 
         self.text_key = text_key
@@ -555,6 +555,7 @@ class NormalizeText(BaseParallelProcessor):
 
     def prepare(self):
         from nemo_text_processing.text_normalization.normalize import Normalizer
+
         try:
             self.normalizer = Normalizer(input_case=self.input_case, lang=self.input_language)
         except NotImplementedError as e:
@@ -603,7 +604,10 @@ class InverseNormalizeText(BaseParallelProcessor):
         self.verbose = verbose
 
     def prepare(self):
-        from nemo_text_processing.inverse_text_normalization.inverse_normalize import InverseNormalizer
+        from nemo_text_processing.inverse_text_normalization.inverse_normalize import (
+            InverseNormalizer,
+        )
+
         try:
             self.inverse_normalizer = InverseNormalizer(input_case=self.input_case, lang=self.input_language)
         except NotImplementedError as e:
@@ -624,7 +628,7 @@ class CopyManifestData(BaseParallelProcessor):
 
     Args:
         copy_path (str): The destination directory where files will be copied.
-        source_filepath (str): The key in the manifest that contains the path to 
+        source_filepath (str): The key in the manifest that contains the path to
             the file to be copied. Default: "audio_path".
 
     Returns:
@@ -640,6 +644,7 @@ class CopyManifestData(BaseParallelProcessor):
               copy_path: ${workspace_dir}/consolidated_data
               source_filepath: "audio_filepath"
     """
+
     def __init__(
         self,
         copy_path: str,
@@ -808,15 +813,16 @@ class GetWER(BaseParallelProcessor):
     """This processor calculates Word Error Rate (WER) between predicted text and ground truth text.
 
     It computes the WER for each entry in the manifest and adds the result as a new field.
-    
+
     Args:
         text_key (str): Key for the ground truth text field in the manifest. Default: "text".
         pred_text_key (str): Key for the predicted text field in the manifest. Default: "pred_text".
-    
+
     Returns:
-        The same data as in the input manifest with an additional 'wer' field containing 
+        The same data as in the input manifest with an additional 'wer' field containing
         the calculated Word Error Rate between the specified text fields.
     """
+
     def __init__(
         self,
         text_key: str = "text",
@@ -860,6 +866,7 @@ class MakeSentence(BaseParallelProcessor):
               end_symbol: "."
               make_uppercase: true
     """
+
     def __init__(
         self,
         text_key: str = "text",
@@ -899,7 +906,14 @@ class ASRFileCheck(BaseProcessor):
         A manifest with corrupted audio files removed.
 
     """
-    def __init__(self, audio_filepath_key: str = "audio_filepath", corrupted_audio_dir: str = None, workspace_dir: str = None, **kwargs):
+
+    def __init__(
+        self,
+        audio_filepath_key: str = "audio_filepath",
+        corrupted_audio_dir: str = None,
+        workspace_dir: str = None,
+        **kwargs,
+    ):
         """
         Constructs the necessary attributes for the ASRFileCheck class.
 
@@ -915,10 +929,12 @@ class ASRFileCheck(BaseProcessor):
         """
         super().__init__(**kwargs)
         self.audio_filepath_key = audio_filepath_key
-        
+
         if corrupted_audio_dir is None:
-            raise ValueError("corrupted_audio_dir parameter is required. Please specify a directory to move corrupted files.")
-        
+            raise ValueError(
+                "corrupted_audio_dir parameter is required. Please specify a directory to move corrupted files."
+            )
+
         self.corrupted_audio_dir = corrupted_audio_dir
         self.workspace_dir = workspace_dir
         self.failed_files = []
@@ -929,17 +945,17 @@ class ASRFileCheck(BaseProcessor):
 
         This method reads through the manifest file, attempts to load each audio file using torchaudio,
         and moves corrupted files. A new manifest file is created with only the valid entries.
-        
+
         Specific errors handled:
         - FileNotFoundError: File doesn't exist
         - RuntimeError: File format issues or codec problems
         - Other exceptions: General issues with file loading
         """
         from sdp.logging import logger
-        
+
         # Debug print to show workspace_dir
         logger.info(f"ASRFileCheck workspace_dir: {self.workspace_dir}")
-        
+
         with open(self.input_manifest_file, 'r') as f:
             lines = f.readlines()
 
@@ -953,22 +969,22 @@ class ASRFileCheck(BaseProcessor):
             line = lines[idx]
             entry = json.loads(line)
             audio_path = entry[self.audio_filepath_key]
-            
+
             # Debug print first file path
             if idx == 0:
                 logger.info(f"First audio_path from manifest: {audio_path}")
-            
+
             # If workspace_dir is provided, join it with audio_path to get absolute path
             if self.workspace_dir is not None:
                 full_audio_path = os.path.join(self.workspace_dir, audio_path)
             else:
                 full_audio_path = audio_path
-            
+
             # Debug print first full path
             if idx == 0:
                 logger.info(f"First full_audio_path: {full_audio_path}")
                 logger.info(f"Path exists: {os.path.exists(full_audio_path)}")
-            
+
             try:
                 # Attempt to load the audio file to check if it is corrupted
                 torchaudio.load(full_audio_path)
@@ -979,7 +995,7 @@ class ASRFileCheck(BaseProcessor):
             except RuntimeError as e:
                 logger.warning(f"Audio format error in {audio_path}: {e}")
                 self.failed_files.append(audio_path)
-                
+
                 # Move the corrupted audio file
                 if os.path.exists(full_audio_path):
                     dest_path = os.path.join(self.corrupted_audio_dir, os.path.basename(audio_path))
@@ -988,7 +1004,7 @@ class ASRFileCheck(BaseProcessor):
             except Exception as e:
                 logger.warning(f"Unknown error loading {audio_path}: {e}")
                 self.failed_files.append(audio_path)
-                
+
                 # Move the corrupted audio file
                 if os.path.exists(full_audio_path):
                     dest_path = os.path.join(self.corrupted_audio_dir, os.path.basename(audio_path))
@@ -1023,23 +1039,23 @@ class ListToEntries(BaseParallelProcessor):
     Raises:
         TypeError: If the specified list field is not of type list.
         ValueError: If the list items are not dictionaries and `output_field` is not provided.
-    
+
     Returns:
-        A manifest where each entry corresponds to one item in the original list from the input entry. 
-        This effectively transforms a single input entry containing a list of items into multiple standalone 
+        A manifest where each entry corresponds to one item in the original list from the input entry.
+        This effectively transforms a single input entry containing a list of items into multiple standalone
         entries, each suitable for further dataset processing.
 
     .. admonition:: Example 1 (list of dicts)
-        
+
         .. code-block:: yaml
-    
+
             - _target_: sdp.processors.ListToEntries
               input_manifest_file: ${workspace_dir}/input_manifest.json
               output_manifest_file: ${workspace_dir}/output_manifest.json
               field_with_list: "segments"
-                
+
         Input::
- 
+
             {
                 "audio_filepath": "sample.wav",
                 "segments": [
@@ -1064,19 +1080,19 @@ class ListToEntries(BaseParallelProcessor):
                     "text": "World"
                 }
             ]
-    
+
     .. admonition:: Example 2 (list of primitives)
-        
+
         .. code-block:: yaml
-    
+
             - _target_: sdp.processors.ListToEntries
               input_manifest_file: ${workspace_dir}/input_manifest.json
               output_manifest_file: ${workspace_dir}/output_manifest.json
               field_with_list: "text_chunks"
               output_field: "text"
-                
+
         Input::
- 
+
             {
                 "audio_filepath": "sample.wav",
                 "text_chunks": [
@@ -1100,10 +1116,7 @@ class ListToEntries(BaseParallelProcessor):
 
     """
 
-    def __init__(self, 
-        field_with_list: str,
-        output_field: str = None,
-        **kwargs):
+    def __init__(self, field_with_list: str, output_field: str = None, **kwargs):
         super().__init__(**kwargs)
         self.field_with_list = field_with_list
         self.output_field = output_field
@@ -1114,14 +1127,16 @@ class ListToEntries(BaseParallelProcessor):
         # Check that the target field is actually a list
         if not isinstance(data_entry[self.field_with_list], list):
             raise TypeError(f'Values of {self.field_with_list} field should be list type only: {data_entry}')
-        
+
         # Remove the list field from the entry and get the list of items
         items_list = data_entry.pop(self.field_with_list)
 
         # If items are not dicts, output_field must be specified to store the item
         if not isinstance(items_list[0], dict) and not self.output_field:
-            raise ValueError(f'Type of items in items list `{self.field_with_list}` is not dict ({type(items_list[0])}). In this case `output_field` should be provided.')
-        
+            raise ValueError(
+                f'Type of items in items list `{self.field_with_list}` is not dict ({type(items_list[0])}). In this case `output_field` should be provided.'
+            )
+
         # Expand the list into multiple entries
         for item in items_list:
             _entry = data_entry.copy()
@@ -1129,7 +1144,7 @@ class ListToEntries(BaseParallelProcessor):
             # If item is a dict, merge its keys; otherwise, store it in `output_field`
             if isinstance(item, dict):
                 _entry.update(item)
-            else: 
+            else:
                 _entry[self.output_field] = item
 
             _entry = DataEntry(_entry)
@@ -1202,6 +1217,7 @@ class LambdaExpression(BaseParallelProcessor):
         str: A line-delimited JSON manifest, where each line is a processed entry.
         The result may contain fewer entries than the input if ``filter=True``.
     """
+
     def __init__(
         self,
         new_field: str,
@@ -1223,11 +1239,11 @@ class LambdaExpression(BaseParallelProcessor):
         If `filter` is True, the entry is only retained if the expression evaluates to True.
         Otherwise, the result is stored in `new_field`.
         """
-        value = evaluate_expression(self.expression,  data_entry, self.lambda_param_name)
+        value = evaluate_expression(self.expression, data_entry, self.lambda_param_name)
         if self.filter:
             if value is not True:
                 return []
-        data_entry[self.new_field] = value   
+        data_entry[self.new_field] = value
         return [DataEntry(data=data_entry)]
 
     def finalize(self, metrics):

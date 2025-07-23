@@ -21,11 +21,11 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 try:
     import toloka.client
     import toloka.client.project.template_builder
+
     TOLOKA_AVAILABLE = True
 except ImportError:
     TOLOKA_AVAILABLE = False
     toloka = None
-    
 
 
 class CreateTolokaProject(BaseParallelProcessor):
@@ -43,7 +43,7 @@ class CreateTolokaProject(BaseParallelProcessor):
     Returns:
         A project created on the Toloka platform, configured and ready for task and pool setup.
     """
-    
+
     def __init__(
         self,
         project_name: str,
@@ -55,11 +55,11 @@ class CreateTolokaProject(BaseParallelProcessor):
         self.API_KEY = os.getenv('TOLOKA_API_KEY')
         if not self.API_KEY:
             raise ValueError("TOLOKA_API_KEY environment variable is not set")
-            
+
         self.platform = os.getenv('TOLOKA_PLATFORM')
         if not self.platform:
             raise ValueError("TOLOKA_PLATFORM environment variable is not set")
-            
+
         self.project_name = project_name
         self.project_description = project_description
         self.project_instructions = project_instructions
@@ -77,7 +77,9 @@ class CreateTolokaProject(BaseParallelProcessor):
         """
         logger.info("Processing Toloka project creation...")
         if self.toloka_availabe != True:
-            logger.warning("Toloka is currently not supported. CreateTolokaProject processor functionality will be limited.")
+            logger.warning(
+                "Toloka is currently not supported. CreateTolokaProject processor functionality will be limited."
+            )
 
         toloka_client = toloka.client.TolokaClient(self.API_KEY, self.platform)
 
@@ -128,4 +130,3 @@ class CreateTolokaProject(BaseParallelProcessor):
             fout.write(json.dumps(data) + "\n")
 
         logger.info("Project created successfully: Project ID - {}".format(created_project.id))
-

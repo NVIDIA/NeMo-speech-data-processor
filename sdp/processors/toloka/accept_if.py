@@ -23,11 +23,12 @@ from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 try:
     import toloka.client
     import toloka.client.project.template_builder
+
     TOLOKA_AVAILABLE = True
 except ImportError:
     TOLOKA_AVAILABLE = False
     toloka = None
-    
+
 
 from tqdm import tqdm
 
@@ -49,7 +50,7 @@ class AcceptIfWERLess(BaseParallelProcessor):
 
     Returns:
         A manifest with accepted assignments from Toloka based on the WER threshold.
-        
+
     Example:
     .. code-block:: yaml
 
@@ -60,7 +61,7 @@ class AcceptIfWERLess(BaseParallelProcessor):
             input_pool_file: ${workspace_dir}/taskpool.json
             threshold: 50
     """
-    
+
     def __init__(
         self,
         input_data_file: str,
@@ -156,4 +157,3 @@ class AcceptIfWERLess(BaseParallelProcessor):
                 accepted += 1
 
         logger.info(f"Number of accepted task suits: {accepted} of {len(big_dict)}")
-

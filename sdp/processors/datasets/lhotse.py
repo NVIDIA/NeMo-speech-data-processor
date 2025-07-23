@@ -63,12 +63,8 @@ class LhotseImport(BaseProcessor):
     def check_entry(self, cut) -> None:
         from lhotse import MonoCut
 
-        assert isinstance(
-            cut, MonoCut
-        ), f"Currently, only MonoCut import is supported. Received: {cut}"
-        assert (
-            cut.has_recording
-        ), f"Currently, we only support cuts with recordings. Received: {cut}"
+        assert isinstance(cut, MonoCut), f"Currently, only MonoCut import is supported. Received: {cut}"
+        assert cut.has_recording, f"Currently, we only support cuts with recordings. Received: {cut}"
         assert (
             cut.recording.num_channels == 1
         ), f"Currently, we only supports recordings with a single channel. Received: {cut}"

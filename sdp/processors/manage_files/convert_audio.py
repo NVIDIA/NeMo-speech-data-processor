@@ -14,11 +14,11 @@
 
 import os
 from typing import Optional
+
 from sox import Transformer
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
-
 from sdp.utils.common import ffmpeg_convert
 
 
@@ -122,7 +122,7 @@ class SoxConvert(BaseParallelProcessor):
         # Extract workspace_dir from kwargs to avoid passing it to BaseProcessor
         if "workspace_dir" in kwargs:
             workspace_dir = kwargs.pop("workspace_dir")
-            
+
         super().__init__(**kwargs)
         self.input_audio_file_key = input_audio_file_key
         self.output_audio_file_key = output_audio_file_key
@@ -141,13 +141,13 @@ class SoxConvert(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry):
         audio_path = data_entry[self.input_audio_file_key]
-        
+
         # If workspace_dir is provided, join it with audio_path to get absolute path
         if self.workspace_dir is not None:
             full_audio_path = os.path.join(self.workspace_dir, audio_path)
         else:
             full_audio_path = audio_path
-            
+
         # Debug print first file path
         if not hasattr(self, '_debug_printed'):
             logger.info(f"First audio_path from manifest: {audio_path}")

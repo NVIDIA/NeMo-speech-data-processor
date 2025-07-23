@@ -17,13 +17,17 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
-import pandas as pd
 import librosa
+import pandas as pd
 
 from sdp.logging import logger
-from sdp.processors.base_processor import BaseParallelProcessor, BaseProcessor, DataEntry
+from sdp.processors.base_processor import (
+    BaseParallelProcessor,
+    BaseProcessor,
+    DataEntry,
+)
 from sdp.utils.common import extract_archive
 
 
@@ -32,7 +36,7 @@ class CreateInitialAudioAndManifest(BaseParallelProcessor):
     """Create initial audio manifest from Earnings21/22 dataset files.
 
     This processor creates the initial manifest for Earnings21/22 datasets by discovering
-    audio files and creating manifest entries with duration information. Audio format 
+    audio files and creating manifest entries with duration information. Audio format
     conversion should be handled by a separate FfmpegConvert processor in the pipeline.
 
     Args:
@@ -94,7 +98,7 @@ class CreateInitialAudioAndManifest(BaseParallelProcessor):
                 metadata_file = self.dataset_root / "earnings21-file-metadata.csv"
         else:  # earnings22
             metadata_file = self.dataset_root / "metadata.csv"
-        
+
         # If metadata file doesn't exist, discover files from audio directory
         if not metadata_file.exists():
             logger.warning(f"Metadata file not found: {metadata_file}. Discovering files from audio directory.")
@@ -111,13 +115,11 @@ class CreateInitialAudioAndManifest(BaseParallelProcessor):
                 self.file_ids = file_metadata_df['File ID'].astype(str).tolist()
             else:
                 raise ValueError(f"Neither 'file_id' nor 'File ID' column found in {metadata_file}")
-        
+
         if self.test_mode:
             self.file_ids = self.file_ids[:2]
-            
+
         logger.info(f"Loaded {len(self.file_ids)} file IDs for {self.dataset_type} subset {self.subset}.")
-
-
 
     def read_manifest(self):
         """Read and process all files to create manifest entries."""
@@ -126,7 +128,7 @@ class CreateInitialAudioAndManifest(BaseParallelProcessor):
     def process_dataset_entry(self, file_id: str) -> List[DataEntry]:
         """Process a single file to create full audio manifest entry."""
         file_id = str(file_id)
-        
+
         # Find audio file
         audio_file = None
         for ext in ['.mp3', '.wav']:
@@ -134,7 +136,7 @@ class CreateInitialAudioAndManifest(BaseParallelProcessor):
             if potential_path.exists():
                 audio_file = potential_path
                 break
-        
+
         if not audio_file:
             logger.warning(f"Audio file not found for {file_id}")
             return []
@@ -142,7 +144,7 @@ class CreateInitialAudioAndManifest(BaseParallelProcessor):
         try:
             # Get audio duration from the original audio file
             duration = librosa.get_duration(path=str(audio_file))
-            
+
             # Create manifest entry
             entry_data = {
                 "audio_filepath": str(audio_file),
@@ -150,9 +152,9 @@ class CreateInitialAudioAndManifest(BaseParallelProcessor):
                 "text": "",  # Placeholder text
                 "file_id": file_id,
             }
-            
+
             return [DataEntry(data=entry_data)]
-            
+
         except Exception as e:
             logger.error(f"Error processing audio file {file_id}: {e}")
             return []
@@ -215,8 +217,10 @@ class CreateFullAudioManifestEarnings21(BaseParallelProcessor):
         else:  # earnings22
             # Check both possible locations for earnings22
             nlp_path1 = self.dataset_root / "transcripts" / "nlp_references" / f"{file_id}.nlp"
-            nlp_path2 = self.dataset_root / "subset10" / "nonverbatim_transcripts" / "nlp_references" / f"{file_id}.nlp"
-            
+            nlp_path2 = (
+                self.dataset_root / "subset10" / "nonverbatim_transcripts" / "nlp_references" / f"{file_id}.nlp"
+            )
+
             if nlp_path1.exists():
                 return nlp_path1
             elif nlp_path2.exists():
@@ -227,11 +231,11 @@ class CreateFullAudioManifestEarnings21(BaseParallelProcessor):
     def _load_nlp_file(self, file_id: str) -> List[Dict[str, Any]]:
         """Load NLP file containing tokens and metadata."""
         nlp_file = self._get_nlp_file_path(file_id)
-        
+
         if not nlp_file.exists():
             logger.warning(f"NLP file not found: {nlp_file}")
             return []
-        
+
         tokens_list = []
         try:
             with open(nlp_file, 'r', encoding='utf-8') as f:
@@ -245,7 +249,7 @@ class CreateFullAudioManifestEarnings21(BaseParallelProcessor):
                 for i, row_values in enumerate(reader):
                     if len(row_values) == len(header):
                         token_data = dict(zip(header, row_values))
-                        
+
                         # Parse 'tags' and 'wer_tags' fields if they are string representations of lists
                         for key_to_parse in ['tags', 'wer_tags']:
                             if key_to_parse in token_data:
@@ -255,12 +259,14 @@ class CreateFullAudioManifestEarnings21(BaseParallelProcessor):
                                         token_data[key_to_parse] = json.loads(field_value)
                                     except json.JSONDecodeError:
                                         if field_value and field_value != "[]":
-                                            logger.debug(f"Field '{key_to_parse}' in {nlp_file} non-JSON: {field_value}")
+                                            logger.debug(
+                                                f"Field '{key_to_parse}' in {nlp_file} non-JSON: {field_value}"
+                                            )
                         tokens_list.append(token_data)
                     else:
                         logger.warning(f"Skipping malformed row in {nlp_file} (row {i+2})")
             return tokens_list
-                
+
         except Exception as e:
             logger.error(f"Error processing NLP file {nlp_file}: {e}")
             return []
@@ -269,13 +275,13 @@ class CreateFullAudioManifestEarnings21(BaseParallelProcessor):
         """Reconstruct text from tokens with proper spacing and punctuation."""
         if not tokens:
             return ""
-        
+
         text_parts = []
         for token in tokens:
             token_text = token.get('token', '').strip()
             if not token_text:
                 continue
-            
+
             text_parts.append(token_text)
             # Add punctuation if preserving and it exists
             if self.preserve_punctuation and token.get('punctuation'):
@@ -289,7 +295,7 @@ class CreateFullAudioManifestEarnings21(BaseParallelProcessor):
 
         if not self.preserve_capitalization:
             text = text.lower()
-        
+
         # Final cleanup of multiple spaces
         text = re.sub(r'\s+', ' ', text).strip()
         return text
@@ -298,13 +304,13 @@ class CreateFullAudioManifestEarnings21(BaseParallelProcessor):
         """Process a single manifest entry to add full text."""
         file_id = data_entry['file_id']
         tokens = self._load_nlp_file(file_id)
-        
+
         if not tokens:
             logger.warning(f"No NLP tokens for {file_id}, text will be empty.")
             data_entry['text'] = data_entry.get('text', '')
         else:
             data_entry['text'] = self._reconstruct_text(tokens)
-            
+
         return [DataEntry(data=data_entry)]
 
 
@@ -328,7 +334,7 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
         use_speaker_metadata_csv (bool): Whether to use speaker metadata CSV for name mapping. Defaults to False.
 
     Returns:
-        Manifest entries segmented by speaker with audio_filepath, duration (set to 0), 
+        Manifest entries segmented by speaker with audio_filepath, duration (set to 0),
         text, file_id, segment_id, and optionally speaker and tags fields.
 
     Example:
@@ -380,7 +386,7 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
         if not metadata_file.exists():
             logger.warning(f"Speaker metadata file not found: {metadata_file}")
             return
-        
+
         try:
             df = pd.read_csv(metadata_file)
             for _, row in df.iterrows():
@@ -400,8 +406,10 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
         else:  # earnings22
             # Check both possible locations for earnings22
             nlp_path1 = self.dataset_root / "transcripts" / "nlp_references" / f"{file_id}.nlp"
-            nlp_path2 = self.dataset_root / "subset10" / "nonverbatim_transcripts" / "nlp_references" / f"{file_id}.nlp"
-            
+            nlp_path2 = (
+                self.dataset_root / "subset10" / "nonverbatim_transcripts" / "nlp_references" / f"{file_id}.nlp"
+            )
+
             if nlp_path1.exists():
                 return nlp_path1
             elif nlp_path2.exists():
@@ -412,11 +420,11 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
     def _load_nlp_file(self, file_id: str) -> List[Dict[str, Any]]:
         """Load NLP file containing tokens and metadata."""
         nlp_file = self._get_nlp_file_path(file_id)
-        
+
         if not nlp_file.exists():
             logger.warning(f"NLP file not found: {nlp_file}")
             return []
-        
+
         tokens_list = []
         try:
             with open(nlp_file, 'r', encoding='utf-8') as f:
@@ -430,7 +438,7 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
                 for i, row_values in enumerate(reader):
                     if len(row_values) == len(header):
                         token_data = dict(zip(header, row_values))
-                        
+
                         # Parse 'tags' and 'wer_tags' fields if they are string representations of lists
                         for key_to_parse in ['tags', 'wer_tags']:
                             if key_to_parse in token_data:
@@ -440,12 +448,14 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
                                         token_data[key_to_parse] = json.loads(field_value)
                                     except json.JSONDecodeError:
                                         if field_value and field_value != "[]":
-                                            logger.debug(f"Field '{key_to_parse}' in {nlp_file} non-JSON: {field_value}")
+                                            logger.debug(
+                                                f"Field '{key_to_parse}' in {nlp_file} non-JSON: {field_value}"
+                                            )
                         tokens_list.append(token_data)
                     else:
                         logger.warning(f"Skipping malformed row in {nlp_file} (row {i+2})")
             return tokens_list
-                
+
         except Exception as e:
             logger.error(f"Error processing NLP file {nlp_file}: {e}")
             return []
@@ -454,11 +464,11 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
         """Load entity tags file (earnings21 only)."""
         if self.dataset_type != "earnings21":
             return {}
-            
+
         tags_file = self.dataset_root / "transcripts" / "tags" / f"{file_id}.tags.json"
         if not tags_file.exists():
             return {}
-        
+
         try:
             with open(tags_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
@@ -470,13 +480,13 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
         """Reconstruct text from tokens with proper spacing and punctuation."""
         if not tokens:
             return ""
-        
+
         text_parts = []
         for token in tokens:
             token_text = token.get('token', '').strip()
             if not token_text:
                 continue
-            
+
             text_parts.append(token_text)
             # Add punctuation if preserving and it exists
             if self.preserve_punctuation and token.get('punctuation'):
@@ -490,7 +500,7 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
 
         if not self.preserve_capitalization:
             text = text.lower()
-        
+
         # Final cleanup of multiple spaces
         text = re.sub(r'\s+', ' ', text).strip()
         return text
@@ -499,43 +509,47 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
         """Create segments based on speaker changes."""
         if not tokens:
             return []
-        
+
         segments = []
         current_segment_tokens = []
         current_speaker_id = tokens[0].get('speaker', 'unknown_speaker_0') if tokens else 'unknown_speaker_0'
 
         for token in tokens:
             token_speaker_id = token.get('speaker', current_speaker_id)
-            
+
             # Check for speaker change
             if token_speaker_id != current_speaker_id and current_segment_tokens:
                 # Finalize current segment
                 segment_text = self._reconstruct_text(current_segment_tokens)
                 if segment_text.strip():
-                    segments.append({
-                        'tokens': current_segment_tokens,
-                        'text': segment_text,
-                        'speaker_id': current_speaker_id,
-                        'file_id': file_id,
-                    })
-                
+                    segments.append(
+                        {
+                            'tokens': current_segment_tokens,
+                            'text': segment_text,
+                            'speaker_id': current_speaker_id,
+                            'file_id': file_id,
+                        }
+                    )
+
                 # Start new segment
                 current_segment_tokens = [token]
                 current_speaker_id = token_speaker_id
             else:
                 current_segment_tokens.append(token)
-        
+
         # Handle last segment
         if current_segment_tokens:
             segment_text = self._reconstruct_text(current_segment_tokens)
             if segment_text.strip():
-                segments.append({
-                    'tokens': current_segment_tokens,
-                    'text': segment_text,
-                    'speaker_id': current_speaker_id,
-                    'file_id': file_id,
-                })
-        
+                segments.append(
+                    {
+                        'tokens': current_segment_tokens,
+                        'text': segment_text,
+                        'speaker_id': current_speaker_id,
+                        'file_id': file_id,
+                    }
+                )
+
         return segments
 
     def process_dataset_entry(self, full_audio_manifest_entry: Dict[str, Any]) -> List[DataEntry]:
@@ -563,7 +577,7 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
         for idx, segment_dict in enumerate(segments):
             segment_text = segment_dict['text']
             speaker_id = segment_dict['speaker_id']
-            
+
             # Create manifest entry
             manifest_entry_data = {
                 "audio_filepath": audio_filepath,  # Point to original audio file
@@ -572,23 +586,25 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
                 "file_id": file_id,
                 "segment_id": idx,
                 "start_time": None,  # No timing information
-                "end_time": None,    # No timing information
+                "end_time": None,  # No timing information
             }
 
             # Add speaker information
             if self.include_speaker_info:
                 speaker_name = speaker_id  # Default to ID
-                if (self.use_speaker_metadata_csv and 
-                    file_id in self.speaker_name_map and 
-                    speaker_id in self.speaker_name_map[file_id]):
+                if (
+                    self.use_speaker_metadata_csv
+                    and file_id in self.speaker_name_map
+                    and speaker_id in self.speaker_name_map[file_id]
+                ):
                     speaker_name = self.speaker_name_map[file_id][speaker_id]
                 manifest_entry_data["speaker"] = speaker_name
-            
+
             # Add tags if requested
             if self.include_tags:
                 segment_tags = []
                 segment_entities = []
-                
+
                 # Extract basic tags from tokens
                 for token in segment_dict.get('tokens', []):
                     if token.get('tags') and str(token['tags']).strip():
@@ -596,12 +612,12 @@ class SpeakerSegmentedManifest(BaseParallelProcessor):
                         tag_type = tag_val.split(':', 1)[1].strip() if ':' in tag_val else tag_val
                         if tag_type and tag_type not in segment_tags:
                             segment_tags.append(tag_type)
-                
+
                 manifest_entry_data["tags"] = segment_tags
                 manifest_entry_data["entities"] = segment_entities
 
             output_entries.append(DataEntry(data=manifest_entry_data))
-            
+
         logger.info(f"Successfully processed {len(output_entries)} segments for file {file_id}")
         return output_entries
 
@@ -660,23 +676,25 @@ class CreateSentenceSegmentedManifest(BaseParallelProcessor):
                         duration = float(parts[3])
                         word = parts[4]
                         end_time = start_time + duration
-                        
-                        alignments.append({
-                            'word': word,
-                            'start': round(start_time, 3),
-                            'end': round(end_time, 3),
-                            'utt_id': utt_id,
-                            'channel': channel
-                        })
+
+                        alignments.append(
+                            {
+                                'word': word,
+                                'start': round(start_time, 3),
+                                'end': round(end_time, 3),
+                                'utt_id': utt_id,
+                                'channel': channel,
+                            }
+                        )
         except Exception as e:
             logger.error(f"Error parsing CTM file {ctm_path}: {e}")
-        
+
         return alignments
 
     def _is_sentence_end(self, word: str, next_word: str = None) -> bool:
         """
         Check if a word marks the end of a sentence.
-        
+
         Rules:
         - Word ends with !, ?, or .
         - Exclude numbers like 42.12 (. within numbers)
@@ -685,15 +703,15 @@ class CreateSentenceSegmentedManifest(BaseParallelProcessor):
         """
         if not word:
             return False
-            
+
         # Check if word ends with sentence-ending punctuation
         if not word.endswith(('.', '!', '?')):
             return False
-        
+
         # Handle exclamation and question marks - these are always sentence endings
         if word.endswith(('!', '?')):
             return True
-            
+
         # For words ending with '.', do additional checks
         if word.endswith('.'):
             # Remove the final '.' and check if what remains is a number
@@ -705,25 +723,100 @@ class CreateSentenceSegmentedManifest(BaseParallelProcessor):
             except ValueError:
                 # Not a number, continue with other checks
                 pass
-            
+
             # Check for common abbreviations (case-insensitive)
             common_abbreviations = {
-                'mr', 'mrs', 'ms', 'dr', 'prof', 'sr', 'jr', 'vs', 'etc', 'inc', 'corp', 'ltd', 'co',
-                'st', 'ave', 'blvd', 'rd', 'ln', 'ct', 'pl', 'sq', 'ft', 'in', 'cm', 'mm', 'kg', 'lb',
-                'oz', 'pt', 'qt', 'gal', 'mph', 'rpm', 'vol', 'no', 'pg', 'pp', 'ch', 'sec', 'min',
-                'hr', 'hrs', 'am', 'pm', 'est', 'pst', 'cst', 'mst', 'utc', 'gmt', 'jan', 'feb', 'mar',
-                'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', 'mon', 'tue', 'wed',
-                'thu', 'fri', 'sat', 'sun', 'dept', 'div', 'mgr', 'dir', 'pres', 'vp', 'ceo', 'cfo',
-                'cto', 'coo', 'evp', 'svp', 'avp'
+                'mr',
+                'mrs',
+                'ms',
+                'dr',
+                'prof',
+                'sr',
+                'jr',
+                'vs',
+                'etc',
+                'inc',
+                'corp',
+                'ltd',
+                'co',
+                'st',
+                'ave',
+                'blvd',
+                'rd',
+                'ln',
+                'ct',
+                'pl',
+                'sq',
+                'ft',
+                'in',
+                'cm',
+                'mm',
+                'kg',
+                'lb',
+                'oz',
+                'pt',
+                'qt',
+                'gal',
+                'mph',
+                'rpm',
+                'vol',
+                'no',
+                'pg',
+                'pp',
+                'ch',
+                'sec',
+                'min',
+                'hr',
+                'hrs',
+                'am',
+                'pm',
+                'est',
+                'pst',
+                'cst',
+                'mst',
+                'utc',
+                'gmt',
+                'jan',
+                'feb',
+                'mar',
+                'apr',
+                'may',
+                'jun',
+                'jul',
+                'aug',
+                'sep',
+                'oct',
+                'nov',
+                'dec',
+                'mon',
+                'tue',
+                'wed',
+                'thu',
+                'fri',
+                'sat',
+                'sun',
+                'dept',
+                'div',
+                'mgr',
+                'dir',
+                'pres',
+                'vp',
+                'ceo',
+                'cfo',
+                'cto',
+                'coo',
+                'evp',
+                'svp',
+                'avp',
             }
-            
+
             if word_without_dot.lower() in common_abbreviations:
                 return False
-        
+
         # If we have a next word, check if it starts with capital letter
         if next_word:
             return next_word[0].isupper()
-        
+
         # If no next word, assume it's sentence end
         return True
 
@@ -731,13 +824,13 @@ class CreateSentenceSegmentedManifest(BaseParallelProcessor):
         """Create sentence-level segments from word alignments."""
         if not alignments:
             return []
-        
+
         segments = []
         current_segment_words = []
-        
+
         for i, alignment in enumerate(alignments):
             current_segment_words.append(alignment)
-            
+
             # Check if this word ends a sentence
             next_word = alignments[i + 1]['word'] if i + 1 < len(alignments) else None
             if self._is_sentence_end(alignment['word'], next_word):
@@ -747,55 +840,59 @@ class CreateSentenceSegmentedManifest(BaseParallelProcessor):
                     segment_start = current_segment_words[0]['start']
                     segment_end = current_segment_words[-1]['end']
                     segment_duration = round(segment_end - segment_start, 3)
-                    
-                    segments.append({
-                        'text': segment_text,
-                        'start_time': segment_start,
-                        'end_time': segment_end,
-                        'duration': segment_duration,
-                        'alignment': current_segment_words.copy()
-                    })
-                    
+
+                    segments.append(
+                        {
+                            'text': segment_text,
+                            'start_time': segment_start,
+                            'end_time': segment_end,
+                            'duration': segment_duration,
+                            'alignment': current_segment_words.copy(),
+                        }
+                    )
+
                     current_segment_words = []
-        
+
         # Handle any remaining words
         if current_segment_words:
             segment_text = ' '.join([w['word'] for w in current_segment_words])
             segment_start = current_segment_words[0]['start']
             segment_end = current_segment_words[-1]['end']
             segment_duration = round(segment_end - segment_start, 3)
-            
-            segments.append({
-                'text': segment_text,
-                'start_time': segment_start,
-                'end_time': segment_end,
-                'duration': segment_duration,
-                'alignment': current_segment_words.copy()
-            })
-        
+
+            segments.append(
+                {
+                    'text': segment_text,
+                    'start_time': segment_start,
+                    'end_time': segment_end,
+                    'duration': segment_duration,
+                    'alignment': current_segment_words.copy(),
+                }
+            )
+
         return segments
 
     def process_dataset_entry(self, aligned_manifest_entry: Dict[str, Any]) -> List[DataEntry]:
         """Process a single aligned manifest entry to create sentence-level segments."""
         file_id = aligned_manifest_entry['file_id']
         audio_filepath = aligned_manifest_entry['audio_filepath']
-        
+
         # Find corresponding CTM file
         ctm_file = self.ctm_dir / f"{file_id}.ctm"
         if not ctm_file.exists():
             logger.warning(f"CTM file not found: {ctm_file}")
             return []
-        
+
         # Parse CTM file
         alignments = self._parse_ctm_file(str(ctm_file))
         if not alignments:
             logger.warning(f"No alignments found in CTM file: {ctm_file}")
             return []
-        
+
         # Create sentence segments
         segments = self._create_sentence_segments(alignments)
         logger.info(f"Created {len(segments)} sentence segments for file {file_id}")
-        
+
         # Create manifest entries
         output_entries = []
         for idx, segment in enumerate(segments):
@@ -807,11 +904,11 @@ class CreateSentenceSegmentedManifest(BaseParallelProcessor):
                 "segment_id": idx,
                 "offset": segment['start_time'],  # Use offset instead of start_time
                 "end_time": segment['end_time'],
-                "alignment": segment['alignment']
+                "alignment": segment['alignment'],
             }
-            
+
             output_entries.append(DataEntry(data=manifest_entry_data))
-        
+
         logger.info(f"Successfully processed {len(output_entries)} sentence segments for file {file_id}")
         return output_entries
 
@@ -863,15 +960,15 @@ class NeMoForcedAligner(BaseProcessor):
         self.pretrained_name = pretrained_name
         self.device = device
         self.nemo_path = nemo_path
-        
+
         # Create output directory
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def process(self):
         """Process the manifest using NeMo Forced Aligner script."""
-        import subprocess
         import json
-        
+        import subprocess
+
         try:
             # Find NeMo forced aligner script
             if self.nemo_path:
@@ -880,23 +977,24 @@ class NeMoForcedAligner(BaseProcessor):
                 # Try to find NeMo installation
                 try:
                     import nemo
+
                     nemo_dir = Path(nemo.__file__).parent.parent
                     align_script = nemo_dir / "tools" / "nemo_forced_aligner" / "align.py"
                 except ImportError:
                     raise ImportError("NeMo not found. Please install NeMo or specify nemo_path.")
-            
+
             if not align_script.exists():
                 raise FileNotFoundError(f"NeMo Forced Aligner script not found at {align_script}")
-            
+
             logger.info(f"Using NeMo Forced Aligner script at: {align_script}")
-            
+
             # Prepare manifest for forced alignment
             input_manifest = []
             with open(self.input_manifest_file, 'r') as f:
                 for line in f:
                     if line.strip():
                         input_manifest.append(json.loads(line))
-            
+
             # Create temporary manifest with absolute paths
             temp_manifest_path = self.output_dir / "temp_manifest_for_alignment.json"
             with open(temp_manifest_path, 'w') as f:
@@ -906,13 +1004,10 @@ class NeMoForcedAligner(BaseProcessor):
                         audio_path = Path(entry['audio_filepath'])
                         if not audio_path.is_absolute():
                             audio_path = audio_path.resolve()
-                        
-                        alignment_entry = {
-                            "audio_filepath": str(audio_path),
-                            "text": entry['text'].strip()
-                        }
+
+                        alignment_entry = {"audio_filepath": str(audio_path), "text": entry['text'].strip()}
                         f.write(json.dumps(alignment_entry) + '\n')
-            
+
             # Run NeMo Forced Aligner
             # Determine if we should use pretrained_name or model_path
             if self.pretrained_name.endswith('.nemo'):
@@ -921,25 +1016,26 @@ class NeMoForcedAligner(BaseProcessor):
             else:
                 # Pretrained model name - use pretrained_name
                 model_param = f"pretrained_name={self.pretrained_name}"
-            
+
             cmd = [
-                "python", str(align_script),
+                "python",
+                str(align_script),
                 model_param,
                 f"manifest_filepath={temp_manifest_path}",
                 f"output_dir={self.output_dir}",
                 f"transcribe_device={self.device}",
                 f"viterbi_device={self.device}",
                 "batch_size=1",
-                'save_output_file_formats=["ctm"]'
+                'save_output_file_formats=["ctm"]',
             ]
-            
+
             logger.info(f"Running NeMo Forced Aligner: {' '.join(cmd)}")
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             logger.info("NeMo Forced Aligner completed successfully")
-            
+
             # Process the output and merge with original manifest
             output_manifest_path = self.output_dir / f"{temp_manifest_path.stem}_with_output_file_paths.json"
-            
+
             if output_manifest_path.exists():
                 # Load alignment results
                 alignment_results = []
@@ -947,30 +1043,30 @@ class NeMoForcedAligner(BaseProcessor):
                     for line in f:
                         if line.strip():
                             alignment_results.append(json.loads(line))
-                
+
                 # Create mapping from audio filepath to alignment results
                 alignment_map = {}
                 for result in alignment_results:
                     audio_path = result['audio_filepath']
                     alignment_map[audio_path] = result
-                
+
                 # Merge alignments with original manifest
                 output_entries = []
                 for entry in input_manifest:
                     output_entry = entry.copy()
-                    
+
                     if entry.get('text', '').strip():
                         # Find corresponding alignment
                         audio_path = str(Path(entry['audio_filepath']).resolve())
                         if audio_path in alignment_map:
                             alignment_result = alignment_map[audio_path]
-                            
+
                             # Load word-level CTM file if available
                             if 'word_level_ctm_filepath' in alignment_result:
                                 ctm_path = alignment_result['word_level_ctm_filepath']
                                 word_alignments = self._parse_ctm_file(ctm_path)
                                 output_entry['alignment'] = word_alignments
-                                
+
                                 # Calculate duration from alignments
                                 if word_alignments:
                                     output_entry['duration'] = round(
@@ -987,23 +1083,23 @@ class NeMoForcedAligner(BaseProcessor):
                     else:
                         output_entry['alignment'] = []
                         output_entry['duration'] = 0.0
-                    
+
                     output_entries.append(output_entry)
-                
+
                 # Save final manifest
                 with open(self.output_manifest_file, 'w') as f:
                     for entry in output_entries:
                         f.write(json.dumps(entry) + '\n')
-                
+
                 logger.info(f"Saved aligned manifest to {self.output_manifest_file}")
-                
+
                 # Clean up temporary files
                 temp_manifest_path.unlink(missing_ok=True)
-                
+
             else:
                 logger.error(f"Expected output file not found: {output_manifest_path}")
                 raise FileNotFoundError(f"NeMo Forced Aligner did not produce expected output")
-                
+
         except subprocess.CalledProcessError as e:
             logger.error(f"NeMo Forced Aligner failed: {e}")
             logger.error(f"stdout: {e.stdout}")
@@ -1026,13 +1122,9 @@ class NeMoForcedAligner(BaseProcessor):
                         duration = float(parts[3])
                         word = parts[4]
                         end_time = start_time + duration
-                        
-                        alignments.append({
-                            'word': word,
-                            'start': round(start_time, 3),
-                            'end': round(end_time, 3)
-                        })
+
+                        alignments.append({'word': word, 'start': round(start_time, 3), 'end': round(end_time, 3)})
         except Exception as e:
             logger.error(f"Error parsing CTM file {ctm_path}: {e}")
-        
+
         return alignments

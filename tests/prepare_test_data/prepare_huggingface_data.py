@@ -15,16 +15,18 @@
 """Will take the downloaded tar file and create a version with only X entries."""
 
 import argparse
+import itertools
 import os
 import tempfile
-import itertools
 from pathlib import Path
 
 if __name__ == "__main__":
-    from datasets import load_dataset, Dataset, load_from_disk
-    
+    from datasets import Dataset, load_dataset, load_from_disk
+
     parser = argparse.ArgumentParser("Preparing TarteelAI's EveryAyah test data")
-    parser.add_argument("--dataset_name", required=True, help="Hugging Face dataset name. E.g., 'tarteel-ai/everyayah'")
+    parser.add_argument(
+        "--dataset_name", required=True, help="Hugging Face dataset name. E.g., 'tarteel-ai/everyayah'"
+    )
     parser.add_argument(
         "--archive_file_stem",
         required=True,
@@ -35,11 +37,11 @@ if __name__ == "__main__":
     parser.add_argument("--test_data_folder", required=True, help="Where to place the prepared data")
 
     args = parser.parse_args()
-    
+
     os.makedirs(args.test_data_folder, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
-        
+
         dataset = load_dataset(args.dataset_name, split="train", streaming=True)
         sampled_dataset = list(itertools.islice(dataset, args.num_entries))
         sampled_dataset = Dataset.from_list(sampled_dataset)

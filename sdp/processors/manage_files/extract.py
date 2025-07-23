@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tarfile
 import os
+import tarfile
 from pathlib import Path
 
 from sdp.logging import logger
-from sdp.processors.base_processor import DataEntry, BaseParallelProcessor
+from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
 
 
 class ExtractTar(BaseParallelProcessor):
@@ -42,15 +42,15 @@ class ExtractTar(BaseParallelProcessor):
     """
 
     def __init__(
-        self, 
-        field_to_tar_filepath: str, 
-        extraction_dir: str, 
-        remove_source_tar: bool = False, 
+        self,
+        field_to_tar_filepath: str,
+        extraction_dir: str,
+        remove_source_tar: bool = False,
         skip_invalid_filepaths: bool = False,
         filepath_prefix_field: str = None,
         output_filepath_field: str = 'extracted',
-        get_extracted_filepaths: bool = False, 
-        **kwargs
+        get_extracted_filepaths: bool = False,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.field_to_tar_filepath = field_to_tar_filepath
@@ -80,9 +80,7 @@ class ExtractTar(BaseParallelProcessor):
                 else ''
             )
             output_filepath = os.path.join(
-                self.extraction_dir,
-                output_filepath_prefix,
-                os.path.basename(tar_filepath).split('.')[0]
+                self.extraction_dir, output_filepath_prefix, os.path.basename(tar_filepath).split('.')[0]
             )
             os.makedirs(output_filepath, exist_ok=True)
 
@@ -101,9 +99,7 @@ class ExtractTar(BaseParallelProcessor):
             extracted_filepaths = []
             if output_filepath is not None and self.get_extracted_filepaths:
                 extraction_folder_path = Path(output_filepath)
-                extracted_filepaths = [
-                    str(file) for file in extraction_folder_path.rglob("*") if file.is_file()
-                ]
+                extracted_filepaths = [str(file) for file in extraction_folder_path.rglob("*") if file.is_file()]
 
             # Optionally remove the original tar archive after extraction
             if self.remove_source_tar:

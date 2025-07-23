@@ -58,7 +58,6 @@ class BaseProcessor(ABC):
     """
 
     def __init__(self, output_manifest_file: str, input_manifest_file: Optional[str] = None, **kwargs):
-
         if output_manifest_file and input_manifest_file and (output_manifest_file == input_manifest_file):
             # we cannot have the same input and output manifest file specified because we need to be able to
             # read from the input_manifest_file and write to the output_manifest_file at the same time
@@ -82,6 +81,7 @@ class BaseProcessor(ABC):
         There are not tests by default.
         """
 
+
 class BaseParallelProcessor(BaseProcessor):
     """
     A processor that performs per-entry processing in parallel (using Dask or multiprocessing).
@@ -96,7 +96,7 @@ class BaseParallelProcessor(BaseProcessor):
         use_dask (bool): If True, use Dask for parallelization; otherwise, use multiprocessing.
         dask_client: (Optional) An existing Dask client.
     """
-    
+
     def __getstate__(self):
         state = self.__dict__.copy()
         # Remove the Dask client from state (it is not picklable)
@@ -116,7 +116,7 @@ class BaseParallelProcessor(BaseProcessor):
         dask_client=None,
         **kwargs,
     ):
-        kwargs.pop("use_dask", None) #
+        kwargs.pop("use_dask", None)  #
         super().__init__(input_manifest_file=input_manifest_file, output_manifest_file=output_manifest_file, **kwargs)
         if max_workers == -1:
             max_workers = os.cpu_count()
@@ -129,25 +129,21 @@ class BaseParallelProcessor(BaseProcessor):
         self.test_cases = test_cases or []
         self.use_dask = use_dask
         self.dask_client = dask_client
-        
+
     def prepare(self):
-        """Can be used in derived classes to prepare the processing.
-        
-        """
+        """Can be used in derived classes to prepare the processing."""
         pass
 
     def process(self):
-        """A fork in the road to pick dask or classic processing
-
-        """
+        """A fork in the road to pick dask or classic processing"""
         os.environ.setdefault("PATH", os.defpath)
 
         self.prepare()
-        
+
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         metrics = []
-        
-        #Ability to work sa legacy and as dask
+
+        # Ability to work sa legacy and as dask
         if self.use_dask:
             self._process_with_dask(metrics)
         else:
@@ -161,7 +157,8 @@ class BaseParallelProcessor(BaseProcessor):
         if self.dask_client is None:
             self.dask_client = Client()
         client = self.dask_client
-        from sdp.logging import logger 
+        from sdp.logging import logger
+
         logger.info(f"Using Dask client with dashboard at: {client.dashboard_link}")
 
         # Delegate manifest reading to read_manifest() which returns a Dask bag.
@@ -210,7 +207,7 @@ class BaseParallelProcessor(BaseProcessor):
 
     def _chunk_manifest(self):
         """Splits the input manifest into chunks of in_memory_chunksize size.
-           Only used in non-Dask (multiprocessing) mode.
+        Only used in non-Dask (multiprocessing) mode.
         """
         manifest_chunk = []
         # When use_dask is False, read_manifest() returns an iterator.
@@ -225,7 +222,7 @@ class BaseParallelProcessor(BaseProcessor):
     def read_manifest(self):
         """
         Reads entries from the input manifest.
-        
+
         Behavior depends on the parallelization mode:
          - When use_dask is True:
               If the input_manifest_file exists and is non-empty, returns a Dask bag (reading in 256KB blocks).
@@ -233,30 +230,41 @@ class BaseParallelProcessor(BaseProcessor):
          - When use_dask is False:
               If the input_manifest_file does not exist or is empty, logs the condition and returns an empty iterator.
               Otherwise, opens the file in text mode, strips each line, and yields the parsed JSON from non-empty lines.
-              
+
         This unified behavior lets the processor run even in manifest-creation mode.
 
         """
-        from sdp.logging import logger  
+        from sdp.logging import logger
+
         if self.use_dask:
             import dask.bag as db
-            if self.input_manifest_file and os.path.exists(self.input_manifest_file) and os.path.getsize(self.input_manifest_file) > 0:
+
+            if (
+                self.input_manifest_file
+                and os.path.exists(self.input_manifest_file)
+                and os.path.getsize(self.input_manifest_file) > 0
+            ):
                 bag = db.read_text(self.input_manifest_file, blocksize=2**18).map(json.loads)
                 return bag
             else:
-                logger.info("No input manifest file provided or file is empty. Returning an empty Dask bag for manifest creation.")
+                logger.info(
+                    "No input manifest file provided or file is empty. Returning an empty Dask bag for manifest creation."
+                )
                 return db.from_sequence([])
         else:
             if not self.input_manifest_file or not os.path.exists(self.input_manifest_file):
-                logger.info("No input manifest file provided or file does not exist. Continuing with an empty manifest.")
+                logger.info(
+                    "No input manifest file provided or file does not exist. Continuing with an empty manifest."
+                )
                 return iter([])
-            else: 
-                #if use_dask = False, we get here
-                def generator(): #Reading manifest line by line, adding only non emply lines
+            else:
+                # if use_dask = False, we get here
+                def generator():  # Reading manifest line by line, adding only non emply lines
                     with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
                         for line in fin:
-                                if line:
-                                    yield json.loads(line)
+                            if line:
+                                yield json.loads(line)
+
                 return generator()
 
     @abstractmethod
@@ -270,38 +278,43 @@ class BaseParallelProcessor(BaseProcessor):
     def finalize(self, metrics: List[Any]):
         """Outputs metrics about the processed data."""
         from sdp.logging import logger
+
         logger.info("Total number of entries after processing: %d", self.number_of_entries)
         if self.total_duration:
             logger.info("Total audio duration (hours) after processing: %.2f", self.total_duration / 3600)
         else:
-            logger.info("Unable to calculate total audio duration (hours). Ensure that the manifest file includes a 'duration' key.")
+            logger.info(
+                "Unable to calculate total audio duration (hours). Ensure that the manifest file includes a 'duration' key."
+            )
         elapsed = time.time() - self.start_time
         logger.info("Processor completed in (seconds): %.2f", elapsed)
 
     def test(self):
-        """Applies processing to each test case and raises an error if the output does not match expected output."""        
+        """Applies processing to each test case and raises an error if the output does not match expected output."""
         for test_case in self.test_cases:
             input_data = test_case["input"].copy() if isinstance(test_case["input"], dict) else test_case["input"]
             generated_outputs = self.process_dataset_entry(input_data)
-            expected_outputs = [test_case["output"]] if not isinstance(test_case["output"], list) else test_case["output"]
+            expected_outputs = (
+                [test_case["output"]] if not isinstance(test_case["output"], list) else test_case["output"]
+            )
             for gen_out, exp_out in zip(generated_outputs, expected_outputs):
                 gen_data = gen_out.data if hasattr(gen_out, "data") else gen_out
                 if gen_data != exp_out:
                     raise RuntimeError(
-                        "Runtime test failed.\nTest input: {}\nGenerated output: {}\nExpected output: {}"
-                        .format(test_case["input"], gen_data, exp_out)
+                        "Runtime test failed.\nTest input: {}\nGenerated output: {}\nExpected output: {}".format(
+                            test_case["input"], gen_data, exp_out
+                        )
                     )
-
 
 
 # ------------------ Legacy Parallel Processor ------------------ #Just for reference
 class LegacyParallelProcessor(BaseProcessor):
     """
     A legacy parallel processor implementation using multiprocessing and process_map.
-    
+
     This class processes the manifest in chunks (using process_map) and is provided for compatibility.
     Child classes must implement process_dataset_entry().
-    
+
     Args:
         max_workers (int): maximum number of workers that will be spawned
             during the parallel processing.
@@ -312,12 +325,13 @@ class LegacyParallelProcessor(BaseProcessor):
         test_cases (list[dict]): an optional list of dicts containing test
             cases for checking that the processor makes the changes that we
             are expecting.
-            
+
         The dicts must have a key ``input``, the value of which is a dictionary
             containing data which is our test's input manifest line, and a key
             ``output``, the value of which is a dictionary containing data which is
             the expected output manifest line.
     """
+
     def __init__(
         self,
         max_workers: int = -1,
@@ -326,7 +340,7 @@ class LegacyParallelProcessor(BaseProcessor):
         test_cases: Optional[List[Dict]] = None,
         **kwargs,
     ):
-        kwargs.pop("use_dask", None) #
+        kwargs.pop("use_dask", None)  #
         super().__init__(**kwargs)
         if max_workers == -1:
             max_workers = multiprocessing.cpu_count()
@@ -478,9 +492,12 @@ class LegacyParallelProcessor(BaseProcessor):
         if self.total_duration:
             logger.info("Total audio duration (hours) after processing (legacy): %.2f", self.total_duration / 3600)
         else:
-            logger.info("Unable to calculate total audio duration (legacy). Please ensure that the manifest file includes a 'duration' key.")
+            logger.info(
+                "Unable to calculate total audio duration (legacy). Please ensure that the manifest file includes a 'duration' key."
+            )
         elapsed = time.time() - self.start_time
         logger.info("Legacy processor completed in (seconds): %.2f", elapsed)
+
     def test(self):
         """Applies processing to "test_cases" and raises an error in case of mismatch."""
         for test_case in self.test_cases:

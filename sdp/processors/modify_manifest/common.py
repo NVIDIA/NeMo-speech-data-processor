@@ -94,7 +94,6 @@ class Subprocess(BaseProcessor):
         subprocess.run(" ".join(process_args), shell=True)
 
 
-
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.
 
@@ -474,7 +473,7 @@ class DropSpecifiedFields(BaseProcessor):
     """
     A processor that removes specified fields from each data entry in the manifest.
 
-    This processor reads an input manifest line by line, drops the fields listed in `fields_to_drop` 
+    This processor reads an input manifest line by line, drops the fields listed in `fields_to_drop`
     from each JSON entry, and writes the cleaned entries to the output manifest.
 
     Args:

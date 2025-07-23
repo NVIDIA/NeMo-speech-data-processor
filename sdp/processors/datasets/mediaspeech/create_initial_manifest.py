@@ -18,8 +18,7 @@ from pathlib import Path
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
-from sdp.utils.common import ffmpeg_convert
-from sdp.utils.common import extract_archive
+from sdp.utils.common import extract_archive, ffmpeg_convert
 
 
 class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
@@ -27,7 +26,7 @@ class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
     Processor for creating initial manifest for MediaSpeech Arabic dataset.
     Dataset link: https://www.openslr.org/108/.
     Prior to calling processor download the tarred dataset and store it under `raw_dataset_dir/AR.tgz` or `raw_dataset_dir/AR.tar.gz`.
-    
+
     Args:
         raw_data_dir (str): The root directory of the dataset.
         extract_archive_dir (str): Directory where the extracted data will be saved.
@@ -42,12 +41,13 @@ class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
 
     Returns:
         This processor generates an initial manifest file with the following fields::
-        
+
             {
                 "audio_filepath": <path to the audio file>,
                 "text": <text>,
             }
     """
+
     def __init__(
         self,
         raw_data_dir: str,
@@ -66,10 +66,10 @@ class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
         self.extract_archive_dir = extract_archive_dir
         self.resampled_audios_dir = Path(resampled_audios_dir)
         self.already_extracted = already_extracted
-        
+
         self.target_samplerate = target_samplerate
         self.target_nchannels = target_nchannels
-        
+
         self.output_manifest_sample_id_key = output_manifest_sample_id_key
         self.output_manifest_audio_filapath_key = output_manifest_audio_filapath_key
         self.output_manifest_text_key = output_manifest_text_key
@@ -94,7 +94,7 @@ class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
         else:
             logger.info("Skipping dataset untarring...")
             self.dataset_dir = Path(self.extract_archive_dir) / "AR"
-        
+
         os.makedirs(self.resampled_audios_dir, exist_ok=True)
 
     def read_manifest(self):
@@ -106,9 +106,7 @@ class CreateInitialManifestMediaSpeech(BaseParallelProcessor):
 
             text_filepath = f"{self.dataset_dir}/{sample_id}.txt"
             if not os.path.exists(text_filepath):
-                logger.warning(
-                    f'Sample "{sample_id}" has no related .txt files. Skipping'
-                )
+                logger.warning(f'Sample "{sample_id}" has no related .txt files. Skipping')
                 continue
 
             data_entries.append(

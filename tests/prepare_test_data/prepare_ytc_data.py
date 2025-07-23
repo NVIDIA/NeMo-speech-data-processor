@@ -15,11 +15,11 @@
 """Will take the downloaded tar file and create a version with only X entries."""
 
 import argparse
+import json
 import os
 import shutil
 import tarfile
 import tempfile
-import json
 from pathlib import Path
 
 if __name__ == "__main__":
@@ -43,21 +43,21 @@ if __name__ == "__main__":
             for idx, audio_file in enumerate(Path(args.extracted_data_path).glob("audios/*")):
                 if idx == args.num_entries:
                     break
-                    
+
                 # Copy audio file to temp directory maintaining relative path
                 rel_path = audio_file.relative_to(Path(args.extracted_data_path))
                 target_path = tmpdir_path / split / "audio" / rel_path
                 target_path.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(audio_file, target_path)
                 stem = audio_file.stem
-                
+
                 # Write manifest entry
                 manifest_entry = {
                     "audio_filepath": str(target_path.relative_to(tmpdir_path / split)),
-                    "audio_item_id": stem
+                    "audio_item_id": stem,
                 }
                 fout.write(f"{json.dumps(manifest_entry)}\n")
-           
+
         os.makedirs(args.test_data_folder, exist_ok=True)
         with tarfile.open(os.path.join(args.test_data_folder, f"ytc_{args.language}.tar.gz"), "w:gz") as tar:
             # has to be the same as what's before .tar.gz
