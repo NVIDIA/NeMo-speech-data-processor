@@ -85,6 +85,7 @@ jobs:
         AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
         AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
         CLEAN_UP_TMP_PATH: 1
+        PATH: /usr/local/bin:/usr/bin:/bin
       run: |
 
         wget https://uit.stanford.edu/sites/default/files/2023/10/11/incommon-rsa-ca2.pem #downloading cert manually [for CORAL]
