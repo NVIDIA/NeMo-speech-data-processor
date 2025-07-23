@@ -40,7 +40,7 @@ RUN pip install -r requirements/main.txt
 RUN pip install -r requirements/tts.txt
 RUN pip install flash-attn --no-build-isolation
 RUN pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
-RUN pip install megatron-core transformer_engine[pytorch]
+RUN pip install megatron-core transformer_engine[pytorch]==2.4.0
 RUN pip install nemo_toolkit['all']==2.1.0 
 
 WORKDIR /src/NeMo-speech-data-processor

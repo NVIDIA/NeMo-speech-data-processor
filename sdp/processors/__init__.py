@@ -21,6 +21,13 @@ from sdp.processors.datasets.coraal import (
     CreateInitialManifestCORAAL,
     TrainDevTestSplitCORAAL,
 )
+from sdp.processors.datasets.earnings import (
+    ApplyEarnings21Normalizations,
+    CreateFullAudioManifestEarnings21,
+    CreateInitialAudioAndManifest,
+    CreateSentenceSegmentedManifest,
+    SpeakerSegmentedManifest,
+)
 from sdp.processors.datasets.fleurs.create_initial_manifest import (
     CreateInitialManifestFleurs,
 )
@@ -75,16 +82,21 @@ from sdp.processors.huggingface.create_initial_manifest import (
     CreateInitialManifestHuggingFace,
 )
 from sdp.processors.huggingface.speech_recognition import ASRTransformers
+from sdp.processors.manage_files.convert_audio import FfmpegConvert, SoxConvert
+from sdp.processors.manage_files.extract import ExtractTar
+from sdp.processors.manage_files.remove import RemoveFiles
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ApplyInnerJoin,
     ChangeToRelativePath,
     CombineSources,
+    DropSpecifiedFields,
     DuplicateFields,
     KeepOnlySpecifiedFields,
     RenameFields,
     SortManifest,
     SplitOnFixedDuration,
+    Subprocess,
 )
 from sdp.processors.modify_manifest.create_manifest import (
     CreateCombinedManifests,
@@ -96,16 +108,16 @@ from sdp.processors.modify_manifest.data_to_data import (
     CopyManifestData,
     CountNumWords,
     ExtractFromBrackets,
-    FfmpegConvert,
     GetAudioDuration,
     GetWER,
     InsIfASRInsertion,
     InverseNormalizeText,
+    LambdaExpression,
+    ListToEntries,
     MakeSentence,
     NormalizeText,
     ReadDocxLines,
     ReadTxtLines,
-    SoxConvert,
     SplitLineBySentence,
     SubIfASRSubstitution,
     SubMakeLowercase,
@@ -134,6 +146,7 @@ from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
 )
 from sdp.processors.nemo.asr_inference import ASRInference
 from sdp.processors.nemo.estimate_bandwidth import EstimateBandwidth
+from sdp.processors.nemo.lid_inference import AudioLid
 from sdp.processors.nemo.pc_inference import PCInference
 from sdp.processors.toloka.accept_if import AcceptIfWERLess
 from sdp.processors.toloka.create_pool import CreateTolokaPool
