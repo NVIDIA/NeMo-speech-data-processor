@@ -23,7 +23,7 @@ from ray_curator.stages.base import ProcessingStage
 from ray_curator.tasks import Task, _EmptyTask
 
 from sdp.run_processors import run_processors
-from sdp.utils.common import load_manifest
+from sdp.utils.common import load_manifest, save_manifest
 
 
 def _write_config(file_path: Path, dict_conf):
