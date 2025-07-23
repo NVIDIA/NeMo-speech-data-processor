@@ -14,12 +14,14 @@
 
 import json
 import os
+import subprocess
 from pathlib import Path
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 from tqdm import tqdm
 
+from sdp.logging import logger
 from sdp.processors.base_processor import (
     BaseParallelProcessor,
     BaseProcessor,
@@ -27,6 +29,71 @@ from sdp.processors.base_processor import (
     LegacyParallelProcessor,
 )
 from sdp.utils.common import load_manifest
+
+
+class Subprocess(BaseProcessor):
+    """
+    Processor for handling subprocess execution with additional features for managing input and output manifests.
+
+    Args:
+        cmd (str): The command to be executed as a subprocess.
+        input_manifest_arg (str, optional): The argument specifying the input manifest. Defaults to an empty string.
+        output_manifest_arg (str, optional): The argument specifying the output manifest. Defaults to an empty string.
+        arg_separator (str, optional): The separator used between argument and value. Defaults to "=".
+        **kwargs: Additional keyword arguments to be passed to the base class.
+
+    Example:
+        
+        _target_: sdp.processors.datasets.commoncrawl.Subprocess
+        output_manifest_file: /workspace/manifest.json
+        input_manifest_arg: "--manifest"
+        output_manifest_arg: "--output_filename"
+        arg_separator: "="
+        cmd: "python /workspace/NeMo-text-processing/nemo_text_processing/text_normalization/normalize_with_audio.py \
+            --language=en --n_jobs=-1 --batch_size=600 --manifest_text_field=text --cache_dir=${workspace_dir}/cache --overwrite_cache \
+            --whitelist=/workspace/NeMo-text-processing/nemo_text_processing/text_normalization/en/data/whitelist/asr_with_pc.tsv"
+
+    """
+
+    def __init__(
+        self,
+        cmd: str,
+        input_manifest_arg: str = "",
+        output_manifest_arg: str = "",
+        arg_separator: str = "=",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.input_manifest_arg = input_manifest_arg
+        self.output_manifest_arg = output_manifest_arg
+        self.arg_separator = arg_separator
+        self.cmd = cmd
+
+    def process(self):
+        os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
+        if self.cmd.find(self.input_manifest_file) != -1 or self.cmd.find(self.output_manifest_file) != -1:
+            logger.error(
+                "input_manifest_file "
+                + self.input_manifest_file
+                + " and output_manifest_file "
+                + self.output_manifest_file
+                + " should be exluded from cmd line!"
+            )
+            raise ValueError
+        process_args = [x for x in self.cmd.split(" ") if x]
+        if self.arg_separator == " ":
+            if self.input_manifest_arg:
+                process_args.extend([self.input_manifest_arg, self.input_manifest_file])
+            if self.output_manifest_arg:
+                process_args.extend([self.output_manifest_arg, self.output_manifest_file])
+        else:
+            if self.input_manifest_arg:
+                process_args.extend([self.input_manifest_arg + self.arg_separator + self.input_manifest_file])
+            if self.output_manifest_arg:
+                process_args.extend([self.output_manifest_arg + self.arg_separator + self.output_manifest_file])
+        subprocess.run(" ".join(process_args), shell=True)
+
+
 
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.
@@ -104,24 +171,24 @@ class AddConstantFields(BaseParallelProcessor):
     This processor adds constant fields to all manifest entries using Dask BaseParallelProcessor.
     It is useful when you want to attach fixed information (e.g., a language label or metadata)
     to each entry for downstream tasks such as language identification model training.
-    
+
     Args:
         fields (dict): A dictionary containing key-value pairs of fields to add to each manifest entry.
             For example::
-    
+
                 {
                     "label": "en",
                     "metadata": "mcv-11.0-2022-09-21"
                 }
-    
+
     Returns:
         dict: The same data as in the input manifest with the added constant fields as specified in
         the ``fields`` dictionary.
-    
+
     Example:
-    
+
         .. code-block:: yaml
-    
+
             - _target_: sdp.processors.modify_manifest.common.AddConstantFields
               input_manifest_file: ${workspace_dir}/input_manifest.json
               output_manifest_file: ${workspace_dir}/output_manifest.json
@@ -139,7 +206,6 @@ class AddConstantFields(BaseParallelProcessor):
         return [DataEntry(data=data_entry)]
 
 
-
 class DuplicateFields(BaseParallelProcessor):
     """This processor duplicates fields in all manifest entries.
 
@@ -154,8 +220,8 @@ class DuplicateFields(BaseParallelProcessor):
 
     Returns:
         The same data as in the input manifest with duplicated fields
-        as specified in the ``duplicate_fields`` input dictionary. 
-    
+        as specified in the ``duplicate_fields`` input dictionary.
+
     Example:
         .. code-block:: yaml
 
@@ -165,6 +231,7 @@ class DuplicateFields(BaseParallelProcessor):
               duplicate_fields: {"text":"answer"}
 
     """
+
     def __init__(
         self,
         duplicate_fields: Dict,
@@ -401,3 +468,38 @@ class ApplyInnerJoin(BaseProcessor):
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for _, line in m3.iterrows():
                 fout.write(json.dumps(dict(line), ensure_ascii=False) + "\n")
+
+
+class DropSpecifiedFields(BaseProcessor):
+    """
+    A processor that removes specified fields from each data entry in the manifest.
+
+    This processor reads an input manifest line by line, drops the fields listed in `fields_to_drop` 
+    from each JSON entry, and writes the cleaned entries to the output manifest.
+
+    Args:
+        fields_to_drop (List[str]): A list of keys to remove from each manifest entry.
+        **kwargs: Additional arguments passed to the BaseProcessor (e.g., input/output manifest paths).
+
+    Returns:
+        A line-delimited JSON manifest, where each entry is the same as the input,
+        but with the specified fields removed.
+    """
+
+    def __init__(self, fields_to_drop: List[str], **kwargs):
+        super().__init__(**kwargs)
+        self.fields_to_drop = fields_to_drop
+
+    def process(self):
+        # Open the input and output manifest files
+        with open(self.input_manifest_file, "rt", encoding="utf8") as fin, open(
+            self.output_manifest_file, "wt", encoding="utf8"
+        ) as fout:
+            # Iterate over each line (entry) in the input manifest
+            for line in tqdm(fin):
+                # Parse JSON entry from the current line
+                entry = json.loads(line)
+                # Create a new entry by excluding the specified fields
+                new_line = {field: entry[field] for field in entry if field not in self.fields_to_drop}
+                # Write the cleaned entry to the output manifest
+                fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")

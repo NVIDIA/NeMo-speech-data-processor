@@ -19,6 +19,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubIfASRSubstitution,
     SubMakeLowercase,
     SubRegex,
+    ListToEntries,
     LambdaExpression,
 )
 
@@ -94,6 +95,24 @@ test_params_list.extend(
     ]
 )
 
+test_params_list.extend(
+    [
+        # Test: list of dictionaries (e.g., segments)
+        (
+            ListToEntries,
+            {"field_with_list": "segments"},
+            {"audio_filepath": "a.wav", "segments": [{"start": 0.0, "end": 1.0, "text": "Hello"}, {"start": 1.1, "end": 2.0, "text": "World"}], "duration": 2.5},
+            [{"audio_filepath": "a.wav", "duration": 2.5, "start": 0.0, "end": 1.0, "text": "Hello"}, {"audio_filepath": "a.wav", "duration": 2.5, "start": 1.1, "end": 2.0, "text": "World"}]
+        ),
+        # Test: list of primitive values (strings), requires output_field
+        (
+            ListToEntries,
+            {"field_with_list": "text_chunks", "output_field": "text"},
+            {"audio_filepath": "b.wav", "text_chunks": ["Привет", "Мир"], "lang": "ru"},
+            [{"audio_filepath": "b.wav", "lang": "ru", "text": "Привет"}, {"audio_filepath": "b.wav", "lang": "ru", "text": "Мир"}]
+        ),
+    ]
+)
 
 test_params_list.extend(
     [

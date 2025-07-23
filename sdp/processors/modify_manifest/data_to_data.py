@@ -408,36 +408,67 @@ class SubMakeLowercase(BaseParallelProcessor):
 
 
 class SubRegex(BaseParallelProcessor):
-    """Converts a regex match to a string, as defined by key-value pairs in ``regex_to_sub``.
+    """
+    Applies a sequence of regex substitutions to the specified text field in each data entry.
 
-    Before applying regex changes, we will add a space
-    character to the beginning and end of the ``text`` and ``pred_text``
-    keys for each data entry. After the the regex changes,
-    the extra spaces are removed. This includes the spaces in the beginning
-    and end of the text, as well as any double spaces ``"  "``.
+    This processor performs regex-based substitutions as defined in either a provided list of
+    regex parameter dictionaries or a YAML configuration file. Each substitution is applied in
+    the order specified.
+
+    Before substitutions are applied, a space is temporarily added to the beginning and end of the text
+    to improve regex match consistency. After all substitutions, leading/trailing spaces and repeated
+    spaces are removed.
 
     Args:
-        regex_params_list (list[dict]): list of dicts.
-            Each dict must contain a ``pattern`` and a ``repl`` key,
-            and optionally a ``count`` key (by default, ``count`` will be 0).
-            This processor will go through the list in order, and apply a ``re.sub`` operation on
-            the input text in ``data_entry[self.text_key]``, feeding in the specified ``pattern``, ``repl``
-            and ``count`` parameters to ``re.sub``.
-        text_key (str): a string indicating which key of the data entries
-            should be used to find the utterance transcript. Defaults to "text".
+        regex_params_list (List[Dict], optional): A list of dictionaries specifying the regex substitutions.
+            Each dictionary must include::
+
+                - "pattern": A regex pattern to match.
+                - "repl": A replacement string.
+                - "count" (optional): Maximum number of replacements to make. Defaults to 0 (replace all).
+
+        regex_params_yaml (str, optional): Path to a YAML file that defines the same list of dictionaries
+            as `regex_params_list`. Either `regex_params_list` or `regex_params_yaml` must be provided.
+            If both are provided, `regex_params_yaml` takes precedence.
+
+        text_key (str): The key in each data entry whose value will be modified. Defaults to "text".
+
+        **kwargs: Additional arguments passed to the BaseParallelProcessor.
+
+    Example YAML format for `regex_params_yaml`:
+        ```
+        # regex_params.yaml
+        - {"pattern": "♩", "repl": " "}
+        - {"pattern": "♭", "repl": " "}
+        - {"pattern": "\\|", "repl": " "}
+        - {"pattern": ":", "repl": " "}
+        - {"pattern": "-", "repl": " "}
+        - {"pattern": "[^ €₽₴$£%?!',.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЬЮЯабвгдежзийклмнопрстуфхцчшщъьюя]", "repl": ""}
+        - {"pattern": "\\s+\\.", "repl": "."}
+        - {"pattern": "\\?+", "repl": "?"}
+        - {"pattern": "\\.+", "repl": "."}
+        ```
 
     Returns:
-         The same data as in the input manifest with ``<text_key>`` field changed.
+        The same data as in the input manifest with ``<text_key>`` field changed.
     """
 
     def __init__(
         self,
-        regex_params_list: List[Dict],
+        regex_params_list: List[Dict] = None,
+        regex_params_yaml: str = None,
         text_key: str = "text",
         **kwargs,
     ):
         super().__init__(**kwargs)
+        if not regex_params_list and not regex_params_yaml:
+            raise ValueError(f'One of `regex_params_list` or `regex_params_yaml` should be provided.')
+        
         self.regex_params_list = regex_params_list
+        if regex_params_yaml:
+            with open(regex_params_yaml, 'r') as regex_params_file: 
+                self.regex_params_list = yaml.safe_load(regex_params_file)
+
         self.text_key = text_key
 
         # verify all dicts in regex_params_list have "pattern" and "repl" keys
@@ -976,6 +1007,138 @@ class ASRFileCheck(BaseProcessor):
         if self.failed_files:
             logger.warning(f"Failed to process {len(self.failed_files)} files.")
             logger.debug(f"Failed files: {self.failed_files}")
+
+
+class ListToEntries(BaseParallelProcessor):
+    """
+    A dataset processor that transforms a single entry containing a list of items into multiple entries,
+    one for each item in the list.
+
+    This is useful when a manifest field (e.g., "segments") contains a list of sub-entries, and you want
+    to flatten these into individual records for further processing.
+
+    Args:
+        field_with_list (str): The name of the field in the input entry that contains a list.
+        output_field (str, optional): The name of the output field to assign to items in the list
+            if they are not dictionaries. Required if the list contains primitive types (e.g., strings).
+        **kwargs: Additional arguments passed to the BaseParallelProcessor.
+
+    Raises:
+        TypeError: If the specified list field is not of type list.
+        ValueError: If the list items are not dictionaries and `output_field` is not provided.
+    
+    Returns:
+        A manifest where each entry corresponds to one item in the original list from the input entry. 
+        This effectively transforms a single input entry containing a list of items into multiple standalone 
+        entries, each suitable for further dataset processing.
+
+    .. admonition:: Example 1 (list of dicts)
+        
+        .. code-block:: yaml
+    
+            - _target_: sdp.processors.ListToEntries
+              input_manifest_file: ${workspace_dir}/input_manifest.json
+              output_manifest_file: ${workspace_dir}/output_manifest.json
+              field_with_list: "segments"
+                
+        Input::
+ 
+            {
+                "audio_filepath": "sample.wav",
+                "segments": [
+                    {"start": 0.0, "end": 1.5, "text": "Hello"},
+                    {"start": 1.6, "end": 3.0, "text": "World"}
+                ]
+            }
+
+        Output::
+
+            [
+                {
+                    "audio_filepath": "sample.wav",
+                    "start": 0.0,
+                    "end": 1.5,
+                    "text": "Hello"
+                },
+                {
+                    "audio_filepath": "sample.wav",
+                    "start": 1.6,
+                    "end": 3.0,
+                    "text": "World"
+                }
+            ]
+    
+    .. admonition:: Example 2 (list of primitives)
+        
+        .. code-block:: yaml
+    
+            - _target_: sdp.processors.ListToEntries
+              input_manifest_file: ${workspace_dir}/input_manifest.json
+              output_manifest_file: ${workspace_dir}/output_manifest.json
+              field_with_list: "text_chunks"
+              output_field: "text"
+                
+        Input::
+ 
+            {
+                "audio_filepath": "sample.wav",
+                "text_chunks": [
+                    "Hello",
+                    "World"
+                ]
+            }
+
+        Output::
+
+            [
+                {
+                    "audio_filepath": "sample.wav",
+                    "text": "Hello"
+                },
+                {
+                    "audio_filepath": "sample.wav",
+                    "text": "World"
+                }
+            ]
+
+    """
+
+    def __init__(self, 
+        field_with_list: str,
+        output_field: str = None,
+        **kwargs):
+        super().__init__(**kwargs)
+        self.field_with_list = field_with_list
+        self.output_field = output_field
+
+    def process_dataset_entry(self, data_entry):
+        _entries = []
+
+        # Check that the target field is actually a list
+        if not isinstance(data_entry[self.field_with_list], list):
+            raise TypeError(f'Values of {self.field_with_list} field should be list type only: {data_entry}')
+        
+        # Remove the list field from the entry and get the list of items
+        items_list = data_entry.pop(self.field_with_list)
+
+        # If items are not dicts, output_field must be specified to store the item
+        if not isinstance(items_list[0], dict) and not self.output_field:
+            raise ValueError(f'Type of items in items list `{self.field_with_list}` is not dict ({type(items_list[0])}). In this case `output_field` should be provided.')
+        
+        # Expand the list into multiple entries
+        for item in items_list:
+            _entry = data_entry.copy()
+
+            # If item is a dict, merge its keys; otherwise, store it in `output_field`
+            if isinstance(item, dict):
+                _entry.update(item)
+            else: 
+                _entry[self.output_field] = item
+
+            _entry = DataEntry(_entry)
+            _entries.append(_entry)
+
+        return _entries
 
 
 class LambdaExpression(BaseParallelProcessor):

@@ -205,6 +205,9 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.vLLMInference
    :annotation:
 
+.. autodata:: sdp.processors.AudioLid
+   :annotation:
+
 Text-only processors
 ####################
 
@@ -244,6 +247,9 @@ Data modifications
    :annotation:
 
 .. autodata:: sdp.processors.LambdaExpression
+   :annotation:
+  
+.. autodata:: sdp.processors.ListToEntries
    :annotation:
 
 .. autodata:: sdp.processors.EstimateBandwidth
@@ -373,6 +379,12 @@ Data filtering
 .. autodata:: sdp.processors.CleanQwenGeneration
     :annotation:
 
+.. autodata:: sdp.processors.GetRttmSegments
+    :annotation:
+
+.. autodata:: sdp.processors.SplitAudioFile
+    :annotation:
+
 Miscellaneous
 #############
 
@@ -431,6 +443,9 @@ Miscellaneous
    :annotation:
 
 .. autodata:: sdp.processors.ipl.ipl_processors.InferenceCommandGenerator
+   :annotation:
+
+.. autodata:: sdp.processors.DropSpecifiedFields
    :annotation:
 
 .. _sdp-base-classes:
