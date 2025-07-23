@@ -1,12 +1,10 @@
 import os
-from typing import Dict, List, Union
+from typing import Dict
 
 import soundfile as sf
-from tqdm import tqdm
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
-from sdp.utils.common import load_manifest
 
 
 class GetRttmSegments(BaseParallelProcessor):

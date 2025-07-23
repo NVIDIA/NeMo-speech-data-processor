@@ -75,21 +75,21 @@ processors:
     output_manifest_file: ${manifest_dir}/vad
     input_manifest_arg: "manifest_filepath"
     output_manifest_arg: "output_dir"
-    cmd: 'python sdp/processors/nemo/speech_to_text_with_vad.py audio_type=wav vad_model=vad_multilingual_frame_marblenet  vad_config=sdp/processors/nemo/frame_vad_infer_postprocess.yaml'
+    cmd: 'python sdp/processors/inference/asr/nemo/utils/speech_to_text_with_vad.py audio_type=wav vad_model=vad_multilingual_frame_marblenet  vad_config=sdp/processors/inference/asr/nemo/utils/frame_vad_infer_postprocess.yaml'
 
   - _target_: sdp.processors.RenameFields
     input_manifest_file: ${manifest_dir}/vad/temp_manifest_vad_rttm-onset0.3-offset0.3-pad_onset0.2-pad_offset0.2-min_duration_on0.2-min_duration_off0.2-filter_speech_firstTrue.json
     output_manifest_file: ${manifest_dir}/manifest7.json
     rename_fields: {"audio_filepath":"source_filepath"}
 
-  - _target_: sdp.processors.nemo.rttm.GetRttmSegments
+  - _target_: sdp.processors.GetRttmSegments
     output_manifest_file: ${manifest_dir}/manifest8.json
     rttm_key: rttm_file
     output_file_key: audio_segments
     duration_key: duration
     duration_threshold: 20.0
 
-  - _target_: sdp.processors.nemo.rttm.SplitAudioFile
+  - _target_: sdp.processors.SplitAudioFile
     output_manifest_file: ${manifest_dir}/manifest9.json
     splited_audio_dir: ${workspace_dir}/splited_wavs/
     segments_key: audio_segments

@@ -81,7 +81,6 @@ from sdp.processors.datasets.ytc.create_initial_manifest import CreateInitialMan
 from sdp.processors.huggingface.create_initial_manifest import (
     CreateInitialManifestHuggingFace,
 )
-from sdp.processors.huggingface.speech_recognition import ASRTransformers
 from sdp.processors.modify_manifest.common import (
     AddConstantFields,
     ApplyInnerJoin,
@@ -119,6 +118,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubRegex,
     ListToEntries,
     LambdaExpression,
+    EstimateBandwidth,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,
@@ -141,6 +141,16 @@ from sdp.processors.modify_manifest.data_to_dropbool import (
 from sdp.processors.modify_manifest.make_letters_uppercase_after_period import (
     MakeLettersUppercaseAfterPeriod,
 )
+from sdp.processors.inference.asr.nemo.asr_inference import ASRInference
+from sdp.processors.inference.asr.nemo.lid_inference import AudioLid
+from sdp.processors.inference.asr.faster_whisper.faster_whisper_inference import FasterWhisperInference
+from sdp.processors.inference.asr.transformers.speech_recognition import ASRTransformers
+from sdp.processors.inference.asr.utils.whisper_hallucinations import DetectWhisperHallucinationFeatures
+from sdp.processors.inference.asr.utils.rttm import GetRttmSegments, SplitAudioFile
+from sdp.processors.inference.nlp.nemo.pc_inference import PCInference
+from sdp.processors.inference.llm.vllm.vllm import vLLMInference
+from sdp.processors.inference.llm.utils.qwen_cleaning import CleanQwenGeneration
+
 from sdp.processors.manage_files.convert_audio import (
     FfmpegConvert,
     SoxConvert,
@@ -151,10 +161,7 @@ from sdp.processors.manage_files.extract import (
 from sdp.processors.manage_files.remove import (
     RemoveFiles,
 )
-from sdp.processors.nemo.asr_inference import ASRInference
-from sdp.processors.nemo.estimate_bandwidth import EstimateBandwidth
-from sdp.processors.nemo.lid_inference import AudioLid
-from sdp.processors.nemo.pc_inference import PCInference
+
 from sdp.processors.toloka.accept_if import AcceptIfWERLess
 from sdp.processors.toloka.create_pool import CreateTolokaPool
 from sdp.processors.toloka.create_project import CreateTolokaProject
