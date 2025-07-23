@@ -57,9 +57,8 @@ See more options in the `InferenceConfig` class.
 import contextlib
 import json
 import os
-
 import time
-from dataclasses import dataclass, is_dataclass, field
+from dataclasses import dataclass, field, is_dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -73,7 +72,7 @@ from tqdm import tqdm
 from nemo.collections.asr.data import feature_to_text_dataset
 from nemo.collections.asr.metrics.wer import word_error_rate
 from nemo.collections.asr.models import ASRModel, EncDecClassificationModel
-from nemo.collections.asr.parts.submodules.ctc_decoding import CTCDecodingConfig
+from nemo.collections.asr.parts.submodules import CTCDecodingConfig
 from nemo.collections.asr.parts.submodules.rnnt_decoding import RNNTDecodingConfig
 from nemo.collections.asr.parts.utils.manifest_utils import read_manifest, write_manifest
 from nemo.collections.asr.parts.utils.vad_utils import (
