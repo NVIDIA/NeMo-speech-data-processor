@@ -14,13 +14,15 @@
 
 import json
 from pathlib import Path
+from typing import Optional
 
+from ray_curator.tasks import _EmptyTask
 from tqdm import tqdm
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseProcessor
 from sdp.utils.common import load_manifest
-from typing import Optional
+
 
 class ASRTransformers(BaseProcessor):
     """This processor transcribes audio files using HuggingFace ASR Transformer models.
@@ -99,7 +101,7 @@ class ASRTransformers(BaseProcessor):
 
         # Check if using Whisper/Seamless or NVIDIA model based on the model name
         self.is_whisper_or_seamless = any(x in self.pretrained_model.lower() for x in ['whisper', 'seamless'])
-        
+
         # Only set language in generation config for Whisper/Seamless models
         if self.is_whisper_or_seamless and self.generate_language:
             self.model.generation_config.language = self.generate_language
@@ -119,7 +121,7 @@ class ASRTransformers(BaseProcessor):
             device=self.device,
         )
 
-    def process(self):
+    def process(self, task: _EmptyTask) -> _EmptyTask:
         json_list = load_manifest(Path(self.input_manifest_file))
         json_list_sorted = sorted(json_list, key=lambda d: d[self.input_duration_key], reverse=True)
 
@@ -131,7 +133,7 @@ class ASRTransformers(BaseProcessor):
                 batch = json_list_sorted[start_index : start_index + self.batch_size]
                 start_index += self.batch_size
                 audio_files = [item[self.input_audio_key] for item in batch]
-                
+
                 # Only pass generate_kwargs for Whisper/Seamless models
                 if self.is_whisper_or_seamless and self.generate_language and self.generate_task:
                     results = self.pipe(
@@ -143,3 +145,4 @@ class ASRTransformers(BaseProcessor):
                 for i, item in enumerate(batch):
                     item[self.output_text_key] = results[i]["text"]
                     f.write(json.dumps(item, ensure_ascii=False) + "\n")
+        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)

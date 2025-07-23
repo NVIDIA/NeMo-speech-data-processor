@@ -15,6 +15,8 @@
 
 import json
 from pathlib import Path
+
+from ray_curator.tasks import _EmptyTask
 from tqdm import tqdm
 
 from sdp.processors.base_processor import BaseProcessor
@@ -49,7 +51,7 @@ class RemovedFailedChapters(BaseProcessor):
         super().__init__(**kwargs)
         self.error_file = Path(error_file)
 
-    def process(self):
+    def process(self, task: _EmptyTask) -> _EmptyTask:
         chapter_rows = load_manifest(self.error_file)
         audio_files_to_remove = set()
         for chapter_row in chapter_rows:
@@ -64,3 +66,4 @@ class RemovedFailedChapters(BaseProcessor):
 
                 output_line = f"{json.dumps(row, ensure_ascii=False)}\n"
                 output_f.write(output_line)
+        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)

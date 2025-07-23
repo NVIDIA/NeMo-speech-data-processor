@@ -15,9 +15,39 @@
 import json
 from pathlib import Path
 
-import pandas
+from ray_curator.stages.base import ProcessingStage
+from ray_curator.stages.resources import Resources
+from ray_curator.tasks import Task
 
-from sdp.processors.base_processor import BaseParallelProcessor, DataEntry
+from sdp.processors.base_processor import (
+    BaseParallelProcessor,
+    BaseProcessor,
+    DataEntry,
+)
+
+
+class SaveJsonl(BaseProcessor):
+    """
+    Processor for saving tasks as a one JSONL file.
+
+    Args:
+        **kwargs: Additional keyword arguments to be passed to the base class `BaseProcessor`.
+
+    """
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+
+    def setup_on_node(self, _, __):
+        open(self.output_manifest_file, 'w').close()
+
+    def process(self, tasks: DataEntry) -> DataEntry:
+        with open(self.output_manifest_file, 'a', encoding="utf8") as f:
+            f.write(json.dumps(tasks.data) + '\n')
+        return tasks
 
 
 class CreateInitialManifestByExt(BaseParallelProcessor):
@@ -44,6 +74,10 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
         self.output_file_key = output_file_key
         self.extension = extension
 
+    def setup_on_node(self, _, __):
+        if self.output_manifest_file:
+            open(self.output_manifest_file, 'w').close()
+
     def read_manifest(self):
         # Get all files with the specified extension
         files = list(self.raw_data_dir.rglob('*.' + self.extension))
@@ -52,7 +86,12 @@ class CreateInitialManifestByExt(BaseParallelProcessor):
 
     def process_dataset_entry(self, data_entry):
         data = {self.output_file_key: data_entry}
-        return [DataEntry(data=data)]
+        return [
+            DataEntry(
+                data=data,
+                dataset_name=str(self.raw_data_dir / "*.") + self.extension,
+            )
+        ]
 
 
 class CreateCombinedManifests(BaseParallelProcessor):
@@ -85,4 +124,10 @@ class CreateCombinedManifests(BaseParallelProcessor):
                     yield json.loads(line)
 
     def process_dataset_entry(self, data_entry):
-        return [DataEntry(data=data_entry)]
+        return [
+            DataEntry(
+                data=data_entry,
+                task_id=0,
+                dataset_name=self.__class__.__name__,
+            )
+        ]

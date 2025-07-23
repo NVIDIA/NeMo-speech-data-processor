@@ -19,6 +19,8 @@ import re
 from operator import eq, ge, gt, le, lt, ne
 from typing import List, Union
 
+from ray_curator.tasks import _EmptyTask
+
 from sdp.logging import logger
 from sdp.processors.base_processor import (
     BaseParallelProcessor,
@@ -75,7 +77,7 @@ class PreserveByValue(BaseParallelProcessor):
                 'Operator must be one from the list: "lt" (less than), "le" (less than or equal to), "eq" (equal to), "ne" (not equal to), "ge" (greater than or equal to), "gt" (greater than)'
             )
 
-    def process_dataset_entry(self, data_entry): 
+    def process_dataset_entry(self, data_entry):
         input_value = data_entry[self.input_value_key]
         target = self.target_value
         if self.operator(input_value, target):
@@ -890,7 +892,7 @@ class DropDuplicates(BaseProcessor):
         self.drop_key = drop_key
         self.seen_texts = set()
 
-    def process(self):
+    def process(self, task: _EmptyTask) -> _EmptyTask:
         unique_entries = []
         with open(self.input_manifest_file, 'r', encoding='utf-8') as file:
             for line in file:
@@ -905,4 +907,4 @@ class DropDuplicates(BaseProcessor):
                 fout.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
         logger.info(f"Total number of entries after processing: {len(unique_entries)}")
-        return unique_entries
+        return _EmptyTask(task_id="empty", dataset_name="empty", data=None)

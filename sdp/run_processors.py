@@ -12,19 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import os
 import tempfile
 import uuid
 from typing import List, Optional
-import psutil
-import json
 
 import hydra
+import psutil
 from omegaconf import OmegaConf, open_dict
+from ray_curator.backends.xenna import XennaExecutor
+from ray_curator.pipeline import Pipeline
+from ray_curator.tasks import EmptyTask, _EmptyTask
 
 from sdp.logging import logger
-
 from sdp.utils.import_manager import ImportManager
 
 # registering new resolvers to simplify config files
@@ -46,16 +48,18 @@ logger.handlers
 logger.addHandler(handler)
 logger.propagate = False
 
+
 def update_processor_imports(config_path: str, init_file: str = None):
     """
     Update processor imports based on config file.
-    
+
     Args:
         config_path: Path to the YAML config file
         init_file: Optional path to __init__.py file to update
     """
     try:
         import yaml
+
         manager = ImportManager()
         manager.sync_with_config(config_path, init_file)
         logger.info(f"Successfully updated imports for config: {config_path}")
@@ -120,13 +124,14 @@ def run_processors(cfg):
     if cfg.get("use_import_manager", False):
         try:
             import yaml
+
             yaml_path = cfg.get("config_path")
             if not yaml_path:
                 raise ValueError("No configuration path provided in 'config_path'. Please specify the path.")
 
             if not os.path.exists(yaml_path):
                 raise FileNotFoundError(f"Configuration file not found: {yaml_path}")
-            
+
             logger.info(f"Managing imports for config: {yaml_path}")
             manager = ImportManager()
             manager.sync_with_config(yaml_path)
@@ -141,22 +146,26 @@ def run_processors(cfg):
         except Exception as e:
             logger.error(f"An unexpected error occurred during management of imports: {e}")
 
-    # Detecting dask
+    # Detecting ray
     try:
-        from dask.distributed import Client
-        dask_available = True
+        import ray
+
+        ray_available = True
     except ImportError:
         logger.warning("Dask not installed; using multiprocessing for all processors")
-        dask_available = False
-    
+        ray_available = False
+
     # look for global directions in cfg for dask usage
-    global_use_dask = bool(cfg.get("use_dask", True)) and dask_available
+    if bool(cfg.get("use_backend", None) == "ray") and ray_available:
+        global_use_backend = "ray"
+    else:
+        global_use_backend = cfg.get("use_backend", None)
 
     processors_to_run = cfg.get("processors_to_run", "all")
     if processors_to_run == "all":
         processors_to_run = ":"
     selected_cfgs = select_subset(cfg.processors, processors_to_run)
-    
+
     # filtering out any processors that have should_run=False
     processors_cfgs = []
     for processor_cfg in selected_cfgs:
@@ -169,9 +178,7 @@ def run_processors(cfg):
         "Specified to run the following processors: %s ",
         [proc_cfg["_target_"] for proc_cfg in processors_cfgs],
     )
-    
-    
-    
+
     processors = []
     # Create a temporary directory to hold intermediate files if needed.
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -187,7 +194,7 @@ def run_processors(cfg):
                         with open_dict(processors_cfgs[0]):
                             processors_cfgs[0]["input_manifest_file"] = cfg.processors[idx - 1]["output_manifest_file"]
                     break
-        
+
         for idx, processor_cfg in enumerate(processors_cfgs):
             logger.info('=> Building processor "%s"', processor_cfg["_target_"])
 
@@ -205,48 +212,59 @@ def run_processors(cfg):
             if idx != len(processors_cfgs) - 1 and "input_manifest_file" not in processors_cfgs[idx + 1]:
                 with open_dict(processors_cfgs[idx + 1]):
                     processors_cfgs[idx + 1]["input_manifest_file"] = processor_cfg["output_manifest_file"]
-            
-            #check if we have processor level directions of using dask
-            flag=processor_cfg.get("use_dask", None)
+
+            # check if we have processor level directions of using dask
+            flag = processor_cfg.get("use_backend", None)
 
             # if no processor-specific flag, fallback to global; otherwise use provided value
             if flag is None:
-                use_dask_flag = global_use_dask
+                use_backend_flag = global_use_backend
             else:
-                use_dask_flag = flag
+                use_backend_flag = flag
+
             processor = hydra.utils.instantiate(processor_cfg)
-            processor.use_dask = use_dask_flag
+            processor.use_backend = use_backend_flag
             # running runtime tests to fail right-away if something is not
             # matching users expectations
             processor.test()
             processors.append(processor)
 
         # Start Dask client if any processor requires it
-        dask_client = None
-        if any(p.use_dask for p in processors):
-            
+        backend_client = None
+        if any(p.use_backend for p in processors):
             try:
                 num_cpus = psutil.cpu_count(logical=False) or 4
-                logger.info(f"Starting Dask client with {num_cpus} workers")
-                dask_client = Client(n_workers=num_cpus, processes=True)
-                logger.info(f"Dask dashboard at: {dask_client.dashboard_link}")
+                logger.info(f"Starting Ray client with {num_cpus} workers")
+                backend_client = ray.init()  # Client(n_workers=num_cpus, processes=True)
+                logger.info(f"Dask dashboard at: {backend_client.dashboard_link}")
             except Exception as e:
                 logger.warning(f"Failed to start Dask client: {e}")
-                dask_client = None
+                backend_client = None
 
         # Run processors in order
         try:
-            for proc in processors:
-                if proc.use_dask and dask_client is not None:
-                    proc.dask_client = dask_client
-                    logger.info('=> Running processor "%s" with Dask', proc)
-                else:
-                    logger.info('=> Running processor "%s" with Multiprocessing', proc)
-                proc.process()
+            if global_use_backend == "curator":
+                pipeline = Pipeline(name="processing", description="Process data from JSONL files")
+                for p in cfg.processors:
+                    stage = hydra.utils.instantiate(p, use_backend="curator", backend_client=backend_client)
+                    pipeline.add_stage(stage)
+
+                executor = XennaExecutor()
+                pipeline.run(executor)
+            else:
+                t = EmptyTask
+                for proc in processors:
+                    if proc.use_backend == "dask" and backend_client is not None:
+                        proc.backend_client = backend_client
+                        logger.info('=> Running processor "%s" with Dask', proc)
+                    else:
+                        logger.info('=> Running processor "%s" with Multiprocessing', proc)
+                    t = proc.process(t)
         finally:
-            if dask_client is not None:
+            if backend_client is not None:
                 logger.info("Shutting down Dask client...")
-                dask_client.close(timeout="60s")
+                backend_client.close(timeout="60s")
                 logger.info("Dask client shutdown complete")
 
-#tmp_dir is removed here after all processing finishes. !!!
+
+# tmp_dir is removed here after all processing finishes. !!!

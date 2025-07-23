@@ -94,7 +94,6 @@ class Subprocess(BaseProcessor):
         subprocess.run(" ".join(process_args), shell=True)
 
 
-
 class CombineSources(BaseParallelProcessor):
     """Can be used to create a single field from two alternative sources.
 
@@ -401,7 +400,7 @@ class SortManifest(BaseProcessor):
                 fout.write(json.dumps(line, ensure_ascii=False) + "\n")
 
 
-class KeepOnlySpecifiedFields(BaseProcessor):
+class KeepOnlySpecifiedFields(BaseParallelProcessor):
     """Saves a copy of a manifest but only with a subset of the fields.
 
     Typically will be the final processor to save only relevant fields
@@ -421,14 +420,9 @@ class KeepOnlySpecifiedFields(BaseProcessor):
         super().__init__(**kwargs)
         self.fields_to_keep = fields_to_keep
 
-    def process(self):
-        with open(self.input_manifest_file, "rt", encoding="utf8") as fin, open(
-            self.output_manifest_file, "wt", encoding="utf8"
-        ) as fout:
-            for line in tqdm(fin):
-                line = json.loads(line)
-                new_line = {field: line[field] for field in self.fields_to_keep}
-                fout.write(json.dumps(new_line, ensure_ascii=False) + "\n")
+    def process_dataset_entry(self, data_entry: Dict):
+        new_data_entry = {field: data_entry[field] for field in self.fields_to_keep}
+        return [DataEntry(data=new_data_entry)]
 
 
 class ApplyInnerJoin(BaseProcessor):
@@ -474,7 +468,7 @@ class DropSpecifiedFields(BaseProcessor):
     """
     A processor that removes specified fields from each data entry in the manifest.
 
-    This processor reads an input manifest line by line, drops the fields listed in `fields_to_drop` 
+    This processor reads an input manifest line by line, drops the fields listed in `fields_to_drop`
     from each JSON entry, and writes the cleaned entries to the output manifest.
 
     Args:
