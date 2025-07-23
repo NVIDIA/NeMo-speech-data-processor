@@ -82,14 +82,14 @@ processors:
     output_manifest_file: ${manifest_dir}/manifest7.json
     rename_fields: {"audio_filepath":"source_filepath"}
 
-  - _target_: sdp.processors.nemo.rttm.GetRttmSegments
+  - _target_: sdp.processors.GetRttmSegments
     output_manifest_file: ${manifest_dir}/manifest8.json
     rttm_key: rttm_file
     output_file_key: audio_segments
     duration_key: duration
     duration_threshold: 20.0
 
-  - _target_: sdp.processors.nemo.rttm.SplitAudioFile
+  - _target_: sdp.processors.SplitAudioFile
     output_manifest_file: ${manifest_dir}/manifest9.json
     splited_audio_dir: ${workspace_dir}/splited_wavs/
     segments_key: audio_segments
