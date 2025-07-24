@@ -96,6 +96,27 @@ UzbekVoice
 .. autodata:: sdp.processors.CreateInitialManifestUzbekvoice
    :annotation:
 
+Earnings21/22
+'''''''''''''
+
+.. autodata:: sdp.processors.datasets.earnings.CreateInitialAudioAndManifest
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings.CreateFullAudioManifestEarnings21
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings.SpeakerSegmentedManifest
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings.CreateSentenceSegmentedManifest
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings.NeMoForcedAligner
+   :annotation:
+
+.. autodata:: sdp.processors.datasets.earnings.ApplyEarnings21Normalizations
+   :annotation:
+
 
 MASC
 ''''''
@@ -163,9 +184,6 @@ used in the downstream processing for additional enhancement or filtering.
 .. autodata:: sdp.processors.ASRTransformers
    :annotation:
 
-.. autodata:: sdp.processors.EstimateBandwidth
-   :annotation:
-
 .. autodata:: sdp.processors.tts.pyannote.PyAnnoteDiarizationAndOverlapDetection
    :annotation:
 
@@ -179,6 +197,15 @@ used in the downstream processing for additional enhancement or filtering.
    :annotation:
 
 .. autodata:: sdp.processors.tts.metrics.BandwidthEstimationProcessor
+   :annotation:
+
+.. autodata:: sdp.processors.FasterWhisperInference
+   :annotation:
+
+.. autodata:: sdp.processors.vLLMInference
+   :annotation:
+
+.. autodata:: sdp.processors.AudioLid
    :annotation:
 
 Text-only processors
@@ -219,6 +246,15 @@ Data modifications
 .. autodata:: sdp.processors.InverseNormalizeText
    :annotation:
 
+.. autodata:: sdp.processors.LambdaExpression
+   :annotation:
+  
+.. autodata:: sdp.processors.ListToEntries
+   :annotation:
+
+.. autodata:: sdp.processors.EstimateBandwidth
+   :annotation:
+
 Data filtering
 ''''''''''''''
 
@@ -254,13 +290,25 @@ ASR-based processors
 Data modifications
 ''''''''''''''''''
 
-.. autodata:: sdp.processors.SoxConvert
-   :annotation:
-
 .. autodata:: sdp.processors.InsIfASRInsertion
    :annotation:
 
 .. autodata:: sdp.processors.SubIfASRSubstitution
+   :annotation:
+
+Files management
+''''''''''''''''
+
+.. autodata:: sdp.processors.SoxConvert
+   :annotation:
+
+.. autodata:: sdp.processors.FfmpegConvert
+   :annotation:
+
+.. autodata:: sdp.processors.ExtractTar
+   :annotation:
+
+.. autodata:: sdp.processors.RemoveFiles
    :annotation:
 
 Data filtering
@@ -325,6 +373,18 @@ Data filtering
 .. autodata:: sdp.processors.RejectIfBanned
     :annotation:
 
+.. autodata:: sdp.processors.DetectWhisperHallucinationFeatures
+    :annotation:
+   
+.. autodata:: sdp.processors.CleanQwenGeneration
+    :annotation:
+
+.. autodata:: sdp.processors.GetRttmSegments
+    :annotation:
+
+.. autodata:: sdp.processors.SplitAudioFile
+    :annotation:
+
 Miscellaneous
 #############
 
@@ -355,9 +415,6 @@ Miscellaneous
 .. autodata:: sdp.processors.GetAudioDuration
    :annotation:
 
-.. autodata:: sdp.processors.FfmpegConvert
-   :annotation:
-
 .. autodata:: sdp.processors.CreateInitialManifestByExt
    :annotation:
 
@@ -386,6 +443,9 @@ Miscellaneous
    :annotation:
 
 .. autodata:: sdp.processors.ipl.ipl_processors.InferenceCommandGenerator
+   :annotation:
+
+.. autodata:: sdp.processors.DropSpecifiedFields
    :annotation:
 
 .. _sdp-base-classes:
