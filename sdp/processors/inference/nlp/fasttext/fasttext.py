@@ -29,21 +29,22 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
     specified input text field.
 
     Args:
-        model_name_or_path (str): Path to a FastText model file or the name of a supported remote model ('lid.176.bin' or 'lid.176.ftz').
+        model_name_or_path (str): Path to a FastText model file or the name of a supported remote model 
+            ('lid.176.bin' or 'lid.176.ftz').
         text_field (str): The name of the field in the dataset entry that contains the input text for classification.
         output_field (str): The name of the field to store the predicted label. Defaults to "label".
-        cache_dir (str, optional): Directory to store the downloaded model file. If not provided, a temporary directory is used.
+        cache_dir (str, optional): Directory to store the downloaded model file. If not provided, a temporary 
+            directory is used.
         **kwargs: Additional keyword arguments passed to `BaseParallelProcessor`.
 
     Returns:
         A manifest where each entry contains the original data fields plus:
-            - `<output_field>`: The predicted label (e.g., language code for `lid.176.bin`).
-            - `<output_field>_prob`: The probability of the prediction.
-    
-    .. note::
-        Make sure to install `fasttext` before using this processor:
-            pip install fasttext
+        - `<output_field>`: The predicted label (e.g., language code for `lid.176.bin`).
+        - `<output_field>_prob`: The probability of the prediction.
 
+    Note:
+        Make sure to install `fasttext` before using this processor:
+        `pip install fasttext`
     """
 
     SUPPROTED_MODELS_URLS = {
