@@ -4,3 +4,4 @@ Sphinx
 sphinx-book-theme
 sphinx-copybutton
 sphinxext-opengraph
+tabulate
