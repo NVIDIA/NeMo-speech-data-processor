@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  frontend:
+    image: nvcr.io/nvidia/nemo:24.03
+    build: .
+    volumes:
+      - type: tmpfs
+        target: /dev/shm
+        tmpfs:
+          size: 9000000000 # ~9gb
+      - .:/workspace/nemo_capstone
+      - /raid/asds/:/workspace/nemo_capstone/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            capabilities: [gpu]
+            count: 'all' # or 'all' to use all GPUs
+    entrypoint: tail -f
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
