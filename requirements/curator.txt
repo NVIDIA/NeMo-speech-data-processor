@@ -3,6 +3,8 @@ cd ray-api
 # pip install cosmos-xenna[gpu]
 git clone https://github.com/NVIDIA-NeMo/Curator.git
 git switch ray-api
+pip install .
+
 # install  NeMo
 pip install "nemo_toolkit[all]"
 
@@ -11,7 +13,7 @@ pip install nemo_text_processing
 
 pip install -r requirements/main.txt 
 pip install -r requirements/tests.txt 
-pip install .
+
 RAY_ADDRESS=10.110.41.40:8265 python -m pytest tests/test_curator.py 
 
 # pip install loguru

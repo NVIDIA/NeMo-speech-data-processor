@@ -53,7 +53,7 @@ class ASRInference(BaseProcessor):
         super().__init__(**kwargs)
         self.script_path = Path(__file__).parents[1] / "nemo" / "transcribe_speech.py"
         self.pretrained_model = pretrained_model
-        self.batch_size = batch_size
+        self.batch_size_asr = batch_size
 
     def process(self, task: _EmptyTask) -> _EmptyTask:
         """This will add "pred_text" key into the output manifest."""
@@ -64,7 +64,7 @@ class ASRInference(BaseProcessor):
                 f"model_path={self.pretrained_model} "
                 f"dataset_manifest={self.input_manifest_file} "
                 f"output_filename={self.output_manifest_file} "
-                f"batch_size={self.batch_size} ",
+                f"batch_size={self.batch_size_asr} ",
                 shell=True,
                 check=True,
             )
@@ -74,7 +74,7 @@ class ASRInference(BaseProcessor):
                 f"pretrained_name={self.pretrained_model} "
                 f"dataset_manifest={self.input_manifest_file} "
                 f"output_filename={self.output_manifest_file} "
-                f"batch_size={self.batch_size} ",
+                f"batch_size={self.batch_size_asr} ",
                 shell=True,
                 check=True,
             )
