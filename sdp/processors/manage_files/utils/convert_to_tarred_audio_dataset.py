@@ -94,6 +94,10 @@ from omegaconf import DictConfig, OmegaConf, open_dict
 from tabulate import tabulate
 from tqdm import tqdm
 
+PARALLEL_BACKEND = "loky"
+if os.environ.get("USE_THREADING_BACKEND") == "1":
+    PARALLEL_BACKEND = "threading"
+
 try:
     import create_dali_tarred_dataset_index as dali_index
 
@@ -288,13 +292,12 @@ class ASRTarredDatasetBuilder:
 
         manifest_folder, _ = os.path.split(manifest_path)
 
-        with Parallel(n_jobs=num_workers, verbose=config.num_shards) as parallel:
-            # Call parallel tarfile construction
-            new_entries_list = parallel(
+        with parallel_backend(backend, n_jobs=num_workers):
+            new_entries_list = Parallel(verbose=config.num_shards)(
                 delayed(self._create_shard)(entries[start_idx:end_idx], target_dir, i, manifest_folder, only_manifests)
                 for i, (start_idx, end_idx) in enumerate(zip(start_indices, end_indices))
             )
-
+            
         if config.shard_manifests:
             sharded_manifests_dir = target_dir + '/sharded_manifests'
             if not os.path.exists(sharded_manifests_dir):
@@ -492,9 +495,8 @@ class ASRTarredDatasetBuilder:
 
         manifest_folder, _ = os.path.split(base_manifest_path)
 
-        with Parallel(n_jobs=num_workers, verbose=num_added_shards) as parallel:
-            # Call parallel tarfile construction
-            new_entries_list = parallel(
+        with parallel_backend(backend, n_jobs=num_workers):
+            new_entries_list = Parallel(verbose=config.num_shards)(
                 delayed(self._create_shard)(
                     entries[start_idx:end_idx], target_dir, shard_idx, manifest_folder, only_manifests
                 )
