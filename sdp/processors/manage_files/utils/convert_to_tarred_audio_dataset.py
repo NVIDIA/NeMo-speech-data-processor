@@ -89,7 +89,7 @@ from typing import Any, List, Optional
 
 import numpy as np
 import soundfile as sf
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, parallel_backend
 from omegaconf import DictConfig, OmegaConf, open_dict
 from tabulate import tabulate
 from tqdm import tqdm
@@ -292,7 +292,7 @@ class ASRTarredDatasetBuilder:
 
         manifest_folder, _ = os.path.split(manifest_path)
 
-        with parallel_backend(backend, n_jobs=num_workers):
+        with parallel_backend(PARALLEL_BACKEND, n_jobs=num_workers):
             new_entries_list = Parallel(verbose=config.num_shards)(
                 delayed(self._create_shard)(entries[start_idx:end_idx], target_dir, i, manifest_folder, only_manifests)
                 for i, (start_idx, end_idx) in enumerate(zip(start_indices, end_indices))
@@ -495,7 +495,7 @@ class ASRTarredDatasetBuilder:
 
         manifest_folder, _ = os.path.split(base_manifest_path)
 
-        with parallel_backend(backend, n_jobs=num_workers):
+        with parallel_backend(PARALLEL_BACKEND, n_jobs=num_workers):
             new_entries_list = Parallel(verbose=config.num_shards)(
                 delayed(self._create_shard)(
                     entries[start_idx:end_idx], target_dir, shard_idx, manifest_folder, only_manifests
