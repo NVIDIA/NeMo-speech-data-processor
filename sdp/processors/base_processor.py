@@ -33,11 +33,10 @@ from sdp.logging import logger
 class DataEntry(Task[list]):
     """A wrapper for data entry + any additional metrics."""
 
-    data: Optional[Dict]  # can be None to drop the entry
-
-    def __init__(self, metrics: Any = None, dataset_name: str = "", task_id: int = 0, **kwargs):
+    def __init__(self, data: Dict = None, metrics: Any = None, dataset_name: str = "", task_id: int = 0, **kwargs):
+        self.data = data  # data can be None to drop the entry
         self.metrics = metrics
-        super().__init__(task_id=task_id, dataset_name=dataset_name, **kwargs)
+        super().__init__(data=data, task_id=task_id, dataset_name=dataset_name, **kwargs)
 
     @property
     def num_items(self) -> int:
@@ -240,6 +239,7 @@ class BaseParallelProcessor(BaseProcessor):
         return tasks
 
     def _process_with_multiprocessing(self, metrics):
+        data = []
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for manifest_chunk in self._chunk_manifest():
                 data = itertools.chain(

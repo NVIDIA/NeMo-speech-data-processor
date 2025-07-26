@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 
 from sdp.logging import logger
-from sdp.processors.base_processor import BaseProcessor
+from sdp.processors.base_processor import BaseProcessor, DataEntry
 from sdp.utils.common import load_manifest
 
 
@@ -45,7 +45,7 @@ class AudioLid(BaseProcessor):
         self.random_seed = random_seed
         self.device = device
 
-    def process(self):
+    def process(self, tasks: DataEntry) -> DataEntry:
         import nemo.collections.asr as nemo_asr
         import torch  # importing after nemo to make sure users first install nemo, instead of torch, then nemo
 
@@ -59,7 +59,10 @@ class AudioLid(BaseProcessor):
         else:
             model = model.to(self.device)
 
-        manifest = load_manifest(Path(self.input_manifest_file))
+        if self.input_manifest_file:
+            manifest = load_manifest(Path(self.input_manifest_file))
+        else:
+            manifest = tasks.data
 
         Path(self.output_manifest_file).parent.mkdir(exist_ok=True, parents=True)
         with Path(self.output_manifest_file).open('w') as f:
@@ -75,3 +78,4 @@ class AudioLid(BaseProcessor):
                 if lang:
                     item[self.output_lang_key] = lang
                     f.write(json.dumps(item, ensure_ascii=False) + '\n')
+        return tasks

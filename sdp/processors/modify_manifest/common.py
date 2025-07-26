@@ -69,7 +69,7 @@ class Subprocess(BaseProcessor):
         self.arg_separator = arg_separator
         self.cmd = cmd
 
-    def process(self):
+    def process(self, tasks: DataEntry) -> DataEntry:
         os.makedirs(os.path.dirname(self.output_manifest_file), exist_ok=True)
         if self.cmd.find(self.input_manifest_file) != -1 or self.cmd.find(self.output_manifest_file) != -1:
             logger.error(
@@ -92,6 +92,7 @@ class Subprocess(BaseProcessor):
             if self.output_manifest_arg:
                 process_args.extend([self.output_manifest_arg + self.arg_separator + self.output_manifest_file])
         subprocess.run(" ".join(process_args), shell=True)
+        return tasks
 
 
 class CombineSources(BaseParallelProcessor):
@@ -454,14 +455,34 @@ class ApplyInnerJoin(BaseProcessor):
         self.right_manifest_file = right_manifest_file
         self.column_id = column_id
 
-    def process(self):
-        m1 = pd.DataFrame.from_records(load_manifest(Path(self.left_manifest_file)))
-        m2 = pd.DataFrame.from_records(load_manifest(Path(self.right_manifest_file)))
+    def process(self, tasks: DataEntry, tasks2: DataEntry = None) -> DataEntry:
+        if self.left_manifest_file:
+            m1 = pd.DataFrame.from_records(load_manifest(Path(self.left_manifest_file)))
+        elif tasks:
+            logger.warning("batch_size should be as big as the dataset size")
+            m1 = tasks.toDataFrame()
+        else:
+            raise ValueError("tasks or self.input_manifest_file or self.left_manifest_file must be not None")
+
+        if self.right_manifest_file:
+            m2 = pd.DataFrame.from_records(load_manifest(Path(self.right_manifest_file)))
+        elif tasks2:
+            logger.warning("batch_size should be as big as the dataset size")
+            m2 = tasks.toDataFrame()
+        else:
+            raise ValueError("tasks2 or self.right_manifest_file must be not None")
+
         m3 = pd.merge(m1, m2, on=self.column_id, how="inner")
 
-        with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
-            for _, line in m3.iterrows():
+        if self.output_manifest_file:
+            fout = open(self.output_manifest_file, "wt", encoding="utf8")
+        items = []
+        for _, line in m3.iterrows():
+            item = DataEntry(data=dict(line))
+            if self.output_manifest_file:
                 fout.write(json.dumps(dict(line), ensure_ascii=False) + "\n")
+            items.append(item)
+        return items
 
 
 class DropSpecifiedFields(BaseProcessor):
