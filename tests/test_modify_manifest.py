@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Dict, List, Union
 
 import pytest
+from ray_curator.tasks import EmptyTask
 
 from sdp.processors import ApplyInnerJoin, DropNonAlphabet
 
@@ -161,7 +162,7 @@ def test_apply_inner_join(
             output_manifest_file=manifest_out,
         )
 
-        processor.process()
+        processor.process(EmptyTask)
 
         with open(manifest_out, "r") as f:
             output_lines = [json.loads(line) for line in f]
