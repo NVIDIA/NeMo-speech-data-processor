@@ -162,7 +162,9 @@ from sdp.processors.manage_files.extract import (
 from sdp.processors.manage_files.remove import (
     RemoveFiles,
 )
-
+from sdp.processors.manage_files.convert_to_tarred_audio_dataset import (
+    ConvertToTarredAudioDataset,
+)
 from sdp.processors.toloka.accept_if import AcceptIfWERLess
 from sdp.processors.toloka.create_pool import CreateTolokaPool
 from sdp.processors.toloka.create_project import CreateTolokaProject
