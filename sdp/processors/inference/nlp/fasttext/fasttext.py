@@ -38,8 +38,8 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
         **kwargs: Additional keyword arguments passed to `BaseParallelProcessor`.
 
     Returns:
-        List[DataEntry]: A manifest where each entry contains the original data fields plus
-            - `<output_field>`: The predicted label (e.g., language code for `lid.176.bin`).
+        A manifest where each entry contains the original data fields plus
+            - `<output_field>`: The predicted label (e.g., language code for `lid.176.bin`),
             - `<output_field>_prob`: The probability of the prediction.
 
     Note:
