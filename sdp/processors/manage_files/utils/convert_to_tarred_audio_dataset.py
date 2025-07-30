@@ -75,6 +75,10 @@ python convert_to_tarred_audio_dataset.py \
     --write_metadata
 
 """
+
+# This file is copied over from https://github.com/NVIDIA/NeMo/blob/main/scripts/speech_recognition/convert_to_tarred_audio_dataset.py
+# It is currently compatible with NeMo v2.2.1 To use a different version of NeMo, please modify the file.
+
 import argparse
 import copy
 import json

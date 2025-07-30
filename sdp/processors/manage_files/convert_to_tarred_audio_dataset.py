@@ -23,6 +23,7 @@ import shutil
 from sdp.processors.base_processor import BaseProcessor
 from sdp.processors.manage_files.utils.convert_to_tarred_audio_dataset import create_tar_datasets
 
+from sdp.logging import logger
 
 @dataclass
 class ConvertToTarredAudioDatasetConfig:
@@ -128,8 +129,8 @@ class ConvertToTarredAudioDataset(BaseProcessor):
 
                     bucket_config.target_dir = os.path.join(self.cfg.target_dir, f"bucket{i_bucket+1}")
                     
-                    print(f"Creating bucket {i_bucket+1} with min_duration={bucket_config.min_duration} and max_duration={bucket_config.max_duration} ...")
-                    print(f"Results are being saved at: {bucket_config.target_dir}.")
+                    logger.info(f"Creating bucket {i_bucket+1} with min_duration={bucket_config.min_duration} and max_duration={bucket_config.max_duration} ...")
+                    logger.info(f"Results are being saved at: {bucket_config.target_dir}.")
 
                     # Create tarred dataset for the current bucket
                     create_tar_datasets(
@@ -143,10 +144,11 @@ class ConvertToTarredAudioDataset(BaseProcessor):
                         for line in tqdm(bin_f, desc="Writing output manifest.."):
                             entry = json.loads(line)
                             entry['bucket_id'] = i_bucket
-                            line = json.dumps(entry)
-                            fout.writelines(f'{line}\n')
+                            #line = json.dumps(entry) 
+                            json.dump(entry, fout, ensure_ascii=False)
+                            fout.write('\n')
 
-                    print(f"Bucket {i_bucket+1} is created.")
+                    logger.info(f"Bucket {i_bucket+1} is created.")
 
         else:
             # No bucketing — create single tarred dataset

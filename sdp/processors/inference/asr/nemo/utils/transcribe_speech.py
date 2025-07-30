@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This file is copied over from https://github.com/NVIDIA/NeMo/blob/v2.2.1/examples/asr/transcribe_speech.py
+# It is currently only compatible with NeMo v2.2.1 To use a different version of NeMo, please modify the file.
+
 import json
 import os
 from dataclasses import dataclass, field, is_dataclass
