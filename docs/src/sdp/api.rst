@@ -311,6 +311,9 @@ Files management
 .. autodata:: sdp.processors.RemoveFiles
    :annotation:
 
+.. autodata:: sdp.processors.ConvertToTarredAudioDataset
+   :annotation:
+
 Data filtering
 ''''''''''''''
 
