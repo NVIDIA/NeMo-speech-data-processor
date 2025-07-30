@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This file is copied over from https://github.com/NVIDIA/NeMo/blob/main/scripts/speech_recognition/convert_to_tarred_audio_dataset.py
+# This file is copied over from https://github.com/NVIDIA/NeMo/blob/v2.2.1/scripts/speech_recognition/convert_to_tarred_audio_dataset.py
 # It is currently compatible with NeMo v2.2.1 To use a different version of NeMo, please modify the file.
 
 import glob
