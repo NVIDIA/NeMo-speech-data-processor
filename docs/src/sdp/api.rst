@@ -210,6 +210,9 @@ used in the downstream processing for additional enhancement or filtering.
 
 .. autodata:: sdp.processors.CometoidWMTQualityEstimation
    :annotation:
+   
+.. autodata:: sdp.processors.FastTextLangIdClassifier
+   :annotation:
 
 Text-only processors
 ####################
