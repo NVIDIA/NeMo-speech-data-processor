@@ -33,6 +33,7 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
             ('lid.176.bin' or 'lid.176.ftz').
         text_field (str): The name of the field in the dataset entry that contains the input text for classification.
         output_field (str): The name of the field to store the predicted label. Defaults to "label".
+        top_k (int): The number of top predictions to return. Defaults to 1 (-1 for all).
         cache_dir (str, optional): Directory to store the downloaded model file. If not provided, a temporary 
             directory is used.
         **kwargs: Additional keyword arguments passed to `BaseParallelProcessor`.
@@ -57,6 +58,7 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
         model_name_or_path: str,
         text_field: str,
         output_field: str = "label",
+        top_k: int = 1,
         cache_dir: str = None,
         **kwargs
     ):
@@ -65,6 +67,7 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
         self.text_field = text_field
         self.output_field = output_field
         self.cache_dir = cache_dir
+        self.top_k = top_k
         self._model = None
 
     def _download_model(self):
@@ -108,7 +111,14 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
         """Applies the classifier to a single dataset entry."""
         text = data_entry[self.text_field].strip().replace("\n", " ")
         label, prob = self._model.predict(text)
-        data_entry[self.output_field] = label[0].replace('__label__', '')
-        data_entry[f"{self.output_field}_prob"] = prob[0]
+        if self.top_k == 1:
+            data_entry[self.output_field] = label[0].replace('__label__', '')
+            data_entry[f"{self.output_field}_prob"] = prob[0]
+        else:
+            max_k = len(label) if self.top_k == -1 else self.top_k
 
+            for _label, _prob, top_i in zip(label, prob, range(1, max_k + 1)):
+                data_entry[f"{self.output_field}_{top_i}"] = _label.replace('__label__', '')
+                data_entry[f"{self.output_field}_prob_{top_i}"] = _prob
+        
         return [DataEntry(data=data_entry)]
