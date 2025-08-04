@@ -197,7 +197,7 @@ class BaseParallelProcessor(BaseProcessor):
                     delayed(self.process_dataset_entry)(entry) for entry in manifest_chunk
                 )
 
-                for result_group in results:
+                for result_group in tqdm(results):
                     for data_entry in result_group:
                         metrics.append(data_entry.metrics)
                         if data_entry.data is None:
@@ -378,24 +378,22 @@ class LegacyParallelProcessor(BaseProcessor):
         metrics = []
         with open(self.output_manifest_file, "wt", encoding="utf8") as fout:
             for manifest_chunk in self._chunk_manifest():
-                # this will unroll all inner lists
-                data = itertools.chain(
-                    *process_map(
-                        self.process_dataset_entry,
-                        manifest_chunk,
-                        max_workers=self.max_workers,
-                        chunksize=self.chunksize,
-                    )
+
+                results = Parallel(n_jobs=self.max_workers, backend="multiprocessing")(
+                    delayed(self.process_dataset_entry)(entry) for entry in manifest_chunk
                 )
-                for data_entry in tqdm(data):
-                    if data_entry.metrics is not None:
-                        pass  # optionally accumulate metrics here
-                    if data_entry.data is None:
-                        continue
-                    json.dump(data_entry.data, fout, ensure_ascii=False)
-                    self.number_of_entries += 1
-                    self.total_duration += data_entry.data.get("duration", 0)
-                    fout.write("\n")
+
+                for result_group in tqdm(results):
+                    for data_entry in result_group:
+                        if data_entry.metrics is not None:
+                            pass  # optionally accumulate metrics here
+                        if data_entry.data is None:
+                            continue
+                        json.dump(data_entry.data, fout, ensure_ascii=False)
+                        self.number_of_entries += 1
+                        self.total_duration += data_entry.data.get("duration", 0)
+                        fout.write("\n")
+                        
         self.finalize(self.test_cases)
 
     def prepare(self):
