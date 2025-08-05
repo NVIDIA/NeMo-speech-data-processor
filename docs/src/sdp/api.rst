@@ -255,6 +255,9 @@ Data modifications
 .. autodata:: sdp.processors.EstimateBandwidth
    :annotation:
 
+.. autodata:: sdp.processors.CharacterHistogramLangValidator
+   :annotation:
+
 Data filtering
 ''''''''''''''
 

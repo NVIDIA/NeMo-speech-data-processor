@@ -119,6 +119,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     ListToEntries,
     LambdaExpression,
     EstimateBandwidth,
+    CharacterHistogramLangValidator,
 )
 from sdp.processors.modify_manifest.data_to_dropbool import (
     DropASRError,
