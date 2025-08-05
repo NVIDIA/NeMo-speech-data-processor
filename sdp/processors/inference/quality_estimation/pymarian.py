@@ -19,9 +19,10 @@ import termplotlib as tpl
 import numpy as np
 
 from sdp.logging import logger
-from sdp.processors.base_processor import BaseParallelProcessor
+from sdp.processors.base_processor import BaseProcessor
 
-class CometoidWMTQualityEstimation(BaseParallelProcessor):
+
+class CometoidWMTQualityEstimation(BaseProcessor):
     """
     A processor for estimating translation quality using pretrained COMET-like models 
     based on MarianNMT and the pymarian Evaluator.
@@ -78,20 +79,26 @@ class CometoidWMTQualityEstimation(BaseParallelProcessor):
                  chunksize = 5000,
                  **kwargs,
     ):
-        super().__init__(max_workers = num_devices, chunksize = chunksize, in_memory_chunksize = chunksize, **kwargs)
+        super().__init__(**kwargs)
         self.source_text_field = source_text_field
         self.target_text_field = target_text_field
         self.model_name_or_path = model_name_or_path
         self.vocab_path = vocab_path
         self.save_model_to = save_model_to
         self.device_type = device_type
+        self.max_workers = num_devices
         self.mini_batch = mini_batch
         self.maxi_batch = maxi_batch
         self.output_field = output_field
         self.model = None
+        self.chunksize = chunksize
 
     def load_model(self):
-        from pymarian import Evaluator
+        try:
+            from pymarian import Evaluator
+        except ImportError:
+            raise ImportError("`pymarian` is not installed. Please install it using `pip install pymarian`.")
+        
         from huggingface_hub import hf_hub_download
 
         """
@@ -139,9 +146,6 @@ class CometoidWMTQualityEstimation(BaseParallelProcessor):
         marian_args += f' --mini-batch {self.mini_batch} --maxi-batch {self.maxi_batch}'
         
         self.model = Evaluator(marian_args)
-
-    def process_dataset_entry(self):
-        pass
 
     def process(self):
         """

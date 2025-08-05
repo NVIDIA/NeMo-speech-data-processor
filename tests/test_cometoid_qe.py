@@ -26,7 +26,8 @@ def mock_processor():
         output_field="cometoid_score",
         device_type="cpu",
         num_devices=1,
-        chunksize=1
+        chunksize=1,
+        output_manifest_file="/tmp/test_output.jsonl",
     )
     return processor
 
@@ -51,12 +52,11 @@ def test_process_dataset_entry(mock_processor):
         "tgt": "Dies ist ein Testsatz."
     }
 
-    mock_processor.output_manifest_file = "/tmp/test_output.jsonl"
     mock_processor._chunk_manifest = lambda: [[entry]]
     mock_processor.finalize = MagicMock()
     mock_processor.number_of_entries = 0
 
-    # 👇 Patch load_model to avoid real downloading
+    # Patch load_model to avoid real downloading
     with patch.object(mock_processor, "load_model"), \
          patch("builtins.open"), \
          patch("json.dump"), \
