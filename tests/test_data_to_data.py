@@ -286,7 +286,7 @@ def test_detect_whisper_hallucinations(tmp_path, text, expected_flags):
         assert result_entry[key] == value, f"Failed for text='{text}' on key='{key}'"
 
 @pytest.fixture
-def download_en_hist(tmp_dir):
+def download_en_hist(tmp_path):
     s3 = boto3.client(
         's3',
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
@@ -295,17 +295,17 @@ def download_en_hist(tmp_dir):
 
     #s3.download_file("sdp-test-data",
     #                 "test_processor/CharacterHistogramLangValidator/histograms/en", 
-    #                 os.path.join(tmp_dir, "en"))
+    #                 os.path.join(tmp_path, "en"))
     
     s3.download_file(
        "sdp-test-data",
        "test_data/tts/ytc/test_data_reference.json",
-       tmp_dir/"test_data_reference.json",
+       tmp_path/"test_data_reference.json",
     )
 
     print('ok! ' * 100)
     #assert os.path.exists(os.path.join(tmp_path, "en")), "No histogram files downloaded from S3"
-    return str(tmp_dir)
+    return str(tmp_path)
 
 @pytest.mark.parametrize(
     "text,expected",
