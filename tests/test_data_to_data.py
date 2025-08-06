@@ -287,15 +287,17 @@ def test_detect_whisper_hallucinations(tmp_path, text, expected_flags):
 
 @pytest.fixture
 def download_en_hist(tmp_path):
-    s3 = boto3.client(
-        's3',
+    s3_resource = boto3.resource(
+        "s3",
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
         aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
     )
 
-    s3.download_file("sdp-test-data",
-                     "test_data/test_processors/CharacterHistogramLangValidator/histograms/en", 
-                     os.path.join(tmp_path, "en"))
+    bucket = s3_resource.Bucket("sdp-test-data")
+    
+    bucket.download_file(
+        "test_data/test_processors/CharacterHistogramLangValidator/histograms/en",
+        os.path.join(tmp_path, "en"))
     
     assert os.path.exists(os.path.join(tmp_path, "en")), "No histogram files downloaded from S3"
     return str(tmp_path)
