@@ -293,18 +293,11 @@ def download_en_hist(tmp_path):
         aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
     )
 
-    #s3.download_file("sdp-test-data",
-    #                 "test_processor/CharacterHistogramLangValidator/histograms/en", 
-    #                 os.path.join(tmp_path, "en"))
+    s3.download_file("sdp-test-data",
+                     "test_data/test_processors/CharacterHistogramLangValidator/histograms/en", 
+                     os.path.join(tmp_path, "en"))
     
-    s3.download_file(
-       "sdp-test-data",
-       "test_data/tts/ytc/test_data_reference.json",
-       tmp_path/"test_data_reference.json",
-    )
-
-    print('ok! ' * 100)
-    #assert os.path.exists(os.path.join(tmp_path, "en")), "No histogram files downloaded from S3"
+    assert os.path.exists(os.path.join(tmp_path, "en")), "No histogram files downloaded from S3"
     return str(tmp_path)
 
 @pytest.mark.parametrize(
