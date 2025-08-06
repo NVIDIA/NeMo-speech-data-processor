@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import pytest
+import os
+import boto3
 
 from sdp.processors.modify_manifest.data_to_data import (
     InsIfASRInsertion,
@@ -21,6 +23,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubRegex,
     ListToEntries,
     LambdaExpression,
+    CharacterHistogramLangValidator,
 )
 
 from sdp.processors.inference.llm.utils.qwen_cleaning import CleanQwenGeneration
@@ -281,6 +284,48 @@ def test_detect_whisper_hallucinations(tmp_path, text, expected_flags):
     # check each expected flag
     for key, value in expected_flags.items():
         assert result_entry[key] == value, f"Failed for text='{text}' on key='{key}'"
+
+@pytest.fixture
+def download_en_hist(tmp_path):
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_KEY")
+    )
+
+    s3.download_file("sdp-test-data",
+                     "test_processor/CharacterHistogramLangValidator/histograms/en", 
+                     os.path.join(tmp_path, "en"))
+ 
+    assert os.path.exists(os.path.join(tmp_path, "en")), "No histogram files downloaded from S3"
+    return str(tmp_path)
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [   
+        # Plain English sentence; all characters expected in 'en' histogram -> ratio 1.0
+        ("Hello, how are you today?", 1.0),
+        # # Chinese characters; none expected in 'en' histogram -> ratio 0.0
+        ("今天天气很好，我们去公园吧。", 0.0),
+        # Symbols + digits; only digits 1..5 expected in 'en' histogram -> 5 matches out of 17 chars
+        ("@#$%^&*()_+=12345", 5 / 17), # 0.29411764705882354
+        # French sentence with one accented char 'é' not in 'en' histogram -> 23 matches out of 24 chars
+        ("C'est une belle journée.", 23 / 24), # 0.9583333333333334
+    ],
+)
+def test_character_hist_validator_from_s3(text, expected, download_en_hist):
+    processor = CharacterHistogramLangValidator(
+        text_field="text",
+        lang="en",
+        cache_dir=download_en_hist,
+        output_manifest_file=None,
+    )
+    processor.prepare()
+
+    entry = {"text": text}
+    result_entry = processor.process_dataset_entry(entry)[0].data
+
+    assert result_entry[processor.output_score_field] == pytest.approx(expected, rel=1e-12)
 
 @pytest.mark.parametrize("test_class,class_kwargs,test_input,expected_output", test_params_list, ids=str)
 def test_data_to_data(test_class, class_kwargs, test_input, expected_output):
