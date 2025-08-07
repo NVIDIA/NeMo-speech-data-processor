@@ -1,5 +1,6 @@
 import pytest
 import boto3
+from botocore.exceptions import ClientError
 import json
 import os
 from pathlib import Path
@@ -36,6 +37,8 @@ def granary_data(tmp_path: Path):
         f"{granary_key_prefix}/audio/zG3RpHaMzkQ.wav",
     ]
 
+    bucket = "sdp-test-data"
+
     input_manifest_file = tmp_path / "input_manifest.json"
     with open(input_manifest_file, 'w', encoding="utf8") as f:
         for file_key in file_keys_to_download:
@@ -43,7 +46,11 @@ def granary_data(tmp_path: Path):
             dest_path  = tmp_path / rel_path
             dest_path.parent.mkdir(parents=True, exist_ok=True)
 
-            s3.download_file("sdp-test-data", file_key, str(dest_path))
+            try:
+                s3.download_file(bucket, file_key, str(dest_path))
+            except ClientError as e:
+                code = e.response.get("Error", {}).get("Code", "")
+                pytest.skip(f"Cannot download s3://{bucket}/{file_key} ({code}).")
 
             if file_key.endswith(".wav"):
                 f.write(json.dumps({"source_audio_filepath": str(dest_path)}) + "\n")
