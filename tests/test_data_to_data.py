@@ -311,9 +311,7 @@ def en_hist_dir(tmp_path_factory):
         except ClientError as e:
             code = e.response.get("Error", {}).get("Code", "")
             pytest.skip(f"Cannot download s3://{bucket}/{key} ({code}).")
-    
-    s3.download_file(bucket, key, str(local_path))
-    
+        
     assert local_path.exists(), "Histogram file was not downloaded"
     return str(tmp_dir)
 
