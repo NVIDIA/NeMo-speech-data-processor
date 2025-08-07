@@ -26,7 +26,9 @@ def get_test_cases():
     """Returns paths to all configs that are checked in."""
     for config_path in glob.glob(f"{DATASET_CONFIGS_ROOT}/**/*.yaml", recursive=True):
         path_parts = Path(config_path).parts
-        if "partials" in path_parts:
+        if config_path.endswith("nemo_run_config.yaml"):
+            continue
+        elif "partials" in path_parts:
             continue
         else:
             yield config_path
