@@ -47,7 +47,7 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
 
     """
 
-    SUPPROTED_MODELS_URLS = {
+    SUPPORTED_MODELS_URLS = {
         'lid.176.bin' : 'https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin',
         'lid.176.ftz' : 'https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz'
     }
@@ -101,18 +101,23 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
         - Downloads the model if only the name is given and it's known.
         - Raises ValueError if the path or model name is invalid.
         """
-        if not os.path.exists(self.model_name_or_path):
-            if os.path.exists(os.path.join(self.cache_dir, self.model_name_or_path)):
-                self.model_name_or_path = os.path.join(self.cache_dir, self.model_name_or_path)
-            elif self.model_name_or_path in self.SUPPROTED_MODELS_URLS:
-                self._download_model()
-            else:
-                raise ValueError(f'Current model is not supported or filepath is invalid: {self.model_name_or_path}.')
+        if os.path.isfile(self.model_name_or_path):
+            return
+        if self.cache_dir:
+            cached_path = os.path.join(self.cache_dir, self.model_name_or_path)
+            if os.path.isfile(cached_path):
+                self.model_name_or_path = cached_path
+                return
+        if self.model_name_or_path in self.SUPPORTED_MODELS_URLS:
+            self._download_model()
+            return
+        raise ValueError(
+            f'Current model is not supported or filepath is invalid: {self.model_name_or_path}.'
+        )
 
     def process_dataset_entry(self, data_entry: dict):
         """Applies the classifier to a single dataset entry."""
         self._load_model()
-        
         text = data_entry[self.text_field].strip().replace("\n", " ")
         label, prob = self._model.predict(text)
         if self.top_k == 1:
