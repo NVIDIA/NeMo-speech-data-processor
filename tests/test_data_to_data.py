@@ -13,6 +13,9 @@
 # limitations under the License.
 
 import pytest
+import os
+import boto3
+from botocore.exceptions import ClientError
 
 from sdp.processors.modify_manifest.data_to_data import (
     InsIfASRInsertion,
@@ -21,6 +24,7 @@ from sdp.processors.modify_manifest.data_to_data import (
     SubRegex,
     ListToEntries,
     LambdaExpression,
+    CharacterHistogramLangValidator,
 )
 
 from sdp.processors.inference.llm.utils.qwen_cleaning import CleanQwenGeneration
@@ -281,6 +285,62 @@ def test_detect_whisper_hallucinations(tmp_path, text, expected_flags):
     # check each expected flag
     for key, value in expected_flags.items():
         assert result_entry[key] == value, f"Failed for text='{text}' on key='{key}'"
+
+@pytest.fixture(scope="session")
+def en_hist_dir(tmp_path_factory):
+    """
+    Download the English histogram from S3 just once
+    and return the directory path that contains it.
+
+    Uses tmp_path_factory → one persistent temp-dir for the whole session.
+    """
+    s3 = boto3.client('s3',
+                    aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
+                    aws_secret_access_key=os.getenv("AWS_SECRET_KEY")
+                    )
+    
+    bucket = "sdp-test-data"
+    key = "test_data/test_processors/CharacterHistogramLangValidator/histograms/en"
+
+    tmp_dir = tmp_path_factory.mktemp("char_hists")
+    local_path = tmp_dir / "en"
+
+    if not local_path.exists():
+        try:
+            s3.download_file(bucket, key, str(local_path))
+        except ClientError as e:
+            code = e.response.get("Error", {}).get("Code", "")
+            pytest.skip(f"Cannot download s3://{bucket}/{key} ({code}).")
+        
+    assert local_path.exists(), "Histogram file was not downloaded"
+    return str(tmp_dir)
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [   
+        # Plain English sentence; all characters expected in 'en' histogram -> ratio 1.0
+        ("Hello, how are you today?", 1.0),
+        # # Chinese characters; none expected in 'en' histogram -> ratio 0.0
+        ("今天天气很好，我们去公园吧。", 0.0),
+        # Symbols + digits; only digits 1..5 expected in 'en' histogram -> 5 matches out of 17 chars
+        ("@#$%^&*()_+=12345", 5 / 17), # 0.29411764705882354
+        # French sentence with one accented char 'é' not in 'en' histogram -> 23 matches out of 24 chars
+        ("C'est une belle journée.", 23 / 24), # 0.9583333333333334
+    ],
+)
+def test_character_hist_validator(text, expected, en_hist_dir):
+    processor = CharacterHistogramLangValidator(
+        text_field="text",
+        lang="en",
+        cache_dir=en_hist_dir,
+        output_manifest_file=None,
+    )
+    processor.prepare()
+
+    entry = {"text": text}
+    result_entry = processor.process_dataset_entry(entry)[0].data
+
+    assert result_entry[processor.output_score_field] == pytest.approx(expected, rel=1e-12)
 
 @pytest.mark.parametrize("test_class,class_kwargs,test_input,expected_output", test_params_list, ids=str)
 def test_data_to_data(test_class, class_kwargs, test_input, expected_output):
