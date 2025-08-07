@@ -450,3 +450,14 @@ Earnings21/22
    :hidden:
 
    config-docs/english/earnings/config
+
+Granary
+~~~~~~~
+
+**Required manual steps:** You need to download the dataset.
+
+`config <https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/multilingual/granary/config.yaml>`__ |
+:doc:`documentation <config-docs/multilingual/granary/config>`
+
+.. toctree::
+   :hidden:
