@@ -93,6 +93,8 @@ class CometoidWMTQualityEstimation(BaseProcessor):
         self.model = None
         self.chunksize = chunksize
 
+        self.number_of_entries = 0
+        
     def load_model(self):
         try:
             from pymarian import Evaluator
@@ -135,7 +137,7 @@ class CometoidWMTQualityEstimation(BaseProcessor):
                 if torch.cuda.is_available():
                     max_available_gpus = torch.cuda.device_count()
                 if self.max_workers == -1 or self.max_workers > max_available_gpus:
-                    self.max_workers = max_available_cpus
+                    self.max_workers = max_available_gpus
             except Exception:
                 pass
 
@@ -147,6 +149,29 @@ class CometoidWMTQualityEstimation(BaseProcessor):
         
         self.model = Evaluator(marian_args)
 
+    def _chunk_manifest(self):
+        """Splits the manifest into smaller chunks defined by ``in_memory_chunksize``."""
+        manifest_chunk = []
+        for idx, data_entry in enumerate(self.read_manifest(), 1):
+            manifest_chunk.append(data_entry)
+            if idx % self.chunksize == 0:
+                yield manifest_chunk
+                manifest_chunk = []
+        if manifest_chunk:
+            yield manifest_chunk
+
+    def read_manifest(self):
+        """Reading the input manifest file.
+        .. note::
+            This function should be overridden in the "initial" class creating
+            manifest to read from the original source of data.
+        """
+        if not self.input_manifest_file:
+            raise NotImplementedError("Override this method if no input manifest file is used")
+        with open(self.input_manifest_file, "rt", encoding="utf8") as fin:
+            for line in fin:
+                yield json.loads(line)
+    
     def process(self):
         """
         Process the entire manifest in chunks.
