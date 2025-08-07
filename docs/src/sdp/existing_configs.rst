@@ -461,3 +461,5 @@ Granary
 
 .. toctree::
    :hidden:
+
+   config-docs/multilingual/granary/config
