@@ -71,7 +71,7 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
 
     def _download_model(self):
         """Downloads the FastText model from a predefined URL and stores it in the cache directory."""
-        model_url = self.SUPPROTED_MODELS_URLS[self.model_name_or_path]
+        model_url = self.SUPPORTED_MODELS_URLS[self.model_name_or_path]
         logger.info(f'Downloading {self.model_name_or_path}..')
         response = requests.get(model_url)
 
