@@ -1,0 +1,43 @@
+system: |
+  Description:
+    Vous avez une transcription qui peut contenir une ponctuation et une capitalisation, ne pas en contenir, ou contenir une ponctuation incorrecte. La tâche consiste à remettre le texte en forme correcte en restaurant la ponctuation et la capitalisation.
+
+  Règles:
+    - Ne changez pas, n'ajoutez pas et ne supprimez aucun mot du texte. Toutes les modifications doivent se limiter à la ponctuation et à la capitalisation.
+    - Restaurez la ponctuation correcte en utilisant uniquement des points, des virgules, des points d'interrogation, des points d'exclamation, des points-virgules, des deux-points et des tirets. Tous les autres symboles (y compris les guillemets, parenthèses, émojis, etc.) doivent être supprimés ou remplacés par des signes de ponctuation autorisés.
+    - Si le texte contient déjà une ponctuation suffisante (points, virgules, points d'interrogation, points d'exclamation, points-virgules, deux-points et tirets), il doit rester inchangé.
+    - Si la ponctuation est incomplète, incorrecte ou contient des symboles invalides (par exemple, des ellipses ou d'autres symboles inutiles), elle doit être corrigée sous la forme correcte en utilisant uniquement les signes de ponctuation autorisés.
+    - La ponctuation doit correspondre au contexte: si la phrase est une question, utilisez un point d'interrogation à la fin. Si la phrase exprime de l'excitation ou une émotion forte, utilisez un point d'exclamation. Utilisez des points, des virgules, des points-virgules ou des deux-points au besoin pour séparer les parties de la phrase.
+    - Tous les caractères alphanumériques (y compris les chiffres, par ex. 3:30pm) doivent rester inchangés.
+    - Mettez en majuscule la première lettre de chaque phrase.
+    - Mettez en majuscule les noms propres et les abréviations.
+    - Si le texte commence au milieu d'une phrase ou se termine au milieu d'un mot, ne mettez pas la première lettre en majuscule et n'ajoutez pas de point à la fin.
+    - Si la ponctuation est absente ou incorrecte, remplacez les symboles invalides par une ponctuation valide (point, virgule, point d'interrogation, point d'exclamation, point-virgule, deux-points ou tiret) sans changer le sens du texte.
+
+  Exemples:
+  - input: "la capitale de la france est paris 🗼 elle est connue pour la tour eiffel!!!"
+    output: "La capitale de la France est Paris. Elle est connue pour la tour Eiffel!"
+
+  - input: "bonjour comment allez vous aujourd'hui 😊 je suis content de vous voir"
+    output: "Bonjour, comment allez-vous aujourd'hui? Je suis content de vous voir."
+
+  - input: "nous avons acheté 5 pommes, 3 oranges, et 2 bananes...! 🍎🍌"
+    output: "Nous avons acheté 5 pommes, 3 oranges et 2 bananes."
+
+  - input: "le soleil brille aujourd'hui mais il fait un peu froid dehors ❄️"
+    output: "Le soleil brille aujourd'hui, mais il fait un peu froid dehors."
+
+  - input: "je dois appeler mon ami paul 😅 mais je n'ai pas son numéro"
+    output: "Je dois appeler mon ami Paul, mais je n'ai pas son numéro."
+
+  - input: "il est 3:30pm maintenant, on se retrouve a 4pm?"
+    output: "Il est 3:30pm maintenant. On se retrouve à 4pm?"
+
+  - input: "je ne comprends pas ce que tu veux dire...!! 🤔 peux tu expliquer encore?"
+    output: "Je ne comprends pas ce que tu veux dire! Peux-tu expliquer encore?"
+
+  - input: "la date d'aujourd'hui est le 1er janvier 2023 🎉 bonne année à tous!"
+    output: "La date d'aujourd'hui est le 1er janvier 2023. Bonne année à tous!"
+    
+user: |
+  Input transcript: {text}

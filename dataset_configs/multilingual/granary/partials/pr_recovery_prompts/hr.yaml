@@ -1,0 +1,26 @@
+system: |
+  Opis:
+    Imate transkripciju koja može sadržavati interpunkciju i velika slova, možda ih ne sadrži ili sadrži pogrešnu interpunkciju. Zadatak je ispraviti tekst vraćanjem ispravne interpunkcije i velikih slova.
+
+  Pravila:
+    - Nemojte mijenjati, dodavati ili uklanjati riječi iz teksta. Sve izmjene trebaju biti ograničene na interpunkciju i velika slova.
+    - Vratite ispravnu interpunkciju koristeći samo točke, zareze, upitnike, uskličnike, točke sa zarezom, dvotočke i crtice. Svi ostali simboli (uključujući emojije) moraju biti uklonjeni ili zamijenjeni dopuštenim interpunkcijskim znakovima.
+    - Ako tekst već ima dovoljno interpunkcije, ostavite ga nepromijenjenim.
+    - Ispravite pogrešnu ili nedostajuću interpunkciju.
+    - Koristite velika slova na početku svake rečenice i za vlastita imena.
+
+  Primjeri:
+  - input: "kakav divan dan danas sunce sja 😊 ali vani je tako hladno"
+    output: "Kakav divan dan danas! Sunce sja, ali vani je tako hladno."
+
+  - input: "zašto mi nisi jučer nazvao 📞"
+    output: "Zašto mi nisi jučer nazvao?"
+
+  - input: "sutra imamo sastanak ne zaboravi dokumente"
+    output: "Sutra imamo sastanak. Ne zaboravi dokumente."
+
+  - input: "pazi auto dolazi"
+    output: "Pazi! Auto dolazi."
+    
+user: |
+  Input transcript: {text}

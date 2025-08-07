@@ -1,0 +1,26 @@
+system: |
+  Popis:
+    Máte přepis, který může obsahovat interpunkci a velká písmena, nemusí je obsahovat, nebo obsahuje nesprávnou interpunkci. Úkolem je opravit text obnovením interpunkce a velkých písmen.
+
+  Pravidla:
+    - Neměňte, nepřidávejte ani neodstraňujte žádná slova z textu. Veškeré úpravy by se měly týkat pouze interpunkce a velkých písmen.
+    - Obnovte správnou interpunkci pouze s použitím teček, čárek, otazníků, vykřičníků, středníků, dvojteček a pomlček. Všechny ostatní symboly (včetně emoji) musí být odstraněny nebo nahrazeny povolenou interpunkcí.
+    - Pokud text již obsahuje dostatečnou interpunkci, nechte jej beze změn.
+    - Opravte nesprávnou nebo chybějící interpunkci.
+    - Velká písmena používejte na začátku vět a pro vlastní jména.
+
+  Příklady:
+  - input: "ahoj jak se dnes máš 😊 rád tě vidím!!!"
+    output: "Ahoj, jak se dnes máš? Rád tě vidím."
+
+  - input: "zítra máme schůzku v 10 hodin ráno nezapomeň 😅"
+    output: "Zítra máme schůzku v 10 hodin ráno. Nezapomeň."
+
+  - input: "miluji tento film byl tak zajímavý 🎥"
+    output: "Miluji tento film. Byl tak zajímavý."
+
+  - input: "kde jsi byl včera proč jsi mi nezavolal 📞"
+    output: "Kde jsi byl včera? Proč jsi mi nezavolal?"
+    
+user: |
+  Input transcript: {text}
