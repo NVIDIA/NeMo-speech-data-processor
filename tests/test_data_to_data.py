@@ -285,22 +285,29 @@ def test_detect_whisper_hallucinations(tmp_path, text, expected_flags):
     for key, value in expected_flags.items():
         assert result_entry[key] == value, f"Failed for text='{text}' on key='{key}'"
 
-@pytest.fixture
-def download_en_hist(tmp_path):
-    s3_resource = boto3.resource(
-        "s3",
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
-    )
+@pytest.fixture(scope="session")
+def en_hist_dir(tmp_path_factory):
+    """
+    Download the English histogram from S3 just once
+    and return the directory path that contains it.
 
-    bucket = s3_resource.Bucket("sdp-test-data")
+    Uses tmp_path_factory → one persistent temp-dir for the whole session.
+    """
+    s3 = boto3.client('s3',
+                    aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
+                    aws_secret_access_key=os.getenv("AWS_SECRET_KEY")
+                    )
     
-    bucket.download_file(
-        "test_data/test_processors/CharacterHistogramLangValidator/histograms/en",
-        os.path.join(tmp_path, "en"))
+    bucket = "sdp-test-data"
+    key = "test_data/test_processors/CharacterHistogramLangValidator/histograms/en"
+
+    tmp_dir = tmp_path_factory.mktemp("char_hists")
+    local_path = tmp_dir / "en"
     
-    assert os.path.exists(os.path.join(tmp_path, "en")), "No histogram files downloaded from S3"
-    return str(tmp_path)
+    s3.download_file(bucket, key, str(local_path))
+    
+    assert local_path.exists(), "Histogram file was not downloaded"
+    return str(tmp_dir)
 
 @pytest.mark.parametrize(
     "text,expected",
@@ -315,11 +322,11 @@ def download_en_hist(tmp_path):
         ("C'est une belle journée.", 23 / 24), # 0.9583333333333334
     ],
 )
-def test_character_hist_validator_from_s3(text, expected, download_en_hist):
+def test_character_hist_validator(text, expected, en_hist_dir):
     processor = CharacterHistogramLangValidator(
         text_field="text",
         lang="en",
-        cache_dir=download_en_hist,
+        cache_dir=en_hist_dir,
         output_manifest_file=None,
     )
     processor.prepare()
