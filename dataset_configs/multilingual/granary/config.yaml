@@ -22,6 +22,18 @@ documentation: |
 
   .. note::
 
+    **Per-language runs.** The pipeline is executed **once per language pair**:
+    set
+
+    * ``source_lang`` / ``source_lang_full`` – audio & transcript language
+    * ``translation.target_lang`` / ``target_lang_full`` – translation language
+
+    For example, to obtain English audio with Italian translations choose
+    ``source_lang: en`` and ``translation.target_lang: it``.  
+    Separate runs are required for each additional language combination.
+
+  .. note::
+
     **GPU required.** All Whisper, vLLM, FastText and Comet-QE stages expect at
     least one CUDA-capable GPU.  Multi-GPU nodes are auto-detected when
     ``num_devices: -1`` (default) is used.
@@ -114,21 +126,21 @@ documentation: |
 
   The processors executed (indices match the config):
 
-  #. **FfmpegConvert (00)** – re-encode audio to 16 kHz/mono FLAC.
+  #. **FfmpegConvert (0)** – re-encode audio to 16 kHz/mono FLAC.
 
-  #. **GetAudioDuration (01)** – compute clip length.
+  #. **GetAudioDuration (1)** – compute clip length.
 
-  #. **RemoveFiles (02)** – optionally delete originals (``params.save_disk_space``).
+  #. **RemoveFiles (2)** – optionally delete originals (``params.save_disk_space``).
 
-  #. **FasterWhisperInference (03)** – *pass 1* language detection.
+  #. **FasterWhisperInference (3)** – *pass 1* language detection.
 
-  #. **LambdaExpression (04)** – probability-based LID filtering.
+  #. **LambdaExpression (4)** – probability-based LID filtering.
 
-  #. **DropSpecifiedFields (05)** – remove temporary fields.
+  #. **DropSpecifiedFields (5)** – remove temporary fields.
 
-  #. **FasterWhisperInference (06, 14)** – two-pass transcription (second run can slice by offset).
+  #. **FasterWhisperInference (6, 14)** – two-pass transcription (second run can slice by offset).
 
-  #. **Segmentation & grooming (07–13)** – split Whisper segments into atomic utterances.
+  #. **Segmentation & grooming (7–13)** – split Whisper segments into atomic utterances.
 
   #. **Hallucination detection (18–20)** – drop repeated n-grams, garbage tokens and common filler phrases.
 
@@ -177,15 +189,15 @@ documentation: |
 
     * ``use_regex`` – regex preset for text normalisation
     * ``save_disk_space`` – delete originals after conversion
-    * ``use_dask`` – enable distributed execution
+    * ``use_dask`` – enable distributed execution (not recommended)
 
   Advanced usage
   --------------
 
-  * **Selective execution** – override ``processors_to_run`` with a comma-separated
-    subset, e.g. ``"00,01,03,04,06"``.
+  * **Selective execution** – override ``processors_to_run`` with a range of 
+    indices, e.g. ``"0:25"``.
 
-  * **Model swapping** – every ``*_Inference`` processor exposes either
+  * **Model swapping** – every inference processor exposes either
     ``model_size_or_path`` (Whisper) or an embedded ``model:`` block (vLLM).
 
   * **Resource tuning** – ``num_devices = -1`` uses all visible GPUs; set an
@@ -194,9 +206,15 @@ documentation: |
   References
   ----------
 
-  Koluguri et al., *Granary: Speech Recognition and Translation Dataset in 25
-  European Languages*, 2025 (preprint).  Dataset and code available at
-  ``nvidia/Granary`` and the NeMo-SDP repository.
+  * Koluguri *et al.* (2025). *Granary: Speech Recognition and Translation
+    Dataset in 25 European Languages* (preprint). arXiv:
+    `2505.13404 <https://arxiv.org/abs/2505.13404>`_.
+
+  * Granary dataset on Hugging Face:
+    `nvidia/Granary <https://huggingface.co/datasets/nvidia/Granary>`_.
+
+  * NeMo-SDP source code:
+    `<https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/multilingual/granary/>`_.
 
 input_manifest_file: ?? 
 output_dir: ??
