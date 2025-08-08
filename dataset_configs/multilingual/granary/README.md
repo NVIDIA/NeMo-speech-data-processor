@@ -42,25 +42,25 @@ print(os.path.dirname(nvidia.cublas.lib.__file__) + ":" + os.path.dirname(nvidia
 PY)
 ```
 
-- vLLMInference
+- `vLLMInference`
 
 ```bash
 pip install "optree>=0.13.0" vllm
 ```
 
-- CometoidWMTQualityEstimation
+- `CometoidWMTQualityEstimation`
 
 ```bash
 pip install pymarian
 ```
 
-- FastTextLangIdClassifier
+- `FastTextLangIdClassifier`
 
 ```bash
 pip install fasttext
 ```
 
-- ConvertToTarredAudioDataset (optional, only if tar-sharding is enabled)
+- `ConvertToTarredAudioDataset` (optional, only if tar-sharding is enabled)
 
 ```bash
 pip install lhotse "nemo-toolkit[common]==2.2.1"
@@ -90,7 +90,7 @@ python ${SDP_DIR}/main.py \
 
 ### Input and output formats
 
-- **Input manifest**
+#### Input manifest
 
 Each line is a JSON object with the source-audio path:
 
@@ -98,7 +98,7 @@ Each line is a JSON object with the source-audio path:
 {"source_audio_filepath": "/path/to/file.flac"}
 ```
 
-- **Key outputs**
+#### Key outputs
 
   - `${output_dir}/${source_lang}/manifest_46.json` – final bilingual manifest containing `audio_filepath`, `offset`, `duration`, `text` (source) and `answer` (translation), plus constant decoder flags.
   - `${output_dir}/${source_lang}/tarred_dataset/` – optional tarred-audio shards and `shard_manifest.json` when `convert_to_audio_tarred_dataset.should_run: True`.
@@ -108,20 +108,20 @@ Each line is a JSON object with the source-audio path:
 
 The processors executed (indices match the config):
 
-- FfmpegConvert (00) – re-encode audio to 16 kHz/mono FLAC.
-- GetAudioDuration (01) – compute clip length.
-- RemoveFiles (02) – optionally delete originals (`params.save_disk_space`).
-- FasterWhisperInference (03) – pass 1 language detection.
-- LambdaExpression (04) – probability-based LID filtering.
-- DropSpecifiedFields (05) – remove temporary fields.
-- FasterWhisperInference (06, 14) – two-pass transcription (second run can slice by offset).
-- Segmentation & grooming (07–13) – split Whisper segments into atomic utterances.
-- Hallucination detection (18–20) – drop repeated n-grams, garbage tokens and common filler phrases.
-- PnC restoration (21–23) – Qwen-2.5-7B restores punctuation & capitalisation; optional regex clean-up.
-- Length & charset filtering (27–36) – word-ratio, character histogram and FastText checks.
-- Quality estimation (41–43) – keep pairs with Comet-QE `score ≥ min_qe_score`.
-- Constant flags (44) – add decoder directives (`<|emo:undefined|>`, `itn`, `pnc`, etc.).
-- Tarred dataset (46) – shard audio into `num_shards` tar files (optional).
+- **FfmpegConvert** (0) – re-encode audio to 16 kHz/mono FLAC.
+- **GetAudioDuration** (1) – compute clip length.
+- **RemoveFiles** (2) – optionally delete originals (`params.save_disk_space`).
+- **FasterWhisperInference** (3) – pass 1 language detection.
+- **LambdaExpression** (4) – probability-based LID filtering.
+- **DropSpecifiedFields** (5) – remove temporary fields.
+- **FasterWhisperInference** (6, 14) – two-pass transcription (second run can slice by offset).
+- **Segmentation & grooming** (7–13) – split Whisper segments into atomic utterances.
+- **Hallucination detection** (18–20) – drop repeated n-grams, garbage tokens and common filler phrases.
+- **PnC restoration** (21–23) – `Qwen-2.5-7B` restores punctuation & capitalisation; optional regex clean-up.
+- **Length & charset filtering** (27–36) – word-ratio, character histogram and FastText checks.
+- **Quality estimation** (41–43) – keep pairs with `Comet-QE score ≥ min_qe_score`.
+- **Constant flags** (44) – add decoder directives (`<|emo:undefined|>`, `itn`, `pnc`, etc.).
+- **Tarred dataset** (46) – shard audio into `num_shards` tar files (optional).
 
 ### Tunable parameters
 
@@ -156,11 +156,11 @@ All knobs live under the `params` block.
 ### Advanced usage
 
 - **Selective execution** – override `processors_to_run` with a range of indices, e.g. `"0:25"`.
-- **Model swapping** – every `*_Inference` processor exposes either `model_size_or_path` (Whisper) or an embedded `model:` block (vLLM).
+- **Model swapping** – every inference processor exposes either `model_size_or_path` (Whisper) or an embedded `model:` block (vLLM).
 - **Resource tuning** – `num_devices = -1` uses all visible GPUs; set an integer to pin workers per stage.
 
 ### References
 
-- Koluguri et al. (2025). Granary: Speech Recognition and Translation Dataset in 25 European Languages (preprint). arXiv: [2505.13404](https://arxiv.org/abs/2505.13404).
-- Granary dataset on Hugging Face: [nvidia/Granary](https://huggingface.co/datasets/nvidia/Granary).
-- NeMo-SDP source code: <https://github.com/NVIDIA/NeMo-speech-data-processor>. 
+- Koluguri et al. (2025). Granary: Speech Recognition and Translation Dataset in 25 European Languages (preprint). arXiv: [2505.13404](https://arxiv.org/abs/2505.13404),
+- [nvidia/Granary](https://huggingface.co/datasets/nvidia/Granary) dataset on Hugging Face,
+- NeMo-SDP source [code](https://github.com/NVIDIA/NeMo-speech-data-processor/blob/main/dataset_configs/multilingual/granary/>). 
