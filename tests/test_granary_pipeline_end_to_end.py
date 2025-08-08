@@ -120,14 +120,3 @@ def test_granary_pipeline_end_to_end(granary_data):
     
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
         shutil.rmtree(granary_data)
-
-
-
-
-    
-
-   
-    
-    
-
-
