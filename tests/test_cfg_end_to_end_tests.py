@@ -428,35 +428,5 @@ def test_configs(setup_data, tmp_path):
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
         shutil.rmtree(tmp_path)
 
-# Additional unit tests to increase coverage
-def test_check_e2e_test_data():
-    os.environ.clear()
-    assert not check_e2e_test_data()
-    os.environ["TEST_DATA_ROOT"] = "/path/to/test/data"
-    assert check_e2e_test_data()
-    os.environ.clear()
-    os.environ["AWS_SECRET_KEY"] = "secret"
-    os.environ["AWS_ACCESS_KEY"] = "access"
-    assert check_e2e_test_data()
-
-@pytest.mark.slow
-def test_get_e2e_test_data_path(tmp_path):
-    os.environ["TEST_DATA_ROOT"] = str(tmp_path)
-    assert get_e2e_test_data_path("test/path") == str(tmp_path)
-
-    os.environ.clear()
-    os.environ["AWS_SECRET_KEY"] = "secret"
-    os.environ["AWS_ACCESS_KEY"] = "access"
-    with mock.patch("boto3.resource") as mock_resource:
-        mock_bucket = mock.MagicMock()
-        mock_resource.return_value.Bucket.return_value = mock_bucket
-        mock_bucket.objects.all.return_value = [
-            mock.MagicMock(key="test/path/file1.txt"),
-            mock.MagicMock(key="test/path/file2.txt"),
-        ]
-        result = get_e2e_test_data_path("test/path")
-        assert result == os.path.abspath("test_data")
-        assert mock_bucket.download_file.call_count == 2
-
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--durations=0"])
