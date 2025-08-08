@@ -15,7 +15,7 @@ def to_abs_paths(manifest_filepath, tmp_path):
     with open(manifest_filepath, 'r', encoding = 'utf8') as fin:
         for line in fin:
             sample = json.loads(line)
-            sample['source_audio_filepath'] = os.path.join(str(tmp_path), os.path.basenames(sample['source_audio_filepath'])
+            sample['source_audio_filepath'] = os.path.join(str(tmp_path), "audio", os.path.basenames(sample['source_audio_filepath'])
             samples.append(sample)
         
     with open(manifest_filepath, 'w', encoding = 'utf8') as fout:
@@ -80,18 +80,19 @@ def test_granary_pipeline_end_to_end(granary_data):
     cfg.sdp_dir = Path(__file__).parents[1]
 
     #disable some processors
-    processors_to_disable = [3, 6, 14,  # FasterWhisperInference 
-                             21, 26,    # vLLMInference  
-                             41,        # CometoidWMTQualityEstimation
-                             ]
+    processors_to_disable = [
+                            3, 6, 14,  # FasterWhisperInference 
+                            21, 26,    # vLLMInference  
+                            41,        # CometoidWMTQualityEstimation
+                            ]
     
     for processor_idx in processors_to_disable:
         processor_id = str(processor_idx).zfill(2)
         cfg.processors[processor_idx].should_run = False
         cfg.processors[processor_idx + 1].input_manifest_file = os.path.join(granary_data, f"manifest_{processor_id}.json")
 
-    #cfg.processors[33].cache_dir = os.path.join(granary_data, ".cache")
-    #cfg.processors[34].cache_dir = os.path.join(granary_data, ".cache")
+    #cfg.processors[33].cache_dir = os.path.join(granary_data, ".cache", "histograms")
+    #cfg.processors[34].cache_dir = os.path.join(granary_data, ".cache", "histograms")
 
     #cfg.processors[37].cache_dir = os.path.join(granary_data, ".cache")
     #cfg.processors[38].cache_dir = os.path.join(granary_data, ".cache")
