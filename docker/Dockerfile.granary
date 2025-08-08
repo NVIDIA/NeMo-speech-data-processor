@@ -1,0 +1,62 @@
+###############################################################################
+# Dockerfile: NeMo-Speech-Data-Processor (CUDA 12.1 + Python 3.10)
+###############################################################################
+
+# ───────── 0. Base image (CUDA 12.1 / cuDNN 8) ─────────
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles \
+    LANG=C.UTF-8 \
+    PYTHONUNBUFFERED=1 \
+    TOKENIZERS_PARALLELISM=false
+
+# ───────── 1. System packages + pin Python 3.10 ─────────
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        python3.10 python3.10-dev python3.10-venv python-is-python3 \
+        build-essential cmake git curl wget unzip \
+        sox libsox-fmt-mp3 ffmpeg libsndfile1 \
+        libopenblas-base libffi-dev libssl-dev && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 && \
+    ln -sf /usr/bin/python3.10 /usr/bin/python && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ───────── 2. Upgrade pip + add NVIDIA PyIndex ─────────
+RUN python -m pip install --upgrade pip setuptools wheel && \
+    pip install nvidia-pyindex
+
+# ───────── 3. Core build-time Python deps ─────────
+RUN pip install "numpy>=1.26,<2.0" cython typing-extensions
+
+# ───────── 4. Copy NeMo-SDP sources ─────────
+COPY . /src/NeMo-speech-data-processor
+WORKDIR /src/NeMo-speech-data-processor
+# remove service folders that are not needed in the final image
+RUN rm -rf .git docker build sdp.egg-info
+
+# ───────── 5. Install this repo (+ its dependencies) ─────────
+RUN pip install --no-cache-dir .
+
+# ───────── 6. DL stack and GPU libraries ─────────
+RUN pip install --no-cache-dir \
+      torch==2.2.2+cu121 torchvision==0.17.2+cu121 \
+      --index-url https://download.pytorch.org/whl/cu121 && \
+    pip install --no-cache-dir \
+      pytorch-lightning==2.2.5 \
+      nvidia-cublas-cu12 \
+      "nvidia-cudnn-cu12==9.*" \
+      faster_whisper \
+      "optree>=0.13.0" vllm \
+      pymarian fasttext \
+      "lhotse>=1.7.0" "nemo-toolkit[common]==2.2.1"
+
+# ───────── 7. Add cuBLAS / cuDNN libs to ld.so.conf ─────────
+RUN python - <<'PY' > /etc/ld.so.conf.d/nvidia-cu12.conf && ldconfig
+import pathlib, nvidia.cublas.lib, nvidia.cudnn.lib
+print(pathlib.Path(nvidia.cublas.lib.__file__).parent)
+print(pathlib.Path(nvidia.cudnn.lib.__file__).parent)
+PY
+
+# ───────── 8. Entrypoint ─────────
+CMD ["/bin/bash"]

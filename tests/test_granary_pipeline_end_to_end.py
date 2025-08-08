@@ -15,7 +15,7 @@ def to_abs_paths(manifest_filepath, tmp_path):
     with open(manifest_filepath, 'r', encoding = 'utf8') as fin:
         for line in fin:
             sample = json.loads(line)
-            sample['source_audio_filepath'] = os.path.join(str(tmp_path), "audio", os.path.basenames(sample['source_audio_filepath'])
+            sample['source_audio_filepath'] = os.path.join(str(tmp_path), "audio", os.path.basenames(sample['source_audio_filepath']))
             samples.append(sample)
         
     with open(manifest_filepath, 'w', encoding = 'utf8') as fout:
