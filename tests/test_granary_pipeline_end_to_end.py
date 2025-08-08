@@ -28,10 +28,18 @@ def to_abs_paths(manifest_filepath, tmp_path):
 @pytest.fixture
 def granary_data(tmp_path: Path):
     # Download the data from S3
+    aws_access_key = os.getenv("AWS_ACCESS_KEY")
+    if not aws_access_key:
+        raise EnvironmentError("The environment variable AWS_ACCESS_KEY is not set or is empty")
+
+    aws_secret_access_key = os.getenv("AWS_SECRET_KEY")
+    if not aws_secret_access_key:
+        raise EnvironmentError("The environment variable AWS_SECRET_KEY is not set or is empty")
+
     s3 = boto3.client(
         's3',
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_KEY")
+        aws_access_key_id=aws_access_key,
+        aws_secret_access_key=aws_secret_access_key
     )
 
     granary_key_prefix = "test_data/granary"
