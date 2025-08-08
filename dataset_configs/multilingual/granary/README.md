@@ -28,7 +28,7 @@ and is published as [nvidia/Granary](https://huggingface.co/datasets/nvidia/Gran
 
 Install NeMo-speech-data-processor plus the extra wheels required by specific processors:
 
-- FasterWhisperInference
+- `FasterWhisperInference`
 
 ```bash
 pip install pytorch-lightning \
