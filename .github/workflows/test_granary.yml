@@ -40,4 +40,4 @@ jobs:
         CLEAN_UP_TMP_PATH: 1
         USE_THREADING_BACKEND: 1
       run: |
-        python -m pytest tests/test_granary_pipeline_end_to_end.py
+        python -m pytest tests/test_granary_pipeline_end_to_end.py tests/test_data_to_data.py
