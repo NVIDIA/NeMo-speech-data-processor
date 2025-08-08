@@ -27,7 +27,7 @@ jobs:
         pip install -r requirements/tests.txt
         sudo apt-get update
         sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
-        pip install nemo-toolkit[common]==2.2.1
+        pip install nemo-toolkit[asr]==2.2.1
         pip install fasttext
         python -m pip cache purge
         
