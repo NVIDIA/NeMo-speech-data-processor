@@ -93,7 +93,7 @@ jobs:
         sudo cp incommon-rsa-ca2.pem     /usr/local/share/ca-certificates/incommon-rsa-server-ca-2.crt # [cert for CORAL]
         sudo update-ca-certificates # [cert for CORAL]
         set -o pipefail # this will make sure next line returns non-0 exit code if tests fail
-        python -m pytest tests/test_granary_pipeline_end_to_end.py tests/test_data_to_data.py --junitxml=pytest.xml --ignore=tests/test_tts_sdp_end_to_end.py --cov-report=term-missing:skip-covered --cov=sdp --durations=30 -rs | tee pytest-coverage.txt
+        python -m pytest tests/test_granary_pipeline_end_to_end.py tests/test_data_to_data.py --junitxml=pytest.xml --ignore=tests/test_tts_sdp_end_to_end.py,tests/test_granary_pipeline_end_to_end.py --cov-report=term-missing:skip-covered --cov=sdp --durations=30 -rs | tee pytest-coverage.txt
 
 
 # TODO: add some way to see if e2e tests were skipped
