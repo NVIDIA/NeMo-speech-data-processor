@@ -75,6 +75,7 @@ jobs:
         pip install nemo-toolkit[asr,nlp]==2.2.1
         pip install nemo_text_processing
         pip install -r requirements/huggingface.txt
+        pip install pymarian
         pip install certifi #this needed to avoid problems with certificates [COORAL]
         export SSL_CERT_FILE=$(python -m certifi)
         python -m pip cache purge
