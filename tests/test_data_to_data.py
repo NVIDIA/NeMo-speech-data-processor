@@ -296,11 +296,11 @@ def en_hist_dir(tmp_path_factory):
     """
     aws_access_key = os.getenv("AWS_ACCESS_KEY")
     if not aws_access_key:
-        raise EnvironmentError("The environment variable AWS_ACCESS_KEY is not set or is empty")
+        pytest.skip("The environment variable AWS_ACCESS_KEY is not set or is empty")
 
     aws_secret_access_key = os.getenv("AWS_SECRET_KEY")
     if not aws_secret_access_key:
-        raise EnvironmentError("The environment variable AWS_SECRET_KEY is not set or is empty")
+        pytest.skip("The environment variable AWS_SECRET_KEY is not set or is empty")
 
     s3 = boto3.client(
         's3',
