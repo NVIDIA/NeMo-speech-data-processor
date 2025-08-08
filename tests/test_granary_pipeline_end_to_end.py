@@ -15,7 +15,10 @@ def to_abs_paths(manifest_filepath, tmp_path):
     with open(manifest_filepath, 'r', encoding = 'utf8') as fin:
         for line in fin:
             sample = json.loads(line)
-            sample['source_audio_filepath'] = os.path.join(str(tmp_path), "audio", os.path.basenames(sample['source_audio_filepath']))
+            if 'source_audio_filepath' in sample:
+                sample['source_audio_filepath'] = os.path.join(str(tmp_path), sample['source_audio_filepath'])
+            if 'audio_filepath' in sample:
+                sample['audio_filepath'] = os.path.join(str(tmp_path), sample['audio_filepath'])
             samples.append(sample)
         
     with open(manifest_filepath, 'w', encoding = 'utf8') as fout:
@@ -46,9 +49,9 @@ def granary_data(tmp_path: Path):
         f"{granary_key_prefix}/audio/zHtFdl5K8qg.wav",
         f"{granary_key_prefix}/audio/zCW9rGbaF4E.wav",
         f"{granary_key_prefix}/audio/zG3RpHaMzkQ.wav",
-        #f"{granary_key_prefix}/.cache/histograms/en",
-        #f"{granary_key_prefix}/.cache/histograms/it",
-        #f"{granary_key_prefix}/.cache/models/lid.176.bin",
+        f"{granary_key_prefix}/cache/histograms/en",
+        f"{granary_key_prefix}/cache/histograms/it",
+        f"{granary_key_prefix}/cache/models/lid.176.bin",
     ]
 
     bucket = "sdp-test-data"
@@ -76,7 +79,7 @@ def test_granary_pipeline_end_to_end(granary_data):
     cfg = OmegaConf.load(config_path)
     
     cfg.input_manifest_file = input_manifest_file
-    cfg.output_dir = os.path.join(granary_data, "sdp_output")
+    cfg.output_dir = os.path.join(granary_data)
     cfg.sdp_dir = Path(__file__).parents[1]
 
     #disable some processors
@@ -91,11 +94,11 @@ def test_granary_pipeline_end_to_end(granary_data):
         cfg.processors[processor_idx].should_run = False
         cfg.processors[processor_idx + 1].input_manifest_file = os.path.join(granary_data, f"manifest_{processor_id}.json")
 
-    #cfg.processors[33].cache_dir = os.path.join(granary_data, ".cache", "histograms")
-    #cfg.processors[34].cache_dir = os.path.join(granary_data, ".cache", "histograms")
+    cfg.processors[33].cache_dir = os.path.join(granary_data, "cache", "histograms")
+    cfg.processors[34].cache_dir = os.path.join(granary_data, "cache", "histograms")
 
-    #cfg.processors[37].cache_dir = os.path.join(granary_data, ".cache")
-    #cfg.processors[38].cache_dir = os.path.join(granary_data, ".cache")
+    cfg.processors[37].cache_dir = os.path.join(granary_data, "cache", "models")
+    cfg.processors[38].cache_dir = os.path.join(granary_data, "cache", "models")
 
     run_processors(cfg)
 
