@@ -562,7 +562,7 @@ processors:
     model_name_or_path: cometoid-wmt23
     device_type: gpu
     num_devices: -1
-    chunksize: 10
+    chunksize: 100
   
   - _target_: sdp.processors.PreserveByValue
     output_manifest_file: ${output_dir}/${params.source_lang}/manifest_42.json

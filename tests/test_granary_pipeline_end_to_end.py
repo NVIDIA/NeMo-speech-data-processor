@@ -28,8 +28,7 @@ def granary_data(tmp_path: Path):
         f"{granary_key_prefix}/manifest_14.json",
         f"{granary_key_prefix}/manifest_21.json",
         f"{granary_key_prefix}/manifest_26.json",
-        f"{granary_key_prefix}/manifest_34.json",
-        f"{granary_key_prefix}/manifest_39.json",
+        f"{granary_key_prefix}/manifest_41.json",
         f"{granary_key_prefix}/audio/zCW0Pa0BI4Q.wav",
         f"{granary_key_prefix}/audio/zHWk3Ae7qJ0.wav",
         f"{granary_key_prefix}/audio/zHtFdl5K8qg.wav",
@@ -45,12 +44,7 @@ def granary_data(tmp_path: Path):
             rel_path   = file_key.replace(granary_key_prefix + "/", "")
             dest_path  = tmp_path / rel_path
             dest_path.parent.mkdir(parents=True, exist_ok=True)
-
-            try:
-                s3.download_file(bucket, file_key, str(dest_path))
-            except ClientError as e:
-                code = e.response.get("Error", {}).get("Code", "")
-                pytest.skip(f"Cannot download s3://{bucket}/{file_key} ({code}).")
+            s3.download_file(bucket, file_key, str(dest_path))
 
             if file_key.endswith(".wav"):
                 f.write(json.dumps({"source_audio_filepath": str(dest_path)}) + "\n")
@@ -70,34 +64,15 @@ def test_granary_pipeline_end_to_end(granary_data):
     cfg.sdp_dir = Path(__file__).parents[1]
 
     #disable some processors
-    ## step 3: FasterWhisperInference 
-    cfg.processors[3].should_run = False
-    cfg.processors[4].input_manifest_file = os.path.join(granary_data, "manifest_03.json")
-
-    ## step 14: FasterWhisperInference 
-    cfg.processors[6].should_run = False
-    cfg.processors[7].input_manifest_file = os.path.join(granary_data, "manifest_06.json")
-
-    ## step 21: FasterWhisperInference 
-    cfg.processors[14].should_run = False
-    cfg.processors[15].input_manifest_file = os.path.join(granary_data, "manifest_14.json")
-
-    ## step 21: vLLMInference 
-    cfg.processors[21].should_run = False
-    cfg.processors[22].input_manifest_file = os.path.join(granary_data, "manifest_21.json")
-
-    ## step 26: vLLMInference 
-    cfg.processors[26].should_run = False
-    cfg.processors[27].input_manifest_file = os.path.join(granary_data, "manifest_26.json")
+    processors_to_disable = [3, 6, 14,  # FasterWhisperInference 
+                             21, 26,    # vLLMInference  
+                             41,        # CometoidWMTQualityEstimation
+                             ]
     
-    ## steps 33-34: CharacterHistogramLangValidator
-    cfg.processors[33].should_run = False
-    cfg.processors[34].should_run = False
-    cfg.processors[35].input_manifest_file = os.path.join(granary_data, "manifest_34.json")
-
-    ## step 39: CometoidWMTQualityEstimation
-    cfg.processors[39].should_run = False
-    cfg.processors[40].input_manifest_file = os.path.join(granary_data, "manifest_39.json")
+    for processor_idx in processors_to_disable:
+        processor_id = str(processor_idx).zfill(2)
+        cfg.processors[processor_idx].should_run = False
+        cfg.processors[processor_idx + 1].input_manifest_file = os.path.join(granary_data, f"manifest_{processor_id}.json")
 
     run_processors(cfg)
 
