@@ -295,12 +295,12 @@ def en_hist_dir(tmp_path_factory):
     Uses tmp_path_factory → one persistent temp-dir for the whole session.
     """
     aws_access_key = os.getenv("AWS_ACCESS_KEY")
-    if not aws_access_key or aws_access_key == "access":
-        pytest.skip("The environment variable AWS_ACCESS_KEY is not set or is empty")
+    if not aws_access_key:
+        raise EnvironmentError("The environment variable AWS_ACCESS_KEY is not set or is empty")
 
     aws_secret_access_key = os.getenv("AWS_SECRET_KEY")
-    if not aws_secret_access_key or aws_secret_access_key == "secret":
-        pytest.skip("The environment variable AWS_SECRET_KEY is not set or is empty")
+    if not aws_secret_access_key:
+        raise EnvironmentError("The environment variable AWS_SECRET_KEY is not set or is empty")
 
     s3 = boto3.client(
         's3',
