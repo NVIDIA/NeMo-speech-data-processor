@@ -10,6 +10,18 @@ import shutil
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
 
+def to_abs_paths(manifest_filepath, tmp_path):
+    samples = []
+    with open(manifest_filepath, 'r', encoding = 'utf8') as fin:
+        for line in fin:
+            sample = json.loads(line)
+            sample['source_audio_filepath'] = os.path.join(str(tmp_path), os.path.basenames(sample['source_audio_filepath'])
+            samples.append(sample)
+        
+    with open(manifest_filepath, 'w', encoding = 'utf8') as fout:
+        for sample in samples:
+            fout.write(json.dumps(sample) + "\n")
+
 @pytest.fixture
 def granary_data(tmp_path: Path):
     # Download the data from S3
@@ -34,6 +46,9 @@ def granary_data(tmp_path: Path):
         f"{granary_key_prefix}/audio/zHtFdl5K8qg.wav",
         f"{granary_key_prefix}/audio/zCW9rGbaF4E.wav",
         f"{granary_key_prefix}/audio/zG3RpHaMzkQ.wav",
+        #f"{granary_key_prefix}/.cache/histograms/en",
+        #f"{granary_key_prefix}/.cache/histograms/it",
+        #f"{granary_key_prefix}/.cache/models/lid.176.bin",
     ]
 
     bucket = "sdp-test-data"
@@ -48,7 +63,8 @@ def granary_data(tmp_path: Path):
 
             if file_key.endswith(".wav"):
                 f.write(json.dumps({"source_audio_filepath": str(dest_path)}) + "\n")
-
+            elif file_key.endswith(".json"):
+                to_abs_paths(dest_path, tmp_path)
     return tmp_path
 
 def test_granary_pipeline_end_to_end(granary_data):
@@ -73,6 +89,12 @@ def test_granary_pipeline_end_to_end(granary_data):
         processor_id = str(processor_idx).zfill(2)
         cfg.processors[processor_idx].should_run = False
         cfg.processors[processor_idx + 1].input_manifest_file = os.path.join(granary_data, f"manifest_{processor_id}.json")
+
+    #cfg.processors[33].cache_dir = os.path.join(granary_data, ".cache")
+    #cfg.processors[34].cache_dir = os.path.join(granary_data, ".cache")
+
+    #cfg.processors[37].cache_dir = os.path.join(granary_data, ".cache")
+    #cfg.processors[38].cache_dir = os.path.join(granary_data, ".cache")
 
     run_processors(cfg)
 
