@@ -22,7 +22,7 @@ and is published as [nvidia/Granary](https://huggingface.co/datasets/nvidia/Gran
 
 > Note — GPU required
 > 
-> All Whisper, vLLM, FastText and Comet-QE stages expect at least one CUDA-capable GPU. Multi-GPU nodes are auto-detected when `num_devices: -1` (default) is used.
+> All Whisper, vLLM and Comet-QE stages expect at least one CUDA-capable GPU. Multi-GPU nodes are auto-detected when `num_devices: -1` (default) is used.
 
 ### Software prerequisites
 

@@ -34,7 +34,7 @@ documentation: |
 
   .. note::
 
-    **GPU required.** All Whisper, vLLM, FastText and Comet-QE stages expect at
+    **GPU required.** All Whisper, vLLM and Comet-QE stages expect at
     least one CUDA-capable GPU.  Multi-GPU nodes are auto-detected when
     ``num_devices: -1`` (default) is used.
 
