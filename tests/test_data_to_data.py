@@ -294,10 +294,19 @@ def en_hist_dir(tmp_path_factory):
 
     Uses tmp_path_factory → one persistent temp-dir for the whole session.
     """
-    s3 = boto3.client('s3',
-                    aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
-                    aws_secret_access_key=os.getenv("AWS_SECRET_KEY")
-                    )
+    aws_access_key = os.getenv("AWS_ACCESS_KEY")
+    if not aws_access_key:
+        raise EnvironmentError("The environment variable AWS_ACCESS_KEY is not set or is empty")
+
+    aws_secret_access_key = os.getenv("AWS_SECRET_KEY")
+    if not aws_secret_access_key:
+        raise EnvironmentError("The environment variable AWS_SECRET_KEY is not set or is empty")
+
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=aws_access_key,
+        aws_secret_access_key=aws_secret_access_key
+    )
     
     bucket = "sdp-test-data"
     key = "test_data/test_processors/CharacterHistogramLangValidator/histograms/en"
@@ -310,7 +319,7 @@ def en_hist_dir(tmp_path_factory):
             s3.download_file(bucket, key, str(local_path))
         except ClientError as e:
             code = e.response.get("Error", {}).get("Code", "")
-            pytest.skip(f"Cannot download s3://{bucket}/{key} ({code}).")
+            raise FileNotFoundError(f"Cannot download s3://{bucket}/{key} ({code}).")
         
     assert local_path.exists(), "Histogram file was not downloaded"
     return str(tmp_dir)

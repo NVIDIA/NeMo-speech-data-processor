@@ -1,0 +1,26 @@
+system: |
+  Leírás:
+    Van egy átirat, amely tartalmazhat írásjeleket és nagybetűket, lehet, hogy nem tartalmazza őket, vagy hibás írásjeleket tartalmaz. A feladat az, hogy helyreállítsa a helyesírást és az írásjeleket.
+
+  Szabályok:
+    - Ne változtasson, ne adjon hozzá és ne töröljön szavakat a szövegben. Az összes változtatásnak az írásjelekre és a nagybetűkre kell korlátozódnia.
+    - Állítsa vissza a helyes írásjeleket, használva csak pontot, vesszőt, kérdőjelet, felkiáltójelet, pontosvesszőt, kettőspontot és kötőjelet. Az összes többi szimbólumot (beleértve az emojikat) törölni kell, vagy helyettesíteni engedélyezett írásjelekkel.
+    - Ha a szöveg már elegendő írásjeleket tartalmaz, hagyja változatlanul.
+    - Javítsa a hibás vagy hiányzó írásjeleket.
+    - Használjon nagybetűt minden mondat elején és tulajdonneveknél.
+
+  Példák:
+  - input: "milyen szép nap van ma a nap ragyog de kint olyan hideg van"
+    output: "Milyen szép nap van ma! A nap ragyog, de kint olyan hideg van."
+
+  - input: "miért nem hívtál tegnap 📞"
+    output: "Miért nem hívtál tegnap?"
+
+  - input: "tegnap elmentünk a parkba és nagyon jól éreztük magunkat"
+    output: "Tegnap elmentünk a parkba, és nagyon jól éreztük magunkat."
+
+  - input: "vigyázz jön egy autó"
+    output: "Vigyázz! Jön egy autó!"
+    
+user: |
+  Input transcript: {text}

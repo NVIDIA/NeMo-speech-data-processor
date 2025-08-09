@@ -29,26 +29,25 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
     specified input text field.
 
     Args:
-        model_name_or_path (str): Path to a FastText model file or the name of a supported remote model 
-            ('lid.176.bin' or 'lid.176.ftz').
+        model_name_or_path (str): Path to a FastText model file or the name of a supported remote model ('lid.176.bin' or 'lid.176.ftz').
         text_field (str): The name of the field in the dataset entry that contains the input text for classification.
         output_field (str): The name of the field to store the predicted label. Defaults to "label".
         top_k (int): The number of top predictions to return. Defaults to 1 (-1 for all).
-        cache_dir (str, optional): Directory to store the downloaded model file. If not provided, a temporary 
-            directory is used.
+        cache_dir (str, optional): Directory to store the downloaded model file. If not provided, a temporary directory is used.
         **kwargs: Additional keyword arguments passed to `BaseParallelProcessor`.
 
     Returns:
         A manifest where each entry contains the original data fields plus
-            - `<output_field>`: The predicted label (e.g., language code for `lid.176.bin`),
+            - `<output_field>`: The predicted label (e.g., language code for `lid.176.bin`).
             - `<output_field>_prob`: The probability of the prediction.
-
-    Note:
+    
+    .. note::
         Make sure to install `fasttext` before using this processor:
-        `pip install fasttext`
+            pip install fasttext
+
     """
 
-    SUPPROTED_MODELS_URLS = {
+    SUPPORTED_MODELS_URLS = {
         'lid.176.bin' : 'https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin',
         'lid.176.ftz' : 'https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.ftz'
     }
@@ -72,7 +71,7 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
 
     def _download_model(self):
         """Downloads the FastText model from a predefined URL and stores it in the cache directory."""
-        model_url = self.SUPPROTED_MODELS_URLS[self.model_name_or_path]
+        model_url = self.SUPPORTED_MODELS_URLS[self.model_name_or_path]
         logger.info(f'Downloading {self.model_name_or_path}..')
         response = requests.get(model_url)
 
@@ -87,6 +86,13 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
 
         self.model_name_or_path = wget.download(model_url, out=self.cache_dir)
         logger.info(f'Model `{self.model_name_or_path}` has been downloaded to {self.cache_dir}.')
+
+    def _load_model(self):
+        """Lazily loads the FastText model into memory."""
+        import fasttext
+
+        if self._model is None:
+            self._model = fasttext.load_model(self.model_name_or_path)
     
     def prepare(self):
         """
@@ -95,20 +101,23 @@ class FastTextLangIdClassifier(BaseParallelProcessor):
         - Downloads the model if only the name is given and it's known.
         - Raises ValueError if the path or model name is invalid.
         """
-        import fasttext
-
-        if not os.path.exists(self.model_name_or_path):
-            if self.cache_dir and os.path.exists(os.path.join(self.cache_dir, self.model_name_or_path)):
-                self.model_name_or_path = os.path.join(self.cache_dir, self.model_name_or_path)
-            elif self.model_name_or_path in self.SUPPROTED_MODELS_URLS:
-                self._download_model()
-            else:
-                raise ValueError(f'Current model is not supported or filepath is invalid: {self.model_name_or_path}.')
-        
-        self._model = fasttext.load_model(self.model_name_or_path)
+        if os.path.isfile(self.model_name_or_path):
+            return
+        if self.cache_dir:
+            cached_path = os.path.join(self.cache_dir, self.model_name_or_path)
+            if os.path.isfile(cached_path):
+                self.model_name_or_path = cached_path
+                return
+        if self.model_name_or_path in self.SUPPORTED_MODELS_URLS:
+            self._download_model()
+            return
+        raise ValueError(
+            f'Current model is not supported or filepath is invalid: {self.model_name_or_path}.'
+        )
 
     def process_dataset_entry(self, data_entry: dict):
         """Applies the classifier to a single dataset entry."""
+        self._load_model()
         text = data_entry[self.text_field].strip().replace("\n", " ")
         label, prob = self._model.predict(text)
         if self.top_k == 1:

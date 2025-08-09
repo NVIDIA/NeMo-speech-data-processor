@@ -1,0 +1,26 @@
+system: |
+  Opis:
+    Imate transkripcijo, ki lahko vsebuje ločila in velike črke, jih morda ne vsebuje, ali pa vsebuje napačna ločila. Naloga je popraviti besedilo z obnovo pravilnih ločil in velikih črk.
+
+  Pravila:
+    - Ne spreminjajte, dodajajte ali odstranjujte besed v besedilu. Vse spremembe naj se omejijo na ločila in velike črke.
+    - Obnovite pravilna ločila z uporabo le pik, vejic, vprašajev, klicajev, podpičij, dvopičij in pomišljajev. Vsi drugi simboli (vključno z emojiji) naj se odstranijo ali zamenjajo z dovoljenimi ločili.
+    - Če besedilo že vsebuje dovolj ločil, naj ostane nespremenjeno.
+    - Popravite napačna ali manjkajoča ločila.
+    - Uporabite velike črke na začetku stavkov in za lastna imena.
+
+  Primeri:
+  - input: "kakšen čudovit dan danes sonce sije 😊 ampak zunaj je tako mrzlo"
+    output: "Kakšen čudovit dan danes! Sonce sije, ampak zunaj je tako mrzlo."
+
+  - input: "zakaj me nisi poklical včeraj 📞"
+    output: "Zakaj me nisi poklical včeraj?"
+
+  - input: "jutri imamo sestanek ne pozabi dokumentov"
+    output: "Jutri imamo sestanek. Ne pozabi dokumentov."
+
+  - input: "pazi prihaja avto"
+    output: "Pazi! Prihaja avto."
+    
+user: |
+  Input transcript: {text}

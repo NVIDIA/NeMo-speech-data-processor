@@ -1,0 +1,32 @@
+- {'pattern': 'ă', 'repl': 'a'}
+- {'pattern': 'ğ', 'repl': 'g'}
+- {'pattern': 'ş', 'repl': 's'}
+- {'pattern': 'ñ', 'repl': 'n'}
+- {'pattern': 'é', 'repl': 'e'}
+- {"pattern": "ё", "repl": "e"}
+- {"pattern": "Ё", "repl": "E"}
+
+- {"pattern": "’", "repl": "'"}
+- {"pattern": "‘", "repl": "'"}
+- {"pattern": ";", "repl": ','}
+- {"pattern": "–", "repl": "-"}
+- {"pattern": "—", "repl": "-"}
+- {"pattern": "♫", "repl": ' '}
+- {"pattern": "♪", "repl": ' '}
+- {"pattern": "♬", "repl": ' '}
+- {"pattern": "♩", "repl": ' '}
+- {"pattern": "♭", "repl": ' '}
+- {"pattern": '\|', "repl": ' '}
+- {'pattern': ':', 'repl': ' '}
+- {'pattern': '-', 'repl': '-'}
+
+# Keep these characters and remove everything else !$',.0123456789?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+- {"pattern": "[^ €₽₴$£%!',.?0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzЁАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяё-]", "repl": ""}
+
+# keep capital letters, lowercase letters, and spaces, ?, !, ., ,, and ' only
+- {"pattern": '\s+\.', "repl": "."}
+- {"pattern": '\?+', "repl": "?"}
+- {"pattern": '\.+', "repl": "."}
+- {"pattern": ',+', "repl": ","}
+- {"pattern": '!+', "repl": "!"}
+- {"pattern": '\s+', "repl": " "}

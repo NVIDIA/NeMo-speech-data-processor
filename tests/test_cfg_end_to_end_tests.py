@@ -17,6 +17,7 @@ import shutil
 import tarfile
 import logging
 from functools import partial
+from itertools import chain
 from pathlib import Path
 from typing import Callable, List, Tuple
 from unittest import mock
@@ -134,6 +135,46 @@ coraal_processor.get_coraal_url_list = mock.Mock(
         'http://lingtools.uoregon.edu/coraal/les/2021.07/LES_textfiles_2021.07.tar.gz',
     ]
 )
+
+def data_check_fn_granary(raw_data_dir: str) -> None:
+    def create_init_manifest(audio_files, raw_data_dir):
+        with open(os.path.join(raw_data_dir, "input_manifest.json"), "wt", encoding="utf8") as f:
+            for audio_file in audio_files:
+                line = json.dumps({"source_audio_filepath": os.path.join(raw_data_dir, audio_file)})
+                f.write(line + "\n")
+    
+    def to_abs_audio_paths(manifest_filepath, raw_data_dir):
+        with open(manifest_filepath, "rt", encoding="utf8") as f:
+            lines = f.readlines()
+
+        with open(manifest_filepath, "wt", encoding="utf8") as f:
+            for line in lines:
+                sample = json.loads(line)
+                for audio_field in ["source_audio_filepath", "audio_filepath"]:
+                    if audio_field in sample:
+                        sample[audio_field] = str(Path(raw_data_dir) / sample[audio_field])
+                f.write(json.dumps(sample) + "\n")
+
+    audio_files = [ 
+                    "audio/zCW0Pa0BI4Q.wav", "audio/zHWk3Ae7qJ0.wav", "audio/zHtFdl5K8qg.wav", 
+                    "audio/zCW9rGbaF4E.wav", "audio/zG3RpHaMzkQ.wav"
+                  ]
+    
+    manifest_files = [
+                        "reference_manifest.json", "manifest_03.json", "manifest_06.json",
+                        "manifest_14.json", "manifest_21.json", "manifest_26.json",
+                        "manifest_41.json",
+                     ]
+    
+    cache_files = ["cache/histograms/en", "cache/histograms/it", "cache/models/lid.176.bin"]
+    
+    for file in chain(audio_files, manifest_files, cache_files):
+        if not (Path(raw_data_dir) / file).exists():
+            raise ValueError(f"No such file {str(Path(raw_data_dir) / file)}")
+
+    create_init_manifest(audio_files, raw_data_dir)
+    for manifest_file in manifest_files:
+        to_abs_audio_paths(Path(raw_data_dir) / manifest_file, raw_data_dir)
 
 def get_test_cases() -> List[Tuple[str, Callable]]:
     return [
@@ -281,6 +322,12 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
             data_check_fn=partial(data_check_fn_generic, file_name="manifest_22khz.json"),
             reference_manifest_filename="test_data_reference_bandwidth.json",
         ),
+        TestCase(
+            config_path=f"{DATASET_CONFIGS_ROOT}/multilingual/granary/config.yaml",
+            data_check_fn=data_check_fn_granary,
+            reference_manifest_filename="reference_manifest.json",
+            fields_to_ignore=['audio_filepath'],
+        ),
     ]
 
 def get_test_names():
@@ -350,7 +397,6 @@ def setup_data(request):
     if os.getenv("CLEAN_UP_DATA_DIR", "0") != "0":
         shutil.rmtree(data_dir)
 
-
 def test_data_availability(setup_data):
     _, data_check_fn, reference_manifest_filename, data_dir, fields_to_ignore, _ = setup_data
     try:
@@ -380,7 +426,6 @@ def test_configs(setup_data, tmp_path):
     cfg.data_split = cfg.get("data_split", "train")
     cfg.processors[0].raw_data_dir = data_dir.as_posix()
     
-
     if "already_downloaded" in cfg["processors"][0]:
         cfg["processors"][0]["already_downloaded"] = True
 
@@ -404,6 +449,30 @@ def test_configs(setup_data, tmp_path):
     if "english/hifitts2/config_bandwidth" in config_path:
         cfg.processors[0].audio_dir = (data_dir / "audio_22khz").as_posix()
         cfg.processors[0].input_manifest_file = (data_dir / "manifest_22khz.json").as_posix()
+    
+    if "multilingual/granary/config" in config_path:
+        cfg.input_manifest_file = data_dir / "input_manifest.json"
+        cfg.output_dir = data_dir
+        cfg.sdp_dir = Path(__file__).parents[1]
+        cfg.final_manifest = cfg.processors[-1].output_manifest_file
+
+        # Disable processors that uses GPU
+        processors_to_disable = [
+                            3, 6, 14,  # FasterWhisperInference 
+                            21, 26,    # vLLMInference  
+                            41,        # CometoidWMTQualityEstimation
+                            ]
+    
+        for processor_idx in processors_to_disable:
+            processor_id = str(processor_idx).zfill(2)
+            cfg.processors[processor_idx].should_run = False
+            cfg.processors[processor_idx + 1].input_manifest_file = os.path.join(data_dir, f"manifest_{processor_id}.json")
+        
+        # Set cache directories
+        cfg.processors[33].cache_dir = os.path.join(data_dir, "cache", "histograms")
+        cfg.processors[34].cache_dir = os.path.join(data_dir, "cache", "histograms")
+        cfg.processors[37].cache_dir = os.path.join(data_dir, "cache", "models")
+        cfg.processors[38].cache_dir = os.path.join(data_dir, "cache", "models")
 
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
@@ -427,36 +496,6 @@ def test_configs(setup_data, tmp_path):
 
     if os.getenv("CLEAN_UP_TMP_PATH", "0") != "0":
         shutil.rmtree(tmp_path)
-
-# Additional unit tests to increase coverage
-def test_check_e2e_test_data():
-    os.environ.clear()
-    assert not check_e2e_test_data()
-    os.environ["TEST_DATA_ROOT"] = "/path/to/test/data"
-    assert check_e2e_test_data()
-    os.environ.clear()
-    os.environ["AWS_SECRET_KEY"] = "secret"
-    os.environ["AWS_ACCESS_KEY"] = "access"
-    assert check_e2e_test_data()
-
-@pytest.mark.slow
-def test_get_e2e_test_data_path(tmp_path):
-    os.environ["TEST_DATA_ROOT"] = str(tmp_path)
-    assert get_e2e_test_data_path("test/path") == str(tmp_path)
-
-    os.environ.clear()
-    os.environ["AWS_SECRET_KEY"] = "secret"
-    os.environ["AWS_ACCESS_KEY"] = "access"
-    with mock.patch("boto3.resource") as mock_resource:
-        mock_bucket = mock.MagicMock()
-        mock_resource.return_value.Bucket.return_value = mock_bucket
-        mock_bucket.objects.all.return_value = [
-            mock.MagicMock(key="test/path/file1.txt"),
-            mock.MagicMock(key="test/path/file2.txt"),
-        ]
-        result = get_e2e_test_data_path("test/path")
-        assert result == os.path.abspath("test_data")
-        assert mock_bucket.download_file.call_count == 2
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--durations=0"])

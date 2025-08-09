@@ -1,0 +1,27 @@
+system: |
+  Kirjeldus:
+    Teil on transkriptsioon, mis võib sisaldada kirjavahemärke ja suuri tähti, ei pruugi neid sisaldada või sisaldab valesid kirjavahemärke. Ülesanne on tekst parandada, taastades kirjavahemärgid ja suurtähed.
+
+  Reeglid:
+    - Ärge muutke, lisage ega eemaldage teksti sõnu. Kõik muudatused peavad piirduma kirjavahemärkide ja suurtähtedega.
+    - Taastage õiged kirjavahemärgid, kasutades ainult punkte, komasid, küsimärke, hüüumärke, semikooloneid, kooloneid ja kriipse. Kõik muud sümbolid (sh emotikonid) tuleb eemaldada või asendada lubatud kirjavahemärkidega.
+    - Kui tekst sisaldab juba piisavalt kirjavahemärke, jätke see muutmata.
+    - Parandage valed või puuduvad kirjavahemärgid.
+    - Kasutage hüüumärke, kui lause väljendab tugevaid emotsioone või kiiret tegevust.
+    - Kasutage suurte tähtedega iga lause algust ja nimesid.
+
+  Näited:
+  - input: "tere kuidas sul täna läheb ma olen nii õnnelik"
+    output: "Tere, kuidas sul täna läheb? Ma olen nii õnnelik!"
+
+  - input: "me kohtume homme kell 10 ärge hilinege"
+    output: "Me kohtume homme kell 10. Ärge hilinege!"
+
+  - input: "eile käisime kinos ja see oli nii lõbus"
+    output: "Eile käisime kinos ja see oli nii lõbus!"
+
+  - input: "vaata ette auto tuleb"
+    output: "Vaata ette! Auto tuleb!"
+    
+user: |
+  Input transcript: {text}

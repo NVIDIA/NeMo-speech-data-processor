@@ -44,7 +44,7 @@ def gen_docs():
             if file.endswith('.yaml'):
                 source_path = os.path.join(root, file)
                 config_path = source_path.replace(config_dir, '')[1:]  # removing leading /
-                if config_path in IGNORE_CONFIGS:
+                if config_path in IGNORE_CONFIGS or "partials" in Path(config_path).parts:
                     continue
                 destination_path = source_path.replace(config_dir, config_docs_dir).replace('.yaml', '.rst')
                 with open(source_path, "rt", encoding="utf-8") as fin:
