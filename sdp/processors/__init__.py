@@ -14,6 +14,14 @@
 
 # let's import all supported processors here to simplify target specification
 
+from sdp.processors.datasets.ytdlp.downlaod_youtube_audio import (
+    GetYoutubeAudio,
+)
+
+from sdp.processors.datasets.ytdlp.create_initial_manifest import (
+    CreateInitialManifestytdlp,
+)
+
 from sdp.processors.datasets.coraa.create_initial_manifest import (
     CreateInitialManifestCORAA,
 )
