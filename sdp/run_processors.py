@@ -170,8 +170,6 @@ def run_processors(cfg):
         [proc_cfg["_target_"] for proc_cfg in processors_cfgs],
     )
     
-    
-    
     processors = []
     # Create a temporary directory to hold intermediate files if needed.
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -226,9 +224,21 @@ def run_processors(cfg):
         if any(p.use_dask for p in processors):
             
             try:
-                num_cpus = psutil.cpu_count(logical=False) or 4
+                # Check for custom Dask configuration in config
+                dask_config = cfg.get("dask", {})
+                num_cpus = dask_config.get("n_workers", psutil.cpu_count(logical=False) or 4)
+                memory_limit = dask_config.get("memory_limit", None)
+                
+                # Apply memory limit if specified
+                client_kwargs = {"n_workers": num_cpus, "processes": True}
+                if memory_limit:
+                    client_kwargs["memory_limit"] = memory_limit
+                
                 logger.info(f"Starting Dask client with {num_cpus} workers")
-                dask_client = Client(n_workers=num_cpus, processes=True)
+                if memory_limit:
+                    logger.info(f"Using memory limit per worker: {memory_limit}")
+                
+                dask_client = Client(**client_kwargs)
                 logger.info(f"Dask dashboard at: {dask_client.dashboard_link}")
             except Exception as e:
                 logger.warning(f"Failed to start Dask client: {e}")
