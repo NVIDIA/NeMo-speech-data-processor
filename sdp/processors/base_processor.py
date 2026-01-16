@@ -240,7 +240,7 @@ class BaseParallelProcessor(BaseProcessor):
         if self.use_dask:
             import dask.bag as db
             if self.input_manifest_file and os.path.exists(self.input_manifest_file) and os.path.getsize(self.input_manifest_file) > 0:
-                bag = db.read_text(self.input_manifest_file, blocksize="256KB").map(json.loads)
+                bag = db.read_text(self.input_manifest_file, blocksize="512KB").map(json.loads)
                 return bag
             else:
                 logger.info("No input manifest file provided or file is empty. Returning an empty Dask bag for manifest creation.")
