@@ -119,7 +119,7 @@ class NeMoASRAligner(BaseProcessor):
                 - list: List of dictionaries with word alignments (word, start, end)
                 - str: The transcribed text
         """
-        timestamp_dict = hypotheses.timestep # extract timesteps from hypothesis of first (and only) audio file
+        timestamp_dict = hypotheses.timestamp # extract timesteps from hypothesis of first (and only) audio file
 
         # For a FastConformer model, you can display the word timestamps as follows:
         # 80ms is duration of a timestep at output of the Conformer
