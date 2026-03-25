@@ -388,7 +388,7 @@ class FasterWhisperInference(BaseProcessor):
 
         output_words_filepath = None
         if self.config.inference.word_timestamps:
-            output_words_filepath = _write_words(output_words_filepath, sample_words)
+            output_words_filepath = _write_words(sample_words)
         
         return dict(segments = output_segments_filepath, words = output_words_filepath)
 

@@ -15,7 +15,6 @@
 import json
 from sdp.processors.base_processor import BaseProcessor, BaseParallelProcessor, DataEntry
 from sdp.utils.common import load_manifest, save_manifest
-from nemo_text_processing.inverse_text_normalization.inverse_normalize import InverseNormalizer
 from nemo.collections.nlp.models import PunctuationCapitalizationModel
 
 class InverseTextNormalizationProcessor(BaseParallelProcessor):
@@ -42,6 +41,7 @@ class InverseTextNormalizationProcessor(BaseParallelProcessor):
     def __init__(self, 
                  language="en",
                  **kwargs):
+        from nemo_text_processing.inverse_text_normalization.inverse_normalize import InverseNormalizer
         super().__init__(**kwargs)
         self.normalizer = InverseNormalizer(lang=language)
     
