@@ -58,29 +58,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v3
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements/main.txt
-          pip install -r requirements/tests.txt
-          sudo apt-get update
-          sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
-          pip install pytorch_lightning
-          pip install Cython wheel  # need to pre-install to avoid error in nemo installation
-          pip install nemo-toolkit[asr,nlp]==2.3.2
-          pip install nemo_text_processing
-          pip install -r requirements/huggingface.txt
-          pip install pymarian
-          pip install certifi  # this needed to avoid problems with certificates [COORAL]
-          export SSL_CERT_FILE=$(python -m certifi)
-          python -m pip cache purge
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.12"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements/main.txt
+        pip install -r requirements/tests.txt
+        sudo apt-get update
+        sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
+        pip install pytorch_lightning
+        pip install Cython wheel  # need to pre-install to avoid error in nemo installation
+        pip install nemo-toolkit[asr,nlp]==2.3.2
+        pip install nemo_text_processing
+        pip install -r requirements/huggingface.txt
+        pip install pymarian
+        pip install certifi #this needed to avoid problems with certificates [COORAL]
+        export SSL_CERT_FILE=$(python -m certifi)
+        python -m pip cache purge
         
 
     - name: Run all tests
