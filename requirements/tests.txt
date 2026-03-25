@@ -4,6 +4,6 @@ pytest
 pytest-cov
 # lhotse requires torch and torchaudio to be present
 lhotse
-torch==2.11.*
-torchaudio==2.11.*
-torchcodec==0.11.*
+torch==2.10.*
+torchaudio==2.10.*
+torchcodec==0.10.*
