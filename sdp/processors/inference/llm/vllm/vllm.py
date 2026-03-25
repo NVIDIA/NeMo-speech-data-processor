@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+
 import yaml
 from tqdm import tqdm
 
@@ -52,7 +54,7 @@ class vLLMInference(BaseProcessor):
 
         - model: https://docs.vllm.ai/en/latest/api/vllm/index.html#vllm.LLM
         - inference: https://docs.vllm.ai/en/v0.6.4/dev/sampling_params.html
-        - apply_chat_template: https://huggingface.co/docs/transformers/main/en/chat_templating#using-applychattemplate
+        - apply_chat_template: https://huggingface.co/docs/transformers/main/en/chat_templating
 
         Make sure to install `optree>=0.13.0` and `vllm` before using this processor:
             pip install "optree>=0.13.0" vllm
@@ -69,8 +71,8 @@ class vLLMInference(BaseProcessor):
                  apply_chat_template: dict = {},
                  **kwargs):
 
-        from vllm import SamplingParams
         from transformers import AutoTokenizer
+        from vllm import SamplingParams
 
         super().__init__(**kwargs)
     
