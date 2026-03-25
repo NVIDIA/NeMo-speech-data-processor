@@ -477,11 +477,7 @@ def test_configs(setup_data, tmp_path):
     run_processors(cfg)
     # additionally, let's test that final generated manifest matches the
     # reference file (ignoring the file paths and additional fields explicitly specified to ignore)
-    
-    print("#"*100)
-    print(f"torch.__version__: {torch.__version__}")
-    print(f"torchcodec.__version__: {torchcodec.__version__}")
-    print("#"*100)
+
     fields_to_ignore += ['audio_filepath']
     
     with open(reference_manifest, "rt", encoding="utf8") as reference_fin, \
