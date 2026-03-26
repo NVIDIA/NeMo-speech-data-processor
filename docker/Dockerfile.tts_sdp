@@ -22,6 +22,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Update pip
 RUN pip install --upgrade pip
 
+RUN nvidia-smi
+
 # Link all cudnn .so libraries for runtime
 RUN ln -s /opt/conda/lib/python3.11/site-packages/nvidia/cudnn/include/cudnn*.h /usr/include/
 RUN mkdir -p /usr/local/cuda/lib64
