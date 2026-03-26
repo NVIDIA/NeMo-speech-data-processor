@@ -79,8 +79,6 @@ from nemo.collections.asr.parts.utils.vad_utils import (
     generate_overlap_vad_seq,
     generate_vad_segment_table,
     get_vad_stream_status,
-    init_frame_vad_model,
-    init_vad_model,
 )
 from nemo.core.config import hydra_runner
 from nemo.utils import logging
@@ -246,9 +244,9 @@ def extract_audio_features(manifest_filepath: str, cfg: DictConfig, record_fn: C
     out_dir.mkdir(parents=True, exist_ok=True)
     torch.set_grad_enabled(False)
     if cfg.vad_model:
-        vad_model = init_frame_vad_model(cfg.vad_model)
+        vad_model = init_frame_vad_model(cfg.vad_model, strict=False)
     else:
-        vad_model = EncDecClassificationModel.from_pretrained("vad_multilingual_marblenet")
+        vad_model = EncDecClassificationModel.from_pretrained("vad_multilingual_marblenet", strict=False)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     vad_model = vad_model.to(device)
     vad_model.eval()
@@ -477,15 +475,43 @@ def generate_vad_frame_pred(
     return out_dir
 
 
-def init_asr_model(model_path: str) -> ASRModel:
+def init_frame_vad_model(model_path: str, strict: bool = False) -> EncDecFrameClassificationModel:
+    """
+    Initiate VAD model with model path
+    """
+    if model_path.endswith('.nemo'):
+        logging.info(f"Using local VAD model from {model_path}")
+        vad_model = EncDecFrameClassificationModel.restore_from(restore_path=model_path, strict=strict)
+    elif model_path.endswith('.ckpt'):
+        vad_model = EncDecFrameClassificationModel.load_from_checkpoint(checkpoint_path=model_path, strict=strict)
+    else:
+        logging.info(f"Using NGC cloud VAD model {model_path}")
+        vad_model = EncDecFrameClassificationModel.from_pretrained(model_name=model_path, strict=strict)
+    return vad_model
+
+def init_vad_model(model_path: str, strict: bool = False) -> EncDecClassificationModel:
+    """
+    Initiate VAD model with model path
+    """
+    if model_path.endswith('.nemo'):
+        logging.info(f"Using local VAD model from {model_path}")
+        vad_model = EncDecClassificationModel.restore_from(restore_path=model_path, strict=strict)
+    elif model_path.endswith('.ckpt'):
+        vad_model = EncDecClassificationModel.load_from_checkpoint(checkpoint_path=model_path, strict=strict)
+    else:
+        logging.info(f"Using NGC cloud VAD model {model_path}")
+        vad_model = EncDecClassificationModel.from_pretrained(model_name=model_path, strict=strict)
+    return vad_model
+
+def init_asr_model(model_path: str, strict: bool = True) -> ASRModel:
     if model_path.endswith('.nemo'):
         logging.info(f"Using local ASR model from {model_path}")
-        asr_model = ASRModel.restore_from(restore_path=model_path, strict=False)
+        asr_model = ASRModel.restore_from(restore_path=model_path, strict=strict)
     elif model_path.endswith('.ckpt'):
         asr_model = ASRModel.load_from_checkpoint(checkpoint_path=model_path, strict=False)
     else:
         logging.info(f"Using NGC ASR model {model_path}")
-        asr_model = ASRModel.from_pretrained(model_name=model_path, strict=False)
+        asr_model = ASRModel.from_pretrained(model_name=model_path, strict=strict)
     return asr_model
 
 
