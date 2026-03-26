@@ -480,12 +480,12 @@ def generate_vad_frame_pred(
 def init_asr_model(model_path: str) -> ASRModel:
     if model_path.endswith('.nemo'):
         logging.info(f"Using local ASR model from {model_path}")
-        asr_model = ASRModel.restore_from(restore_path=model_path)
+        asr_model = ASRModel.restore_from(restore_path=model_path, strict=False)
     elif model_path.endswith('.ckpt'):
-        asr_model = ASRModel.load_from_checkpoint(checkpoint_path=model_path)
+        asr_model = ASRModel.load_from_checkpoint(checkpoint_path=model_path, strict=False)
     else:
         logging.info(f"Using NGC ASR model {model_path}")
-        asr_model = ASRModel.from_pretrained(model_name=model_path)
+        asr_model = ASRModel.from_pretrained(model_name=model_path, strict=False)
     return asr_model
 
 
