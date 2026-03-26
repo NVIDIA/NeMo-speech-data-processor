@@ -30,7 +30,7 @@ jobs:
         HF_SECRET_KEY: ${{ secrets.HF_SECRET_KEY }}
         CLEAN_UP_TMP_PATH: 1
       run: |
-        docker run --rm --gpus all  \
+        docker run --rm \
           -v ${{ github.workspace }}:/workspace \
           -w /workspace \
           --shm-size=4g \
