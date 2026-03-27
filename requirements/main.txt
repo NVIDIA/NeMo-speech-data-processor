@@ -34,4 +34,4 @@ datasets>=2.14.0,<3.0.0
 # for vLLMInference processor is required: pip install "optree>=0.13.0" vllm
 # for CometoidWMTQualityEstimation processor is required: pip install pymarian
 # for FastTextLangIdClassifier processor is required: pip install fasttext
-# for ConvertToTarredAudioDatasetConfig processor can be additionally required: pip install lhotse "nemo-toolkit[common]==2.3.2"
+# for ConvertToTarredAudioDatasetConfig processor can be additionally required: pip install lhotse "nemo-toolkit[common]==2.7.2"

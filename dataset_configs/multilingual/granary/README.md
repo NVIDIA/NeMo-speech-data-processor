@@ -63,7 +63,7 @@ pip install fasttext
 - `ConvertToTarredAudioDataset` (optional, only if tar-sharding is enabled)
 
 ```bash
-pip install lhotse "nemo-toolkit[common]==2.3.2"
+pip install lhotse "nemo-toolkit[common]==2.7.2"
 ```
 
 ### Quick start
