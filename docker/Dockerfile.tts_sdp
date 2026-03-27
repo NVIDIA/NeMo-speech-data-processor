@@ -3,6 +3,8 @@ FROM pytorch/pytorch:2.11.0-cuda13.0-cudnn9-devel
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV TZ=America/Los_Angeles
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH=/opt/venv/bin:$PATH
 
 # Install basics
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -17,10 +19,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sox \
     unzip \
     vim \
-    wget
+    wget \
+    python3-venv
 
-# Update pip
-RUN python -m pip install --no-cache-dir --upgrade --ignore-installed setuptools wheel
+# Isolate Python packages from Debian-managed system Python (PEP 668).
+RUN python3 -m venv ${VIRTUAL_ENV}
+
+# Update pip tooling in the virtual environment.
+RUN ${VIRTUAL_ENV}/bin/python -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # Link all cudnn .so libraries for runtime
 RUN ln -s /opt/conda/lib/python3.11/site-packages/nvidia/cudnn/include/cudnn*.h /usr/include/
@@ -36,11 +42,11 @@ RUN rm -rf /src/NeMo-speech-data-processor/.git
 
 # Install requirements
 WORKDIR /src/NeMo-speech-data-processor
-RUN python -m pip install -r requirements/main.txt 
-RUN python -m pip install -r requirements/tts.txt
+RUN ${VIRTUAL_ENV}/bin/python -m pip install -r requirements/main.txt
+RUN ${VIRTUAL_ENV}/bin/python -m pip install -r requirements/tts.txt
 # RUN pip install flash-attn --no-build-isolation
-RUN python -m pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
-RUN python -m pip install --no-build-isolation megatron-core transformer_engine[pytorch]==2.13.0
-RUN python -m pip install nemo_toolkit['all']==2.7.2
+RUN ${VIRTUAL_ENV}/bin/python -m pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
+RUN ${VIRTUAL_ENV}/bin/python -m pip install --no-build-isolation megatron-core transformer_engine[pytorch]==2.13.0
+RUN ${VIRTUAL_ENV}/bin/python -m pip install nemo_toolkit['all']==2.7.2
 
 WORKDIR /src/NeMo-speech-data-processor

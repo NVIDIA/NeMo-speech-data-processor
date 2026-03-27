@@ -14,6 +14,7 @@
 
 import json
 import os
+import warnings
 from collections import defaultdict
 from typing import Optional
 
@@ -73,6 +74,15 @@ class AcceptIfWERLess(BaseParallelProcessor):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        
+        # Deprecation warning
+        warnings.warn(
+            "Toloka processors are deprecated and will be removed in a future version. "
+            "Please migrate to alternative solutions for crowdsourcing tasks.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        
         self.input_data_file = input_data_file
         self.input_pool_file = input_pool_file
         self.threshold = threshold
