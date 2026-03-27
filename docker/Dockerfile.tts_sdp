@@ -38,6 +38,7 @@ RUN rm -rf /src/NeMo-speech-data-processor/.git
 WORKDIR /src/NeMo-speech-data-processor
 RUN pip install -r requirements/main.txt 
 RUN pip install -r requirements/tts.txt
+RUN pip install pytest pytest-cov
 RUN pip install flash-attn --no-build-isolation
 RUN pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
 # RUN pip install megatron-core transformer_engine[pytorch]==2.4.0
