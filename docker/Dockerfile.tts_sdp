@@ -46,6 +46,6 @@ RUN pip install nemo_toolkit['asr,tts,nlp']==2.3.2
 RUN python -m pip install --force-reinstall \
     torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 \
     --index-url https://download.pytorch.org/whl/cu121
-RUN python -m pip install "numpy<=2.1.0"
+RUN python -m pip install "numpy<2.0.0"
 
 WORKDIR /src/NeMo-speech-data-processor
