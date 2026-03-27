@@ -41,7 +41,9 @@ RUN pip install -r requirements/tts.txt
 RUN pip install pytest pytest-cov boto3
 RUN pip install flash-attn --no-build-isolation
 RUN pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
-RUN pip install nemo_toolkit['all']==2.5.0 
+
+# newer versions of nemo do not have PunctuationCapitalizationModels
+RUN pip install nemo_toolkit['all']==2.3.2 
 
 # nemo updates torch version, so we need to install the same version, for properly working tts
 RUN python -m pip install --force-reinstall \
