@@ -46,7 +46,7 @@ RUN ${VIRTUAL_ENV}/bin/python -m pip install -r requirements/main.txt
 RUN ${VIRTUAL_ENV}/bin/python -m pip install -r requirements/tts.txt
 # RUN pip install flash-attn --no-build-isolation
 # RUN ${VIRTUAL_ENV}/bin/python -m pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
-RUN ${VIRTUAL_ENV}/bin/python -m pip install --no-build-isolation megatron-core transformer_engine[pytorch]==2.13.0
+# RUN ${VIRTUAL_ENV}/bin/python -m pip install --no-build-isolation megatron-core transformer_engine[pytorch]==2.13.0
 RUN ${VIRTUAL_ENV}/bin/python -m pip install nemo_toolkit['all']==2.7.2
 
 WORKDIR /src/NeMo-speech-data-processor

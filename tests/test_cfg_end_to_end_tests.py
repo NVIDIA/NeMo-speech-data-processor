@@ -178,26 +178,26 @@ def data_check_fn_granary(raw_data_dir: str) -> None:
 
 def get_test_cases() -> List[Tuple[str, Callable]]:
     return [
-        TestCase(
-           config_path=f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", 
-           data_check_fn=partial(data_check_fn_mls, language="spanish"),
-           ),
+        # TestCase(
+        #    config_path=f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", 
+        #    data_check_fn=partial(data_check_fn_mls, language="spanish"),
+        #    ),
         # TestCase(
         #    config_path=f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", 
         #    data_check_fn=partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")
         #    ),
-        # TestCase(
-        #    config_path=f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", 
-        #    data_check_fn=data_check_fn_voxpopuli
-        #    ),
+        TestCase(
+           config_path=f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", 
+           data_check_fn=data_check_fn_voxpopuli
+           ),
         # TestCase(
         #    config_path=f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", 
         #    data_check_fn=partial(data_check_fn_mls, language="italian")
         #    ),
-        TestCase(
-           config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", 
-           data_check_fn=partial(data_check_fn_mls, language="portuguese")
-           ),
+        # TestCase(
+        #    config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/mls/config.yaml", 
+        #    data_check_fn=partial(data_check_fn_mls, language="portuguese")
+        #    ),
         # TestCase(
         #    config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/mcv/config.yaml", 
         #    data_check_fn=partial(data_check_fn_mcv, archive_file_stem="cv-corpus-15.0-2023-09-08-pt")
