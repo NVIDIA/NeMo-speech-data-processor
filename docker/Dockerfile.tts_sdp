@@ -1,7 +1,6 @@
 FROM pytorch/pytorch:2.11.0-cuda13.0-cudnn9-devel
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG PYTHON_BIN=/opt/conda/bin/python3.11
 
 ENV TZ=America/Los_Angeles
 ENV VIRTUAL_ENV=/opt/venv
@@ -20,20 +19,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sox \
     unzip \
     vim \
-    wget
+    wget \
+    python3-venv
 
-# Isolate Python packages from Debian-managed system Python (PEP 668)
-# while keeping compatibility with the base image Python stack.
-RUN ${PYTHON_BIN} --version && ${PYTHON_BIN} -m venv ${VIRTUAL_ENV}
+# Isolate Python packages from Debian-managed system Python (PEP 668).
+RUN python3 -m venv ${VIRTUAL_ENV}
 
 # Update pip tooling in the virtual environment.
 RUN ${VIRTUAL_ENV}/bin/python -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Link all cudnn .so libraries for runtime
-RUN ln -s /opt/conda/lib/python3.11/site-packages/nvidia/cudnn/include/cudnn*.h /usr/include/
-RUN mkdir -p /usr/local/cuda/lib64
-RUN ln -s /opt/conda/lib/python3.11/site-packages/nvidia/cudnn/lib/libcudnn*.so* /usr/local/cuda/lib64/
-ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+# # Link all cudnn .so libraries for runtime
+# RUN ln -s /opt/conda/lib/python3.11/site-packages/nvidia/cudnn/include/cudnn*.h /usr/include/
+# RUN mkdir -p /usr/local/cuda/lib64
+# RUN ln -s /opt/conda/lib/python3.11/site-packages/nvidia/cudnn/lib/libcudnn*.so* /usr/local/cuda/lib64/
+# ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 
 # Copy NeMo SDP
