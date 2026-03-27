@@ -6,4 +6,5 @@ pytest-cov
 lhotse
 torch==2.8.0
 torchaudio==2.8.0
+torchcodec==0.7.0
 fasttext
