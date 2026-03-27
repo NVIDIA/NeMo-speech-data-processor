@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.11.0-cuda13.0-cudnn9-devel
+FROM pytorch/pytorch:2.8.0-cuda12.8-cudnn9-devel
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -48,5 +48,10 @@ RUN ${VIRTUAL_ENV}/bin/python -m pip install -r requirements/tts.txt
 # RUN ${VIRTUAL_ENV}/bin/python -m pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
 # RUN ${VIRTUAL_ENV}/bin/python -m pip install --no-build-isolation megatron-core transformer_engine[pytorch]==2.13.0
 RUN ${VIRTUAL_ENV}/bin/python -m pip install nemo_toolkit['all']==2.7.2
+
+# nemo installs newer torch version than the one in the base image, so we need to install the same version, for properly working tts
+RUN python -m pip install --upgrade --force-reinstall \
+    torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 \
+    --index-url https://download.pytorch.org/whl/cu128
 
 WORKDIR /src/NeMo-speech-data-processor
