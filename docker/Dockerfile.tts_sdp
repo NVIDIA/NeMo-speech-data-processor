@@ -1,6 +1,7 @@
 FROM pytorch/pytorch:2.11.0-cuda13.0-cudnn9-devel
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG PYTHON_BIN=/opt/conda/bin/python3.11
 
 ENV TZ=America/Los_Angeles
 ENV VIRTUAL_ENV=/opt/venv
@@ -23,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Isolate Python packages from Debian-managed system Python (PEP 668)
 # while keeping compatibility with the base image Python stack.
-RUN /opt/conda/bin/python -m venv ${VIRTUAL_ENV}
+RUN ${PYTHON_BIN} --version && ${PYTHON_BIN} -m venv ${VIRTUAL_ENV}
 
 # Update pip tooling in the virtual environment.
 RUN ${VIRTUAL_ENV}/bin/python -m pip install --no-cache-dir --upgrade pip setuptools wheel
@@ -45,7 +46,7 @@ WORKDIR /src/NeMo-speech-data-processor
 RUN ${VIRTUAL_ENV}/bin/python -m pip install -r requirements/main.txt
 RUN ${VIRTUAL_ENV}/bin/python -m pip install -r requirements/tts.txt
 # RUN pip install flash-attn --no-build-isolation
-RUN ${VIRTUAL_ENV}/bin/python -m pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
+# RUN ${VIRTUAL_ENV}/bin/python -m pip install https://github.com/LahiLuk/YouTokenToMe/archive/master.zip
 RUN ${VIRTUAL_ENV}/bin/python -m pip install --no-build-isolation megatron-core transformer_engine[pytorch]==2.13.0
 RUN ${VIRTUAL_ENV}/bin/python -m pip install nemo_toolkit['all']==2.7.2
 
