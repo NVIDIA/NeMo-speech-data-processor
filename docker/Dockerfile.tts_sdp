@@ -19,11 +19,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sox \
     unzip \
     vim \
-    wget \
-    python3-venv
+    wget
 
-# Isolate Python packages from Debian-managed system Python (PEP 668).
-RUN python3 -m venv ${VIRTUAL_ENV}
+# Isolate Python packages from Debian-managed system Python (PEP 668)
+# while keeping compatibility with the base image Python stack.
+RUN /opt/conda/bin/python -m venv ${VIRTUAL_ENV}
 
 # Update pip tooling in the virtual environment.
 RUN ${VIRTUAL_ENV}/bin/python -m pip install --no-cache-dir --upgrade pip setuptools wheel
