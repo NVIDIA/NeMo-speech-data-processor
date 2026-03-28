@@ -54,7 +54,7 @@ jobs:
       run: |
         python -m pytest tests/test_cfg_runtime_tests.py
 
-main-tests:
+  main-tests:
     runs-on: ubuntu-latest
 
     steps:
