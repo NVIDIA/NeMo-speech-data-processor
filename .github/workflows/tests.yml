@@ -67,6 +67,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install nemo-toolkit[asr,nlp]==2.5.0
+        pip install --force-reinstall -r requirements/huggingface.txt
         pip install --force-reinstall -r requirements/main.txt
         pip install --force-reinstall -r requirements/tests.txt
         sudo apt-get update
@@ -74,7 +75,6 @@ jobs:
         pip install pytorch_lightning
         pip install Cython wheel  # need to pre-install to avoid error in nemo installation
         pip install nemo_text_processing
-        pip install --force-reinstall -r requirements/huggingface.txt
         pip install pymarian
         pip install certifi #this needed to avoid problems with certificates [COORAL]
         export SSL_CERT_FILE=$(python -m certifi)
