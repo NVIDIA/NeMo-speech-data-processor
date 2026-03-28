@@ -1,15 +1,10 @@
---extra-index-url https://download.pytorch.org/whl/cpu
-
 boto3
 # additional packages required to run tests
 pytest
 pytest-cov
-
 # lhotse requires torch and torchaudio to be present
 lhotse
-
-torch==2.8.0
-torchaudio==2.8.0
-torchcodec==0.7.0
+torch
+torchaudio
 
 fasttext
