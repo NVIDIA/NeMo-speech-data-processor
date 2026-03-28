@@ -54,7 +54,7 @@ jobs:
       run: |
         python -m pytest tests/test_cfg_runtime_tests.py
 
-  main-tests:
+main-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -66,15 +66,15 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install nemo-toolkit[asr,nlp]==2.5.0
-        pip install --force-reinstall -r requirements/huggingface.txt
-        pip install --force-reinstall -r requirements/main.txt
-        pip install --force-reinstall -r requirements/tests.txt
+        pip install nemo-toolkit[asr,nlp]==2.7.2
+        pip install -r requirements/main.txt
+        pip install -r requirements/tests.txt
         sudo apt-get update
         sudo apt-get install -y libsndfile1 ffmpeg sox libsox-fmt-mp3
         pip install pytorch_lightning
         pip install Cython wheel  # need to pre-install to avoid error in nemo installation
         pip install nemo_text_processing
+        pip install -r requirements/huggingface.txt
         pip install pymarian
         pip install certifi #this needed to avoid problems with certificates [COORAL]
         export SSL_CERT_FILE=$(python -m certifi)
