@@ -78,9 +78,7 @@ jobs:
         pip install pymarian
         pip install certifi #this needed to avoid problems with certificates [COORAL]
         export SSL_CERT_FILE=$(python -m certifi)
-        pip install --force-reinstall nvidia-resiliency-ext==0.4.1 
         python -m pip cache purge
-        pip freeze
         
 
     - name: Run all tests
