@@ -15,6 +15,8 @@ import json
 import logging
 import os
 import shutil
+import subprocess
+import sys
 import tarfile
 from dataclasses import dataclass, field
 from functools import partial
@@ -31,6 +33,20 @@ from sdp.run_processors import run_processors
 from sdp.utils.common import extract_tar_with_strip_components
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
+
+
+def log_pip_freeze() -> None:
+    """Log environment package versions to simplify e2e test debugging."""
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "freeze"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        logging.info("pip freeze for current test environment:\n%s", result.stdout.strip())
+    except Exception as exc:
+        logging.warning("Unable to collect pip freeze output: %s", exc)
 
 @dataclass
 class TestCase:
@@ -416,6 +432,7 @@ def test_configs(setup_data, tmp_path):
 
     config_path, _, reference_manifest_filename, data_dir, fields_to_ignore, processors_to_run = setup_data
     reference_manifest = data_dir / reference_manifest_filename
+    log_pip_freeze()
 
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
