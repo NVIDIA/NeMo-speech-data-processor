@@ -15,8 +15,6 @@ import json
 import logging
 import os
 import shutil
-import subprocess
-import sys
 import tarfile
 from dataclasses import dataclass, field
 from functools import partial
@@ -33,20 +31,7 @@ from sdp.run_processors import run_processors
 from sdp.utils.common import extract_tar_with_strip_components
 
 DATASET_CONFIGS_ROOT = Path(__file__).parents[1] / "dataset_configs"
-
-
-def log_pip_freeze() -> None:
-    """Log environment package versions to simplify e2e test debugging."""
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pip", "freeze"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        logging.info("pip freeze for current test environment:\n%s", result.stdout.strip())
-    except Exception as exc:
-        logging.warning("Unable to collect pip freeze output: %s", exc)
+RUN_OPTIONAL_E2E_TESTS_ENV = "RUN_OPTIONAL_E2E_TESTS"
 
 @dataclass
 class TestCase:
@@ -57,6 +42,16 @@ class TestCase:
     # Fields in the manifest to ignore (can be set when non-deterministic processor was used)
     fields_to_ignore: List[str] = field(default_factory=list)
     processors_to_run: str = ""
+    # Optional tests are skipped unless RUN_OPTIONAL_E2E_TESTS is enabled.
+    optional: bool = False
+
+
+def _is_true(value: str) -> bool:
+    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _run_optional_e2e_tests() -> bool:
+    return _is_true(os.getenv(RUN_OPTIONAL_E2E_TESTS_ENV, "0"))
 
 def data_check_fn_generic(raw_data_dir: str, file_name: str, **kwargs) -> None:
     if callable(file_name):
@@ -193,11 +188,11 @@ def data_check_fn_granary(raw_data_dir: str) -> None:
         to_abs_audio_paths(Path(raw_data_dir) / manifest_file, raw_data_dir)
 
 def get_test_cases() -> List[Tuple[str, Callable]]:
-    return [
-        # TestCase(
-        #    config_path=f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", 
-        #    data_check_fn=partial(data_check_fn_mls, language="spanish"),
-        #    ),
+    test_cases = [
+        TestCase(
+           config_path=f"{DATASET_CONFIGS_ROOT}/spanish/mls/config.yaml", 
+           data_check_fn=partial(data_check_fn_mls, language="spanish"),
+           ),
         # TestCase(
         #    config_path=f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", 
         #    data_check_fn=partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")
@@ -309,7 +304,8 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         #    data_check_fn=data_check_fn_armenian_toloka_pipeline_start,
         #    fields_to_ignore=['source_filepath'],
         #    processors_to_run="2:14",
-        #    reference_manifest_filename="pipeline_start/test_data_reference.json"
+        #    reference_manifest_filename="pipeline_start/test_data_reference.json",
+        #    optional=True,
         # ),
         # TestCase(
         #    config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_get_final_res.yaml",
@@ -317,6 +313,7 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         #    reference_manifest_filename="pipeline_get_final_res/test_data_reference.json",
         #    fields_to_ignore=['audio_filepath', 'duration'],
         #    processors_to_run="1:6"
+        #    optional=True,
         # ),
         # TestCase(
         #     config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/unlabeled/config.yaml", 
@@ -345,6 +342,9 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         #     fields_to_ignore=['audio_filepath'],
         # ),
     ]
+    if _run_optional_e2e_tests():
+        return test_cases
+    return [test_case for test_case in test_cases if not test_case.optional]
 
 def get_test_names():
     config_names = [
@@ -432,7 +432,6 @@ def test_configs(setup_data, tmp_path):
 
     config_path, _, reference_manifest_filename, data_dir, fields_to_ignore, processors_to_run = setup_data
     reference_manifest = data_dir / reference_manifest_filename
-    log_pip_freeze()
 
     cfg = OmegaConf.load(config_path)
     assert "processors" in cfg
@@ -501,6 +500,86 @@ def test_configs(setup_data, tmp_path):
          open(cfg.final_manifest, "rt", encoding="utf8") as generated_fin:
         reference_lines = sorted(reference_fin.readlines())
         generated_lines = sorted(generated_fin.readlines())
+        reference_records = [json.loads(line) for line in reference_lines]
+        generated_records = [json.loads(line) for line in generated_lines]
+        id_key = "audio_filepath"
+        text_key = "text"
+
+        reference_by_id = {record[id_key]: record for record in reference_records if id_key in record}
+        generated_by_id = {record[id_key]: record for record in generated_records if id_key in record}
+        reference_missing_id = [record for record in reference_records if id_key not in record]
+        generated_missing_id = [record for record in generated_records if id_key not in record]
+
+        if reference_missing_id:
+            logging.error(
+                "Reference has %s records without '%s':\n%s",
+                len(reference_missing_id),
+                id_key,
+                "\n".join(json.dumps(record, ensure_ascii=False, sort_keys=True) for record in reference_missing_id),
+            )
+        if generated_missing_id:
+            logging.error(
+                "Generated has %s records without '%s':\n%s",
+                len(generated_missing_id),
+                id_key,
+                "\n".join(json.dumps(record, ensure_ascii=False, sort_keys=True) for record in generated_missing_id),
+            )
+
+        missing_in_generated = sorted(set(reference_by_id) - set(generated_by_id))
+        missing_in_reference = sorted(set(generated_by_id) - set(reference_by_id))
+
+        if len(reference_lines) != len(generated_lines):
+            logging.error(
+                "Manifest lengths differ: reference=%s generated=%s",
+                len(reference_lines),
+                len(generated_lines),
+            )
+            if missing_in_generated:
+                logging.error(
+                    "Entries present in reference but missing in generated (%s). Full reference samples:\n%s",
+                    len(missing_in_generated),
+                    "\n".join(
+                        json.dumps(reference_by_id[sample_id], ensure_ascii=False, sort_keys=True)
+                        for sample_id in missing_in_generated
+                    ),
+                )
+            if missing_in_reference:
+                logging.error(
+                    "Entries present in generated but missing in reference (%s). Full generated samples:\n%s",
+                    len(missing_in_reference),
+                    "\n".join(
+                        json.dumps(generated_by_id[sample_id], ensure_ascii=False, sort_keys=True)
+                        for sample_id in missing_in_reference
+                    ),
+                )
+
+        mismatched_text_sample_ids = []
+        for sample_id in sorted(set(reference_by_id) & set(generated_by_id)):
+            reference_text = reference_by_id[sample_id].get(text_key)
+            generated_text = generated_by_id[sample_id].get(text_key)
+            if reference_text != generated_text:
+                mismatched_text_sample_ids.append(sample_id)
+
+        if mismatched_text_sample_ids:
+            logging.error(
+                "Entries with matching '%s' but different '%s' (%s):\n%s",
+                id_key,
+                text_key,
+                len(mismatched_text_sample_ids),
+                "\n".join(mismatched_text_sample_ids),
+            )
+            for sample_id in mismatched_text_sample_ids:
+                logging.error(
+                    "Reference sample for '%s': %s",
+                    sample_id,
+                    json.dumps(reference_by_id[sample_id], ensure_ascii=False, sort_keys=True),
+                )
+                logging.error(
+                    "Generated sample for '%s': %s",
+                    sample_id,
+                    json.dumps(generated_by_id[sample_id], ensure_ascii=False, sort_keys=True),
+                )
+
         assert len(reference_lines) == len(generated_lines)
 
         for reference_line, generated_line in zip(reference_lines, generated_lines):
