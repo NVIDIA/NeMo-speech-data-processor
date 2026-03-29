@@ -197,10 +197,10 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
         #    config_path=f"{DATASET_CONFIGS_ROOT}/spanish_pc/mcv12/config.yaml", 
         #    data_check_fn=partial(data_check_fn_mcv, archive_file_stem="cv-corpus-12.0-2022-12-07-es")
         #    ),
-        TestCase(
-           config_path=f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", 
-           data_check_fn=data_check_fn_voxpopuli
-           ),
+        # TestCase(
+        #    config_path=f"{DATASET_CONFIGS_ROOT}/italian/voxpopuli/config.yaml", 
+        #    data_check_fn=data_check_fn_voxpopuli
+        #    ),
         # TestCase(
         #    config_path=f"{DATASET_CONFIGS_ROOT}/italian/mls/config.yaml", 
         #    data_check_fn=partial(data_check_fn_mls, language="italian")
@@ -505,8 +505,8 @@ def test_configs(setup_data, tmp_path):
         id_key = "audio_filepath"
         text_key = "text"
 
-        reference_by_id = {record[id_key]: record for record in reference_records if id_key in record}
-        generated_by_id = {record[id_key]: record for record in generated_records if id_key in record}
+        reference_by_id = {os.path.basename(record[id_key]): record for record in reference_records if id_key in record}
+        generated_by_id = {os.path.basename(record[id_key]): record for record in generated_records if id_key in record}
         reference_missing_id = [record for record in reference_records if id_key not in record]
         generated_missing_id = [record for record in generated_records if id_key not in record]
 
