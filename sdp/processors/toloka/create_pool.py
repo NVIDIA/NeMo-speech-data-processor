@@ -15,6 +15,7 @@
 import datetime
 import json
 import os
+import warnings
 
 from sdp.logging import logger
 from sdp.processors.base_processor import BaseParallelProcessor
@@ -55,7 +56,17 @@ class CreateTolokaPool(BaseParallelProcessor):
         lang : str, optional
             The language filter for the pool. Defaults to 'HY'.
         """
+        
         super().__init__(**kwargs)
+        
+        # Deprecation warning
+        warnings.warn(
+            "Toloka processors are deprecated and will be removed in a future version. "
+            "Please migrate to alternative solutions for crowdsourcing tasks.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        
         self.API_KEY = os.getenv('TOLOKA_API_KEY')
         if not self.API_KEY:
             raise ValueError("TOLOKA_API_KEY environment variable is not set")

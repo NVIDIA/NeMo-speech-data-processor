@@ -288,20 +288,20 @@ def get_test_cases() -> List[Tuple[str, Callable]]:
            config_path=f"{DATASET_CONFIGS_ROOT}/arabic/everyayah/config.yaml", 
            data_check_fn=partial(data_check_fn_generic, file_name="everyayah.hf")
         ),
-        TestCase(
-           config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_start.yaml",
-           data_check_fn=data_check_fn_armenian_toloka_pipeline_start,
-           fields_to_ignore=['source_filepath'],
-           processors_to_run="2:14",
-           reference_manifest_filename="pipeline_start/test_data_reference.json"
-        ),
-        TestCase(
-           config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_get_final_res.yaml",
-           data_check_fn=data_check_fn_armenian_toloka_pipeline_get_final_res,
-           reference_manifest_filename="pipeline_get_final_res/test_data_reference.json",
-           fields_to_ignore=['audio_filepath', 'duration'],
-           processors_to_run="1:6"
-        ),
+        # TestCase(
+        #    config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_start.yaml",
+        #    data_check_fn=data_check_fn_armenian_toloka_pipeline_start,
+        #    fields_to_ignore=['source_filepath'],
+        #    processors_to_run="2:14",
+        #    reference_manifest_filename="pipeline_start/test_data_reference.json"
+        # ),
+        # TestCase(
+        #    config_path=f"{DATASET_CONFIGS_ROOT}/armenian/toloka/pipeline_get_final_res.yaml",
+        #    data_check_fn=data_check_fn_armenian_toloka_pipeline_get_final_res,
+        #    reference_manifest_filename="pipeline_get_final_res/test_data_reference.json",
+        #    fields_to_ignore=['audio_filepath', 'duration'],
+        #    processors_to_run="1:6"
+        # ),
         TestCase(
             config_path=f"{DATASET_CONFIGS_ROOT}/portuguese/unlabeled/config.yaml", 
             data_check_fn=partial(data_check_fn_unlabeled),

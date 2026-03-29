@@ -14,6 +14,7 @@
 
 import json
 import os
+import warnings
 
 from docx import Document
 
@@ -34,6 +35,14 @@ class CreateSentenceSet(BaseParallelProcessor):
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        
+        # Deprecation warning
+        warnings.warn(
+            "Toloka processors are deprecated and will be removed in a future version. "
+            "Please migrate to alternative solutions for crowdsourcing tasks.",
+            DeprecationWarning,
+            stacklevel=2
+        )
 
     def parse_docx(self, file_path):
         doc = Document(file_path)
