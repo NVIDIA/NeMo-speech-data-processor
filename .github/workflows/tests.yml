@@ -79,6 +79,7 @@ jobs:
         pip install certifi #this needed to avoid problems with certificates [COORAL]
         export SSL_CERT_FILE=$(python -m certifi)
         python -m pip cache purge
+        pip freeze
         
 
     - name: Run all tests
